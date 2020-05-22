@@ -1,0 +1,18 @@
+{
+  "printWidth": 120,
+  "bracketSpacing": true,
+  "explicitTypes": "preserve",
+  "tabWidth": 2,
+  "overrides": [
+    {
+      "files": "*.sol",
+      "options": {
+        "tabWidth": 4,
+        "useTabs": false,
+        "singleQuote": false,
+        "explicitTypes": "always"
+      }
+    }]
+  ]
+}
+© 2020 GitHub, Inc.
