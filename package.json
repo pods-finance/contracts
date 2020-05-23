@@ -4,8 +4,8 @@
   "description": "Options on chain of everything",
   "main": "networks.js",
   "scripts": {
-    "lint": "npm run eslint && npm run prettier -- --list-different",
-    "lint-fix": "npm run eslint -- --fix && npm run prettier -- --write",
+    "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
+    "prettier:fix": "./node_modules/.bin/prettier --write contracts/**/*.sol",
     "test": "buidler test"
   },
   "repository": {
@@ -26,15 +26,24 @@
   },
   "homepage": "https://github.com/pods-finance/contracts#readme",
   "devDependencies": {
+    "@openzeppelin/cli": "^2.8.2",
+    "@openzeppelin/upgrades": "^2.8.0",
     "@truffle/hdwallet-provider": "^1.0.35",
     "dotenv": "^8.2.0",
-    "eslint": "^7.0.0",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-mocha": "^7.0.0",
-    "eslint-plugin-prettier": "^3.1.3",
     "ganache-cli": "^6.9.1",
+    "husky": "^4.2.5",
     "prettier": "^2.0.5",
     "prettier-plugin-solidity": "^1.0.0-alpha.52",
+    "solhint": "^3.0.0",
+    "solhint-plugin-prettier": "0.0.4",
     "solidity-coverage": "^0.7.5"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.0.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-push": "npm run lint && npm run prettier:fix"
+    }
   }
 }
