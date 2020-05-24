@@ -1,7 +1,6 @@
 const { use, expect } = require('chai')
 const { solidity, MockProvider, getWallets, deployContract } = require('ethereum-waffle')
 const { TestHelper } = require('@openzeppelin/cli')
-const { Contracts, ZWeb3 } = require('@openzeppelin/upgrades')
 const PodToken = require('../build/PodToken.json')
 const MockERC20 = require('../build/MockERC20.json')
 
