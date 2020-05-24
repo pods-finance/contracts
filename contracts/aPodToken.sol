@@ -135,13 +135,14 @@ contract aPodToken is OptionCore {
         );
         // Gets the payment from the caller by transfering them
         // to this contract
-        uint256 underlyingAmount = amount.mul(strikePrice).div(
+        uint256 amountStrikeToTransfer = amount.mul(strikePrice).div(
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
         // Transfers the strike tokens back in exchange
         _burn(msg.sender, amount);
+        require(amountStrikeToTransfer > 0, "amount too low");
         require(
-            ERC20(strikeAsset).transfer(msg.sender, underlyingAmount),
+            ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Couldn't transfer underlying tokens to caller"
         );
     }

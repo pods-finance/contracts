@@ -140,7 +140,7 @@ contract PodToken is OptionCore {
         );
         // Transfers the strike tokens back in exchange
         _burn(msg.sender, amount);
-        require(amountToTransfer > 0, "amount too low");
+        require(amountStrikeToTransfer > 0, "amount too low");
         require(
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Couldn't transfer underlying tokens to caller"
