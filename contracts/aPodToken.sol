@@ -42,6 +42,8 @@ import "./OptionCore.sol";
  * - Will burn the corresponding amounty of put tokens.
  */
 contract aPodToken is OptionCore {
+    using SafeMath for uint8;
+
     constructor(
         string memory name,
         string memory symbol,
@@ -72,12 +74,11 @@ contract aPodToken is OptionCore {
         lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
         _mint(msg.sender, amount);
 
-        uint256 amountToTransfer = amount.mul(strikePrice).div(10**uint256(strikePriceDecimals));
+        uint256 amountToTransfer = amount.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
 
-        // Need to check the Strike Asset Decimals
-        // e.g .div(10 ** strikeAssetDecimals)
-        // Should check now or during contract deploy? (save gas if is during deploy)
-        // Locks the strike asset inside this contract
+        require(amountToTransfer > 0, "You need to increase amount");
         require(
             ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
             "Couldn't transfer strike tokens from caller"
@@ -126,13 +127,18 @@ contract aPodToken is OptionCore {
      *
      * Options can only be exchanged while the series is NOT expired.
      */
-    function exchange() external payable beforeExpiration {
+    function exchange(uint256 amount) external beforeExpiration {
         // Gets the payment from the caller by transfering them
         // to this contract
-        uint256 underlyingAmount = msg.value.mul(strikePrice).div(10**uint256(strikePriceDecimals));
+        uint256 underlyingAmount = amount.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
         // Transfers the strike tokens back in exchange
-        _burn(msg.sender, msg.value);
-        require(ERC20(strikeAsset).transfer(msg.sender, underlyingAmount), "Couldn't transfer strike tokens to caller");
+        _burn(msg.sender, amount);
+        require(
+            ERC20(strikeAsset).transfer(msg.sender, underlyingAmount),
+            "Couldn't transfer underlying tokens to caller"
+        );
     }
 
     /**
