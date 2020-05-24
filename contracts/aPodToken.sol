@@ -128,6 +128,11 @@ contract aPodToken is OptionCore {
      * Options can only be exchanged while the series is NOT expired.
      */
     function exchange(uint256 amount) external beforeExpiration {
+        require(amount > 0, "null amount");
+        require(
+            underlyingAsset.transferFrom(msg.sender, address(this), amount),
+            "Couldn't transfer underlying tokens from caller"
+        );
         // Gets the payment from the caller by transfering them
         // to this contract
         uint256 underlyingAmount = amount.mul(strikePrice).div(

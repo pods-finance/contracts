@@ -72,6 +72,7 @@ contract OptionCore is ERC20 {
         strikeAssetDecimals = 18;
 
         strikeAsset = _strikeAsset;
+        underlyingAsset = _underlyingAsset;
         strikePrice = _strikePrice;
         expirationBlockNumber = _expirationBlockNumber;
 
