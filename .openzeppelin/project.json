@@ -5,11 +5,8 @@
   "name": "pods-finance",
   "version": "1.0.0",
   "compiler": {
-    "compilerSettings": {
-      "optimizer": {}
-    },
-    "typechain": {
-      "enabled": false
-    }
-  }
+    "manager": "openzeppelin",
+    "solcVersion": "0.6.0"
+  },
+  "telemetryOptIn": true
 }
