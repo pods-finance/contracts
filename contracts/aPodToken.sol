@@ -44,6 +44,8 @@ import "./OptionCore.sol";
 contract aPodToken is OptionCore {
     using SafeMath for uint8;
 
+    uint256 totalBalanceWithoutInterest = 0;
+
     constructor(
         string memory name,
         string memory symbol,
@@ -71,13 +73,16 @@ contract aPodToken is OptionCore {
      * contract
      */
     function mint(uint256 amount) external beforeExpiration {
-        lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
-        _mint(msg.sender, amount);
+        require(amount > 0, "Null amount");
 
         uint256 amountToTransfer = amount.mul(strikePrice).div(
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
 
+        lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
+        totalBalanceWithoutInterest = totalBalanceWithoutInterest.add(amountToTransfer);
+
+        _mint(msg.sender, amount);
         require(amountToTransfer > 0, "You need to increase amount");
         require(
             ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
@@ -96,12 +101,16 @@ contract aPodToken is OptionCore {
     function burn(uint256 amount) external beforeExpiration {
         require(amount <= lockedBalance[msg.sender], "Not enough underlying balance");
 
+        uint256 amountToTransfer = amount.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
+
         // Burn option tokens
         lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
+        totalBalanceWithoutInterest = totalBalanceWithoutInterest.sub(amountToTransfer);
         _burn(msg.sender, amount);
 
-        uint256 amountToTransfer = amount.mul(strikePrice).div(10**uint256(strikePriceDecimals));
-
+        require(amountToTransfer > 0, "You need to increase amount");
         // Unlocks the strike token
         require(
             ERC20(strikeAsset).transfer(msg.sender, amountToTransfer),
@@ -139,7 +148,9 @@ contract aPodToken is OptionCore {
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
         // Transfers the strike tokens back in exchange
+        totalBalanceWithoutInterest = totalBalanceWithoutInterest.sub(amountStrikeToTransfer);
         _burn(msg.sender, amount);
+
         require(amountStrikeToTransfer > 0, "amount too low");
         require(
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
@@ -165,7 +176,21 @@ contract aPodToken is OptionCore {
         // Calculates how many underlying/strike tokens the caller
         // will get back
         uint256 currentStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 strikeToReceive = amount.mul(strikePrice).div(10**uint256(strikePriceDecimals));
+        uint256 strikeToReceive;
+        uint256 strikeToReceiveWithoutInterest = amount.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
+
+        uint256 interestToReceive = currentStrikeBalance
+            .sub(totalBalanceWithoutInterest)
+            .mul(strikeToReceiveWithoutInterest)
+            .div(totalBalanceWithoutInterest);
+
+        strikeToReceive = strikeToReceiveWithoutInterest;
+        if (interestToReceive > 0) {
+            strikeToReceive = strikeToReceiveWithoutInterest.add(interestToReceive);
+        }
+
         uint256 underlyingToReceive = 0;
         if (strikeToReceive > currentStrikeBalance) {
             uint256 underlyingAmount = strikeToReceive.sub(currentStrikeBalance);
@@ -178,6 +203,7 @@ contract aPodToken is OptionCore {
 
         // Unlocks the underlying token
         lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
+
         if (strikeToReceive > 0) {
             require(
                 ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
