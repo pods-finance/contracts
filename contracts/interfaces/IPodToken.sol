@@ -8,6 +8,10 @@ interface IPodToken {
 
     function withdraw(address) external;
 
+    function amountOfMintedOptions(uint256) external view returns (uint256);
+
+    function strikeToTransfer(uint256) external view returns (uint256);
+
     function name() external view returns (string memory);
 
     function symbol() external view returns (string memory);

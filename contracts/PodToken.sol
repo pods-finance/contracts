@@ -54,6 +54,28 @@ contract PodToken is OptionCore {
     ) public OptionCore(name, symbol, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber) {}
 
     /**
+     * @notice Gets the amount of minted options given amount of strikeAsset`.
+     * @param strikeAmount of options that protect 1:1 underlying asset.
+     * @return optionsAmount amount of strike asset.
+     */
+    function amountOfMintedOptions(uint256 strikeAmount) external view returns (uint256 optionsAmount) {
+        optionsAmount = strikeAmount
+            .mul(10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals))
+            .div(strikePrice);
+    }
+
+    /**
+     * @notice Gets the amount of strikeAsset necessary to mint a given amount of options`.
+     * @param amount of options that protect 1:1 underlying asset.
+     * @return strikeAmount amount of strike asset.
+     */
+    function strikeToTransfer(uint256 amount) external view returns (uint256 strikeAmount) {
+        strikeAmount = amount.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
+    }
+
+    /**
      * Locks some amount of the strike token and writes option tokens.
      *
      * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
@@ -74,13 +96,11 @@ contract PodToken is OptionCore {
         lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
         _mint(msg.sender, amount);
 
-        uint256 amountToTransfer = amount.mul(strikePrice).div(
-            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
-        );
+        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
 
-        require(amountToTransfer > 0, "amount too low");
+        require(amountStrikeToTransfer > 0, "amount too low");
         require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
+            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
             "Couldn't transfer strike tokens from caller"
         );
     }
@@ -100,11 +120,11 @@ contract PodToken is OptionCore {
         lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
         _burn(msg.sender, amount);
 
-        uint256 amountToTransfer = amount.mul(strikePrice).div(10**uint256(strikePriceDecimals));
+        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
 
         // Unlocks the strike token
         require(
-            ERC20(strikeAsset).transfer(msg.sender, amountToTransfer),
+            ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Couldn't transfer back strike tokens to caller"
         );
     }
@@ -135,9 +155,7 @@ contract PodToken is OptionCore {
         );
         // Gets the payment from the caller by transfering them
         // to this contract
-        uint256 amountStrikeToTransfer = amount.mul(strikePrice).div(
-            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
-        );
+        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
         // Transfers the strike tokens back in exchange
         _burn(msg.sender, amount);
         require(amountStrikeToTransfer > 0, "amount too low");
@@ -161,17 +179,29 @@ contract PodToken is OptionCore {
         _redeem(amount);
     }
 
+    function _strikeToTransfer(uint256 amount) internal returns (uint256 amountOfStrike) {
+        amountOfStrike = amount.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
+    }
+
+    function _underlyingToTransfer(uint256 strikeAmount) internal returns (uint256 underlyingAmount) {
+        underlyingAmount = strikeAmount
+            .mul(10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals))
+            .div(strikePrice);
+    }
+
     function _redeem(uint256 amount) internal {
         // Calculates how many underlying/strike tokens the caller
         // will get back
         uint256 currentStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 strikeToReceive = amount.mul(strikePrice).div(10**uint256(strikePriceDecimals));
+        uint256 strikeToReceive = _strikeToTransfer(amount);
         uint256 underlyingToReceive = 0;
         if (strikeToReceive > currentStrikeBalance) {
-            uint256 underlyingAmount = strikeToReceive.sub(currentStrikeBalance);
+            uint256 remainingStrikeAmount = strikeToReceive.sub(currentStrikeBalance);
             strikeToReceive = currentStrikeBalance;
 
-            underlyingToReceive = underlyingAmount.div(strikePrice).mul(10**uint256(strikePriceDecimals));
+            underlyingToReceive = _underlyingToTransfer(remainingStrikeAmount);
         }
         // require(amount <= lockedBalance[msg.sender]), "Withdraw amount exceeds lockedBalance")
         // We need to check if the person has enough lockedBalance
