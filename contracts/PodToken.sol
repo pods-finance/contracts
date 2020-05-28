@@ -59,9 +59,7 @@ contract PodToken is OptionCore {
      * @return optionsAmount amount of strike asset.
      */
     function amountOfMintedOptions(uint256 strikeAmount) external view returns (uint256 optionsAmount) {
-        optionsAmount = strikeAmount
-            .mul(10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals))
-            .div(strikePrice);
+        optionsAmount = _underlyingToTransfer(strikeAmount);
     }
 
     /**
@@ -70,9 +68,7 @@ contract PodToken is OptionCore {
      * @return strikeAmount amount of strike asset.
      */
     function strikeToTransfer(uint256 amount) external view returns (uint256 strikeAmount) {
-        strikeAmount = amount.mul(strikePrice).div(
-            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
-        );
+        strikeAmount = _strikeToTransfer(amount);
     }
 
     /**
