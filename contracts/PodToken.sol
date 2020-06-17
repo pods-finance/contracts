@@ -45,13 +45,14 @@ contract PodToken is OptionCore {
     using SafeMath for uint8;
 
     constructor(
-        string memory name,
-        string memory symbol,
+        string memory _name,
+        string memory _symbol,
+        uint8 _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expirationBlockNumber
-    ) public OptionCore(name, symbol, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber) {}
+    ) public OptionCore(_name, _symbol, OPTION_TYPE(_optionType), _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber) {}
 
     /**
      * @notice Gets the amount of minted options given amount of strikeAsset`.

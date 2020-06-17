@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -7,6 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract OptionCore is ERC20 {
+
+    enum OPTION_TYPE { PUT, CALL }
+
+    OPTION_TYPE public optionType;
+
     /**
      * The asset used as the underlying token, e.g. DAI
      */
@@ -62,12 +66,13 @@ contract OptionCore is ERC20 {
     constructor(
         string memory name,
         string memory symbol,
+        OPTION_TYPE _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expirationBlockNumber
     ) public ERC20(name, symbol) {
-        // ERC20Detailed.initialize(name, symbol, 18);
+        optionType = _optionType;
         underlyingAssetDecimals = 18;
         strikeAssetDecimals = 18;
 
