@@ -3,7 +3,6 @@ pragma solidity ^0.6.8;
 
 import "./OptionCore.sol";
 
-
 /**
  * Represents a tokenized american put option series for some
  * long/short token pair.
@@ -52,7 +51,18 @@ contract PodToken is OptionCore {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expirationBlockNumber
-    ) public OptionCore(_name, _symbol, OPTION_TYPE(_optionType), _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber) {}
+    )
+        public
+        OptionCore(
+            _name,
+            _symbol,
+            OPTION_TYPE(_optionType),
+            _underlyingAsset,
+            _strikeAsset,
+            _strikePrice,
+            _expirationBlockNumber
+        )
+    {}
 
     /**
      * @notice Gets the amount of minted options given amount of strikeAsset`.
@@ -176,13 +186,13 @@ contract PodToken is OptionCore {
         _redeem(amount);
     }
 
-    function _strikeToTransfer(uint256 amount) internal returns (uint256 amountOfStrike) {
+    function _strikeToTransfer(uint256 amount) internal view returns (uint256 amountOfStrike) {
         amountOfStrike = amount.mul(strikePrice).div(
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
     }
 
-    function _underlyingToTransfer(uint256 strikeAmount) internal returns (uint256 underlyingAmount) {
+    function _underlyingToTransfer(uint256 strikeAmount) internal view returns (uint256 underlyingAmount) {
         underlyingAmount = strikeAmount
             .mul(10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals))
             .div(strikePrice);
