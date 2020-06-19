@@ -179,10 +179,10 @@ contract PodToken is OptionCore {
     }
 
     function _strikeToTransfer(uint256 amount) internal view returns (uint256) {
-        uint256 amountOfStrike = amount.mul(strikePrice).div(
+        uint256 strikeAmount = amount.mul(strikePrice).div(
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
-        return amountOfStrike
+        return strikeAmount;
     }
 
     function _underlyingToTransfer(uint256 strikeAmount) internal view returns (uint256) {
