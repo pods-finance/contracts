@@ -6,7 +6,7 @@ import "./PodToken.sol";
 contract PodFactory {
     address[] public options;
 
-    event OptionCreated(address addr);
+    event OptionCreated(address indexed deployer, address optionAddress);
 
     /**
      * @notice creates a new Pod Contract
@@ -21,7 +21,7 @@ contract PodFactory {
     function createOption(
         string memory _name,
         string memory _symbol,
-        uint8 _optionType,
+        OptionCore.OptionType _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -40,7 +40,7 @@ contract PodFactory {
         );
 
         options.push(address(option));
-        emit OptionCreated(address(option));
+        emit OptionCreated(msg.sender, address(option));
 
         return address(option);
     }

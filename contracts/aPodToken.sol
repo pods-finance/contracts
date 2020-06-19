@@ -48,22 +48,14 @@ contract aPodToken is OptionCore {
     constructor(
         string memory name,
         string memory symbol,
-        uint8 _optionType,
+        OptionCore.OptionType _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expirationBlockNumber
     )
         public
-        OptionCore(
-            name,
-            symbol,
-            OPTION_TYPE(_optionType),
-            _underlyingAsset,
-            _strikeAsset,
-            _strikePrice,
-            _expirationBlockNumber
-        )
+        OptionCore(name, symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
     {}
 
     /**
