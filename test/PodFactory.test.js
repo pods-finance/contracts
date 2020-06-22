@@ -1,61 +1,45 @@
-const { accounts, contract, web3 } = require('@openzeppelin/test-environment')
+const { expect } = require('chai')
 
-const {
-  BN, // Big Number support
-  constants, // Common constants, like the zero address and largest integers
-  expectEvent, // Assertions for emitted events
-  expectRevert // Assertions for transactions that should fail
-} = require('@openzeppelin/test-helpers')
-
-const PodFactory = contract.fromArtifact('PodFactory')
-const MockERC20 = contract.fromArtifact('MockERC20')
-
-let PodFactoryContract
+let podFactory
 let underlyingAsset
 let strikeAsset
 
-const ScenarioA = [
-  'Pods Put WBTC USDC 5000 2020-06-23',
-  'podWBTC:20AA',
-  1,
-  null,
-  null,
-  5000000000,
-  1000
-]
+const ScenarioA = {
+  name: 'Pods Put WBTC USDC 5000 2020-06-23',
+  symbol: 'podWBTC:20AA',
+  optionType: 1,
+  strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
+  expirationDate: 100000
+}
 
-describe('PodFactory.sol', function () {
-  const [sender, receiver] = accounts
+describe('PodFactory', function () {
+  before(async function () {
+    const PodFactory = await ethers.getContractFactory('PodFactory')
+    const MockERC20 = await ethers.getContractFactory('MockERC20')
+    podFactory = await PodFactory.deploy()
+    underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8, 1000e8)
+    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6, 1000e8)
 
-  beforeEach(async function () {
-    PodFactoryContract = await PodFactory.new()
-    underlyingAsset = await MockERC20.new('Wrapped BTC', 'WBTC', 8, 1000e8)
-    strikeAsset = await MockERC20.new('USDC Token', 'USDC', 6, 1000e8)
-    ScenarioA[3] = underlyingAsset.address
-    ScenarioA[4] = strikeAsset.address
+    await podFactory.deployed()
+    await underlyingAsset.deployed()
+    await strikeAsset.deployed()
   })
 
-  describe('Checking correct initial parameters', function () {
-    it('options array to be empty', async function () {
-      const result = await PodFactoryContract.getNumberOfOptions()
-      expect(result.toNumber()).toEqual(0)
-    })
+  it('Should start with a empty options array', async function () {
+    expect(await podFactory.getNumberOfOptions()).to.equal(0)
   })
 
-  describe('Checking correct createOption', function () {
-    it('optionsArray should have one element and emit event', async function () {
-      ScenarioA[6] = await web3.eth.getBlockNumber() + 1000
-      const txReceipt = await PodFactoryContract.createOption(...ScenarioA)
-      expectEvent(txReceipt, 'OptionCreated')
-      const result = await PodFactoryContract.getNumberOfOptions()
-      expect(result.toNumber()).toEqual(1)
-    })
+  it('Should create a new Option correctly, emit event and increase options array', async function () {
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expirationDate]
+
+    await expect(podFactory.createOption(...funcParameters)).to.emit(podFactory, 'OptionCreated')
+    expect(await podFactory.getNumberOfOptions()).to.equal(1)
   })
 
-  describe('reverts when deploying with invalid parameters', function () {
-    it('expiration lower than current block', async function () {
-      ScenarioA[6] = 1
-      await expectRevert(PodFactoryContract.createOption(...ScenarioA), 'expiration lower than current block')
-    })
+  it('Should revert if calling createOption with block lower than currentBlock', async function () {
+    // Changing the last parameter to a block that for sure is lower than the current one
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, 1]
+
+    await expect(podFactory.createOption(...funcParameters)).to.be.revertedWith('expiration lower than current block')
   })
 })
