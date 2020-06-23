@@ -3,6 +3,7 @@ pragma solidity ^0.6.8;
 
 import "./OptionCore.sol";
 import "./interfaces/IUniswapV1.sol";
+import "./constants/ConstantAddresses.sol";
 
 /**
  * Represents a tokenized american put option series for some
@@ -41,7 +42,7 @@ import "./interfaces/IUniswapV1.sol";
  * - Will sell 1 DAI for 1 USDC (the strike price) each.
  * - Will burn the corresponding amounty of put tokens.
  */
-contract PodToken is OptionCore {
+contract PodToken is OptionCore, ConstantAddresses {
     using SafeMath for uint8;
 
     constructor(
@@ -118,15 +119,11 @@ contract PodToken is OptionCore {
             "Couldn't transfer strike tokens from caller"
         );
 
-        // contratoo de constantes
-        address uniswapFactoryKovan = 0xECc6C0542710a0EF07966D7d1B10fA38bbb86523;
-        address emptyAddress = 0x0000000000000000000000000000000000000000;
-
-        IUniswapFactory uniswapFactoryA = IUniswapFactory(uniswapFactoryKovan);
+        IUniswapFactory uniswapFactoryA = IUniswapFactory(UNISWAPV1_FACTORY);
 
         address exchangeOption = uniswapFactoryA.getExchange(address(this));
         // create exchange na hora do factory
-        require(exchangeOption != emptyAddress, "Exchange don't exist");
+        require(exchangeOption != EMPTY_ADDRESS, "Exchange don't exist");
 
         require(this.approve(exchangeOption, amount), "Could not approve exchange transfer");
 
