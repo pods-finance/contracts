@@ -62,6 +62,9 @@ typings/
 # Optional REPL history
 .node_repl_history
 
+# Artifacts created by buidler compile
+artifacts/
+
 # Output of 'npm pack'
 *.tgz
 
