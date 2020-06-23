@@ -1,8 +1,5 @@
-const { use, expect } = require('chai')
-const { solidity, MockProvider, getWallets, deployContract } = require('ethereum-waffle')
-const { TestHelper } = require('@openzeppelin/cli')
-const PodToken = require('../build/PodToken.json')
-const MockERC20 = require('../build/MockERC20.json')
+const { expect } = require('chai')
+const provider = waffle.provider
 
 const fixtures = {
   scenarioA: {
@@ -27,61 +24,34 @@ const fixtures = {
   }
 }
 
-use(solidity)
-
 describe('PodToken Contract', () => {
-  const provider = new MockProvider()
-  const [wallet] = provider.getWallets()
   let mockUnderlyingAsset
   let mockStrikeAsset
   let podToken
-  let sellerAddress
-  let buyerAddress
-  let anotherSellerHolder
 
   beforeEach(async function () {
-    this.project = await TestHelper()
+    const [sellerAddress, buyerAddress, anotherSellerHolder] = await ethers.getSigners()
 
-    sellerAddress = wallet[0]
-    buyerAddress = wallet[1]
-    anotherSellerHolder = wallet[2]
+    const PodToken = await ethers.getContractFactory('PodToken')
+    const MockERC20 = await ethers.getContractFactory('MockERC20')
 
-    mockUnderlyingAsset = await deployContract(
-      wallet,
-      MockERC20,
-      [
-        fixtures.scenarioA.underlyingAssetSymbol,
-        fixtures.scenarioA.underlyingAssetSymbol,
-        fixtures.scenarioA.underlyingAssetDecimals
-      ]
+    mockUnderlyingAsset = await MockERC20.deploy(fixtures.scenarioA.underlyingAssetSymbol, fixtures.scenarioA.underlyingAssetSymbol, fixtures.scenarioA.underlyingAssetDecimals, 1000e8)
+    mockStrikeAsset = await MockERC20.deploy(fixtures.scenarioA.strikeAssetSymbol, fixtures.scenarioA.strikeAssetSymbol, fixtures.scenarioA.strikeAssetDecimals, 1000e8)
+
+    await mockUnderlyingAsset.deployed()
+    await mockStrikeAsset.deployed()
+
+    podToken = await PodToken.deploy(
+      'pod:WBTC:USDC:5000:A',
+      'pod:WBTC:USDC:5000:A',
+      mockUnderlyingAsset.address,
+      mockStrikeAsset.address,
+      fixtures.scenarioA.strikePrice,
+      await provider.getBlockNumber() + 3000 // expirationDate = high block number
     )
 
-    mockStrikeAsset = await deployContract(
-      wallet,
-      MockERC20,
-      [
-        fixtures.scenarioA.strikeAssetSymbol,
-        fixtures.scenarioA.strikeAssetSymbol,
-        fixtures.scenarioA.strikeAssetDecimals
-      ]
-    )
-
-    podToken = await deployPodToken()
+    await podToken.deployed()
   })
-
-  async function deployPodToken () {
-    const podToken = await deployContract(
-      wallet, // a wallet to sign transactions
-      PodToken, // the compiled output
-      ['pod:WBTC:USDC:5000:A',
-        'pod:WBTC:USDC:5000:A',
-        mockUnderlyingAsset.address,
-        mockStrikeAsset.address,
-        fixtures.scenarioA.strikePrice,
-        fixtures.scenarioA.strikePriceDecimals] // arguments to the smart contract constructor
-    )
-    return podToken // an ethers 'Contract' class instance
-  }
 
   describe('Constructor/Initialization checks', () => {
     it('Should have correct number of decimals for underlying and strike asset', async () => {
