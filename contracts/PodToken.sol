@@ -2,6 +2,7 @@
 pragma solidity ^0.6.8;
 
 import "./OptionCore.sol";
+import "./interfaces/IUniswapV1.sol";
 
 /**
  * Represents a tokenized american put option series for some
@@ -102,6 +103,44 @@ contract PodToken is OptionCore {
             ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
             "Couldn't transfer strike tokens from caller"
         );
+    }
+
+    function mintAndSell(uint256 amount, address tokenOutputAddress) external beforeExpiration returns (uint256) {
+        lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
+        // _mint(address(this), amount);
+        _mint(address(this), amount);
+
+        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
+
+        require(amountStrikeToTransfer > 0, "amount too low");
+        require(
+            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
+            "Couldn't transfer strike tokens from caller"
+        );
+
+        // contratoo de constantes
+        address uniswapFactoryKovan = 0xECc6C0542710a0EF07966D7d1B10fA38bbb86523;
+        address emptyAddress = 0x0000000000000000000000000000000000000000;
+
+        IUniswapFactory uniswapFactoryA = IUniswapFactory(uniswapFactoryKovan);
+
+        address exchangeOption = uniswapFactoryA.getExchange(address(this));
+        // create exchange na hora do factory
+        require(exchangeOption != emptyAddress, "Exchange don't exist");
+
+        require(this.approve(exchangeOption, amount), "Could not approve exchange transfer");
+
+        // try / Catch
+        uint256 tokenBought = IUniswapExchange(exchangeOption).tokenToTokenTransferInput(
+            amount,
+            1,
+            1,
+            now + 3000,
+            msg.sender,
+            tokenOutputAddress
+        );
+
+        return tokenBought;
     }
 
     /**
