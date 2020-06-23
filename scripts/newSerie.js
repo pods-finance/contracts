@@ -27,15 +27,15 @@ async function main () {
 
   //   console.log('Account balance:', (await deployer.getBalance()).toString())
 
-  const Token = await ethers.getContractFactory('MockERC20')
-  const token = await Token.deploy('teste', 'testao', 8)
+  // const Token = await ethers.getContractFactory('MockERC20')
+  // const token = await Token.deploy('teste', 'testao', 8)
 
   //   const Token = await ethers.getContractFactory('PodToken')
   //   const token = await Token.deploy(PodTokenParams.name, PodTokenParams.symbol, PodTokenParams.underlyingAddress, PodTokenParams.strikeAddress, PodTokenParams.strikePrice, PodTokenParams.expirationDate)
 
-  await token.deployed()
+  // await token.deployed()
 
-  console.log('Token address:', token.address)
+  // console.log('Token address:', token.address)
 }
 
 main()
