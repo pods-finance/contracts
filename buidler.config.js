@@ -1,5 +1,4 @@
 require('dotenv').config()
-const HDWalletProvider = require('@truffle/hdwallet-provider')
 
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')
@@ -32,37 +31,14 @@ module.exports = {
       network_id: '5777',
       url: 'https://mainnet.infura.io/v3/' + process.env.INFURA_PROJECT_ID
     },
-    mainnet: {
-      provider: () =>
-        new HDWalletProvider(
-          process.env.DEV_MNEMONIC,
-          'https://mainnet.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
-          process.env.ADDRESS_INDEX
-        ),
-      network_id: '1',
-      url: 'https://mainnet.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
-      gasPrice: 2000000000
-    },
     kovan: {
-      provider: () =>
-        new HDWalletProvider(
-          process.env.DEV_MNEMONIC,
-          'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
-          process.env.ADDRESS_INDEX
-        ),
+      accounts: {
+        mnemonic: process.env.DEV_MNEMONIC,
+        initialIndex: 1,
+        count: 1
+      },
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
-      from: process.env.FROM_ADDRESS,
       network_id: 42
-    },
-    rinkeby: {
-      provider: () =>
-        new HDWalletProvider(
-          process.env.DEV_MNEMONIC,
-          'https://rinkeby.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
-          process.env.ADDRESS_INDEX
-        ),
-      url: 'https://rinkeby.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
-      network_id: 4
     }
   },
   solc: {
