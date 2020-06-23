@@ -44,13 +44,17 @@ contract PodToken is OptionCore {
     using SafeMath for uint8;
 
     constructor(
-        string memory name,
-        string memory symbol,
+        string memory _name,
+        string memory _symbol,
+        OptionCore.OptionType _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expirationBlockNumber
-    ) public OptionCore(name, symbol, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber) {}
+    )
+        public
+        OptionCore(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
+    {}
 
     /**
      * @notice Gets the amount of minted options given amount of strikeAsset`.
@@ -174,16 +178,18 @@ contract PodToken is OptionCore {
         _redeem(amount);
     }
 
-    function _strikeToTransfer(uint256 amount) internal view returns (uint256 amountOfStrike) {
-        amountOfStrike = amount.mul(strikePrice).div(
+    function _strikeToTransfer(uint256 amount) internal view returns (uint256) {
+        uint256 strikeAmount = amount.mul(strikePrice).div(
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
+        return strikeAmount;
     }
 
-    function _underlyingToTransfer(uint256 strikeAmount) internal view returns (uint256 underlyingAmount) {
-        underlyingAmount = strikeAmount
+    function _underlyingToTransfer(uint256 strikeAmount) internal view returns (uint256) {
+        uint256 underlyingAmount = strikeAmount
             .mul(10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals))
             .div(strikePrice);
+        return underlyingAmount;
     }
 
     function _redeem(uint256 amount) internal {

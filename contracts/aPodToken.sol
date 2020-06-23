@@ -3,7 +3,6 @@ pragma solidity ^0.6.8;
 
 import "./OptionCore.sol";
 
-
 /**
  * Represents a tokenized american put option series for some
  * long/short token pair.
@@ -49,11 +48,15 @@ contract aPodToken is OptionCore {
     constructor(
         string memory name,
         string memory symbol,
+        OptionCore.OptionType _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expirationBlockNumber
-    ) public OptionCore(name, symbol, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber) {}
+    )
+        public
+        OptionCore(name, symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
+    {}
 
     /**
      * Locks some amount of the strike token and writes option tokens.
