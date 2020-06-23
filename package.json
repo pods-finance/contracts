@@ -1,7 +1,7 @@
 {
   "name": "contracts",
   "version": "1.0.0",
-  "description": "Options on chain of anything",
+  "description": "Limitless Options on Ethereum",
   "main": "networks.js",
   "scripts": {
     "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
@@ -32,7 +32,7 @@
     "@nomiclabs/buidler-waffle": "1.3.5",
     "@openzeppelin/cli": "^2.8.2",
     "@openzeppelin/test-environment": "^0.1.4",
-    "@openzeppelin/test-helpers": "^0.5.6",
+    "@openzeppelin/-helpers": "^0.5.6",
     "@openzeppelin/upgrades": "^2.8.0",
     "@truffle/hdwallet-provider": "^1.0.35",
     "chai": "^4.2.0",
