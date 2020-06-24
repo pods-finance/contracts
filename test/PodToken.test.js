@@ -1,6 +1,8 @@
 const { expect } = require('chai')
 const provider = waffle.provider
 
+const OPTION_TYPE_PUT = 0
+
 const fixtures = {
   scenarioA: {
     underlyingAssetSymbol: 'WBTC',
@@ -44,6 +46,7 @@ describe('PodToken Contract', () => {
     podToken = await PodToken.deploy(
       'pod:WBTC:USDC:5000:A',
       'pod:WBTC:USDC:5000:A',
+      OPTION_TYPE_PUT,
       mockUnderlyingAsset.address,
       mockStrikeAsset.address,
       fixtures.scenarioA.strikePrice,

@@ -4,9 +4,9 @@ pragma solidity ^0.6.8;
 import "./PodToken.sol";
 
 contract PodFactory {
-    address[] public options;
+    PodToken[] public options;
 
-    event OptionCreated(address indexed deployer, address optionAddress);
+    event OptionCreated(address indexed deployer, PodToken option);
 
     /**
      * @notice creates a new Pod Contract
@@ -26,7 +26,7 @@ contract PodFactory {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expirationDate
-    ) public returns (address) {
+    ) public returns (PodToken) {
         require(_expirationDate > block.number, "expiration lower than current block");
 
         PodToken option = new PodToken(
@@ -39,10 +39,10 @@ contract PodFactory {
             _expirationDate
         );
 
-        options.push(address(option));
-        emit OptionCreated(msg.sender, address(option));
+        options.push(option);
+        emit OptionCreated(msg.sender, option);
 
-        return address(option);
+        return option;
     }
 
     /**
