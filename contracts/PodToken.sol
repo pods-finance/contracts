@@ -121,23 +121,20 @@ contract PodToken is OptionCore, ConstantAddresses {
 
         IUniswapFactory uniswapFactoryA = IUniswapFactory(UNISWAPV1_FACTORY);
 
-        address exchangeOption = uniswapFactoryA.getExchange(address(this));
+        address exchangeOptionAddress = uniswapFactoryA.getExchange(address(this));
         // create exchange na hora do factory
-        require(exchangeOption != EMPTY_ADDRESS, "Exchange don't exist");
+        require(exchangeOptionAddress != EMPTY_ADDRESS, "Exchange not found");
+        require(this.approve(exchangeOptionAddress, amount), "Could not approve exchange transfer");
 
-        require(this.approve(exchangeOption, amount), "Could not approve exchange transfer");
+        IUniswapExchange exchangeOption = IUniswapExchange(exchangeOptionAddress);
 
-        // try / Catch
-        uint256 tokenBought = IUniswapExchange(exchangeOption).tokenToTokenTransferInput(
-            amount,
-            1,
-            1,
-            now + 3000,
-            msg.sender,
-            tokenOutputAddress
-        );
-
-        return tokenBought;
+        try exchangeOption.tokenToTokenTransferInput(amount, 1, 1, now + 3000, msg.sender, tokenOutputAddress) returns (
+            uint256 tokenBought
+        ) {
+            return tokenBought;
+        } catch {
+            revert("Uniswap trade fail");
+        }
     }
 
     /**
