@@ -106,9 +106,13 @@ contract PodToken is OptionCore, ConstantAddresses {
         );
     }
 
-    function mintAndSell(uint256 amount, address tokenOutputAddress) external beforeExpiration returns (uint256) {
+    /**
+     * @notice Mint new option and sell it directly to Uniswap
+     * @param amount The amount option tokens to be issued
+     * @param tokenOutput Address of the ERC20 that sender wants to receive option premium
+     */
+    function mintAndSell(uint256 amount, address tokenOutput) external beforeExpiration returns (uint256) {
         lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
-        // _mint(address(this), amount);
         _mint(address(this), amount);
 
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
@@ -122,13 +126,12 @@ contract PodToken is OptionCore, ConstantAddresses {
         IUniswapFactory uniswapFactoryA = IUniswapFactory(UNISWAPV1_FACTORY);
 
         address exchangeOptionAddress = uniswapFactoryA.getExchange(address(this));
-        // create exchange na hora do factory
         require(exchangeOptionAddress != EMPTY_ADDRESS, "Exchange not found");
         require(this.approve(exchangeOptionAddress, amount), "Could not approve exchange transfer");
 
         IUniswapExchange exchangeOption = IUniswapExchange(exchangeOptionAddress);
 
-        try exchangeOption.tokenToTokenTransferInput(amount, 1, 1, now + 3000, msg.sender, tokenOutputAddress) returns (
+        try exchangeOption.tokenToTokenTransferInput(amount, 1, 1, now + 3000, msg.sender, tokenOutput) returns (
             uint256 tokenBought
         ) {
             return tokenBought;
