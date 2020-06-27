@@ -1,41 +1,59 @@
 
-const getMonthLetter = require('../utils/utils.js')
+// const getMonthLetter = require('../utils/utils.js')
+const bre = require('@nomiclabs/buidler')
+const factoryAddressKovan = '0x1d0Ca7d4A7c45c7b3E07CFbb90EcBe1e964B4296'
+
 async function main () {
   // USDC Kovan: 0xe22da380ee6B445bb8273C81944ADEB6E8450422
-  // WBTC Kovan: 0x3b92f58feD223E2cB1bCe4c286BD97e42f2A12EA
-  const PodTokenParams = {
-    strikeAddress: '0xe22da380ee6B445bb8273C81944ADEB6E8450422',
-    underlyingAddress: '0x3b92f58feD223E2cB1bCe4c286BD97e42f2A12EA',
-    underlyingSymbol: 'WBTC',
-    strikeSymbol: 'aUSDC',
-    strikePriceSymbol: 5000,
-    strikePrice: 5000000000,
-    strikePriceDecimals: 6,
-    maturityMonth: 'Jun',
-    expirationDate: 19691392
+  // WBTC Kovan: 0x0094e8cf72acf138578e399768879cedd1ddd33c
+
+  const optionParams = {
+    name: 'Pods Put WBTC USDC 5000 2020-06-23',
+    symbol: 'podWBTC:20AA',
+    optionType: 0,
+    underlyingAsset: '0x0094e8cf72acf138578e399768879cedd1ddd33c',
+    strikeAsset: '0xe22da380ee6B445bb8273C81944ADEB6E8450422',
+    strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
+    expirationDate: await ethers.provider.getBlockNumber() + 2000
   }
 
-  PodTokenParams.symbol = `pod:${PodTokenParams.underlyingSymbol}:${PodTokenParams.strikeSymbol}:${PodTokenParams.strikePriceSymbol}:${getMonthLetter(PodTokenParams.maturityMonth)}`
+  const funcParameters = [
+    optionParams.name,
+    optionParams.symbol,
+    optionParams.optionType,
+    optionParams.underlyingAsset,
+    optionParams.strikeAsset,
+    optionParams.strikePrice,
+    optionParams.expirationDate
+  ]
 
-  PodTokenParams.name = `pod:${PodTokenParams.underlyingSymbol}:${PodTokenParams.strikeSymbol}:${PodTokenParams.strikePriceSymbol}:${getMonthLetter(PodTokenParams.maturityMonth)}`
+  const [owner] = await ethers.getSigners()
+  const deployerAddress = await owner.getAddress()
 
-  //   const [deployer] = await ethers.getSigners()
-  //   console.log(
-  //     'Deploying contracts with the account:',
-  //     await deployer.getAddress()
-  //   )
+  // optionParams.symbol = `pod:${PodTokenParams.underlyingSymbol}:${PodTokenParams.strikeSymbol}:${PodTokenParams.strikePriceSymbol}:${getMonthLetter(PodTokenParams.maturityMonth)}`
 
-  //   console.log('Account balance:', (await deployer.getBalance()).toString())
+  // optionParams.name = `pod:${PodTokenParams.underlyingSymbol}:${PodTokenParams.strikeSymbol}:${PodTokenParams.strikePriceSymbol}:${getMonthLetter(PodTokenParams.maturityMonth)}`
 
-  // const Token = await ethers.getContractFactory('MockERC20')
-  // const token = await Token.deploy('teste', 'testao', 8)
+  const FactoryContract = await ethers.getContractAt('PodFactory', factoryAddressKovan)
+  const txIdNewOption = await FactoryContract.createOption(...funcParameters)
+  const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
+  const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
 
-  //   const Token = await ethers.getContractFactory('PodToken')
-  //   const token = await Token.deploy(PodTokenParams.name, PodTokenParams.symbol, PodTokenParams.underlyingAddress, PodTokenParams.strikeAddress, PodTokenParams.strikePrice, PodTokenParams.expirationDate)
+  if (eventDetails.length) {
+    const { deployer, option, exchange } = eventDetails[0].args
+    console.log('deployer: ', deployer)
+    console.log('option: ', option)
+    console.log('exchangeAddress: ', exchange)
+  } else {
+    console.log('Something went wrong: No events found')
+  }
 
-  // await token.deployed()
-
-  // console.log('Token address:', token.address)
+  // await FactoryContract.on('OptionCreated', (a, b, c, d, e) => {
+  //   console.log(a, b, c, d, e)
+  //   // The event object contains the verbatim log data, the
+  //   // EventFragment and functions to fetch the block,
+  //   // transaction and receipt and event functions
+  // })
 }
 
 main()
