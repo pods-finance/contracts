@@ -2,11 +2,12 @@
 pragma solidity ^0.6.8;
 
 import "./PodToken.sol";
+import "./constants/ConstantAddresses.sol";
 
-contract PodFactory {
+contract PodFactory is ConstantAddresses {
     PodToken[] public options;
 
-    event OptionCreated(address indexed deployer, PodToken option);
+    event OptionCreated(address indexed deployer, PodToken option, address exchange);
 
     /**
      * @notice creates a new Pod Contract
@@ -26,7 +27,7 @@ contract PodFactory {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expirationDate
-    ) public returns (PodToken) {
+    ) public returns (address, address exchange) {
         require(_expirationDate > block.number, "expiration lower than current block");
 
         PodToken option = new PodToken(
@@ -40,15 +41,13 @@ contract PodFactory {
         );
 
         options.push(option);
-        emit OptionCreated(msg.sender, option);
 
-        return option;
-    }
-
-    /**
-     * @notice The number of Option Pod Contracts that has been created
-     */
-    function getNumberOfOptions() public view returns (uint256) {
-        return options.length;
+        // Create Uniswap Exchange
+        try IUniswapFactory(UNISWAPV1_FACTORY).createExchange(address(option)) returns (address _exchange) {
+            emit OptionCreated(msg.sender, option, _exchange);
+            return (address(option), _exchange);
+        } catch {
+            revert("Exchange creation error");
+        }
     }
 }
