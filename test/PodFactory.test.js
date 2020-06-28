@@ -25,15 +25,10 @@ describe('PodFactory', function () {
     await strikeAsset.deployed()
   })
 
-  it('Should start with a empty options array', async function () {
-    expect(await podFactory.getNumberOfOptions()).to.equal(0)
-  })
-
   it('Should create a new Option correctly, emit event and increase options array', async function () {
     const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expirationDate]
 
     await expect(podFactory.createOption(...funcParameters)).to.emit(podFactory, 'OptionCreated')
-    expect(await podFactory.getNumberOfOptions()).to.equal(1)
   })
 
   it('Should revert if calling createOption with block lower than currentBlock', async function () {
