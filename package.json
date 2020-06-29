@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "prettier:fix": "./node_modules/.bin/prettier --write contracts/**/*.sol",
-    "test": "mocha",
+    "test": "buidler test",
     "build": "waffle"
   },
   "repository": {
@@ -54,7 +54,8 @@
   },
   "husky": {
     "hooks": {
-      "pre-push": "npm run lint && npm run prettier:fix"
+      "pre-commit": "npm run lint && npm run prettier:fix",
+      "pre-push": "./scripts/pre-push-check.sh"
     }
   },
   "standard": {
