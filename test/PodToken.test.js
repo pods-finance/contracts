@@ -50,7 +50,8 @@ describe('PodToken Contract', () => {
       mockUnderlyingAsset.address,
       mockStrikeAsset.address,
       fixtures.scenarioA.strikePrice,
-      await provider.getBlockNumber() + 3000 // expirationDate = high block number
+      await provider.getBlockNumber() + 3000,
+      mockUnderlyingAsset.address // expirationDate = high block number
     )
 
     await podToken.deployed()

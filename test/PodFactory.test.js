@@ -26,14 +26,14 @@ describe('PodFactory', function () {
   })
 
   it('Should create a new Option correctly, emit event and increase options array', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expirationDate]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expirationDate, strikeAsset.address]
 
     await expect(podFactory.createOption(...funcParameters)).to.emit(podFactory, 'OptionCreated')
   })
 
   it('Should revert if calling createOption with block lower than currentBlock', async function () {
     // Changing the last parameter to a block that for sure is lower than the current one
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, 1]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, 1, strikeAsset.address]
 
     await expect(podFactory.createOption(...funcParameters)).to.be.revertedWith('expiration lower than current block')
   })

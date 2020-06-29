@@ -52,10 +52,20 @@ contract aPodToken is OptionCore {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expirationBlockNumber,
+        address _uniswapFactory
     )
         public
-        OptionCore(name, symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
+        OptionCore(
+            name,
+            symbol,
+            _optionType,
+            _underlyingAsset,
+            _strikeAsset,
+            _strikePrice,
+            _expirationBlockNumber,
+            _uniswapFactory
+        )
     {}
 
     /**

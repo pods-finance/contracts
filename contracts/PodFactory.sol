@@ -25,7 +25,8 @@ contract PodFactory {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationDate
+        uint256 _expirationDate,
+        address _uniswapFactory
     ) public returns (PodToken) {
         require(_expirationDate > block.number, "expiration lower than current block");
 
@@ -36,7 +37,8 @@ contract PodFactory {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationDate
+            _expirationDate,
+            _uniswapFactory
         );
 
         options.push(option);
