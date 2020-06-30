@@ -332,19 +332,6 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "token_addr",
-          "type": "address"
-        }
-      ],
-      "name": "setup",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
       "inputs": [],
       "name": "tokenAddress",
       "outputs": [

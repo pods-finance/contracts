@@ -3,7 +3,6 @@ pragma solidity ^0.6.8;
 
 import "./OptionCore.sol";
 import "./interfaces/IUniswapV1.sol";
-import "./Constants.sol";
 
 /**
  * Represents a tokenized american put option series for some
@@ -42,7 +41,7 @@ import "./Constants.sol";
  * - Will sell 1 DAI for 1 USDC (the strike price) each.
  * - Will burn the corresponding amounty of put tokens.
  */
-contract PodToken is OptionCore, Constants {
+contract PodToken is OptionCore {
     using SafeMath for uint8;
 
     constructor(
@@ -119,9 +118,14 @@ contract PodToken is OptionCore, Constants {
     /**
      * @notice Mint new option and sell it directly to Uniswap
      * @param amount The amount option tokens to be issued
+     * @param minTokensBought Minimium amount of tokens that could be acceptable bought
      * @param tokenOutput Address of the ERC20 that sender wants to receive option premium
      */
-    function mintAndSell(uint256 amount, address tokenOutput) external beforeExpiration returns (uint256) {
+    function mintAndSell(
+        uint256 amount,
+        uint256 minTokensBought,
+        address tokenOutput
+    ) external beforeExpiration returns (uint256) {
         lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
         _mint(address(this), amount);
 
@@ -136,14 +140,24 @@ contract PodToken is OptionCore, Constants {
         IUniswapFactory uniswapFactory = IUniswapFactory(uniswapFactoryAddress);
 
         address exchangeOptionAddress = uniswapFactory.getExchange(address(this));
-        require(exchangeOptionAddress != EMPTY_ADDRESS, "Exchange not found");
+        require(exchangeOptionAddress != address(0), "Exchange not found");
         require(this.approve(exchangeOptionAddress, amount), "Could not approve exchange transfer");
 
         IUniswapExchange exchangeOption = IUniswapExchange(exchangeOptionAddress);
 
-        try exchangeOption.tokenToTokenTransferInput(amount, 1, 1, now + 3000, msg.sender, tokenOutput) returns (
-            uint256 tokenBought
-        ) {
+        uint256 minEthBought = 1;
+        uint256 deadline = now + 3000;
+
+        try
+            exchangeOption.tokenToTokenTransferInput(
+                amount,
+                minTokensBought,
+                minEthBought,
+                deadline,
+                msg.sender,
+                tokenOutput
+            )
+        returns (uint256 tokenBought) {
             return tokenBought;
         } catch {
             revert("Uniswap trade fail");

@@ -43,6 +43,6 @@ contract PodFactory {
 
         options.push(option);
         emit OptionCreated(msg.sender, option);
-        return (option);
+        return option;
     }
 }
