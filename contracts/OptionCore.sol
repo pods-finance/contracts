@@ -47,6 +47,11 @@ contract OptionCore is ERC20 {
     uint256 public expirationBlockNumber;
 
     /**
+     * Uniswap Factory address used to sell options
+     */
+    address public uniswapFactoryAddress;
+
+    /**
      * Tracks how much of the strike token each address has locked
      * inside this contract
      */
@@ -68,7 +73,8 @@ contract OptionCore is ERC20 {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expirationBlockNumber,
+        address _uniswapFactory
     ) public ERC20(name, symbol) {
         optionType = _optionType;
         underlyingAssetDecimals = 18;
@@ -78,6 +84,7 @@ contract OptionCore is ERC20 {
         underlyingAsset = _underlyingAsset;
         strikePrice = _strikePrice;
         expirationBlockNumber = _expirationBlockNumber;
+        uniswapFactoryAddress = _uniswapFactory;
 
         if (!_isETH(_underlyingAsset)) {
             underlyingAssetDecimals = ERC20(_underlyingAsset).decimals();

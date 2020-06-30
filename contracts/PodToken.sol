@@ -2,6 +2,7 @@
 pragma solidity ^0.6.8;
 
 import "./OptionCore.sol";
+import "./interfaces/IUniswapV1.sol";
 
 /**
  * Represents a tokenized american put option series for some
@@ -50,10 +51,20 @@ contract PodToken is OptionCore {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expirationBlockNumber,
+        address _uniswapFactory
     )
         public
-        OptionCore(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
+        OptionCore(
+            _name,
+            _symbol,
+            _optionType,
+            _underlyingAsset,
+            _strikeAsset,
+            _strikePrice,
+            _expirationBlockNumber,
+            _uniswapFactory
+        )
     {}
 
     /**
@@ -102,6 +113,55 @@ contract PodToken is OptionCore {
             ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
             "Couldn't transfer strike tokens from caller"
         );
+    }
+
+    /**
+     * @notice Mint new option and sell it directly to Uniswap
+     * @param amount The amount option tokens to be issued
+     * @param minTokensBought Minimium amount of tokens that could be acceptable bought
+     * @param tokenOutput Address of the ERC20 that sender wants to receive option premium
+     */
+    function mintAndSell(
+        uint256 amount,
+        uint256 minTokensBought,
+        address tokenOutput
+    ) external beforeExpiration returns (uint256) {
+        lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
+        _mint(address(this), amount);
+
+        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
+
+        require(amountStrikeToTransfer > 0, "amount too low");
+        require(
+            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
+            "Couldn't transfer strike tokens from caller"
+        );
+
+        IUniswapFactory uniswapFactory = IUniswapFactory(uniswapFactoryAddress);
+
+        address exchangeOptionAddress = uniswapFactory.getExchange(address(this));
+        require(exchangeOptionAddress != address(0), "Exchange not found");
+        require(this.approve(exchangeOptionAddress, amount), "Could not approve exchange transfer");
+
+        IUniswapExchange exchangeOption = IUniswapExchange(exchangeOptionAddress);
+
+        uint256 minEthBought = 1;
+        uint256 deadline = now + 3000;
+
+        try
+            exchangeOption.tokenToTokenTransferInput(
+                amount,
+                minTokensBought,
+                minEthBought,
+                deadline,
+                msg.sender,
+                tokenOutput
+            )
+        returns (uint256 tokenBought) {
+            return tokenBought;
+        } catch {
+            revert("Uniswap trade fail");
+        }
     }
 
     /**

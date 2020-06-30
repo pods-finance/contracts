@@ -25,7 +25,8 @@ contract PodFactory {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationDate
+        uint256 _expirationDate,
+        address _uniswapFactory
     ) public returns (PodToken) {
         require(_expirationDate > block.number, "expiration lower than current block");
 
@@ -36,19 +37,12 @@ contract PodFactory {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationDate
+            _expirationDate,
+            _uniswapFactory
         );
 
         options.push(option);
         emit OptionCreated(msg.sender, option);
-
         return option;
-    }
-
-    /**
-     * @notice The number of Option Pod Contracts that has been created
-     */
-    function getNumberOfOptions() public view returns (uint256) {
-        return options.length;
     }
 }
