@@ -276,7 +276,10 @@ contract PodToken is OptionCore {
             );
         }
         if (underlyingToReceive > 0) {
-            require(msg.sender.send(underlyingToReceive), "Couldn't transfer back underlying tokens to caller");
+            require(
+                ERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
+                "Couldn't transfer back underlying tokens to caller"
+            );
         }
     }
 }
