@@ -67,6 +67,13 @@ contract PodToken is OptionCore {
         )
     {}
 
+    /** Events */
+    event Mint(address indexed seller, uint256 amount);
+    event Burn(address indexed seller, uint256 amount);
+    event Exchange(address indexed buyer, uint256 amount);
+    event Withdraw(address indexed seller, uint256 amount);
+    event SellUniswap(address indexed seller, uint256 amount);
+
     /**
      * @notice Gets the amount of minted options given amount of strikeAsset`.
      * @param strikeAmount of options that protect 1:1 underlying asset.
@@ -113,6 +120,7 @@ contract PodToken is OptionCore {
             ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
             "Couldn't transfer strike tokens from caller"
         );
+        emit Mint(msg.sender, amount);
     }
 
     /**
@@ -158,6 +166,8 @@ contract PodToken is OptionCore {
                 tokenOutput
             )
         returns (uint256 tokenBought) {
+            emit Mint(msg.sender, amount);
+            emit SellUniswap(msg.sender, amount);
             return tokenBought;
         } catch {
             revert("Uniswap trade fail");
@@ -186,6 +196,7 @@ contract PodToken is OptionCore {
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Couldn't transfer back strike tokens to caller"
         );
+        emit Burn(msg.sender, amount);
     }
 
     /**
@@ -222,6 +233,7 @@ contract PodToken is OptionCore {
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Couldn't transfer underlying tokens to caller"
         );
+        emit Exchange(msg.sender, amount);
     }
 
     /**
@@ -278,5 +290,6 @@ contract PodToken is OptionCore {
         if (underlyingToReceive > 0) {
             require(msg.sender.send(underlyingToReceive), "Couldn't transfer back underlying tokens to caller");
         }
+        emit Withdraw(msg.sender, amount);
     }
 }
