@@ -17,6 +17,7 @@ contract PodFactory {
      * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
      * @param _expirationDate The Expiration Option date in blocknumbers. E.g 19203021
+     * @param _uniswapFactory Uniswap factory address that will be used to sell options
      */
     function createOption(
         string memory _name,
