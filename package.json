@@ -30,6 +30,7 @@
     "@nomiclabs/buidler": "1.3.8",
     "@nomiclabs/buidler-ethers": "2.0.0",
     "@nomiclabs/buidler-waffle": "2.0.0",
+    "@nomiclabs/buidler-web3": "^1.3.4",
     "@openzeppelin/cli": "^2.8.2",
     "@openzeppelin/test-environment": "^0.1.4",
     "@openzeppelin/upgrades": "^2.8.0",
@@ -45,10 +46,12 @@
     "solhint": "^3.0.0",
     "solhint-plugin-prettier": "0.0.4",
     "solidity-coverage": "^0.7.5",
-    "standard": "^14.3.4"
+    "standard": "^14.3.4",
+    "web3": "^1.2.9"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.0.1",
+    "bignumber.js": "^9.0.0",
     "bn.js": "^5.1.2"
   },
   "husky": {
@@ -70,7 +73,8 @@
       "task",
       "usePlugin",
       "ethers",
-      "artifacts"
+      "artifacts",
+      "web3"
     ]
   }
 }
