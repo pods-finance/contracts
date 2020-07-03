@@ -28,7 +28,7 @@ contract PodFactory {
         uint256 _expirationDate,
         address _uniswapFactory
     ) public returns (PodToken) {
-        require(_expirationDate > block.number, "expiration lower than current block");
+        require(_expirationDate > block.number, "Expiration lower than current block");
 
         PodToken option = new PodToken(
             _name,
