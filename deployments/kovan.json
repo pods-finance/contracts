@@ -1,4 +1,33 @@
 {
   "factory": "0x026AF912BacDb4ea5377c585b28cc5212c0c84E0",
-  "uniswapFactory": "0xECc6C0542710a0EF07966D7d1B10fA38bbb86523"
+  "uniswapFactory": "0x78aBC109295157BD592148c6dCcDE696F5B041E5",
+  "USDC": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+  "DAI": "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
+  "aUSDC": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
+  "WBTC": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+  "univ1_exchange_USDC": "0xbf68f4cf0c004cC79ab1f29bD445c4907a7e9120",
+  "univ1_exchange_DAI": "0xacdF2CB9113BE9B89b854FaBA4d51d4Cc8f25333",
+  "univ1_exchange_aUSDC": "0x4AF499A4FcD1b0923e6C31945A25F2605b3D0290",
+  "univ1_exchange_WBTC": "0x8A1d60eBfd7Ae310aC6A44309dE147d811Dc5B26",
+  "options": [
+    {
+      "timestamp": "Jul-04-2020 12:37:32 PM +UTC",
+      "address": "0x6412174bcfcD1565D3a667db40F842544A33D22d",
+      "deployer": "0x2367386801e28b15A7ef606fD55Fe455dfEE6053",
+      "exchange": "0x35AD64bE460bBF0B784DFda599A990f81812d226",
+      "txid": "0x217d64a784b574942b761c395f1bff5aacafd8e85cad4e4f40a605b3bdd05dcb",
+      "inputs": {
+        "name": "Pods Put WBTC:USDC 7000 2020-07-10",
+        "symbol": "podWBTC:20AA",
+        "optionType": 0,
+        "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+        "strikeAsset": "0xe22da380ee6B445bb8273C81944ADEB6E8450422",
+        "strikePrice": "7000000000",
+        "expirationDate": "19443856",
+        "uniswapAddress": "0x78aBC109295157BD592148c6dCcDE696F5B041E5"
+      }
+      
+    }
+    
+  ]
 }
