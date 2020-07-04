@@ -104,7 +104,7 @@ contract OptionCore is ERC20 {
      */
     function forceExpiration() external {
         if (!isTestingDeployment) {
-            revert("Can't force series expiration on non-testing environments");
+            revert("Can not force series expiration on non-testing environments");
         }
         expirationBlockNumber = 0;
     }

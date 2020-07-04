@@ -115,10 +115,10 @@ contract PodToken is OptionCore {
 
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
 
-        require(amountStrikeToTransfer > 0, "amount too low");
+        require(amountStrikeToTransfer > 0, "Amount too low");
         require(
             ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
-            "Couldn't transfer strike tokens from caller"
+            "Could not transfer strike tokens from caller"
         );
         emit Mint(msg.sender, amount);
     }
@@ -139,10 +139,10 @@ contract PodToken is OptionCore {
 
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
 
-        require(amountStrikeToTransfer > 0, "amount too low");
+        require(amountStrikeToTransfer > 0, "Amount too low");
         require(
             ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
-            "Couldn't transfer strike tokens from caller"
+            "Could not transfer strike tokens from caller"
         );
 
         IUniswapFactory uniswapFactory = IUniswapFactory(uniswapFactoryAddress);
@@ -194,7 +194,7 @@ contract PodToken is OptionCore {
         // Unlocks the strike token
         require(
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
-            "Couldn't transfer back strike tokens to caller"
+            "Could not transfer back strike tokens to caller"
         );
         emit Burn(msg.sender, amount);
     }
@@ -218,20 +218,20 @@ contract PodToken is OptionCore {
      * Options can only be exchanged while the series is NOT expired.
      */
     function exchange(uint256 amount) external beforeExpiration {
-        require(amount > 0, "null amount");
+        require(amount > 0, "Null amount");
         require(
             ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amount),
-            "Couldn't transfer underlying tokens from caller"
+            "Could not transfer underlying tokens from caller"
         );
         // Gets the payment from the caller by transfering them
         // to this contract
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
         // Transfers the strike tokens back in exchange
         _burn(msg.sender, amount);
-        require(amountStrikeToTransfer > 0, "amount too low");
+        require(amountStrikeToTransfer > 0, "Amount too low");
         require(
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
-            "Couldn't transfer underlying tokens to caller"
+            "Could not transfer underlying tokens to caller"
         );
         emit Exchange(msg.sender, amount);
     }
@@ -284,13 +284,13 @@ contract PodToken is OptionCore {
         if (strikeToReceive > 0) {
             require(
                 ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
-                "Couldn't transfer back strike tokens to caller"
+                "Could not transfer back strike tokens to caller"
             );
         }
         if (underlyingToReceive > 0) {
             require(
                 ERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
-                "Couldn't transfer back underlying tokens to caller"
+                "Could not transfer back underlying tokens to caller"
             );
         }
         emit Withdraw(msg.sender, amount);
