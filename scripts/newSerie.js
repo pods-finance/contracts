@@ -15,14 +15,14 @@ async function main () {
     optionType: 0, // 0 for put, 1 for call
     underlyingAsset: '', // 0x0094e8cf72acf138578e399768879cedd1ddd33c
     strikeAsset: '', // 0xe22da380ee6B445bb8273C81944ADEB6E8450422
-    strikePrice: new BigNumber().toString(), // 7000e6 if strike is USDC,
+    strikePrice: new BigNumber(0).toString(), // 7000e6 if strike is USDC,
     expirationDate: 0, // 19443856 = 10 july
     uniswapFactory
   }
 
   const currentEtherPriceInUSD = 225 // Checked on uniswap v1 usdc/eth pool
-  const optionPremiumInUSD = 10 // Checked on Deribit
-  const amountOfOptionsToMint = 1
+  const optionPremiumInUSD = 10
+  const amountOfOptionsToMint = 10
 
   const optionPremiumInETH = optionPremiumInUSD / currentEtherPriceInUSD // currentEtherPriceInUSD / optionPremium
   const amountOfEthToAddLiquidity = new BigNumber(1e18).multipliedBy(optionPremiumInETH).multipliedBy(amountOfOptionsToMint).toString() // optionPremiumInETH * Amount
