@@ -20,3 +20,4 @@ jobs:
         run: npm run test
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}       
