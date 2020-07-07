@@ -6,10 +6,10 @@
     <img src="https://img.shields.io/circleci/project/github/.svg" alt='CI' />
   </a> -->
   <a href="https://docs.openzeppelin.com/">
-    <img src="https://img.shields.io/badge/using-Buidler-f9c937" alt="Built with OpenZeppelin">
+    <img src="https://img.shields.io/badge/build with-Buidler-f9c937" alt="Build with buidler">
   </a>
   <a href="https://docs.openzeppelin.com/">
-    <img src="https://img.shields.io/badge/build with-OpenZeppelin-3677FF" alt="Built with OpenZeppelin">
+    <img src="https://img.shields.io/badge/using-OpenZeppelin-3677FF" alt="Using OpenZeppelin">
   </a>
 
   <a href="https://github.com/pods-finance/contracts/actions?query=workflow:test">
@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/github/license/pods-finance/contracts" alt="License: MIT">
   </a>
   <a href="https://discord.com/channels/713910672525754459/713910672525754462">
-    <img src="https://img.shields.io/discord/713910672525754459?logo=Discord" alt="Chat Badge">
+    <img src="https://img.shields.io/discord/713910672525754459?logo=Discord" alt="discord Badge">
   </a>
   <a href="https://twitter.com/podsfinance">
     <img src="https://badgen.net/twitter/follow/podsfinance?icon=twitter" alt="twitter Badge">
