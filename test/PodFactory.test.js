@@ -35,6 +35,6 @@ describe('PodFactory', function () {
     // Changing the last parameter to a block that for sure is lower than the current one
     const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, 1, strikeAsset.address]
 
-    await expect(podFactory.createOption(...funcParameters)).to.be.revertedWith('expiration lower than current block')
+    await expect(podFactory.createOption(...funcParameters)).to.be.revertedWith('Expiration lower than current block')
   })
 })
