@@ -22,7 +22,7 @@
     <img src="https://img.shields.io/discord/713910672525754459?logo=Discord" alt="Chat Badge">
   </a>
   <a href="https://twitter.com/podsfinance">
-    <img src="https://badgen.net/twitter/follow/podsfinance" alt="twitter Badge">
+    <img src="https://badgen.net/twitter/follow/podsfinance?icon=twitter" alt="twitter Badge">
   </a>
   
   
@@ -96,7 +96,7 @@ $ yarn prettier
 yarn run test
 ```
 
-## Contributing :raising_hand_woman:
+## Contributing
 
 We highly encourage participation from the community to help shape the development of Pods. If you are interested in
 contributing or have any questions, ping us on [Twitter](https://twitter.com/pods-finance) or [Discord](https://discord.com/channels/713910672525754459/725468404139556874);
