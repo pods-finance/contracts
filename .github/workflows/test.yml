@@ -1,0 +1,23 @@
+  
+name: test
+on:
+  push
+
+jobs:
+  coverage:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: setup-node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+      - name: install
+        run: npm install
+      - name: test
+        run: npm run test
+        env:
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}       
