@@ -1,11 +1,10 @@
-  
-name: test
+name: lint
 on:
   push
 
 jobs:
-  coverage:
-    name: test
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -18,8 +17,5 @@ jobs:
         run: npm install yarn
       - name: install packages
         run: yarn
-      - name: test
-        run: yarn test
-        env:
-          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}       
+      - name: lint
+        run: yarn lint
