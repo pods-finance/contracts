@@ -93,7 +93,7 @@ $ yarn prettier
 ## Testing
 
 ```
-yarn run test
+yarn test
 ```
 
 ## Contributing
