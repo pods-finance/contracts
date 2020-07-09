@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-interface IPodToken {
+interface IPodPut {
     function mint(uint256) external;
 
     function exchange(uint256) external;

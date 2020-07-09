@@ -27,11 +27,11 @@ const fixtures = {
   }
 }
 
-describe('PodToken Contract', () => {
+describe('PodPut Contract', () => {
   let mockUnderlyingAsset
   let mockStrikeAsset
   let factoryContract
-  let podToken
+  let podPut
   let deployer
   let deployerAddress
   let seller
@@ -46,13 +46,13 @@ describe('PodToken Contract', () => {
     buyerAddress = await buyer.getAddress()
 
     // 1) Deploy Factory
-    const ContractFactory = await ethers.getContractFactory('PodFactory')
+    const ContractFactory = await ethers.getContractFactory('OptionFactory')
     factoryContract = await ContractFactory.deploy()
     await factoryContract.deployed()
   })
 
   beforeEach(async function () {
-    // const PodToken = await ethers.getContractFactory('PodToken')
+    // const podPut = await ethers.getContractFactory('podPut')
     const MockERC20 = await ethers.getContractFactory('MintableERC20')
 
     mockUnderlyingAsset = await MockERC20.deploy(fixtures.scenarioA.underlyingAssetSymbol, fixtures.scenarioA.underlyingAssetSymbol, fixtures.scenarioA.underlyingAssetDecimals)
@@ -78,47 +78,47 @@ describe('PodToken Contract', () => {
 
     if (eventDetails.length) {
       const { option } = eventDetails[0].args
-      podToken = await ethers.getContractAt('PodToken', option)
+      podPut = await ethers.getContractAt('PodPut', option)
     } else {
       console.log('Something went wrong: No events found')
     }
 
-    await podToken.deployed()
+    await podPut.deployed()
   })
 
   describe('Constructor/Initialization checks', () => {
     it('Should have correct number of decimals for underlying and strike asset', async () => {
-      expect(await podToken.strikeAssetDecimals()).to.equal(fixtures.scenarioA.strikeAssetDecimals)
-      expect(await podToken.underlyingAssetDecimals()).to.equal(fixtures.scenarioA.underlyingAssetDecimals)
+      expect(await podPut.strikeAssetDecimals()).to.equal(fixtures.scenarioA.strikeAssetDecimals)
+      expect(await podPut.underlyingAssetDecimals()).to.equal(fixtures.scenarioA.underlyingAssetDecimals)
     })
 
-    it('Podtoken and underlyingAsset should have equal number of decimals', async () => {
-      expect(await podToken.decimals()).to.equal(fixtures.scenarioA.underlyingAssetDecimals)
+    it('PodPut and underlyingAsset should have equal number of decimals', async () => {
+      expect(await podPut.decimals()).to.equal(fixtures.scenarioA.underlyingAssetDecimals)
     })
 
     it('StrikePrice and strikeAsset should have equal number of decimals', async () => {
-      expect(await podToken.strikePriceDecimals()).to.equal(await podToken.strikeAssetDecimals())
+      expect(await podPut.strikePriceDecimals()).to.equal(await podPut.strikeAssetDecimals())
     })
   })
 
   describe('Minting options', () => {
     it('Should not mint if user dont have enough collateral', async () => {
-      expect(await podToken.balanceOf(sellerAddress)).to.equal(0)
+      expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
-      await mockStrikeAsset.connect(seller).approve(podToken.address, ethers.constants.MaxUint256)
+      await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
 
       expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
-      await expect(podToken.connect(seller).mint(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+      await expect(podPut.connect(seller).mint(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
     })
 
-    it('Should not mint if user do not approve collateral to be spended by podToken', async () => {
-      expect(await podToken.balanceOf(sellerAddress)).to.equal(0)
+    it('Should not mint if user do not approve collateral to be spended by podPut', async () => {
+      expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
       await mockStrikeAsset.connect(seller).mint(fixtures.scenarioA.strikePrice)
 
       expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(fixtures.scenarioA.strikePrice)
 
-      await expect(podToken.connect(seller).mint(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+      await expect(podPut.connect(seller).mint(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
     })
 
     it('Should not mint if asked amount is too low', async () => {
@@ -126,24 +126,24 @@ describe('PodToken Contract', () => {
 
       if (minimumAmount.gt(0)) return
 
-      expect(await podToken.balanceOf(sellerAddress)).to.equal(0)
+      expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
-      await mockStrikeAsset.connect(seller).approve(podToken.address, ethers.constants.MaxUint256)
+      await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
       await mockStrikeAsset.connect(seller).mint(fixtures.scenarioA.strikePrice)
 
       expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(fixtures.scenarioA.strikePrice)
-      await expect(podToken.connect(seller).mint(fixtures.scenarioA.amountToMintTooLow)).to.be.revertedWith('amount too low')
+      await expect(podPut.connect(seller).mint(fixtures.scenarioA.amountToMintTooLow)).to.be.revertedWith('amount too low')
     })
 
     it('Should mint, increase option balance to the sender and decrease collateral', async () => {
-      expect(await podToken.balanceOf(sellerAddress)).to.equal(0)
+      expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
-      await mockStrikeAsset.connect(seller).approve(podToken.address, ethers.constants.MaxUint256)
+      await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
       await mockStrikeAsset.connect(seller).mint(fixtures.scenarioA.strikePrice)
 
       expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(fixtures.scenarioA.strikePrice)
-      await podToken.connect(seller).mint(fixtures.scenarioA.amountToMint)
-      expect(await podToken.balanceOf(sellerAddress)).to.equal(fixtures.scenarioA.amountToMint)
+      await podPut.connect(seller).mint(fixtures.scenarioA.amountToMint)
+      expect(await podPut.balanceOf(sellerAddress)).to.equal(fixtures.scenarioA.amountToMint)
       expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
     })
   })

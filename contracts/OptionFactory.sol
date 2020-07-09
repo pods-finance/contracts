@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "./PodToken.sol";
+import "./PodPut.sol";
 
-contract PodFactory {
-    PodToken[] public options;
+contract OptionFactory {
+    PodPut[] public options;
 
-    event OptionCreated(address indexed deployer, PodToken option);
+    event OptionCreated(address indexed deployer, PodPut option);
 
     /**
-     * @notice creates a new Pod Contract
+     * @notice creates a new PodPut Contract
      * @param _name The option token name. Eg. "Pods Put WBTC-USDC 5000 2020-02-23"
      * @param _symbol The option token symbol. Eg. "podWBTC:20AA"
      * @param _optionType The option type. Eg. "0 for Put, 1 for Call"
@@ -28,10 +28,10 @@ contract PodFactory {
         uint256 _strikePrice,
         uint256 _expirationDate,
         address _uniswapFactory
-    ) public returns (PodToken) {
+    ) public returns (PodPut) {
         require(_expirationDate > block.number, "Expiration lower than current block");
 
-        PodToken option = new PodToken(
+        PodPut option = new PodPut(
             _name,
             _symbol,
             _optionType,

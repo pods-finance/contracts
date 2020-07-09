@@ -1,6 +1,6 @@
 const { expect } = require('chai')
 
-let podFactory
+let optionFactory
 let underlyingAsset
 let strikeAsset
 
@@ -12,29 +12,29 @@ const ScenarioA = {
   expirationDate: 100000
 }
 
-describe('PodFactory', function () {
+describe('OptionFactory', function () {
   before(async function () {
-    const PodFactory = await ethers.getContractFactory('PodFactory')
+    const OptionFactory = await ethers.getContractFactory('OptionFactory')
     const MockERC20 = await ethers.getContractFactory('MockERC20')
-    podFactory = await PodFactory.deploy()
+    optionFactory = await OptionFactory.deploy()
     underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8, 1000e8)
     strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6, 1000e8)
 
-    await podFactory.deployed()
+    await optionFactory.deployed()
     await underlyingAsset.deployed()
     await strikeAsset.deployed()
   })
 
-  it('Should create a new Option correctly, emit event and increase options array', async function () {
+  it('Should create a new Option correctly and emit event', async function () {
     const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expirationDate, strikeAsset.address]
 
-    await expect(podFactory.createOption(...funcParameters)).to.emit(podFactory, 'OptionCreated')
+    await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })
 
   it('Should revert if calling createOption with block lower than currentBlock', async function () {
     // Changing the last parameter to a block that for sure is lower than the current one
     const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, 1, strikeAsset.address]
 
-    await expect(podFactory.createOption(...funcParameters)).to.be.revertedWith('Expiration lower than current block')
+    await expect(optionFactory.createOption(...funcParameters)).to.be.revertedWith('Expiration lower than current block')
   })
 })
