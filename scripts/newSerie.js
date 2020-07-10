@@ -10,18 +10,18 @@ async function main () {
   const { factory, uniswapFactory } = require(`../deployments/${bre.network.name}.json`)
 
   const optionParams = {
-    name: '', // Pods Put WBTC:USDC 7000 2020-07-10
-    symbol: '', // Pods Put WBTC:USDC 7000 2020-07-10
+    name: 'Pods Put WBTC:aUSDC 7000 2020-07-17', // Pods Put WBTC:USDC 7000 2020-07-10
+    symbol: 'podWBTC:aUSDC', // Pods Put WBTC:USDC 7000 2020-07-10
     optionType: 0, // 0 for put, 1 for call
-    underlyingAsset: '', // 0x0094e8cf72acf138578e399768879cedd1ddd33c
-    strikeAsset: '', // 0xe22da380ee6B445bb8273C81944ADEB6E8450422
-    strikePrice: new BigNumber(0).toString(), // 7000e6 if strike is USDC,
-    expirationDate: 0, // 19443856 = 10 july
+    underlyingAsset: '0x0094e8cf72acf138578e399768879cedd1ddd33c', // 0x0094e8cf72acf138578e399768879cedd1ddd33c
+    strikeAsset: '0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a', // 0xe22da380ee6B445bb8273C81944ADEB6E8450422
+    strikePrice: new BigNumber(7000e6).toString(), // 7000e6 if strike is USDC,
+    expirationDate: 19675741, // 19443856 = 10 july
     uniswapFactory
   }
 
   const currentEtherPriceInUSD = 225 // Checked on uniswap v1 usdc/eth pool
-  const optionPremiumInUSD = 10
+  const optionPremiumInUSD = 6
   const amountOfOptionsToMint = 10
 
   const optionPremiumInETH = optionPremiumInUSD / currentEtherPriceInUSD // currentEtherPriceInUSD / optionPremium
@@ -44,7 +44,7 @@ async function main () {
   let optionAddress
 
   // 1) Create Option
-  const FactoryContract = await ethers.getContractAt('PodFactory', factory)
+  const FactoryContract = await ethers.getContractAt('OptionFactory', factory)
   const txIdNewOption = await FactoryContract.createOption(...funcParameters)
   const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
   const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
@@ -67,7 +67,7 @@ async function main () {
   console.log('optionExchangeAddress: ', optionExchangeAddress)
 
   // 3) Mint first Options
-  const OptionContract = await ethers.getContractAt('PodToken', optionAddress)
+  const OptionContract = await ethers.getContractAt('PodPut', optionAddress)
   const ExchangeContract = new web3.eth.Contract(UniswapExchangeABI, optionExchangeAddress)
   const strikeAssetContract = new web3.eth.Contract(erc20ABI, optionParams.strikeAsset)
   // 3a) Approve StrikeAsset between me and option Contract

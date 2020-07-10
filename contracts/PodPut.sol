@@ -41,7 +41,7 @@ import "./interfaces/IUniswapV1.sol";
  * - Will sell 1 DAI for 1 USDC (the strike price) each.
  * - Will burn the corresponding amounty of put tokens.
  */
-contract PodToken is OptionCore {
+contract PodPut is OptionCore {
     using SafeMath for uint8;
 
     constructor(

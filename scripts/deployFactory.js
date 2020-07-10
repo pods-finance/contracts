@@ -2,8 +2,8 @@ const bre = require('@nomiclabs/buidler')
 
 async function main () {
   // await bre.run('compile');
-  const PodFactory = await ethers.getContractFactory('PodFactory')
-  const factory = await PodFactory.deploy()
+  const OptionFactory = await ethers.getContractFactory('OptionFactory')
+  const factory = await OptionFactory.deploy()
 
   await factory.deployed()
 
