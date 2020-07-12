@@ -287,6 +287,47 @@ describe('PodPut Contract', () => {
     })
   })
 
+  describe('Burning options', () => {
+    it('Should revert if try to burn without amount', async () => {
+      await expect(podPut.connect(seller).burn(fixtures.scenarioA.amountToMint)).to.be.revertedWith('Not enough balance')
+    })
+    it('Should revert if try to burn amount higher than possible', async () => {
+      await MintPhase(fixtures.scenarioA.amountToMint)
+      await expect(podPut.connect(seller).burn(2 * fixtures.scenarioA.amountToMint)).to.be.revertedWith('Not enough balance')
+    })
+    it('Should burn with exact Strike amount', async () => {
+      await MintPhase(fixtures.scenarioA.amountToMint)
+      const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
+      const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
+      const initialContractUnderlyingBalance = await podPut.underlyingBalance()
+      const initialContractStrikeBalance = await podPut.strikeBalance()
+      const initialContractOptionSupply = await podPut.totalSupply()
+
+      expect(initialSellerOptionBalance).to.equal(fixtures.scenarioA.amountToMint)
+      expect(initialSellerStrikeBalance).to.equal(0)
+      expect(initialContractUnderlyingBalance).to.equal(0)
+      expect(initialContractStrikeBalance).to.equal(fixtures.scenarioA.strikePrice)
+      expect(initialContractOptionSupply).to.equal(fixtures.scenarioA.amountToMint)
+      await expect(podPut.connect(seller).burn(fixtures.scenarioA.amountToMint))
+
+      const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
+      const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
+      const finalContractUnderlyingBalance = await podPut.underlyingBalance()
+      const finalContractStrikeBalance = await podPut.strikeBalance()
+      const finalContractOptionSupply = await podPut.totalSupply()
+
+      expect(finalSellerOptionBalance).to.equal(0)
+      expect(finalSellerStrikeBalance).to.equal(fixtures.scenarioA.strikePrice)
+      expect(finalContractStrikeBalance).to.equal(0)
+      expect(finalContractOptionSupply).to.equal(0)
+      expect(finalContractUnderlyingBalance).to.equal(0)
+    })
+    it('Should revert if user try to burn after expiration', async () => {
+      await forceExpiration(await podPut.expirationBlockNumber())
+      await expect(podPut.connect(seller).burn()).to.be.revertedWith('Option has not expired yet')
+    })
+  })
+
   describe('Withdrawing options', () => {
     it('Should revert if user try to withdraw before expiration', async () => {
       await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('Option has not expired yet')
