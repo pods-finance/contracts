@@ -86,6 +86,19 @@ describe('PodPut Contract', () => {
     await podPut.deployed()
   })
 
+  async function MintPhase (amountOfOptionsToMint) {
+    expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
+
+    await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
+    // calculate amount of Strike necessary to mint
+    await mockStrikeAsset.connect(seller).mint(fixtures.scenarioA.strikePrice)
+
+    expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(fixtures.scenarioA.strikePrice)
+    await podPut.connect(seller).mint(amountOfOptionsToMint)
+    expect(await podPut.balanceOf(sellerAddress)).to.equal(amountOfOptionsToMint)
+    expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
+  }
+
   describe('Constructor/Initialization checks', () => {
     it('Should have correct number of decimals for underlying and strike asset', async () => {
       expect(await podPut.strikeAssetDecimals()).to.equal(fixtures.scenarioA.strikeAssetDecimals)
@@ -145,6 +158,70 @@ describe('PodPut Contract', () => {
       await podPut.connect(seller).mint(fixtures.scenarioA.amountToMint)
       expect(await podPut.balanceOf(sellerAddress)).to.equal(fixtures.scenarioA.amountToMint)
       expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
+    })
+  })
+
+  describe('Exercising options', () => {
+    it('Should revert if user have underlying approved, but dont have enough options', async () => {
+      // Mint underlying
+      await mockUnderlyingAsset.connect(buyer).mint(fixtures.scenarioA.amountToMint)
+      // Approve PodPut spend underlying asset
+      await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
+      expect(await mockUnderlyingAsset.balanceOf(buyerAddress)).to.equal(fixtures.scenarioA.amountToMint)
+      await expect(podPut.connect(buyer).exchange(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: burn amount exceeds balance')
+    })
+
+    it('Should revert if have enough options, approved underlying but user not have enough balance', async () => {
+      await MintPhase(fixtures.scenarioA.amountToMint)
+      // Transfer mint to Buyer address => This will happen through Uniswap
+      await podPut.connect(seller).transfer(buyerAddress, fixtures.scenarioA.amountToMint)
+      expect(await podPut.balanceOf(buyerAddress)).to.equal(fixtures.scenarioA.amountToMint)
+      // Approve PodPut spend underlying asset
+      await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
+      await expect(podPut.connect(buyer).exchange(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+    })
+
+    it('Should revert if have enough options and underlying but user not enough balance', async () => {
+      await MintPhase(fixtures.scenarioA.amountToMint)
+      // Transfer mint to Buyer address => This will happen through Uniswap
+      await podPut.connect(seller).transfer(buyerAddress, fixtures.scenarioA.amountToMint)
+      expect(await podPut.balanceOf(buyerAddress)).to.equal(fixtures.scenarioA.amountToMint)
+      // Mint Underlying Asset
+      await mockUnderlyingAsset.connect(buyer).mint(fixtures.scenarioA.amountToMint)
+      expect(await mockUnderlyingAsset.balanceOf(buyerAddress)).to.equal(fixtures.scenarioA.amountToMint)
+      await expect(podPut.connect(buyer).exchange(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+    })
+
+    it('Should exercise and have all balances matched', async () => {
+      await MintPhase(fixtures.scenarioA.amountToMint)
+      // Transfer mint to Buyer address => This will happen through Uniswap
+      await podPut.connect(seller).transfer(buyerAddress, fixtures.scenarioA.amountToMint)
+
+      // Mint Underlying Asset
+      await mockUnderlyingAsset.connect(buyer).mint(fixtures.scenarioA.amountToMint)
+      // Approve Underlying to be spent by contract
+      await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
+
+      const initialBuyerOptionBalance = await podPut.balanceOf(buyerAddress)
+      const initialBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
+      const initialContractUnderlyingBalance = await podPut.underlyingBalance()
+      const initialContractOptionSupply = await podPut.totalSupply()
+
+      expect(initialBuyerOptionBalance).to.equal(fixtures.scenarioA.amountToMint)
+      expect(initialBuyerUnderlyingBalance).to.equal(fixtures.scenarioA.amountToMint)
+      expect(initialContractUnderlyingBalance).to.equal(0)
+      expect(initialContractOptionSupply).to.equal(fixtures.scenarioA.amountToMint)
+      await expect(podPut.connect(buyer).exchange(fixtures.scenarioA.amountToMint))
+
+      const finalBuyerOptionBalance = await podPut.balanceOf(buyerAddress)
+      const finalBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
+      const finalContractUnderlyingBalance = await podPut.underlyingBalance()
+      const finalContractOptionSupply = await podPut.totalSupply()
+
+      expect(finalBuyerOptionBalance).to.equal(0)
+      expect(finalBuyerUnderlyingBalance).to.equal(0)
+      expect(finalContractUnderlyingBalance).to.equal(fixtures.scenarioA.amountToMint)
+      expect(finalContractOptionSupply).to.equal(0)
     })
   })
 })
