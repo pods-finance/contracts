@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
+import "./IPodPut.sol";
+
 interface IOptionFactory {
     function createOption(
         string calldata name,
@@ -10,7 +12,7 @@ interface IOptionFactory {
         address strikeAsset,
         uint256 strikePrice,
         uint256 expirationDate
-    ) external returns (address PodPut, address exchangeAddress);
+    ) external returns (IPodPut podPut, address exchangeAddress);
 
     function createInterestBearingOption(
         string calldata name,
@@ -20,5 +22,5 @@ interface IOptionFactory {
         address strikeAsset,
         uint256 strikePrice,
         uint256 expirationDate
-    ) external returns (address aPodPut, address exchangeAddress);
+    ) external returns (IPodPut aPodPut, address exchangeAddress);
 }

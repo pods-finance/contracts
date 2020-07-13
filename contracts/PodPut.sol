@@ -67,20 +67,13 @@ contract PodPut is OptionCore {
         )
     {}
 
-    /** Events */
-    event Mint(address indexed seller, uint256 amount);
-    event Burn(address indexed seller, uint256 amount);
-    event Exchange(address indexed buyer, uint256 amount);
-    event Withdraw(address indexed seller, uint256 amount);
-    event SellUniswap(address indexed seller, uint256 amount);
-
     /**
      * @notice Gets the amount of minted options given amount of strikeAsset`.
      * @param strikeAmount of options that protect 1:1 underlying asset.
      * @return optionsAmount amount of strike asset.
      */
-    function amountOfMintedOptions(uint256 strikeAmount) external view returns (uint256 optionsAmount) {
-        optionsAmount = _underlyingToTransfer(strikeAmount);
+    function amountOfMintedOptions(uint256 strikeAmount) external view returns (uint256) {
+        return _underlyingToTransfer(strikeAmount);
     }
 
     /**
@@ -88,8 +81,8 @@ contract PodPut is OptionCore {
      * @param amount of options that protect 1:1 underlying asset.
      * @return strikeAmount amount of strike asset.
      */
-    function strikeToTransfer(uint256 amount) external view returns (uint256 strikeAmount) {
-        strikeAmount = _strikeToTransfer(amount);
+    function strikeToTransfer(uint256 amount) external view returns (uint256) {
+        return _strikeToTransfer(amount);
     }
 
     /**
