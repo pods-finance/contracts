@@ -183,7 +183,7 @@ contract PodPut is OptionCore {
      * Options can only be burned while the series is NOT expired.
      */
     function burn(uint256 amount) external beforeExpiration {
-        require(amount <= lockedBalance[msg.sender], "Not enough underlying balance");
+        require(amount <= lockedBalance[msg.sender], "Not enough balance");
 
         // Burn option tokens
         lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
