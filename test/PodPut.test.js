@@ -26,7 +26,7 @@ const fixtures = {
   }
 }
 
-describe('PodPut Contract', () => {
+describe('PodPut.sol', () => {
   let mockUnderlyingAsset
   let mockStrikeAsset
   let factoryContract
@@ -137,22 +137,22 @@ describe('PodPut Contract', () => {
   }
 
   describe('Constructor/Initialization checks', () => {
-    it('Should have correct number of decimals for underlying and strike asset', async () => {
+    it('should have correct number of decimals for underlying and strike asset', async () => {
       expect(await podPut.strikeAssetDecimals()).to.equal(fixtures.scenarioA.strikeAssetDecimals)
       expect(await podPut.underlyingAssetDecimals()).to.equal(fixtures.scenarioA.underlyingAssetDecimals)
     })
 
-    it('Should have equal number of decimals PodPut and underlyingAsset', async () => {
+    it('should have equal number of decimals PodPut and underlyingAsset', async () => {
       expect(await podPut.decimals()).to.equal(fixtures.scenarioA.underlyingAssetDecimals)
     })
 
-    it('Should have equal number of decimals StrikePrice and strikeAsset', async () => {
+    it('should have equal number of decimals StrikePrice and strikeAsset', async () => {
       expect(await podPut.strikePriceDecimals()).to.equal(await podPut.strikeAssetDecimals())
     })
   })
 
   describe('Minting options', () => {
-    it('Should revert if user dont have enough collateral', async () => {
+    it('should revert if user dont have enough collateral', async () => {
       expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
       await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
@@ -161,7 +161,7 @@ describe('PodPut Contract', () => {
       await expect(podPut.connect(seller).mint(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
     })
 
-    it('Should revert if user do not approve collateral to be spended by podPut', async () => {
+    it('should revert if user do not approve collateral to be spended by PodPut', async () => {
       expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
       await mockStrikeAsset.connect(seller).mint(fixtures.scenarioA.strikePrice)
@@ -171,7 +171,7 @@ describe('PodPut Contract', () => {
       await expect(podPut.connect(seller).mint(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
     })
 
-    it('Should revert if asked amount is too low', async () => {
+    it('should revert if asked amount is too low', async () => {
       const minimumAmount = ethers.BigNumber.from(fixtures.scenarioA.strikePrice).div(10 ** await mockUnderlyingAsset.decimals())
 
       if (minimumAmount.gt(0)) return
@@ -185,7 +185,7 @@ describe('PodPut Contract', () => {
       await expect(podPut.connect(seller).mint(fixtures.scenarioA.amountToMintTooLow)).to.be.revertedWith('amount too low')
     })
 
-    it('Should mint, increase option balance to the sender and decrease collateral', async () => {
+    it('should mint, increase senders option balance and decrease sender strike balance', async () => {
       expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
       await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
@@ -196,7 +196,7 @@ describe('PodPut Contract', () => {
       expect(await podPut.balanceOf(sellerAddress)).to.equal(fixtures.scenarioA.amountToMint)
       expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
     })
-    it('Should revert if user try to mint after expiration', async () => {
+    it('should revert if user try to mint after expiration', async () => {
       expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
       await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
@@ -209,7 +209,7 @@ describe('PodPut Contract', () => {
   })
 
   describe('Exercising options', () => {
-    it('Should revert if user have underlying approved, but dont have enough options', async () => {
+    it('should revert if user have underlying approved, but dont have enough options', async () => {
       // Mint underlying
       await mockUnderlyingAsset.connect(buyer).mint(fixtures.scenarioA.amountToMint)
       // Approve PodPut spend underlying asset
@@ -218,7 +218,7 @@ describe('PodPut Contract', () => {
       await expect(podPut.connect(buyer).exchange(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: burn amount exceeds balance')
     })
 
-    it('Should revert if have enough options, approved underlying but user not have enough balance', async () => {
+    it('should revert if sender not have enough strike balance', async () => {
       await MintPhase(fixtures.scenarioA.amountToMint)
       // Transfer mint to Buyer address => This will happen through Uniswap
       await podPut.connect(seller).transfer(buyerAddress, fixtures.scenarioA.amountToMint)
@@ -228,7 +228,7 @@ describe('PodPut Contract', () => {
       await expect(podPut.connect(buyer).exchange(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
     })
 
-    it('Should revert if have enough options and underlying but user not enough balance', async () => {
+    it('should revert if not approved strike balance', async () => {
       await MintPhase(fixtures.scenarioA.amountToMint)
       // Transfer mint to Buyer address => This will happen through Uniswap
       await podPut.connect(seller).transfer(buyerAddress, fixtures.scenarioA.amountToMint)
@@ -239,7 +239,7 @@ describe('PodPut Contract', () => {
       await expect(podPut.connect(buyer).exchange(fixtures.scenarioA.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
     })
 
-    it('Should exercise and have all balances matched', async () => {
+    it('should exercise and have all final balances matched', async () => {
       await MintPhase(fixtures.scenarioA.amountToMint)
       // Transfer mint to Buyer address => This will happen through Uniswap
       await podPut.connect(seller).transfer(buyerAddress, fixtures.scenarioA.amountToMint)
@@ -274,7 +274,7 @@ describe('PodPut Contract', () => {
       expect(finalContractStrikeBalance).to.equal(0)
       expect(finalContractOptionSupply).to.equal(0)
     })
-    it('Should revert if user try to exercise after expiration', async () => {
+    it('should revert if user try to exercise after expiration', async () => {
       await MintPhase(fixtures.scenarioA.amountToMint)
       // Transfer mint to Buyer address => This will happen through Uniswap
       await podPut.connect(seller).transfer(buyerAddress, fixtures.scenarioA.amountToMint)
@@ -287,14 +287,14 @@ describe('PodPut Contract', () => {
   })
 
   describe('Burning options', () => {
-    it('Should revert if try to burn without amount', async () => {
+    it('should revert if try to burn without amount', async () => {
       await expect(podPut.connect(seller).burn(fixtures.scenarioA.amountToMint)).to.be.revertedWith('Not enough balance')
     })
-    it('Should revert if try to burn amount higher than possible', async () => {
+    it('should revert if try to burn amount higher than possible', async () => {
       await MintPhase(fixtures.scenarioA.amountToMint)
       await expect(podPut.connect(seller).burn(2 * fixtures.scenarioA.amountToMint)).to.be.revertedWith('Not enough balance')
     })
-    it('Should burn with exact Strike amount', async () => {
+    it('should burn, destroy sender option, reduce his balance and send strike back', async () => {
       await MintPhase(fixtures.scenarioA.amountToMint)
       const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
       const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -321,18 +321,18 @@ describe('PodPut Contract', () => {
       expect(finalContractOptionSupply).to.equal(0)
       expect(finalContractUnderlyingBalance).to.equal(0)
     })
-    it('Should revert if user try to burn after expiration', async () => {
+    it('should revert if user try to burn after expiration', async () => {
       await forceExpiration(await podPut.expirationBlockNumber())
       await expect(podPut.connect(seller).burn()).to.be.revertedWith('Option has not expired yet')
     })
   })
 
   describe('Withdrawing options', () => {
-    it('Should revert if user try to withdraw before expiration', async () => {
+    it('should revert if user try to withdraw before expiration', async () => {
       await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('Option has not expired yet')
     })
 
-    it('Should revert if user try to withdraw without balance after expiration', async () => {
+    it('should revert if user try to withdraw without balance after expiration', async () => {
       // Set Expiration
       const optionExpiration = await podPut.expirationBlockNumber()
       await forceExpiration(optionExpiration)
@@ -340,7 +340,7 @@ describe('PodPut Contract', () => {
       await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
     })
 
-    it('Should withdraw exact amount of Strike Asset', async () => {
+    it('should withdraw exact amount of Strike Asset', async () => {
       await MintPhase(fixtures.scenarioA.amountToMint)
       // Set Expiration
       const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
@@ -371,7 +371,7 @@ describe('PodPut Contract', () => {
       await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
     })
 
-    it('Should withdraw mixed amount of Strike Asset and Underlying Asset', async () => {
+    it('should withdraw mixed amount of Strike Asset and Underlying Asset', async () => {
       await MintPhase(fixtures.scenarioA.amountToMint)
       // Exercise half amount of options
       await ExercisePhase(fixtures.scenarioA.amountToMint * 0.5)
