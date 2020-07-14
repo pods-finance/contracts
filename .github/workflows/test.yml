@@ -1,5 +1,5 @@
   
-name: test
+name: lint+compile+test
 on:
   push
 
@@ -18,8 +18,15 @@ jobs:
         run: npm install yarn
       - name: install packages
         run: yarn
+      - name: lint
+        run: yarn lint
+      - name: compile
+        run: yarn compile
+        env:
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }} 
       - name: test
-        run: yarn test
+        run: yarn test --no-compile
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}       
