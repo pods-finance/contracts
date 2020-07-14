@@ -9,21 +9,11 @@ const scenarios = [
     underlyingAssetDecimals: 8,
     strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
-    strikePrice: (5000e6).toString(),
+    strikePrice: ethers.BigNumber.from(5000e6.toString()),
     strikePriceDecimals: 6,
     expirationDate: 900000,
-    initialSellerUnderlyingAmount: (1e8).toString(),
-    initialSellerStrikeAmount: (5000e6).toString(),
-    amountToMint: 1e8,
-    amountToMintTooLow: 1,
-    balanceOfContractAfterMint: 1e18,
-    balanceOfStrikeAfterMint: 120e6,
-    balanceOfUnderlyingAfterMint: 0,
-    amountToExercise: 1e18,
-    balanceOfUnderlyingAfterExercise: 1e18,
-    balanceOfStrikeAfterExercise: 0,
-    amountOfStrikeToWithdraw: 0,
-    amountOfUnderlyingToWithdraw: 1e18
+    amountToMint: ethers.BigNumber.from(1e8.toString()),
+    amountToMintTooLow: 1
   },
   {
     name: 'WETH/USDC',
@@ -31,21 +21,35 @@ const scenarios = [
     underlyingAssetDecimals: 18,
     strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
-    strikePrice: (300e6).toString(),
+    strikePrice: ethers.BigNumber.from(300e6.toString()),
     strikePriceDecimals: 6,
     expirationDate: 900000,
-    initialSellerUnderlyingAmount: (1e8).toString(),
-    initialSellerStrikeAmount: (5000e6).toString(),
-    amountToMint: (ethers.BigNumber.from(1e18.toString())),
-    amountToMintTooLow: 1,
-    balanceOfContractAfterMint: 1e18,
-    balanceOfStrikeAfterMint: 120e6,
-    balanceOfUnderlyingAfterMint: 0,
-    amountToExercise: 1e18,
-    balanceOfUnderlyingAfterExercise: 1e18,
-    balanceOfStrikeAfterExercise: 0,
-    amountOfStrikeToWithdraw: 0,
-    amountOfUnderlyingToWithdraw: 1e18
+    amountToMint: ethers.BigNumber.from(1e18.toString()),
+    amountToMintTooLow: 1
+  },
+  {
+    name: 'WBTC/DAI',
+    underlyingAssetSymbol: 'WBTC',
+    underlyingAssetDecimals: 8,
+    strikeAssetSymbol: 'DAI',
+    strikeAssetDecimals: 18,
+    strikePrice: ethers.BigNumber.from(300e18.toString()),
+    strikePriceDecimals: 18,
+    expirationDate: 900000,
+    amountToMint: ethers.BigNumber.from(1e8.toString()),
+    amountToMintTooLow: 1
+  },
+  {
+    name: 'WETH/DAI',
+    underlyingAssetSymbol: 'WETH',
+    underlyingAssetDecimals: 18,
+    strikeAssetSymbol: 'DAI',
+    strikeAssetDecimals: 18,
+    strikePrice: ethers.BigNumber.from(300e6.toString()),
+    strikePriceDecimals: 6,
+    expirationDate: 900000,
+    amountToMint: ethers.BigNumber.from(1e18.toString()),
+    amountToMintTooLow: 1
   }
 ]
 scenarios.forEach(scenario => {
@@ -91,7 +95,7 @@ scenarios.forEach(scenario => {
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        await ethers.provider.getBlockNumber() + 500, // expirationDate = high block number
+        await ethers.provider.getBlockNumber() + 300, // expirationDate = high block number
         mockUnderlyingAsset.address
       )
 
