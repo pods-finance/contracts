@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "./OptionCore.sol";
+import "./PodOption.sol";
 import "./interfaces/IUniswapV1.sol";
 
 /**
  * Represents a tokenized american put option series for some
  * long/short token pair.
  *
- * It is fungible and it is meant to be freely tradeable until its
+ * It is fungible and it is meant to be freely tradable until its
  * expiration time, when its transfer functions will be blocked
  * and the only available operation will be for the option writers
  * to unlock their collateral.
@@ -35,19 +35,19 @@ import "./interfaces/IUniswapV1.sol";
  * - Will unlock their USDC from this contract
  * - Will burn the corresponding amount of put tokens
  *
- * Put token holders may call redeem() until the expiration date, to
+ * Put token holders may call exchange() until the expiration date, to
  * exercise their option, which in turn:
  *
  * - Will sell 1 DAI for 1 USDC (the strike price) each.
- * - Will burn the corresponding amounty of put tokens.
+ * - Will burn the corresponding amount of put tokens.
  */
-contract PodPut is OptionCore {
+contract PodPut is PodOption {
     using SafeMath for uint8;
 
     constructor(
         string memory _name,
         string memory _symbol,
-        OptionCore.OptionType _optionType,
+        PodOption.OptionType _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -55,7 +55,7 @@ contract PodPut is OptionCore {
         address _uniswapFactory
     )
         public
-        OptionCore(
+        PodOption(
             _name,
             _symbol,
             _optionType,
@@ -119,7 +119,7 @@ contract PodPut is OptionCore {
     /**
      * @notice Mint new option and sell it directly to Uniswap
      * @param amount The amount option tokens to be issued
-     * @param minTokensBought Minimium amount of tokens that could be acceptable bought
+     * @param minTokensBought Minimum amount of tokens that could be acceptable bought
      * @param tokenOutput Address of the ERC20 that sender wants to receive option premium
      */
     function mintAndSell(
@@ -168,7 +168,7 @@ contract PodPut is OptionCore {
     }
 
     /**
-     * Unlocks some amount of the strike token by burning option tokens.
+     * Unlocks the amount of the strike token by burning option tokens.
      *
      * This mechanism ensures that users can only redeem tokens they've
      * previously lock into this contract.
@@ -212,16 +212,20 @@ contract PodPut is OptionCore {
      */
     function exchange(uint256 amount) external beforeExpiration {
         require(amount > 0, "Null amount");
+        // Calculate the strike amount equivalent to pay for the underlying requested
+        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
+        require(amountStrikeToTransfer > 0, "Amount too low");
+
+        // Burn the option tokens equivalent to the underlying requested
+        _burn(msg.sender, amount);
+
+        // Retrieve the underlying asset from caller
         require(
             ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amount),
             "Could not transfer underlying tokens from caller"
         );
-        // Gets the payment from the caller by transfering them
-        // to this contract
-        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
-        // Transfers the strike tokens back in exchange
-        _burn(msg.sender, amount);
-        require(amountStrikeToTransfer > 0, "Amount too low");
+
+        // Releases the strike asset to caller, completing the exchange
         require(
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Could not transfer underlying tokens to caller"
@@ -237,27 +241,10 @@ contract PodPut is OptionCore {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external afterExpiration {
+    function withdraw() external virtual afterExpiration {
         uint256 amount = lockedBalance[msg.sender];
         require(amount > 0, "You do not have balance to withdraw");
-        _redeem(amount);
-    }
 
-    function _strikeToTransfer(uint256 amount) internal view returns (uint256) {
-        uint256 strikeAmount = amount.mul(strikePrice).div(
-            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
-        );
-        return strikeAmount;
-    }
-
-    function _underlyingToTransfer(uint256 strikeAmount) internal view returns (uint256) {
-        uint256 underlyingAmount = strikeAmount
-            .mul(10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals))
-            .div(strikePrice);
-        return underlyingAmount;
-    }
-
-    function _redeem(uint256 amount) internal {
         // Calculates how many underlying/strike tokens the caller
         // will get back
         uint256 currentStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
@@ -269,11 +256,10 @@ contract PodPut is OptionCore {
 
             underlyingToReceive = _underlyingToTransfer(remainingStrikeAmount);
         }
-        // require(amount <= lockedBalance[msg.sender]), "Withdraw amount exceeds lockedBalance")
-        // We need to check if the person has enough lockedBalance
 
-        // Unlocks the underlying token
         lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
+
+        // Unlocks the underlying/strike tokens
         if (strikeToReceive > 0) {
             require(
                 ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
@@ -287,5 +273,20 @@ contract PodPut is OptionCore {
             );
         }
         emit Withdraw(msg.sender, amount);
+    }
+
+    function _strikeToTransfer(uint256 amount) internal view returns (uint256) {
+        uint256 strikeAmount = amount.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
+        return strikeAmount;
+    }
+
+    function _underlyingToTransfer(uint256 strikeAmount) internal view returns (uint256) {
+        uint256 underlyingAmount = strikeAmount
+            .mul(10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals))
+            .div(strikePrice);
+
+        return underlyingAmount;
     }
 }

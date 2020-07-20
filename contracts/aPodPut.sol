@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "./OptionCore.sol";
+import "./PodOption.sol";
 
 /**
  * Represents a tokenized american put option series for some
@@ -40,7 +40,7 @@ import "./OptionCore.sol";
  * - Will sell 1 DAI for 1 USDC (the strike price) each.
  * - Will burn the corresponding amounty of put tokens.
  */
-contract aPodPut is OptionCore {
+contract aPodPut is PodOption {
     using SafeMath for uint8;
 
     uint256 totalBalanceWithoutInterest = 0;
@@ -48,7 +48,7 @@ contract aPodPut is OptionCore {
     constructor(
         string memory name,
         string memory symbol,
-        OptionCore.OptionType _optionType,
+        PodOption.OptionType _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -56,7 +56,7 @@ contract aPodPut is OptionCore {
         address _uniswapFactory
     )
         public
-        OptionCore(
+        PodOption(
             name,
             symbol,
             _optionType,

@@ -8,6 +8,22 @@ interface IPodPut {
 
     function withdraw(address) external;
 
+    function underlyingAsset() external view returns (address);
+
+    function underlyingAssetDecimals() external view returns (uint8);
+
+    function strikeAsset() external view returns (address);
+
+    function strikeAssetDecimals() external view returns (uint8);
+
+    function strikePrice() external view returns (uint256);
+
+    function strikePriceDecimals() external view returns (uint8);
+
+    function expirationBlockNumber() external view returns (uint256);
+
+    function uniswapFactoryAddress() external view returns (address);
+
     function amountOfMintedOptions(uint256) external view returns (uint256);
 
     function strikeToTransfer(uint256) external view returns (uint256);
@@ -20,21 +36,7 @@ interface IPodPut {
 
     function balanceOf(address) external view returns (uint256);
 
-    function strikeAsset() external view returns (address);
-
-    function strikeAssetDecimals() external view returns (uint8);
-
-    function underlyingAsset() external view returns (address);
-
-    function underlyingAssetDecimals() external view returns (uint8);
-
-    function strikePrice() external view returns (uint256);
-
-    function strikePriceDecimals() external view returns (uint8);
-
     function lockedBalance(address) external view returns (uint256);
-
-    function expirationBlockNumber() external view returns (uint256);
 
     function underlyingBalance() external view returns (uint256);
 
