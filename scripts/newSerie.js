@@ -7,7 +7,7 @@ const UniswapExchangeABI = require('../abi/uniswap_exchange.json')
 const erc20ABI = require('../abi/erc20.json')
 
 async function main () {
-  const { factory, uniswapFactory } = require(`../deployments/${bre.network.name}.json`)
+  const { optionFactory, uniswapFactory } = require(`../deployments/${bre.network.name}.json`)
 
   const optionParams = {
     name: 'Pods Put WBTC:aUSDC 7000 2020-07-17', // Pods Put WBTC:USDC 7000 2020-07-10
@@ -20,6 +20,7 @@ async function main () {
     uniswapFactory
   }
 
+  // TODO: check price api, instead of hardcoded
   const currentEtherPriceInUSD = 225 // Checked on uniswap v1 usdc/eth pool
   const optionPremiumInUSD = 6
   const amountOfOptionsToMint = 10
@@ -42,14 +43,25 @@ async function main () {
   const [owner] = await ethers.getSigners()
   const deployerAddress = await owner.getAddress()
   let optionAddress
+  let txIdNewOption
 
   // 1) Create Option
-  const FactoryContract = await ethers.getContractAt('OptionFactory', factory)
-  const txIdNewOption = await FactoryContract.createOption(...funcParameters)
+  const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactory)
+  const UnderlyingContract = new ethers.Contract(optionParams.underlyingAsset, erc20ABI, owner)
+  const underlyingAssetSymbol = await UnderlyingContract.symbol()
+  // const underlyingAssetSymbol = 'WETH'
+
+  console.log('Underlying Asset Symbol: ' + underlyingAssetSymbol)
+  if (underlyingAssetSymbol === 'WETH') {
+    txIdNewOption = await FactoryContract.createEthOption(...funcParameters)
+  } else {
+    txIdNewOption = await FactoryContract.createOption(...funcParameters)
+  }
   const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
   const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
   console.log('txId: ', txIdNewOption.hash)
   console.log('timestamp: ', new Date())
+  await txIdNewOption.wait()
   if (eventDetails.length) {
     const { deployer, option } = eventDetails[0].args
     console.log('blockNumber: ', eventDetails[0].blockNumber)
@@ -59,10 +71,11 @@ async function main () {
   } else {
     console.log('Something went wrong: No events found')
   }
-
   // 2) Create new Uniswap Exchange with OptionAddress
+  console.log('Create New Uniswap Exchange')
   const UniswapFactoryContract = new web3.eth.Contract(UniswapFactoryABI, uniswapFactory)
-  await UniswapFactoryContract.methods.createExchange(optionAddress).send({ from: deployerAddress })
+  const txCreateExchange = await UniswapFactoryContract.methods.createExchange(optionAddress).send({ from: deployerAddress })
+  setTimeout(() => 0, 5000)
   const optionExchangeAddress = await UniswapFactoryContract.methods.getExchange(optionAddress).call()
   console.log('optionExchangeAddress: ', optionExchangeAddress)
 
@@ -80,13 +93,14 @@ async function main () {
   console.log('optionDecimals: ', optionDecimals)
 
   const amountOfOptionsToAddLiquidity = new BigNumber(amountOfOptionsToMint).multipliedBy(10 ** optionDecimals).toString()
-  await OptionContract.mint(amountOfOptionsToAddLiquidity)
+  const txIdMint = await OptionContract.mint(amountOfOptionsToAddLiquidity)
+  await txIdMint.wait()
   console.log('Option Balance after mint', (await OptionContract.balanceOf(deployerAddress)).toString())
 
   // 4) Add Liquidity to Uniswap Exchange
   // 4a) Approve Option contract to exchange spender
-  await OptionContract.approve(optionExchangeAddress, (ethers.constants.MaxUint256).toString())
-
+  const txIdApprove = await OptionContract.approve(optionExchangeAddress, (ethers.constants.MaxUint256).toString())
+  await txIdApprove.wait()
   // // 4b) Add liquidity per se
 
   await ExchangeContract.methods.addLiquidity(0, amountOfOptionsToAddLiquidity, (ethers.constants.MaxUint256).toString()).send({ from: deployerAddress, value: amountOfEthToAddLiquidity })
