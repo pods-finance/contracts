@@ -210,7 +210,7 @@ contract PodPut is PodOption {
      *
      * Options can only be exchanged while the series is NOT expired.
      */
-    function exchange(uint256 amount) external beforeExpiration {
+    function exercise(uint256 amount) external beforeExpiration {
         require(amount > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
@@ -230,7 +230,7 @@ contract PodPut is PodOption {
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Could not transfer underlying tokens to caller"
         );
-        emit Exchange(msg.sender, amount);
+        emit Exercise(msg.sender, amount);
     }
 
     /**

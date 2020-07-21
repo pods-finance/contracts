@@ -37,7 +37,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * - Will unlock their USDC from this contract
  * - Will burn the corresponding amount of put tokens
  *
- * Put token holders may call exchange() until the expiration date, to
+ * Put token holders may call exerciseEth() until the expiration date, to
  * exercise their option, which in turn:
  *
  * - Will sell 1 ETH for 300 USDC (the strike price) each.
@@ -90,7 +90,7 @@ contract wPodPut is PodPut {
      *
      * Options can only be exchanged while the series is NOT expired.
      */
-    function exchangeEth() external payable beforeExpiration {
+    function exerciseEth() external payable beforeExpiration {
         uint256 amount = msg.value;
         require(amount > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
@@ -107,7 +107,7 @@ contract wPodPut is PodPut {
             ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Could not transfer underlying tokens to caller"
         );
-        emit Exchange(msg.sender, amount);
+        emit Exercise(msg.sender, amount);
     }
 
     /**

@@ -125,7 +125,7 @@ scenarios.forEach(scenario => {
       expect(initialBuyerOptionBalance).to.equal(amountOfOptionsToExercise)
       expect(initialContractUnderlyingBalance).to.equal(0)
       expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
-      const txExercise = await wPodPut.connect(buyer).exchangeEth({ value: amountOfOptionsToExercise })
+      const txExercise = await wPodPut.connect(buyer).exerciseEth({ value: amountOfOptionsToExercise })
       const txCost = await getTxCost(txExercise)
 
       const finalBuyerOptionBalance = await wPodPut.balanceOf(buyerAddress)
@@ -222,7 +222,7 @@ scenarios.forEach(scenario => {
     describe('Exercising options', () => {
       it('should revert if user have underlying enough, but dont have enough options', async () => {
         expect(await ethers.provider.getBalance(buyerAddress)).to.gte(scenario.amountToMint)
-        await expect(wPodPut.connect(buyer).exchangeEth({ value: scenario.amountToMint })).to.be.revertedWith('ERC20: burn amount exceeds balance')
+        await expect(wPodPut.connect(buyer).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('ERC20: burn amount exceeds balance')
       })
       it('should exercise and have all final balances matched', async () => {
         await MintPhase(scenario.amountToMint)
@@ -240,7 +240,7 @@ scenarios.forEach(scenario => {
         expect(initialContractUnderlyingBalance).to.equal(0)
         expect(initialContractStrikeBalance).to.equal(scenario.strikePrice)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
-        const txExercise = await wPodPut.connect(buyer).exchangeEth({ value: scenario.amountToMint })
+        const txExercise = await wPodPut.connect(buyer).exerciseEth({ value: scenario.amountToMint })
 
         const txCost = await getTxCost(txExercise)
         const finalBuyerOptionBalance = await wPodPut.balanceOf(buyerAddress)
@@ -261,7 +261,7 @@ scenarios.forEach(scenario => {
         await wPodPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         // Mint Underlying Asset
         await forceExpiration(await wPodPut.expirationBlockNumber())
-        await expect(wPodPut.connect(seller).exchangeEth({ value: scenario.amountToMint })).to.be.revertedWith('Option has expired')
+        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('Option has expired')
       })
     })
 

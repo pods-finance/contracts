@@ -60,7 +60,7 @@ contract PodOption is ERC20 {
     /** Events */
     event Mint(address indexed seller, uint256 amount);
     event Burn(address indexed seller, uint256 amount);
-    event Exchange(address indexed buyer, uint256 amount);
+    event Exercise(address indexed buyer, uint256 amount);
     event Withdraw(address indexed seller, uint256 amount);
     event SellUniswap(address indexed seller, uint256 amount);
 
