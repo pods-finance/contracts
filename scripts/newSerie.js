@@ -9,14 +9,16 @@ const erc20ABI = require('../abi/erc20.json')
 async function main () {
   const { optionFactory, uniswapFactory } = require(`../deployments/${bre.network.name}.json`)
 
+  // TODO: function to build option name and symbol based on underyingAsset,strikeAsset,strikePrice and Date
+
   const optionParams = {
-    name: 'Pods Put WBTC:aUSDC 7000 2020-07-17', // Pods Put WBTC:USDC 7000 2020-07-10
+    name: 'Pods Put WBTC:aUSDC 7000 2020-08-04', // Pods Put WBTC:USDC 7000 2020-07-10
     symbol: 'podWBTC:aUSDC', // Pods Put WBTC:USDC 7000 2020-07-10
     optionType: 0, // 0 for put, 1 for call
     underlyingAsset: '0x0094e8cf72acf138578e399768879cedd1ddd33c', // 0x0094e8cf72acf138578e399768879cedd1ddd33c
     strikeAsset: '0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a', // 0xe22da380ee6B445bb8273C81944ADEB6E8450422
     strikePrice: new BigNumber(7000e6).toString(), // 7000e6 if strike is USDC,
-    expirationDate: 19675741, // 19443856 = 10 july
+    expirationDate: 20037970, // 19443856 = 10 july
     uniswapFactory
   }
 
@@ -91,7 +93,6 @@ async function main () {
   // 3b) Call option Mint
   const optionDecimals = await OptionContract.decimals()
   console.log('optionDecimals: ', optionDecimals)
-
   const amountOfOptionsToAddLiquidity = new BigNumber(amountOfOptionsToMint).multipliedBy(10 ** optionDecimals).toString()
   const txIdMint = await OptionContract.mint(amountOfOptionsToAddLiquidity)
   await txIdMint.wait()
