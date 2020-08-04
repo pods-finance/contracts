@@ -22,9 +22,9 @@ contract FaucetKovan {
     address lendingPoolCoreAddress = 0x95D1189Ed88B380E319dF73fF00E479fcc4CFa45;
     address kovanWBTCAddress = 0x351a448d49C8011D293e81fD53ce5ED09F433E4c;
     LendingPool lendingPool = LendingPool(lendingPoolAddress);
-    ERC20Mintable usdc = ERC20Mintable(aaveUSDCAddress);
-    ERC20Mintable dai = ERC20Mintable(aaveDAIAddress);
-    ERC20Mintable wbtc = ERC20Mintable(kovanWBTCAddress);
+    IERC20Mintable usdc = IERC20Mintable(aaveUSDCAddress);
+    IERC20Mintable dai = IERC20Mintable(aaveDAIAddress);
+    IERC20Mintable wbtc = IERC20Mintable(kovanWBTCAddress);
 
     function getFaucet() external {
         uint256 askedAmount = 30000;
@@ -45,8 +45,8 @@ contract FaucetKovan {
         LendingPool(lendingPoolAddress).deposit(aaveDAIAddress, mintedDaiAmount.div(2), 0);
 
         // send Aave aUSDC
-        ERC20Mintable(aUSDCAddress).transfer(msg.sender, mintedUsdcAmount.div(2));
-        ERC20Mintable(aDAIAddress).transfer(msg.sender, mintedDaiAmount.div(2));
+        IERC20Mintable(aUSDCAddress).transfer(msg.sender, mintedUsdcAmount.div(2));
+        IERC20Mintable(aDAIAddress).transfer(msg.sender, mintedDaiAmount.div(2));
 
         uint256 askedWbtcAmount = 100;
         uint8 wbtcDecimals = wbtc.decimals();
