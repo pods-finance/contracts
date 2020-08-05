@@ -85,7 +85,7 @@ contract aPodPut is PodOption {
      * for instance amount * strikePrice units of strikeToken into this
      * contract
      */
-    function mint(uint256 amount) external beforeExpiration {
+    function mint(uint256 amount) external override beforeExpiration {
         require(amount > 0, "Null amount");
 
         uint256 amountToTransfer = amount.mul(strikePrice).div(
@@ -111,7 +111,7 @@ contract aPodPut is PodOption {
      *
      * Options can only be burned while the series is NOT expired.
      */
-    function burn(uint256 amount) external beforeExpiration {
+    function burn(uint256 amount) external override beforeExpiration {
         require(amount <= lockedBalance[msg.sender], "Not enough underlying balance");
 
         uint256 amountToTransfer = amount.mul(strikePrice).div(
@@ -149,7 +149,7 @@ contract aPodPut is PodOption {
      *
      * Options can only be exchanged while the series is NOT expired.
      */
-    function exchange(uint256 amount) external beforeExpiration {
+    function exercise(uint256 amount) external override beforeExpiration {
         require(amount > 0, "null amount");
         require(
             ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amount),
@@ -179,7 +179,7 @@ contract aPodPut is PodOption {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external afterExpiration {
+    function withdraw() external override afterExpiration {
         uint256 amount = lockedBalance[msg.sender];
         require(amount > 0, "You do not have balance to withdraw");
         _redeem(amount);

@@ -4,7 +4,7 @@ pragma solidity ^0.6.8;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract PodOption is ERC20 {
+abstract contract PodOption is ERC20 {
     enum OptionType { PUT, CALL }
 
     OptionType public optionType;
@@ -88,6 +88,53 @@ contract PodOption is ERC20 {
         strikePrice = _strikePrice;
         strikePriceDecimals = strikeAssetDecimals;
     }
+
+    /**
+     * Locks some amount of collateral and writes option tokens.
+     *
+     * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
+     *
+     * It presumes the caller has already called IERC20.approve() on the
+     * strike token contract to move caller funds.
+     *
+     * This function is meant to be called by collateral holders wanting
+     * to write option tokens.
+     *
+     * Options can only be minted while the series is NOT expired.
+     *
+     * @param amount The amount option tokens to be issued
+     */
+    function mint(uint256 amount) external virtual;
+
+    /**
+     * Allow option token holders to use them to exercise the amount of units
+     * of the locked tokens for the equivalent amount of the exercisable assets.
+     *
+     * It presumes the caller has already called IERC20.approve() exercisable asset
+     * to move caller funds.
+     *
+     * Options can only be exchanged while the series is NOT expired.
+     */
+    function exercise(uint256 amount) external virtual;
+
+    /**
+     * After series expiration, allow addresses who have locked their
+     * collateral to withdraw them on first-come-first-serve basis.
+     *
+     * If assets had been exercised during the option series the caller may withdraw
+     * the exercised assets or a combination of exercised and collateral.
+     */
+    function withdraw() external virtual;
+
+    /**
+     * Unlocks the amount of collateral by burning option tokens.
+     *
+     * This mechanism ensures that users can only redeem tokens they've
+     * previously lock into this contract.
+     *
+     * Options can only be burned while the series is NOT expired.
+     */
+    function burn(uint256 amount) external virtual;
 
     /**
      * Utility function to check the amount of the underlying tokens

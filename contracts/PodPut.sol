@@ -102,7 +102,7 @@ contract PodPut is PodOption {
      * for instance amount * strikePrice units of strikeToken into this
      * contract
      */
-    function mint(uint256 amount) external beforeExpiration {
+    function mint(uint256 amount) external override beforeExpiration {
         lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
         _mint(msg.sender, amount);
 
@@ -175,7 +175,7 @@ contract PodPut is PodOption {
      *
      * Options can only be burned while the series is NOT expired.
      */
-    function burn(uint256 amount) external beforeExpiration {
+    function burn(uint256 amount) external override beforeExpiration {
         require(amount <= lockedBalance[msg.sender], "Not enough balance");
 
         // Burn option tokens
@@ -210,7 +210,7 @@ contract PodPut is PodOption {
      *
      * Options can only be exchanged while the series is NOT expired.
      */
-    function exercise(uint256 amount) external beforeExpiration {
+    function exercise(uint256 amount) external override beforeExpiration {
         require(amount > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
@@ -241,7 +241,7 @@ contract PodPut is PodOption {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external virtual afterExpiration {
+    function withdraw() external virtual override afterExpiration {
         uint256 amount = lockedBalance[msg.sender];
         require(amount > 0, "You do not have balance to withdraw");
 
