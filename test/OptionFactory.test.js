@@ -16,9 +16,12 @@ describe('OptionFactory', function () {
   before(async function () {
     const OptionFactory = await ethers.getContractFactory('OptionFactory')
     const MockERC20 = await ethers.getContractFactory('MockERC20')
-    optionFactory = await OptionFactory.deploy()
+    const MockWETH = await ethers.getContractFactory('WETH')
+
+    const mockWeth = await MockWETH.deploy()
     underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8, 1000e8)
     strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6, 1000e8)
+    optionFactory = await OptionFactory.deploy(mockWeth.address)
 
     await optionFactory.deployed()
     await underlyingAsset.deployed()

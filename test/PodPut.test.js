@@ -74,22 +74,17 @@ scenarios.forEach(scenario => {
       sellerAddress = await seller.getAddress()
       buyerAddress = await buyer.getAddress()
       delegatorAddress = await delegator.getAddress()
-
-      // 1) Deploy Factory
-      const ContractFactory = await ethers.getContractFactory('OptionFactory')
-      factoryContract = await ContractFactory.deploy()
-      await factoryContract.deployed()
     })
 
     beforeEach(async function () {
-      // const podPut = await ethers.getContractFactory('podPut')
       const MockERC20 = await ethers.getContractFactory('MintableERC20')
+      const ContractFactory = await ethers.getContractFactory('OptionFactory')
+      const MockWETH = await ethers.getContractFactory('WETH')
 
+      const mockWeth = await MockWETH.deploy()
+      factoryContract = await ContractFactory.deploy(mockWeth.address)
       mockUnderlyingAsset = await MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals)
       mockStrikeAsset = await MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
-
-      await mockUnderlyingAsset.deployed()
-      await mockStrikeAsset.deployed()
 
       // call transaction
       const txIdNewOption = await factoryContract.createOption(
