@@ -85,20 +85,18 @@ contract aPodPut is PodOption {
      * for instance amount * strikePrice units of strikeToken into this
      * contract
      */
-    function mint(uint256 amount) external override beforeExpiration {
-        require(amount > 0, "Null amount");
+    function mint(uint256 amount, address owner) external override beforeExpiration {
+        lockedBalance[owner] = lockedBalance[owner].add(amount);
+        _mint(owner, amount);
 
-        uint256 amountToTransfer = amount.mul(strikePrice).div(
+        uint256 amountStrikeToTransfer = amount.mul(strikePrice).div(
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
+        totalBalanceWithoutInterest = totalBalanceWithoutInterest.add(amountStrikeToTransfer);
 
-        lockedBalance[msg.sender] = lockedBalance[msg.sender].add(amount);
-        totalBalanceWithoutInterest = totalBalanceWithoutInterest.add(amountToTransfer);
-
-        _mint(msg.sender, amount);
-        require(amountToTransfer > 0, "You need to increase amount");
+        require(amountStrikeToTransfer > 0, "Amount too low");
         require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
+            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
             "Couldn't transfer strike tokens from caller"
         );
     }

@@ -104,7 +104,7 @@ abstract contract PodOption is ERC20 {
      *
      * @param amount The amount option tokens to be issued
      */
-    function mint(uint256 amount) external virtual;
+    function mint(uint256 amount, address owner) external virtual;
 
     /**
      * Allow option token holders to use them to exercise the amount of units
