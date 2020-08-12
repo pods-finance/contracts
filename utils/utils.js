@@ -16,4 +16,43 @@ function getMonthLetter (month) {
   }
 }
 
-module.exports = getMonthLetter
+const avgBlocktime = {
+  1: 15,
+  42: 4
+}
+
+/**
+ * Returns the date of block in the Ethereum network
+ * @param {number} currentBlockNumber
+ * @param {number} targetBlockNumber
+ * @returns {Date}
+ */
+function getBlockDate (currentBlockNumber, targetBlockNumber, networkVersion) {
+  const diffBetweenBlocksInMilliseconds = (targetBlockNumber - currentBlockNumber) * avgBlocktime[networkVersion] * 1000
+  const now = new Date().valueOf()
+  const targetDate = new Date(now + diffBetweenBlocksInMilliseconds)
+
+  return targetDate
+}
+
+/**
+ * Returns the future block number given a date
+ * @param {number} currentBlockNumber
+ * @param {Date} targetDate in utc (milliseconds)
+ * @returns {number} futureBlockNumber
+ */
+function getFutureBlockNumber (currentBlockNumber, targetDate, networkVersion) {
+  const now = new Date().valueOf()
+  const diffBetweenDatesInMilliseconds = targetDate - now
+  const blocksPassed = diffBetweenDatesInMilliseconds / (avgBlocktime[networkVersion] * 1000)
+
+  const futureBlockNumber = currentBlockNumber + blocksPassed
+
+  return futureBlockNumber
+}
+
+module.exports = {
+  getMonthLetter,
+  getBlockDate,
+  getFutureBlockNumber
+}

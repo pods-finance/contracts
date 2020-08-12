@@ -1,4 +1,6 @@
 require('dotenv').config()
+require('./tasks/balance')
+require('./tasks/deployNewSerie')
 
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')

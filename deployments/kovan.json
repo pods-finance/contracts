@@ -82,6 +82,23 @@
         "expirationDate": 19675741,
         "uniswapAddress": "0x78aBC109295157BD592148c6dCcDE696F5B041E5"
       }
+    },
+    {
+      "txId": "0xe897a835c5413244f95b7f713278aff6ebd7c9e9bab1d91869cf4cf5afd9bd35",
+      "timestamp": "2020-08-12T05:46:45.822Z",
+      "blockNumber": 20194920,
+      "deployer": "0x2367386801e28b15A7ef606fD55Fe455dfEE6053",
+      "option": "0x189172eEd289F3E8173Ed953F91E8D64Bc4E526e",
+      "optionExchangeAddress": "0x19e574836922BEb07cEcAf880eA0f075c52ECa8B",
+      "inputs": { 
+        "name": "Pods Put WBTC:USDC 7000 2020-08-27",
+        "symbol": "podWBTC:USDC",
+        "optionType": 0,
+        "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+        "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+        "strikePrice": "7000000000",
+        "expirationDate": "20518519",
+        "uniswapFactory": "0x78aBC109295157BD592148c6dCcDE696F5B041E5" }
     }
   ]
 }
