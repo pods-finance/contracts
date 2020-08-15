@@ -59,7 +59,7 @@ abstract contract PodOption is ERC20 {
 
     /** Events */
     event Mint(address indexed seller, uint256 amount);
-    event Burn(address indexed seller, uint256 amount);
+    event Unwind(address indexed seller, uint256 amount);
     event Exercise(address indexed buyer, uint256 amount);
     event Withdraw(address indexed seller, uint256 amount);
     event SellUniswap(address indexed seller, uint256 amount);
@@ -103,6 +103,7 @@ abstract contract PodOption is ERC20 {
      * Options can only be minted while the series is NOT expired.
      *
      * @param amount The amount option tokens to be issued
+     * @param owner Which address will be the owner of the options
      */
     function mint(uint256 amount, address owner) external virtual;
 
@@ -114,6 +115,7 @@ abstract contract PodOption is ERC20 {
      * to move caller funds.
      *
      * Options can only be exchanged while the series is NOT expired.
+     * @param amount The amount option tokens to be exercised
      */
     function exercise(uint256 amount) external virtual;
 
@@ -133,8 +135,9 @@ abstract contract PodOption is ERC20 {
      * previously lock into this contract.
      *
      * Options can only be burned while the series is NOT expired.
+     * @param amount The amount option tokens to be burned
      */
-    function burn(uint256 amount) external virtual;
+    function unwind(uint256 amount) external virtual;
 
     /**
      * Utility function to check the amount of the underlying tokens

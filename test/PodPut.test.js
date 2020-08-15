@@ -323,15 +323,15 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('Burning options', () => {
-      it('should revert if try to burn without amount', async () => {
-        await expect(podPut.connect(seller).burn(scenario.amountToMint)).to.be.revertedWith('Not enough balance')
+    describe('Unwinding options', () => {
+      it('should revert if try to unwind without amount', async () => {
+        await expect(podPut.connect(seller).unwind(scenario.amountToMint)).to.be.revertedWith('Not enough balance')
       })
-      it('should revert if try to burn amount higher than possible', async () => {
+      it('should revert if try to unwind amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint, sellerAddress)
-        await expect(podPut.connect(seller).burn(2 * scenario.amountToMint)).to.be.revertedWith('Not enough balance')
+        await expect(podPut.connect(seller).unwind(2 * scenario.amountToMint)).to.be.revertedWith('Not enough balance')
       })
-      it('should burn, destroy sender option, reduce his balance and send strike back', async () => {
+      it('should unwind, destroy sender option, reduce his balance and send strike back', async () => {
         await MintPhase(scenario.amountToMint, sellerAddress)
         const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -344,7 +344,7 @@ scenarios.forEach(scenario => {
         expect(initialContractUnderlyingBalance).to.equal(0)
         expect(initialContractStrikeBalance).to.equal(scenario.strikePrice)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
-        await expect(podPut.connect(seller).burn(scenario.amountToMint))
+        await expect(podPut.connect(seller).unwind(scenario.amountToMint))
 
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -358,10 +358,10 @@ scenarios.forEach(scenario => {
         expect(finalContractOptionSupply).to.equal(0)
         expect(finalContractUnderlyingBalance).to.equal(0)
       })
-      it('should revert if user try to burn after expiration', async () => {
+      it('should revert if user try to unwind after expiration', async () => {
         await forceExpiration(podPut)
         await expect(
-          podPut.connect(seller).burn(scenario.amountToMint)
+          podPut.connect(seller).unwind(scenario.amountToMint)
         ).to.be.revertedWith('Option has expired')
       })
     })

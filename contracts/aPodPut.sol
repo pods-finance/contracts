@@ -84,6 +84,7 @@ contract aPodPut is PodOption {
      * @param amount The amount option tokens to be issued; this will lock
      * for instance amount * strikePrice units of strikeToken into this
      * contract
+     * @param owner Which address will be the owner of the options
      */
     function mint(uint256 amount, address owner) external override beforeExpiration {
         lockedBalance[owner] = lockedBalance[owner].add(amount);
@@ -108,8 +109,9 @@ contract aPodPut is PodOption {
      * previously lock into this contract.
      *
      * Options can only be burned while the series is NOT expired.
+     * @param amount The amount option tokens to be burned
      */
-    function burn(uint256 amount) external override beforeExpiration {
+    function unwind(uint256 amount) external override beforeExpiration {
         require(amount <= lockedBalance[msg.sender], "Not enough underlying balance");
 
         uint256 amountToTransfer = amount.mul(strikePrice).div(
