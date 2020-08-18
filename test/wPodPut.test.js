@@ -69,8 +69,7 @@ scenarios.forEach(scenario => {
         OPTION_TYPE_PUT,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        await ethers.provider.getBlockNumber() + 300, // expirationDate = high block number
-        mockUnderlyingAsset.address
+        await ethers.provider.getBlockNumber() + 300 // expirationDate = high block number
       )
 
       const filterFrom = await factoryContract.filters.OptionCreated(deployerAddress)
@@ -208,7 +207,8 @@ scenarios.forEach(scenario => {
         expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(scenario.strikePrice)
 
         await wPodPut.connect(seller).mint(scenario.amountToMint, delegatorAddress)
-        expect(await wPodPut.balanceOf(delegatorAddress)).to.equal(scenario.amountToMint)
+        expect(await wPodPut.balanceOf(sellerAddress)).to.equal(scenario.amountToMint)
+        expect(await wPodPut.lockedBalance(delegatorAddress)).to.equal(scenario.amountToMint)
         expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
       })
 

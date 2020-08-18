@@ -2,7 +2,6 @@
 pragma solidity ^0.6.8;
 
 import "./PodOption.sol";
-import "./interfaces/IUniswapV1.sol";
 
 /**
  * Represents a tokenized american put option series for some
@@ -51,8 +50,7 @@ contract PodPut is PodOption {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber,
-        address _uniswapFactory
+        uint256 _expirationBlockNumber
     )
         public
         PodOption(
@@ -62,8 +60,7 @@ contract PodPut is PodOption {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationBlockNumber,
-            _uniswapFactory
+            _expirationBlockNumber
         )
     {}
 
@@ -105,7 +102,7 @@ contract PodPut is PodOption {
      */
     function mint(uint256 amount, address owner) external override beforeExpiration {
         lockedBalance[owner] = lockedBalance[owner].add(amount);
-        _mint(owner, amount);
+        _mint(msg.sender, amount);
 
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
 
@@ -115,58 +112,6 @@ contract PodPut is PodOption {
             "Could not transfer strike tokens from caller"
         );
         emit Mint(owner, amount);
-    }
-
-    /**
-     * @notice Mint new option and sell it directly to Uniswap
-     * @param amount The amount option tokens to be issued
-     * @param minTokensBought Minimum amount of tokens that could be acceptable bought
-     * @param tokenOutput Address of the ERC20 that sender wants to receive option premium
-     */
-    function mintAndSell(
-        uint256 amount,
-        uint256 minTokensBought,
-        address tokenOutput,
-        address owner
-    ) external beforeExpiration returns (uint256) {
-        lockedBalance[owner] = lockedBalance[owner].add(amount);
-        _mint(owner, amount);
-
-        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
-
-        require(amountStrikeToTransfer > 0, "Amount too low");
-        require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
-            "Could not transfer strike tokens from caller"
-        );
-
-        IUniswapFactory uniswapFactory = IUniswapFactory(uniswapFactoryAddress);
-
-        address exchangeOptionAddress = uniswapFactory.getExchange(address(this));
-        require(exchangeOptionAddress != address(0), "Exchange not found");
-        require(this.approve(exchangeOptionAddress, amount), "Could not approve exchange transfer");
-
-        IUniswapExchange exchangeOption = IUniswapExchange(exchangeOptionAddress);
-
-        uint256 minEthBought = 1;
-        uint256 deadline = now + 3000;
-
-        try
-            exchangeOption.tokenToTokenTransferInput(
-                amount,
-                minTokensBought,
-                minEthBought,
-                deadline,
-                msg.sender,
-                tokenOutput
-            )
-        returns (uint256 tokenBought) {
-            emit Mint(msg.sender, amount);
-            emit SellUniswap(msg.sender, amount);
-            return tokenBought;
-        } catch {
-            revert("Uniswap trade fail");
-        }
     }
 
     /**

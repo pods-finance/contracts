@@ -47,11 +47,6 @@ abstract contract PodOption is ERC20 {
     uint256 public expirationBlockNumber;
 
     /**
-     * Uniswap Factory address used to sell options
-     */
-    address public uniswapFactoryAddress;
-
-    /**
      * Tracks how much of the strike token each address has locked
      * inside this contract
      */
@@ -62,7 +57,6 @@ abstract contract PodOption is ERC20 {
     event Unwind(address indexed seller, uint256 amount);
     event Exercise(address indexed buyer, uint256 amount);
     event Withdraw(address indexed seller, uint256 amount);
-    event SellUniswap(address indexed seller, uint256 amount);
 
     constructor(
         string memory name,
@@ -71,12 +65,10 @@ abstract contract PodOption is ERC20 {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber,
-        address _uniswapFactory
+        uint256 _expirationBlockNumber
     ) public ERC20(name, symbol) {
         optionType = _optionType;
         expirationBlockNumber = _expirationBlockNumber;
-        uniswapFactoryAddress = _uniswapFactory;
 
         underlyingAsset = _underlyingAsset;
         underlyingAssetDecimals = ERC20(_underlyingAsset).decimals();

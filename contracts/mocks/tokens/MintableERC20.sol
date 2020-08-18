@@ -16,8 +16,13 @@ contract MintableERC20 is ERC20 {
         _setupDecimals(decimals);
     }
 
-    function mint(uint256 value) public returns (bool) {
-        _mint(msg.sender, value);
+    function mint(uint256 amount) public returns (bool) {
+        _mint(msg.sender, amount);
+        return true;
+    }
+
+    function burn(uint256 amount) public returns(bool) {
+        _burn(msg.sender, amount);
         return true;
     }
 }

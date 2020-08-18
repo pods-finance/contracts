@@ -2,7 +2,6 @@
 pragma solidity ^0.6.8;
 
 import "./PodPut.sol";
-import "./interfaces/IUniswapV1.sol";
 import "./interfaces/IWETH.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
@@ -53,8 +52,7 @@ contract wPodPut is PodPut {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber,
-        address _uniswapFactory
+        uint256 _expirationBlockNumber
     )
         public
         PodPut(
@@ -64,8 +62,7 @@ contract wPodPut is PodPut {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationBlockNumber,
-            _uniswapFactory
+            _expirationBlockNumber
         )
     {
         weth = IWETH(_underlyingAsset);

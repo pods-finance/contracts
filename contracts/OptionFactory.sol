@@ -30,7 +30,6 @@ contract OptionFactory {
      * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
      * @param _expirationDate The Expiration Option date in blocknumbers. E.g 19203021
-     * @param _uniswapFactory Uniswap factory address that will be used to sell options
      */
     function createOption(
         string memory _name,
@@ -39,8 +38,7 @@ contract OptionFactory {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationDate,
-        address _uniswapFactory
+        uint256 _expirationDate
     ) public returns (PodPut) {
         require(_expirationDate > block.number, "Expiration lower than current block");
 
@@ -51,8 +49,7 @@ contract OptionFactory {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationDate,
-            _uniswapFactory
+            _expirationDate
         );
 
         options.push(option);
@@ -68,7 +65,6 @@ contract OptionFactory {
      * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
      * @param _expirationDate The Expiration Option date in blocknumbers. E.g 19203021
-     * @param _uniswapFactory Uniswap factory address that will be used to sell options
      */
     function createEthOption(
         string memory _name,
@@ -76,8 +72,7 @@ contract OptionFactory {
         PodOption.OptionType _optionType,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationDate,
-        address _uniswapFactory
+        uint256 _expirationDate
     ) public returns (wPodPut) {
         require(_expirationDate > block.number, "Expiration lower than current block");
 
@@ -88,8 +83,7 @@ contract OptionFactory {
             WETH_ADDRESS,
             _strikeAsset,
             _strikePrice,
-            _expirationDate,
-            _uniswapFactory
+            _expirationDate
         );
 
         options.push(option);
