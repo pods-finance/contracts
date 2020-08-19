@@ -71,6 +71,7 @@ task('deploySerie', 'Initial Option series setup: create an option, create a uni
 
     console.log('Underlying Asset Symbol: ' + underlyingAssetSymbol)
     if (underlyingAssetSymbol === 'WETH') {
+      funcParameters.splice(3, 1) // removing underlying asset
       txIdNewOption = await FactoryContract.createEthOption(...funcParameters)
     } else {
       txIdNewOption = await FactoryContract.createOption(...funcParameters)
@@ -110,7 +111,7 @@ task('deploySerie', 'Initial Option series setup: create an option, create a uni
     const optionDecimals = await OptionContract.decimals()
     console.log('optionDecimals: ', optionDecimals)
     const amountOfOptionsToAddLiquidity = new BigNumber(amountOfOptionsToMint).multipliedBy(10 ** optionDecimals).toString()
-    const txIdMint = await OptionContract.mint(amountOfOptionsToAddLiquidity)
+    const txIdMint = await OptionContract.mint(amountOfOptionsToAddLiquidity, deployerAddress)
     await txIdMint.wait()
     console.log('Option Balance after mint', (await OptionContract.balanceOf(deployerAddress)).toString())
 

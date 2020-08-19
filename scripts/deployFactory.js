@@ -2,8 +2,9 @@ const bre = require('@nomiclabs/buidler')
 
 async function main () {
   // await bre.run('compile');
+  const wethAddress = require(`../deployments/${bre.network.name}.json`).WETH
   const OptionFactory = await ethers.getContractFactory('OptionFactory')
-  const factory = await OptionFactory.deploy()
+  const factory = await OptionFactory.deploy(wethAddress)
 
   await factory.deployed()
 
