@@ -2,8 +2,8 @@ const { expect } = require('chai')
 const getUniswapMock = require('./util/getUniswapMock')
 
 describe('OptionExchange', () => {
-  let ContractFactory, MockERC20, ExchangeContract, WETH
-  let exchange, uniswapFactory, createExchange
+  let ContractFactory, MockERC20, ExchangeContract, WETH, UniswapV1Provider
+  let exchange, exchangeProvider, uniswapFactory, createExchange, clearMock
   let underlyingAsset, strikeAsset, weth
   let podPut
   let deployer, deployerAddress
@@ -18,16 +18,18 @@ describe('OptionExchange', () => {
 
     let uniswapMock
 
-    ;[ContractFactory, MockERC20, ExchangeContract, WETH, uniswapMock] = await Promise.all([
+    ;[ContractFactory, MockERC20, ExchangeContract, WETH, UniswapV1Provider, uniswapMock] = await Promise.all([
       ethers.getContractFactory('OptionFactory'),
       ethers.getContractFactory('MintableERC20'),
       ethers.getContractFactory('OptionExchange'),
       ethers.getContractFactory('WETH'),
+      ethers.getContractFactory('UniswapV1Provider'),
       getUniswapMock(deployer)
     ])
 
     uniswapFactory = uniswapMock.uniswapFactory
     createExchange = uniswapMock.createExchange
+    clearMock = uniswapMock.clearMock
 
     ;[underlyingAsset, strikeAsset, weth] = await Promise.all([
       MockERC20.deploy('WBTC', 'WBTC', 8),
@@ -39,14 +41,19 @@ describe('OptionExchange', () => {
   beforeEach(async () => {
     const factoryContract = await ContractFactory.deploy(weth.address)
     podPut = await makeOption(factoryContract, underlyingAsset, strikeAsset)
-    exchange = await ExchangeContract.deploy(uniswapFactory.address)
+    exchangeProvider = await UniswapV1Provider.deploy()
+    await exchangeProvider.initialize(uniswapFactory.address)
+    exchange = await ExchangeContract.deploy(exchangeProvider.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
     await strikeAsset.connect(seller).approve(exchange.address, ethers.constants.MaxUint256)
+
+    // Clears Uniswap mock
+    clearMock()
   })
 
   it('assigns the exchange address correctly', async () => {
-    expect(await exchange.uniswapFactory()).to.equal(uniswapFactory.address)
+    expect(await exchangeProvider.uniswapFactory()).to.equal(uniswapFactory.address)
   })
 
   describe('Sell', () => {
@@ -132,7 +139,7 @@ describe('OptionExchange', () => {
       const deadline = await getTimestamp() + 60
 
       // Creates the Uniswap exchange
-      await createExchange(podPut.address, minAcceptedCost)
+      await createExchange(inputToken, minAcceptedCost)
 
       const tx = exchange.connect(seller).buyExactOptions(
         podPut.address,

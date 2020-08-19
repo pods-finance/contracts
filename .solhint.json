@@ -8,6 +8,7 @@
     "private-vars-leading-underscore": "warn",
     "max-line-length": ["warn", 150],
     "reason-string": ["warn", {"maxLength": 50}],
-    "compiler-version": ["off","^0.5.8"]
+    "compiler-version": ["off","^0.5.8"],
+    "not-rely-on-time": "off"
   }
 }

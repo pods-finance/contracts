@@ -2,15 +2,15 @@
 pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/IUniswapV1.sol";
 import "./interfaces/IPodPut.sol";
+import "./exchanges/ExchangeProvider.sol";
 
 /**
  * Represents a Proxy that can mint and sell on the behalf of a Option Seller,
  * alternatively it can buy to a Option Buyer
  */
 contract OptionExchange {
-    IUniswapFactory public uniswapFactory;
+    ExchangeProvider public exchange;
 
     event OptionsBought(
         address indexed buyer,
@@ -28,13 +28,8 @@ contract OptionExchange {
         uint256 outputBought
     );
 
-    constructor (address _uniswapFactoryAddress) public {
-        uniswapFactory = IUniswapFactory(_uniswapFactoryAddress);
-    }
-
-    modifier withinDeadline(uint256 deadline) {
-        require(deadline > block.timestamp, "Transaction timeout");
-        _;
+    constructor (ExchangeProvider _exchange) public {
+        exchange = _exchange;
     }
 
     /**
@@ -53,7 +48,7 @@ contract OptionExchange {
         address outputToken,
         uint256 minOutputAmount,
         uint256 deadline
-    ) external withinDeadline(deadline) {
+    ) external {
         uint256 strikeToTransfer = option.strikeToTransfer(optionAmount);
 
         IERC20 strikeAsset = IERC20(option.strikeAsset());
@@ -64,27 +59,23 @@ contract OptionExchange {
 
         address optionAddress = address(option);
 
+        // Approving Strike transfer to Option
         strikeAsset.approve(optionAddress, strikeToTransfer);
         option.mint(optionAmount, msg.sender);
 
-        IUniswapExchange optionExchange = getExchange(optionAddress);
+        // Approving Option transfer to Exchange
+        option.approve(address(exchange), optionAmount);
 
-        uint256 minEthBought = 1;
+        uint256 outputBought = exchange.swapWithExactInput(
+            optionAddress,
+            outputToken,
+            optionAmount,
+            minOutputAmount,
+            deadline,
+            msg.sender
+        );
 
-        try
-            optionExchange.tokenToTokenTransferInput(
-                optionAmount,
-                minOutputAmount,
-                minEthBought,
-                deadline,
-                msg.sender,
-                outputToken
-            )
-        returns (uint256 tokensBought) {
-            emit OptionsSold(msg.sender, optionAddress, optionAmount, outputToken, tokensBought);
-        } catch {
-            revert("Uniswap trade failed");
-        }
+        emit OptionsSold(msg.sender, optionAddress, optionAmount, outputToken, outputBought);
     }
 
     /**
@@ -103,27 +94,19 @@ contract OptionExchange {
         address inputToken,
         uint256 maxInputAmount,
         uint256 deadline
-    ) external withinDeadline(deadline) {
+    ) external {
         address optionAddress = address(option);
 
-        IUniswapExchange optionExchange = getExchange(optionAddress);
+        uint256 inputSold = exchange.swapWithExactOutput(
+            inputToken,
+            optionAddress,
+            maxInputAmount,
+            optionAmount,
+            deadline,
+            msg.sender
+        );
 
-        uint256 maxEthSold = 1;
-
-        try
-            optionExchange.tokenToTokenTransferOutput(
-                optionAmount,
-                maxInputAmount,
-                maxEthSold,
-                deadline,
-                msg.sender,
-                inputToken
-            )
-        returns (uint256 tokensSold) {
-            emit OptionsBought(msg.sender, optionAddress, optionAmount, inputToken, tokensSold);
-        } catch {
-            revert("Uniswap trade failed");
-        }
+        emit OptionsBought(msg.sender, optionAddress, optionAmount, inputToken, inputSold);
     }
 
     /**
@@ -142,38 +125,18 @@ contract OptionExchange {
         address inputToken,
         uint256 inputAmount,
         uint256 deadline
-    ) external withinDeadline(deadline) {
+    ) external {
         address optionAddress = address(option);
 
-        IUniswapExchange optionExchange = getExchange(inputToken);
+        uint256 outputBought = exchange.swapWithExactInput(
+            inputToken,
+            optionAddress,
+            inputAmount,
+            minOptionAmount,
+            deadline,
+            msg.sender
+        );
 
-        uint256 minEthBought = 1;
-
-        try
-            optionExchange.tokenToTokenTransferInput(
-                inputAmount,
-                minOptionAmount,
-                minEthBought,
-                deadline,
-                msg.sender,
-                optionAddress
-        )
-        returns (uint256 optionsBought) {
-            emit OptionsBought(msg.sender, optionAddress, optionsBought, inputToken, inputAmount);
-        } catch {
-            revert("Uniswap trade failed");
-        }
-    }
-
-    /**
-     * Returns the Uniswap Exchange associated with the token address
-     *
-     * @param tokenAddress An address of token to be traded
-     * @return IUniswapExchange
-     */
-    function getExchange(address tokenAddress) internal view returns(IUniswapExchange) {
-        address exchangeOptionAddress = uniswapFactory.getExchange(tokenAddress);
-        require(exchangeOptionAddress != address(0), "Exchange not found");
-        return IUniswapExchange(exchangeOptionAddress);
+        emit OptionsBought(msg.sender, optionAddress, outputBought, inputToken, inputAmount);
     }
 }

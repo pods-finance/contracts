@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.0.1",
+    "@openzeppelin/contracts-ethereum-package": "^3.0.0",
     "bignumber.js": "^9.0.0",
     "bn.js": "^5.1.2"
   },
