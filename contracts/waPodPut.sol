@@ -1,26 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "./PodPut.sol";
+import "./aPodPut.sol";
+import "./interfaces/IWETH.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
- * Represents a tokenized american put option series for some
- * long/short token pair.
+ * Represents a tokenized american put option series for ETH.
+ * Internally it Wraps ETH to treat it seamlessly.
  *
- * It is fungible and it is meant to be freely tradeable until its
+ * It is fungible and it is meant to be freely tradable until its
  * expiration time, when its transfer functions will be blocked
  * and the only available operation will be for the option writers
  * to unlock their collateral.
  *
  * Let's take an example: there is such a put option series where buyers
- * may sell 1 DAI for 1 USDC until Dec 31, 2019.
+ * may sell 1 ETH for 300 USDC until Dec 31, 2019.
  *
  * In this case:
  *
  * - Expiration date: Dec 31, 2019
  * - Underlying asset: DAI
  * - Strike asset: USDC
- * - Strike price: 1 USDC
+ * - Strike price: 300 USDC
  *
  * USDC holders may call mint() until the expiration date, which in turn:
  *
@@ -34,17 +36,14 @@ import "./PodPut.sol";
  * - Will unlock their USDC from this contract
  * - Will burn the corresponding amount of put tokens
  *
- * Put token holders may call redeem() until the expiration date, to
+ * Put token holders may call exerciseEth() until the expiration date, to
  * exercise their option, which in turn:
  *
- * - Will sell 1 DAI for 1 USDC (the strike price) each.
- * - Will burn the corresponding amounty of put tokens.
+ * - Will sell 1 ETH for 300 USDC (the strike price) each.
+ * - Will burn the corresponding amount of put tokens.
  */
-contract aPodPut is PodPut {
-    using SafeMath for uint8;
-    mapping(address => uint256) public weightedBalances;
-    mapping(address => uint256) public mintedOptions;
-    uint256 public totalLockedWeighted = 0;
+contract waPodPut is aPodPut {
+    IWETH public weth;
 
     constructor(
         string memory _name,
@@ -56,58 +55,12 @@ contract aPodPut is PodPut {
         uint256 _expirationBlockNumber
     )
         public
-        PodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
-    {}
-
-    /**
-     * Locks some amount of the strike token and writes option tokens.
-     *
-     * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
-     *
-     * It presumes the caller has already called IERC20.approve() on the
-     * strike token contract to move caller funds.
-     *
-     * This function is meant to be called by strike token holders wanting
-     * to write option tokens.
-     *
-     * Options can only be minted while the series is NOT expired.
-     *
-     * @param amount The amount option tokens to be issued; this will lock
-     * for instance amount * strikePrice units of strikeToken into this
-     * contract
-     */
-    function mint(uint256 amount, address owner) external override beforeExpiration {
-        require(amount > 0, "Null amount");
-
-        uint256 amountToTransfer = _strikeToTransfer(amount);
-        require(amountToTransfer > 0, "Amount too low");
-
-        if (totalLockedWeighted > 0) {
-            uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-            uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
-
-            uint256 numerator = amountToTransfer.mul(totalLockedWeighted);
-            uint256 denominator = strikeReserves.add(
-                underlyingReserves.mul(strikePrice).div((uint256(10)**underlyingAssetDecimals))
-            );
-
-            uint256 userLockedWeighted = numerator.div(denominator);
-            totalLockedWeighted = totalLockedWeighted.add(userLockedWeighted);
-            mintedOptions[owner] = mintedOptions[owner].add(amount);
-            weightedBalances[owner] = weightedBalances[owner].add(userLockedWeighted);
-        } else {
-            weightedBalances[owner] = amountToTransfer;
-            mintedOptions[owner] = amount;
-            totalLockedWeighted = amountToTransfer;
-        }
-
-        _mint(msg.sender, amount);
-        require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
-            "Couldn't transfer strike tokens from caller"
-        );
-        emit Mint(owner, amount);
+        aPodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
+    {
+        weth = IWETH(_underlyingAsset);
     }
+
+    event Received(address sender, uint256 value);
 
     /**
      * Unlocks some amount of the strike token by burning option tokens.
@@ -117,7 +70,7 @@ contract aPodPut is PodPut {
      *
      * Options can only be burned while the series is NOT expired.
      */
-    function unwind(uint256 amount) external virtual override beforeExpiration {
+    function unwind(uint256 amount) external override beforeExpiration {
         uint256 weightedBalance = weightedBalances[msg.sender];
         require(weightedBalance > 0, "You do not have minted options");
 
@@ -129,6 +82,7 @@ contract aPodPut is PodPut {
 
         uint256 userWeightedWithdraw = weightedBalance.mul(amount).div(userMintedOptions);
         uint256 strikeToReceive = userWeightedWithdraw.mul(strikeReserves).div(totalLockedWeighted);
+        uint256 underlyingToReceive = userWeightedWithdraw.mul(underlyingReserves).div(totalLockedWeighted);
 
         weightedBalances[msg.sender] = weightedBalances[msg.sender].sub(userWeightedWithdraw);
         mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amount);
@@ -143,13 +97,47 @@ contract aPodPut is PodPut {
         );
 
         if (underlyingReserves > 0) {
-            uint256 underlyingToReceive = userWeightedWithdraw.mul(underlyingReserves).div(totalLockedWeighted);
-            require(
-                ERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
-                "Couldn't transfer back strike tokens to caller"
-            );
+            weth.withdraw(underlyingToReceive);
+            Address.sendValue(msg.sender, underlyingToReceive);
         }
         emit Unwind(msg.sender, amount);
+    }
+
+    /**
+     * Allow put token holders to use them to sell some amount of units
+     * of ETH for the amount * strike price units of the strike token.
+     *
+     * It uses the amount of ETH sent to exchange to the strike amount
+     *
+     * During the process:
+     *
+     * - The amount of ETH is transferred into this contract as a payment
+     * for the strike tokens
+     * - The ETH is wrapped into WETH
+     * - The amount of ETH * strikePrice of strike tokens are transferred to the
+     * caller
+     * - The amount of option tokens are burned
+     *
+     * Options can only be exchanged while the series is NOT expired.
+     */
+    function exerciseEth() external payable beforeExpiration {
+        uint256 amount = msg.value;
+        require(amount > 0, "Null amount");
+        // Calculate the strike amount equivalent to pay for the underlying requested
+        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
+        require(amountStrikeToTransfer > 0, "Amount too low");
+
+        // Burn the option tokens equivalent to the underlying requested
+        _burn(msg.sender, amount);
+
+        // Retrieve the underlying asset from caller
+        weth.deposit{ value: msg.value }();
+        // Releases the strike asset to caller, completing the exchange
+        require(
+            ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
+            "Could not transfer underlying tokens to caller"
+        );
+        emit Exercise(msg.sender, amount);
     }
 
     /**
@@ -160,7 +148,7 @@ contract aPodPut is PodPut {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external virtual override afterExpiration {
+    function withdraw() external override afterExpiration {
         uint256 weightedBalance = weightedBalances[msg.sender];
         require(weightedBalance > 0, "You do not have balance to withdraw");
 
@@ -178,11 +166,13 @@ contract aPodPut is PodPut {
             "Couldn't transfer back strike tokens to caller"
         );
         if (underlyingReserves > 0) {
-            require(
-                ERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
-                "Couldn't transfer back strike tokens to caller"
-            );
+            weth.withdraw(underlyingToReceive);
+            Address.sendValue(msg.sender, underlyingToReceive);
         }
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 }

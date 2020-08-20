@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const forceExpiration = require('./util/forceExpiration')
+const getTxCost = require('./util/getTxCost')
 
 const OPTION_TYPE_PUT = 0
 
@@ -84,17 +85,6 @@ scenarios.forEach(scenario => {
 
       await wPodPut.deployed()
     })
-
-    // Aux function used to get Transaction Cost (Gas Used * Gas Price using Ethers.js)
-    // Input: txObject returned using ethers.js
-    // Returns BigNumber representing txCost
-    async function getTxCost (tx) {
-      const txReceipt = await tx.wait()
-      const gasPrice = tx.gasPrice
-      const gasUsed = txReceipt.gasUsed
-      const txCost = gasPrice.mul(gasUsed)
-      return txCost
-    }
 
     async function MintPhase (amountOfOptionsToMint, owner) {
       expect(await wPodPut.balanceOf(sellerAddress)).to.equal(0)

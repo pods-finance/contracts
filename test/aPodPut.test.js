@@ -13,46 +13,24 @@ const scenarios = [
     expirationDate: 900000,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1
+  },
+  {
+    name: 'WBTC/aDAI',
+    underlyingAssetSymbol: 'WBTC',
+    underlyingAssetDecimals: 8,
+    strikeAssetSymbol: 'aDAI',
+    strikeAssetDecimals: 18,
+    strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
+    strikePriceDecimals: 18,
+    expirationDate: 900000,
+    amountToMint: ethers.BigNumber.from(1e8.toString()),
+    amountToMintTooLow: 1
   }
-  // {
-  //   name: 'WBTC/aDAI',
-  //   underlyingAssetSymbol: 'WETH',
-  //   underlyingAssetDecimals: 18,
-  //   strikeAssetSymbol: 'USDC',
-  //   strikeAssetDecimals: 6,
-  //   strikePrice: ethers.BigNumber.from(300e6.toString()),
-  //   strikePriceDecimals: 6,
-  //   expirationDate: 900000,
-  //   amountToMint: ethers.BigNumber.from(1e18.toString()),
-  //   amountToMintTooLow: 1
-  // }
-  // {
-  //   name: 'ETH/aUSDC',
-  //   underlyingAssetSymbol: 'WETH',
-  //   underlyingAssetDecimals: 18,
-  //   strikeAssetSymbol: 'USDC',
-  //   strikeAssetDecimals: 6,
-  //   strikePrice: ethers.BigNumber.from(300e6.toString()),
-  //   strikePriceDecimals: 6,
-  //   expirationDate: 900000,
-  //   amountToMint: ethers.BigNumber.from(1e18.toString()),
-  //   amountToMintTooLow: 1
-  // },
-  // {
-  //   name: 'ETH/aDAI',
-  //   underlyingAssetSymbol: 'WETH',
-  //   underlyingAssetDecimals: 18,
-  //   strikeAssetSymbol: 'DAI',
-  //   strikeAssetDecimals: 18,
-  //   strikePrice: ethers.BigNumber.from(300e6.toString()),
-  //   strikePriceDecimals: 6,
-  //   expirationDate: 900000,
-  //   amountToMint: ethers.BigNumber.from(1e18.toString()),
-  //   amountToMintTooLow: 1
-  // }
 ]
+
 scenarios.forEach(scenario => {
   describe('aPodPut.sol - ' + scenario.name, () => {
+    let mockWETH
     let mockUnderlyingAsset
     let mockStrikeAsset
     let factoryContract
@@ -73,23 +51,24 @@ scenarios.forEach(scenario => {
       sellerAddress = await seller.getAddress()
       buyerAddress = await buyer.getAddress()
       anotherAddress = await another.getAddress()
-
       // 1) Deploy Factory
-      const ContractFactory = await ethers.getContractFactory('BearingOptionFactory')
-      factoryContract = await ContractFactory.deploy()
-      await factoryContract.deployed()
     })
 
     beforeEach(async function () {
       // const aPodPut = await ethers.getContractFactory('aPodPut')
       const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockERC20 = await ethers.getContractFactory('MintableERC20')
+      const MockWETHContract = await ethers.getContractFactory('WETH')
+      const ContractFactory = await ethers.getContractFactory('BearingOptionFactory')
 
+      mockWETH = await MockWETHContract.deploy()
       mockUnderlyingAsset = await MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals)
       mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
 
       await mockUnderlyingAsset.deployed()
       await mockStrikeAsset.deployed()
+      factoryContract = await ContractFactory.deploy(mockWETH.address)
+      await factoryContract.deployed()
 
       // call transaction
       txIdNewOption = await factoryContract.createBearingOption(
@@ -366,7 +345,7 @@ scenarios.forEach(scenario => {
         expect(finalSellerOptionBalance).to.equal(initialSellerOptionBalance.sub(scenario.amountToMint))
         expect(finalSellerStrikeBalance).to.gte(initialSellerStrikeBalance.add(scenario.strikePrice))
         expect(finalContractStrikeBalance).to.gte(scenario.strikePrice)
-        expect(finalContractOptionSupply).to.equal(initialContractOptionSupply - scenario.amountToMint)
+        expect(finalContractOptionSupply).to.equal(initialContractOptionSupply.sub(scenario.amountToMint))
         expect(finalContractUnderlyingBalance).to.equal(initialContractUnderlyingBalance)
       })
       it('should unwind, destroy seller option, reduce his balance and send strike back counting interests (Ma-Mb-UNa-UNb)', async () => {
