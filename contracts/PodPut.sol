@@ -100,7 +100,7 @@ contract PodPut is PodOption {
      * contract
      * @param owner Which address will be the owner of the options
      */
-    function mint(uint256 amount, address owner) external override beforeExpiration {
+    function mint(uint256 amount, address owner) external virtual override beforeExpiration {
         lockedBalance[owner] = lockedBalance[owner].add(amount);
         _mint(msg.sender, amount);
 
@@ -123,7 +123,7 @@ contract PodPut is PodOption {
      * Options can only be burned while the series is NOT expired.
      * @param amount The amount option tokens to be burned
      */
-    function unwind(uint256 amount) external override beforeExpiration {
+    function unwind(uint256 amount) external virtual override beforeExpiration {
         require(amount <= lockedBalance[msg.sender], "Not enough balance");
 
         // Burn option tokens
