@@ -1,4 +1,5 @@
 const BigNumber = require('bignumber.js')
+require('./UniswapV1/getExchangeUniswapV1')
 
 task('balance', "Prints an account's balance")
   .addParam('account', "The account's address")
