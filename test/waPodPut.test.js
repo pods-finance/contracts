@@ -60,7 +60,7 @@ scenarios.forEach(scenario => {
       // const aPodPut = await ethers.getContractFactory('aPodPut')
       const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockWETH = await ethers.getContractFactory('WETH')
-      const ContractFactory = await ethers.getContractFactory('BearingOptionFactory')
+      const ContractFactory = await ethers.getContractFactory('aOptionFactory')
 
       mockUnderlyingAsset = await MockWETH.deploy()
       mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
@@ -71,7 +71,7 @@ scenarios.forEach(scenario => {
       await mockStrikeAsset.deployed()
 
       // call transaction
-      txIdNewOption = await factoryContract.createBearingEthOption(
+      txIdNewOption = await factoryContract.createEthOption(
         scenario.name,
         scenario.name,
         OPTION_TYPE_PUT,

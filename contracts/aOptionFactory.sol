@@ -4,7 +4,7 @@ pragma solidity ^0.6.8;
 import "./waPodPut.sol";
 import "./aPodPut.sol";
 
-contract BearingOptionFactory {
+contract aOptionFactory {
     aPodPut[] public options;
     address public WETH_ADDRESS;
 
@@ -22,8 +22,8 @@ contract BearingOptionFactory {
     }
 
     /**
-     * @notice creates a new PodPut Contract
-     * @param _name The option token name. Eg. "Pods Put WBTC-USDC 5000 2020-02-23"
+     * @notice creates a new aPodPut Contract
+     * @param _name The option token name. Eg. "Pods Put WBTC-aUSDC 5000 2020-02-23"
      * @param _symbol The option token symbol. Eg. "podWBTC:20AA"
      * @param _optionType The option type. Eg. "0 for Put, 1 for Call"
      * @param _underlyingAsset The underlying asset. Eg. "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
@@ -31,7 +31,7 @@ contract BearingOptionFactory {
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
      * @param _expirationDate The Expiration Option date in blocknumbers. E.g 19203021
      */
-    function createBearingOption(
+    function createOption(
         string memory _name,
         string memory _symbol,
         PodOption.OptionType _optionType,
@@ -58,8 +58,8 @@ contract BearingOptionFactory {
     }
 
     /**
-     * @notice creates a new wPodPut Contract
-     * @param _name The option token name. Eg. "Pods Put ETH-USDC 5000 2020-02-23"
+     * @notice creates a new waPodPut Contract
+     * @param _name The option token name. Eg. "aPods Put ETH-USDC 5000 2020-02-23"
      * @param _symbol The option token symbol. Eg. "podETH:20AA"
      * @param _optionType The option type. Eg. "0 for Put, 1 for Call"
      * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
@@ -67,7 +67,7 @@ contract BearingOptionFactory {
      * @param _expirationDate The Expiration Option date in blocknumbers. E.g 19203021
      */
 
-    function createBearingEthOption(
+    function createEthOption(
         string memory _name,
         string memory _symbol,
         PodOption.OptionType _optionType,
