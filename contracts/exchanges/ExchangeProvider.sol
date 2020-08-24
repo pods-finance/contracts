@@ -21,7 +21,7 @@ abstract contract ExchangeProvider is Initializable {
     function swapWithExactOutput(
         address inputToken,
         address outputToken,
-        uint256 minInputAmount,
+        uint256 maxInputAmount,
         uint256 outputAmount,
         uint256 deadline,
         address recipient

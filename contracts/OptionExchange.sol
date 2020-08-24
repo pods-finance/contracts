@@ -97,6 +97,15 @@ contract OptionExchange {
     ) external {
         address optionAddress = address(option);
 
+        // Take input amount from caller
+        require(
+            IERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
+            "Could not transfer tokens from caller"
+        );
+
+        // Approve exchange usage
+        IERC20(inputToken).approve(address(exchange), maxInputAmount);
+
         uint256 inputSold = exchange.swapWithExactOutput(
             inputToken,
             optionAddress,
@@ -127,6 +136,15 @@ contract OptionExchange {
         uint256 deadline
     ) external {
         address optionAddress = address(option);
+
+        // Take input amount from caller
+        require(
+            IERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
+            "Could not transfer tokens from caller"
+        );
+
+        // Approve exchange usage
+        IERC20(inputToken).approve(address(exchange), inputAmount);
 
         uint256 outputBought = exchange.swapWithExactInput(
             inputToken,

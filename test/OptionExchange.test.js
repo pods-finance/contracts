@@ -7,14 +7,12 @@ describe('OptionExchange', () => {
   let underlyingAsset, strikeAsset, weth
   let podPut
   let deployer, deployerAddress
-  let seller, sellerAddress
-  let buyer, buyerAddress
+  let caller, callerAddress
 
   before(async () => {
-    ;[deployer, seller, buyer, delegator] = await ethers.getSigners()
+    ;[deployer, caller] = await ethers.getSigners()
     deployerAddress = await deployer.getAddress()
-    sellerAddress = await seller.getAddress()
-    buyerAddress = await buyer.getAddress()
+    callerAddress = await caller.getAddress()
 
     let uniswapMock
 
@@ -46,7 +44,7 @@ describe('OptionExchange', () => {
     exchange = await ExchangeContract.deploy(exchangeProvider.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
-    await strikeAsset.connect(seller).approve(exchange.address, ethers.constants.MaxUint256)
+    await strikeAsset.connect(caller).approve(exchange.address, ethers.constants.MaxUint256)
 
     // Clears Uniswap mock
     clearMock()
@@ -67,10 +65,10 @@ describe('OptionExchange', () => {
       // Creates the Uniswap exchange
       await createExchange(podPut.address, minOutputAmount)
 
-      await strikeAsset.connect(seller).mint(collateralAmount)
-      expect(await strikeAsset.balanceOf(sellerAddress)).to.equal(collateralAmount)
+      await strikeAsset.connect(caller).mint(collateralAmount)
+      expect(await strikeAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
 
-      const tx = exchange.connect(seller).sellOptions(
+      const tx = exchange.connect(caller).sellOptions(
         podPut.address,
         amountToMint,
         outputToken,
@@ -80,7 +78,7 @@ describe('OptionExchange', () => {
 
       await expect(tx)
         .to.emit(exchange, 'OptionsSold')
-        .withArgs(sellerAddress, podPut.address, amountToMint, outputToken, minOutputAmount)
+        .withArgs(callerAddress, podPut.address, amountToMint, outputToken, minOutputAmount)
     })
 
     it('fails to sell when the exchange do not exist', async () => {
@@ -90,9 +88,9 @@ describe('OptionExchange', () => {
       const amountToMint = ethers.BigNumber.from(1e8.toString())
       const deadline = await getTimestamp() + 60
 
-      await strikeAsset.connect(seller).mint(collateralAmount)
+      await strikeAsset.connect(caller).mint(collateralAmount)
 
-      const tx = exchange.connect(seller).sellOptions(
+      const tx = exchange.connect(caller).sellOptions(
         podPut.address,
         amountToMint,
         outputToken,
@@ -103,7 +101,7 @@ describe('OptionExchange', () => {
       await expect(tx).to.be.revertedWith('Exchange not found')
 
       // Burn unused tokens
-      await strikeAsset.connect(seller).burn(collateralAmount)
+      await strikeAsset.connect(caller).burn(collateralAmount)
     })
 
     it('fails when the deadline has passed', async () => {
@@ -116,10 +114,10 @@ describe('OptionExchange', () => {
       // Creates the Uniswap exchange
       await createExchange(podPut.address, minOutputAmount)
 
-      await strikeAsset.connect(seller).mint(collateralAmount)
-      expect(await strikeAsset.balanceOf(sellerAddress)).to.equal(collateralAmount)
+      await strikeAsset.connect(caller).mint(collateralAmount)
+      expect(await strikeAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
 
-      const tx = exchange.connect(seller).sellOptions(
+      const tx = exchange.connect(caller).sellOptions(
         podPut.address,
         amountToMint,
         outputToken,
@@ -141,7 +139,7 @@ describe('OptionExchange', () => {
       // Creates the Uniswap exchange
       await createExchange(inputToken, minAcceptedCost)
 
-      const tx = exchange.connect(seller).buyExactOptions(
+      const tx = exchange.connect(caller).buyExactOptions(
         podPut.address,
         amountToBuy,
         inputToken,
@@ -151,7 +149,7 @@ describe('OptionExchange', () => {
 
       await expect(tx)
         .to.emit(exchange, 'OptionsBought')
-        .withArgs(sellerAddress, podPut.address, amountToBuy, inputToken, minAcceptedCost)
+        .withArgs(callerAddress, podPut.address, amountToBuy, inputToken, minAcceptedCost)
     })
 
     it('buys options with a exact amount of tokens', async () => {
@@ -163,7 +161,7 @@ describe('OptionExchange', () => {
       // Creates the Uniswap exchange
       await createExchange(inputToken, minAcceptedOptions)
 
-      const tx = exchange.connect(seller).buyOptionsWithExactTokens(
+      const tx = exchange.connect(caller).buyOptionsWithExactTokens(
         podPut.address,
         minAcceptedOptions,
         inputToken,
@@ -173,7 +171,7 @@ describe('OptionExchange', () => {
 
       await expect(tx)
         .to.emit(exchange, 'OptionsBought')
-        .withArgs(sellerAddress, podPut.address, minAcceptedOptions, inputToken, inputAmount)
+        .withArgs(callerAddress, podPut.address, minAcceptedOptions, inputToken, inputAmount)
     })
 
     it('fails to buy when the exchange do not exist', async () => {
@@ -182,7 +180,7 @@ describe('OptionExchange', () => {
       const amountToBuy = ethers.BigNumber.from(1e8.toString())
       const deadline = await getTimestamp() + 60
 
-      const tx = exchange.connect(seller).buyExactOptions(
+      const tx = exchange.connect(caller).buyExactOptions(
         podPut.address,
         amountToBuy,
         inputToken,
@@ -202,7 +200,7 @@ describe('OptionExchange', () => {
       // Creates the Uniswap exchange
       await createExchange(podPut.address, cost)
 
-      const tx = exchange.connect(seller).buyExactOptions(
+      const tx = exchange.connect(caller).buyExactOptions(
         podPut.address,
         amountToBuy,
         inputToken,

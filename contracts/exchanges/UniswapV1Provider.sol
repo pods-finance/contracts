@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ExchangeProvider.sol";
 import "../interfaces/IUniswapV1.sol";
 
 contract UniswapV1Provider is ExchangeProvider {
+    using SafeMath for uint256;
     IUniswapFactory public uniswapFactory;
+
+    uint256 public constant MIN_ETH_BOUGHT = 1;
+    uint256 public constant MAX_ETH_SOLD = uint256(-1);
 
     function initialize(IUniswapFactory _uniswapFactory) external initializer {
         uniswapFactory = _uniswapFactory;
@@ -18,16 +24,23 @@ contract UniswapV1Provider is ExchangeProvider {
         uint256 minOutputAmount,
         uint256 deadline,
         address recipient
-    ) external override withinDeadline(deadline) returns (uint256 outputBought) {
+    ) external override withinDeadline(deadline) returns (uint256) {
         IUniswapExchange exchange = _getExchange(inputToken);
 
-        uint256 minEthBought = 1;
+        // Take input amount from caller
+        require(
+            ERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
+            "Could not transfer tokens from caller"
+        );
+
+        // Approve exchange usage
+        ERC20(inputToken).approve(address(exchange), inputAmount);
 
         try
             exchange.tokenToTokenTransferInput(
                 inputAmount,
                 minOutputAmount,
-                minEthBought,
+                MIN_ETH_BOUGHT,
                 deadline,
                 recipient,
                 outputToken
@@ -42,25 +55,36 @@ contract UniswapV1Provider is ExchangeProvider {
     function swapWithExactOutput(
         address inputToken,
         address outputToken,
-        uint256 maxOutputAmount,
+        uint256 maxInputAmount,
         uint256 outputAmount,
         uint256 deadline,
         address recipient
-    ) external override withinDeadline(deadline) returns (uint256 inputSold) {
+    ) external override withinDeadline(deadline) returns (uint256) {
         IUniswapExchange exchange = _getExchange(inputToken);
 
-        uint256 maxEthBought = uint256(-1);
+        uint256 balanceBefore = ERC20(inputToken).balanceOf(address(this));
+
+        // Take input amount from caller
+        require(
+            ERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
+            "Could not transfer tokens from caller"
+        );
+
+        // Approve exchange usage
+        ERC20(inputToken).approve(address(exchange), maxInputAmount);
 
         try
             exchange.tokenToTokenTransferOutput(
                 outputAmount,
-                maxOutputAmount,
-                maxEthBought,
+                maxInputAmount,
+                MAX_ETH_SOLD,
                 deadline,
                 recipient,
                 outputToken
             )
         returns (uint256 tokensSold) {
+            uint256 balanceAfter = ERC20(inputToken).balanceOf(address(this));
+            ERC20(inputToken).transfer(recipient, balanceAfter.sub(balanceBefore));
             return tokensSold;
         } catch {
             revert("Uniswap trade failed");
