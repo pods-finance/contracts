@@ -2,7 +2,7 @@ const { expect } = require('chai')
 const getUniswapMock = require('./util/getUniswapMock')
 
 describe('OptionExchange', () => {
-  let ContractFactory, MockERC20, ExchangeContract, WETH, UniswapV1Provider
+  let ContractFactory, MockERC20, OptionExchange, WETH, UniswapV1Provider
   let exchange, exchangeProvider, uniswapFactory, createExchange, clearMock
   let underlyingAsset, strikeAsset, weth
   let podPut
@@ -16,7 +16,7 @@ describe('OptionExchange', () => {
 
     let uniswapMock
 
-    ;[ContractFactory, MockERC20, ExchangeContract, WETH, UniswapV1Provider, uniswapMock] = await Promise.all([
+    ;[ContractFactory, MockERC20, OptionExchange, WETH, UniswapV1Provider, uniswapMock] = await Promise.all([
       ethers.getContractFactory('OptionFactory'),
       ethers.getContractFactory('MintableERC20'),
       ethers.getContractFactory('OptionExchange'),
@@ -39,9 +39,11 @@ describe('OptionExchange', () => {
   beforeEach(async () => {
     const factoryContract = await ContractFactory.deploy(weth.address)
     podPut = await makeOption(factoryContract, underlyingAsset, strikeAsset)
+
     exchangeProvider = await UniswapV1Provider.deploy()
     await exchangeProvider.initialize(uniswapFactory.address)
-    exchange = await ExchangeContract.deploy(exchangeProvider.address)
+
+    exchange = await OptionExchange.deploy(exchangeProvider.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
     await strikeAsset.connect(caller).approve(exchange.address, ethers.constants.MaxUint256)
