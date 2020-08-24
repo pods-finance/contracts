@@ -1,22 +1,13 @@
 require('dotenv').config()
-require('./tasks/balance')
+require('./tasks/utils/balance')
 require('./tasks/deployNewSerie')
-require('./tasks/deployFactory')
+require('./tasks/deployOptionFactory')
 require('./tasks/UniswapV1/getExchangeUniswapV1')
 require('./tasks/deployOptionExchange')
+require('./tasks/Balancer/index')
 
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')
-
-// This is a sample Buidler task. To learn how to create your own go to
-// https://buidler.dev/guides/create-task.html
-task('accounts', 'Prints the list of accounts', async () => {
-  const accounts = await ethers.getSigners()
-
-  for (const account of accounts) {
-    console.log(await account.getAddress())
-  }
-})
 
 module.exports = {
   networks: {
