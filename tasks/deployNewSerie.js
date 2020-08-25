@@ -118,7 +118,7 @@ task('deploySerie', 'Initial Option series setup: create option, create an excha
     await run('createExchangeUniswapV1', { token: optionAddress, factoryAddress: uniswapFactory, deployerAddress })
 
     // 3) Mint options
-    await run('mintOptions', { optionAddress, strikeAssetAddress, amount: amountOfOptionsToAddLiquidity, owner: deployerAddress })
+    await run('mintOptions', { optionAddress, strikeAssetAddress, amount: amountOfOptionsToAddLiquidity, owner: deployerAddress, optionContractName })
 
     // 4) Add Liquidity to Uniswap Exchange
     await run('addLiquidityUniswapV1', { token: optionAddress, amountOfTokens: amountOfOptionsToAddLiquidity, amountOfEth: amountOfEthToAddLiquidity, deployerAddress, factory: uniswapFactory })
