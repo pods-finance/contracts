@@ -131,6 +131,7 @@ contract PodPut is PodOption {
         _burn(msg.sender, amount);
 
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
+        require(amountStrikeToTransfer > 0, "Amount too low");
 
         // Unlocks the strike token
         require(

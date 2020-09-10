@@ -1,4 +1,5 @@
 const { expect } = require('chai')
+const BigNumber = require('bignumber.js')
 const forceExpiration = require('./util/forceExpiration')
 
 const OPTION_TYPE_PUT = 0
@@ -330,6 +331,17 @@ scenarios.forEach(scenario => {
       it('should revert if try to unwind amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint, sellerAddress)
         await expect(podPut.connect(seller).unwind(2 * scenario.amountToMint)).to.be.revertedWith('Not enough balance')
+      })
+      it('should revert if try to unwind amount lower than possible', async () => {
+        const minimumAmount = ethers.BigNumber.from(scenario.strikePrice).div((10 ** await mockUnderlyingAsset.decimals()).toString())
+
+        if (minimumAmount.gt(0)) return
+
+        await MintPhase(scenario.amountToMint, sellerAddress)
+
+        await expect(
+          podPut.connect(seller).unwind(scenario.amountToMintTooLow)
+        ).to.be.revertedWith('Amount too low')
       })
       it('should unwind, destroy sender option, reduce his balance and send strike back', async () => {
         await MintPhase(scenario.amountToMint, sellerAddress)

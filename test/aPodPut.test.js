@@ -295,6 +295,12 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         await expect(aPodPut.connect(seller).unwind(2 * scenario.amountToMint)).to.be.revertedWith('Exceed address minted options')
       })
+      it('should revert if unwind amount is too low', async () => {
+        const minimumAmount = ethers.BigNumber.from(scenario.strikePrice).div((10 ** await mockUnderlyingAsset.decimals()).toString())
+        if (minimumAmount.gt(0)) return
+        await MintPhase(scenario.amountToMint)
+        await expect(aPodPut.connect(seller).unwind(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('Amount too low')
+      })
       it('should unwind, destroy sender option, reduce his balance and send strike back', async () => {
         await MintPhase(scenario.amountToMint)
         const initialSellerOptionBalance = await aPodPut.balanceOf(sellerAddress)
