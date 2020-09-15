@@ -9,7 +9,7 @@ const ScenarioA = {
   symbol: 'podWBTC:20AA',
   optionType: 1,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
-  expirationDate: 100000
+  expiration: new Date().getTime() + 5 * 60 * 60 * 1000
 }
 
 describe('aOptionFactory', function () {
@@ -29,7 +29,7 @@ describe('aOptionFactory', function () {
   })
 
   it('Should create a new Option correctly and emit event', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expirationDate]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration]
 
     await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })
@@ -38,6 +38,6 @@ describe('aOptionFactory', function () {
     // Changing the last parameter to a block that for sure is lower than the current one
     const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, 1]
 
-    await expect(optionFactory.createOption(...funcParameters)).to.be.revertedWith('Expiration lower than current block')
+    await expect(optionFactory.createOption(...funcParameters)).to.be.revertedWith('Expiration should be in the future time')
   })
 })

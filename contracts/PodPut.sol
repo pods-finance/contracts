@@ -50,7 +50,7 @@ contract PodPut is PodOption {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expiration
     )
         public
         PodOption(
@@ -60,7 +60,7 @@ contract PodPut is PodOption {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationBlockNumber
+            _expiration
         )
     {}
 

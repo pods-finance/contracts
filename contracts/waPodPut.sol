@@ -52,10 +52,10 @@ contract waPodPut is aPodPut {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expiration
     )
         public
-        aPodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
+        aPodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expiration)
     {
         weth = IWETH(_underlyingAsset);
     }

@@ -1,4 +1,6 @@
 const { expect } = require('chai')
+const getTimestamp = require('./util/getTimestamp')
+const forceExpiration = require('./util/forceExpiration')
 
 const OPTION_TYPE_PUT = 0
 
@@ -10,7 +12,6 @@ const scenarios = [
     strikeAssetSymbol: 'aUSDC',
     strikeAssetDecimals: 6,
     strikePrice: ethers.BigNumber.from(7000e6.toString()),
-    expirationDate: 900000,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1
   },
@@ -22,7 +23,6 @@ const scenarios = [
     strikeAssetDecimals: 18,
     strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
     strikePriceDecimals: 18,
-    expirationDate: 900000,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1
   }
@@ -78,7 +78,7 @@ scenarios.forEach(scenario => {
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        await ethers.provider.getBlockNumber() + 300 // expirationDate = high block number
+        await getTimestamp() + 5 * 60 * 60 * 1000
       )
 
       const filterFrom = await factoryContract.filters.OptionCreated(deployerAddress)
@@ -113,14 +113,6 @@ scenarios.forEach(scenario => {
       await mockUnderlyingAsset.connect(receiver).mint(scenario.amountToMint)
       await mockUnderlyingAsset.connect(receiver).approve(aPodPut.address, ethers.constants.MaxUint256)
       await aPodPut.connect(receiver).exercise(amountOfOptionsToExercise)
-    }
-
-    async function forceExpiration (untilThisBlock) {
-      let currentBlock = await ethers.provider.getBlockNumber()
-      while (currentBlock <= untilThisBlock) {
-        await ethers.provider.send('evm_mine')
-        currentBlock++
-      }
     }
 
     describe('Constructor/Initialization checks', () => {
@@ -204,7 +196,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
 
         expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(scenario.strikePrice)
-        await forceExpiration(await aPodPut.expirationBlockNumber())
+        await forceExpiration(aPodPut)
         await expect(aPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('Option has expired')
       })
     })
@@ -282,7 +274,7 @@ scenarios.forEach(scenario => {
         // Mint Underlying Asset
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
         expect(await mockUnderlyingAsset.balanceOf(buyerAddress)).to.equal(scenario.amountToMint)
-        await forceExpiration(await aPodPut.expirationBlockNumber())
+        await forceExpiration(aPodPut)
         await expect(aPodPut.connect(seller).exercise(scenario.amountToMint)).to.be.reverted
       })
     })
@@ -378,7 +370,7 @@ scenarios.forEach(scenario => {
         expect(finalContractUnderlyingBalance).to.equal(initialContractUnderlyingBalance)
       })
       it('should revert if user try to unwind after expiration', async () => {
-        await forceExpiration(await aPodPut.expirationBlockNumber())
+        await forceExpiration(aPodPut)
         await expect(aPodPut.connect(seller).unwind()).to.be.revertedWith('Option has not expired yet')
       })
     })
@@ -390,8 +382,7 @@ scenarios.forEach(scenario => {
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         // Set Expiration
-        const optionExpiration = await aPodPut.expirationBlockNumber()
-        await forceExpiration(optionExpiration)
+        await forceExpiration(aPodPut)
 
         await expect(aPodPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
       })
@@ -410,8 +401,7 @@ scenarios.forEach(scenario => {
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialContractStrikeBalance).to.equal(scenario.strikePrice.add(earnedInterest))
 
-        const optionExpiration = await aPodPut.expirationBlockNumber()
-        await forceExpiration(optionExpiration)
+        await forceExpiration(aPodPut)
 
         await aPodPut.connect(seller).withdraw()
 
@@ -448,8 +438,7 @@ scenarios.forEach(scenario => {
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialContractStrikeBalance).to.gt(scenario.strikePrice.add(twoTimesAmountToMint))
 
-        const optionExpiration = await aPodPut.expirationBlockNumber()
-        await forceExpiration(optionExpiration)
+        await forceExpiration(aPodPut)
 
         await aPodPut.connect(seller).withdraw()
 
@@ -481,8 +470,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.earnInterest(aPodPut.address)
         await ExercisePhase(halfAmountMint, seller, another, anotherAddress)
 
-        const optionExpiration = await aPodPut.expirationBlockNumber()
-        await forceExpiration(optionExpiration)
+        await forceExpiration(aPodPut)
 
         const underlyingDecimals = await mockUnderlyingAsset.decimals()
         // Checking balance before withdraw

@@ -1,10 +1,5 @@
-async function forceExpiration (option) {
-  const untilThisBlock = await option.expirationBlockNumber()
-  let currentBlock = await ethers.provider.getBlockNumber()
-  while (currentBlock <= untilThisBlock) {
-    await ethers.provider.send('evm_mine')
-    currentBlock++
-  }
+module.exports = async function forceExpiration (option) {
+  const expirableTimestamp = (await option.expiration()).toNumber()
+  await ethers.provider.send('evm_setNextBlockTimestamp', [expirableTimestamp])
+  await ethers.provider.send('evm_mine')
 }
-
-module.exports = forceExpiration

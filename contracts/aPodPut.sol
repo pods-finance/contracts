@@ -53,10 +53,10 @@ contract aPodPut is PodPut {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expiration
     )
         public
-        PodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
+        PodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expiration)
     {}
 
     /**
