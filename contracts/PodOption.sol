@@ -47,6 +47,13 @@ abstract contract PodOption is ERC20 {
     uint256 public expirationBlockNumber;
 
     /**
+     * You can withdraw your locked collateral only after that period
+     * 
+     */
+    uint256 public endOfExerciseWindowBlockNumber;
+
+
+    /**
      * Tracks how much of the strike token each address has locked
      * inside this contract
      */
@@ -69,6 +76,8 @@ abstract contract PodOption is ERC20 {
     ) public ERC20(name, symbol) {
         optionType = _optionType;
         expirationBlockNumber = _expirationBlockNumber;
+        //24h f exercise window after expiration
+        endOfExerciseWindowBlockNumber = _expirationBlockNumber + 4*60*24;
 
         underlyingAsset = _underlyingAsset;
         underlyingAssetDecimals = ERC20(_underlyingAsset).decimals();
@@ -177,9 +186,38 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
+     * Maker modifier for functions which are only allowed to be executed
+     * BEFORE window of exercise
+     */
+    modifier beforeExerciseWindow() {
+        if (_isAfterExerciseWindow()) {
+            revert("Window of exercise has closed already");
+        }
+        _;
+    }
+
+    /**
+     * Maker modifier for functions which are only allowed to be executed
+     * AFTER series expiration.
+     */
+    modifier afterExerciseWindow() {
+        if (!_isAfterExerciseWindow()) {
+            revert("Window of exercise not close yet");
+        }
+        _;
+    }
+
+    /**
      * Internal function to check expiration
      */
     function _hasExpired() internal view returns (bool) {
         return block.number >= expirationBlockNumber;
+    }
+
+    /**
+     * Internal function to check window exercise ended
+     */
+    function _isAfterExerciseWindow() internal view returns (bool) {
+        return block.number >= endOfExerciseWindowBlockNumber;
     }
 }
