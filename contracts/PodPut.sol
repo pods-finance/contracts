@@ -156,10 +156,10 @@ contract PodPut is PodOption {
      * - The amount of underlying tokens are transferred into
      * this contract as a payment for the strike tokens
      *
-     * Options can only be exchanged while the series is NOT expired.
+     * Options can only be exchanged while the series is after series expired and is inside exercise window.
      * @param amount The amount option tokens to be exercised
      */
-    function exercise(uint256 amount) external override beforeExpiration {
+    function exercise(uint256 amount) external override afterExpiration beforeExerciseWindow {
         require(amount > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
@@ -190,7 +190,7 @@ contract PodPut is PodOption {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external virtual override afterExpiration {
+    function withdraw() external virtual override afterExerciseWindow {
         uint256 amount = lockedBalance[msg.sender];
         require(amount > 0, "You do not have balance to withdraw");
 
