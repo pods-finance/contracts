@@ -6,7 +6,7 @@ interface IPodPut {
 
     function exchange(uint256) external;
 
-    function withdraw(address) external;
+    function withdraw() external;
 
     function unwind(uint256) external;
 

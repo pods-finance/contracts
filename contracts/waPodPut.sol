@@ -52,10 +52,10 @@ contract waPodPut is aPodPut {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expiration
     )
         public
-        aPodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expirationBlockNumber)
+        aPodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expiration)
     {
         weth = IWETH(_underlyingAsset);
     }
@@ -83,6 +83,7 @@ contract waPodPut is aPodPut {
         uint256 userWeightedWithdraw = weightedBalance.mul(amount).div(userMintedOptions);
         uint256 strikeToReceive = userWeightedWithdraw.mul(strikeReserves).div(totalLockedWeighted);
         uint256 underlyingToReceive = userWeightedWithdraw.mul(underlyingReserves).div(totalLockedWeighted);
+        require(strikeToReceive > 0, "Amount too low");
 
         weightedBalances[msg.sender] = weightedBalances[msg.sender].sub(userWeightedWithdraw);
         mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amount);
@@ -97,6 +98,7 @@ contract waPodPut is aPodPut {
         );
 
         if (underlyingReserves > 0) {
+            require(underlyingToReceive > 0, "Amount too low");
             weth.withdraw(underlyingToReceive);
             Address.sendValue(msg.sender, underlyingToReceive);
         }

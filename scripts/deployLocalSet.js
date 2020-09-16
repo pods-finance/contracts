@@ -1,4 +1,5 @@
 const bre = require('@nomiclabs/buidler')
+const getTimestamp = require('./util/getTimestamp')
 
 const scenario = {
   name: 'WBTC/USDC',
@@ -49,7 +50,7 @@ async function main () {
     mockUnderlyingAsset.address,
     mockStrikeAsset.address,
     scenario.strikePrice,
-    await ethers.provider.getBlockNumber() + 300, // expirationDate = high block number
+    await getTimestamp() + 5 * 60 * 60 * 1000,
     mockUnderlyingAsset.address
   )
 
@@ -73,7 +74,7 @@ async function main () {
 
   await mockStrikeAsset.approve(optionAddress, (ethers.constants.MaxUint256).toString())
   const balanceBefore = await OptionContract.balanceOf(deployerAddress)
-  console.log('option seller balance bfore mint', balanceBefore.toString())
+  console.log('option seller balance before mint', balanceBefore.toString())
   await OptionContract.mint(scenario.amountToMint)
   const balanceAfter = await OptionContract.balanceOf(deployerAddress)
   console.log('option seller balance after mint', balanceAfter.toString())

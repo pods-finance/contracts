@@ -52,7 +52,7 @@ contract wPodPut is PodPut {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expiration
     )
         public
         PodPut(
@@ -62,7 +62,7 @@ contract wPodPut is PodPut {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationBlockNumber
+            _expiration
         )
     {
         weth = IWETH(_underlyingAsset);

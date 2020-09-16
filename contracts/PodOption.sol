@@ -41,10 +41,9 @@ abstract contract PodOption is ERC20 {
     uint8 public strikePriceDecimals;
 
     /**
-     * This option series is considered expired starting from this block
-     * number
+     * The UNIX timestamp that represents the series expiration
      */
-    uint256 public expirationBlockNumber;
+    uint256 public expiration;
 
     /**
      * Tracks how much of the strike token each address has locked
@@ -65,10 +64,10 @@ abstract contract PodOption is ERC20 {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expiration
     ) public ERC20(name, symbol) {
         optionType = _optionType;
-        expirationBlockNumber = _expirationBlockNumber;
+        expiration = _expiration;
 
         underlyingAsset = _underlyingAsset;
         underlyingAssetDecimals = ERC20(_underlyingAsset).decimals();
@@ -180,6 +179,6 @@ abstract contract PodOption is ERC20 {
      * Internal function to check expiration
      */
     function _hasExpired() internal view returns (bool) {
-        return block.number >= expirationBlockNumber;
+        return block.timestamp >= expiration;
     }
 }

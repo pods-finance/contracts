@@ -50,7 +50,7 @@ contract PodPut is PodOption {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationBlockNumber
+        uint256 _expiration
     )
         public
         PodOption(
@@ -60,7 +60,7 @@ contract PodPut is PodOption {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationBlockNumber
+            _expiration
         )
     {}
 
@@ -131,6 +131,7 @@ contract PodPut is PodOption {
         _burn(msg.sender, amount);
 
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
+        require(amountStrikeToTransfer > 0, "Amount too low");
 
         // Unlocks the strike token
         require(

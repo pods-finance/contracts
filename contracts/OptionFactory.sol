@@ -14,7 +14,7 @@ contract OptionFactory {
         address underlyingAsset,
         address strikeAsset,
         uint256 strikePrice,
-        uint256 expirationDate
+        uint256 expiration
     );
 
     constructor (address wethAddress) public {
@@ -29,7 +29,7 @@ contract OptionFactory {
      * @param _underlyingAsset The underlying asset. Eg. "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
      * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
-     * @param _expirationDate The Expiration Option date in blocknumbers. E.g 19203021
+     * @param _expiration The Expiration Option date in UNIX timestamp. E.g 1600178324
      */
     function createOption(
         string memory _name,
@@ -38,9 +38,9 @@ contract OptionFactory {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationDate
+        uint256 _expiration
     ) public returns (PodPut) {
-        require(_expirationDate > block.number, "Expiration lower than current block");
+        require(_expiration > block.timestamp, "Expiration should be in the future time");
 
         PodPut option = new PodPut(
             _name,
@@ -49,11 +49,11 @@ contract OptionFactory {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expirationDate
+            _expiration
         );
 
         options.push(option);
-        emit OptionCreated(msg.sender, option, _underlyingAsset, _strikeAsset, _strikePrice, _expirationDate);
+        emit OptionCreated(msg.sender, option, _underlyingAsset, _strikeAsset, _strikePrice, _expiration);
         return option;
     }
 
@@ -64,7 +64,7 @@ contract OptionFactory {
      * @param _optionType The option type. Eg. "0 for Put, 1 for Call"
      * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
-     * @param _expirationDate The Expiration Option date in blocknumbers. E.g 19203021
+     * @param _expiration The Expiration Option date in UNIX timestamp. E.g 1600178324
      */
     function createEthOption(
         string memory _name,
@@ -72,9 +72,9 @@ contract OptionFactory {
         PodOption.OptionType _optionType,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expirationDate
+        uint256 _expiration
     ) public returns (wPodPut) {
-        require(_expirationDate > block.number, "Expiration lower than current block");
+        require(_expiration > block.timestamp, "Expiration should be in the future time");
 
         wPodPut option = new wPodPut(
             _name,
@@ -83,11 +83,11 @@ contract OptionFactory {
             WETH_ADDRESS,
             _strikeAsset,
             _strikePrice,
-            _expirationDate
+            _expiration
         );
 
         options.push(option);
-        emit OptionCreated(msg.sender, option, WETH_ADDRESS, _strikeAsset, _strikePrice, _expirationDate);
+        emit OptionCreated(msg.sender, option, WETH_ADDRESS, _strikeAsset, _strikePrice, _expiration);
         return option;
     }
 }

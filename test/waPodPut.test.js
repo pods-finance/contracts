@@ -1,6 +1,7 @@
 const { expect } = require('chai')
 const getTxCost = require('./util/getTxCost')
 const forceExpiration = require('./util/forceExpiration')
+const getTimestamp = require('./util/getTimestamp')
 
 const OPTION_TYPE_PUT = 0
 
@@ -13,7 +14,6 @@ const scenarios = [
     strikeAssetDecimals: 6,
     strikePrice: ethers.BigNumber.from(300e6.toString()),
     strikePriceDecimals: 6,
-    expirationDate: 900000,
     amountToMint: ethers.BigNumber.from(1e18.toString()),
     amountToMintTooLow: 1
   },
@@ -25,7 +25,6 @@ const scenarios = [
     strikeAssetDecimals: 18,
     strikePrice: ethers.BigNumber.from(300e6.toString()),
     strikePriceDecimals: 6,
-    expirationDate: 900000,
     amountToMint: ethers.BigNumber.from(1e18.toString()),
     amountToMintTooLow: 1
   }
@@ -77,7 +76,7 @@ scenarios.forEach(scenario => {
         OPTION_TYPE_PUT,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        await ethers.provider.getBlockNumber() + 300 // expirationDate = high block number
+        await getTimestamp() + 5 * 60 * 60 * 1000
       )
 
       const filterFrom = await factoryContract.filters.OptionCreated(deployerAddress)
@@ -252,6 +251,12 @@ scenarios.forEach(scenario => {
       it('should revert if try to unwind amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
         await expect(waPodPut.connect(seller).unwind(2 * scenario.amountToMint)).to.be.revertedWith('Exceed address minted options')
+      })
+      it('should revert if unwind amount is too low', async () => {
+        const minimumAmount = ethers.BigNumber.from(scenario.strikePrice).div((10 ** await mockUnderlyingAsset.decimals()).toString())
+        if (minimumAmount.gt(0)) return
+        await MintPhase(scenario.amountToMint)
+        await expect(waPodPut.connect(seller).unwind(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('Amount too low')
       })
       it('should unwind, destroy sender option, reduce his balance and send strike back (Without Exercise Scenario)', async () => {
         await MintPhase(scenario.amountToMint)

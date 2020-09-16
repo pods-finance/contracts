@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const getUniswapMock = require('./util/getUniswapMock')
+const getTimestamp = require('./util/getTimestamp')
 
 describe('OptionExchange', () => {
   let ContractFactory, MockERC20, OptionExchange, WETH, UniswapV1Provider
@@ -226,7 +227,7 @@ async function makeOption (factoryContract, underlyingAsset, strikeAsset) {
     underlyingAsset.address,
     strikeAsset.address,
     strikePrice,
-    await ethers.provider.getBlockNumber() + 300 // expirationDate = high block number
+    await getTimestamp() + 5 * 60 * 60 * 1000
   )
 
   const [deployer] = await ethers.getSigners()
@@ -235,9 +236,4 @@ async function makeOption (factoryContract, underlyingAsset, strikeAsset) {
 
   const { option } = eventDetails[0].args
   return await ethers.getContractAt('PodPut', option)
-}
-
-async function getTimestamp () {
-  const block = await ethers.provider.getBlock('latest')
-  return block.timestamp
 }
