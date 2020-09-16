@@ -32,9 +32,9 @@ interface IPodPut {
 
     function strikePriceDecimals() external view returns (uint8);
 
-    function expirationBlockNumber() external view returns (uint256);
+    function expiration() external view returns (uint256);
 
-    function uniswapFactoryAddress() external view returns (address);
+    function endOfExerciseWindow() external view returns (uint256);
 
     function amountOfMintedOptions(uint256) external view returns (uint256);
 
@@ -55,4 +55,6 @@ interface IPodPut {
     function strikeBalance() external view returns (uint256);
 
     function hasExpired() external view returns (bool);
+
+    function isAfterExerciseWindow() external view returns (bool);
 }

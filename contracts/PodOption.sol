@@ -161,6 +161,13 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
+     * Checks if the options exercise window has closed.
+     */
+    function isAfterExerciseWindow() external view returns (bool) {
+        return _isAfterExerciseWindow();
+    }
+
+    /**
      * Maker modifier for functions which are only allowed to be executed
      * BEFORE series expiration.
      */
