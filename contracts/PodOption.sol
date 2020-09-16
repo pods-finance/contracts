@@ -46,6 +46,11 @@ abstract contract PodOption is ERC20 {
     uint256 public expiration;
 
     /**
+     * The UNIX timestamp that represents the end of exercise window
+     */
+    uint256 public endOfExerciseWindow;
+
+    /**
      * Tracks how much of the strike token each address has locked
      * inside this contract
      */
@@ -64,10 +69,12 @@ abstract contract PodOption is ERC20 {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _exerciseWindowSize
     ) public ERC20(name, symbol) {
         optionType = _optionType;
         expiration = _expiration;
+        endOfExerciseWindow = _expiration + _exerciseWindowSize;
 
         underlyingAsset = _underlyingAsset;
         underlyingAssetDecimals = ERC20(_underlyingAsset).decimals();
@@ -176,9 +183,38 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
+     * Maker modifier for functions which are only allowed to be executed
+     * BEFORE window of exercise
+     */
+    modifier beforeExerciseWindow() {
+        if (_isAfterExerciseWindow()) {
+            revert("Window of exercise has closed already");
+        }
+        _;
+    }
+
+    /**
+     * Maker modifier for functions which are only allowed to be executed
+     * AFTER series expiration.
+     */
+    modifier afterExerciseWindow() {
+        if (!_isAfterExerciseWindow()) {
+            revert("Window of exercise not close yet");
+        }
+        _;
+    }
+
+    /**
      * Internal function to check expiration
      */
     function _hasExpired() internal view returns (bool) {
         return block.timestamp >= expiration;
+    }
+
+    /**
+     * Internal function to check window exercise ended
+     */
+    function _isAfterExerciseWindow() internal view returns (bool) {
+        return block.timestamp >= endOfExerciseWindow;
     }
 }
