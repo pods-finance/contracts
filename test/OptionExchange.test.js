@@ -227,7 +227,8 @@ async function makeOption (factoryContract, underlyingAsset, strikeAsset) {
     underlyingAsset.address,
     strikeAsset.address,
     strikePrice,
-    await getTimestamp() + 5 * 60 * 60 * 1000
+    await getTimestamp() + 5 * 60 * 60 * 1000,
+    20 * 60 * 60
   )
 
   const [deployer] = await ethers.getSigners()

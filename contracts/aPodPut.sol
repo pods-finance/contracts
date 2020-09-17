@@ -53,10 +53,20 @@ contract aPodPut is PodPut {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _exerciseWindowSize
     )
         public
-        PodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expiration)
+        PodPut(
+            _name,
+            _symbol,
+            _optionType,
+            _underlyingAsset,
+            _strikeAsset,
+            _strikePrice,
+            _expiration,
+            _exerciseWindowSize
+        )
     {}
 
     /**
@@ -164,7 +174,7 @@ contract aPodPut is PodPut {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external virtual override afterExpiration {
+    function withdraw() external virtual override afterExerciseWindow {
         uint256 weightedBalance = weightedBalances[msg.sender];
         require(weightedBalance > 0, "You do not have balance to withdraw");
 

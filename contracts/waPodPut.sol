@@ -52,10 +52,20 @@ contract waPodPut is aPodPut {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _exerciseWindowSize
     )
         public
-        aPodPut(_name, _symbol, _optionType, _underlyingAsset, _strikeAsset, _strikePrice, _expiration)
+        aPodPut(
+            _name,
+            _symbol,
+            _optionType,
+            _underlyingAsset,
+            _strikeAsset,
+            _strikePrice,
+            _expiration,
+            _exerciseWindowSize
+        )
     {
         weth = IWETH(_underlyingAsset);
     }
@@ -122,7 +132,7 @@ contract waPodPut is aPodPut {
      *
      * Options can only be exchanged while the series is NOT expired.
      */
-    function exerciseEth() external payable beforeExpiration {
+    function exerciseEth() external payable afterExpiration beforeExerciseWindow {
         uint256 amount = msg.value;
         require(amount > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
@@ -150,7 +160,7 @@ contract waPodPut is aPodPut {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external override afterExpiration {
+    function withdraw() external override afterExerciseWindow {
         uint256 weightedBalance = weightedBalances[msg.sender];
         require(weightedBalance > 0, "You do not have balance to withdraw");
 

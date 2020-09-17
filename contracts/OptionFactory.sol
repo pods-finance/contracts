@@ -14,10 +14,11 @@ contract OptionFactory {
         address underlyingAsset,
         address strikeAsset,
         uint256 strikePrice,
-        uint256 expiration
+        uint256 expiration,
+        uint256 exerciseWindowSize
     );
 
-    constructor (address wethAddress) public {
+    constructor(address wethAddress) public {
         WETH_ADDRESS = wethAddress;
     }
 
@@ -30,6 +31,7 @@ contract OptionFactory {
      * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
      * @param _expiration The Expiration Option date in UNIX timestamp. E.g 1600178324
+     * @param _exerciseWindowSize The Expiration Window Size duration in UNIX timestamp. E.g 24*60*60 (24h)
      */
     function createOption(
         string memory _name,
@@ -38,7 +40,8 @@ contract OptionFactory {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _exerciseWindowSize
     ) public returns (PodPut) {
         require(_expiration > block.timestamp, "Expiration should be in the future time");
 
@@ -49,11 +52,20 @@ contract OptionFactory {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expiration
+            _expiration,
+            _exerciseWindowSize
         );
 
         options.push(option);
-        emit OptionCreated(msg.sender, option, _underlyingAsset, _strikeAsset, _strikePrice, _expiration);
+        emit OptionCreated(
+            msg.sender,
+            option,
+            _underlyingAsset,
+            _strikeAsset,
+            _strikePrice,
+            _expiration,
+            _exerciseWindowSize
+        );
         return option;
     }
 
@@ -65,6 +77,7 @@ contract OptionFactory {
      * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
      * @param _expiration The Expiration Option date in UNIX timestamp. E.g 1600178324
+     * @param _exerciseWindowSize The Expiration Window Size duration in UNIX timestamp. E.g 24*60*60 (24h)
      */
     function createEthOption(
         string memory _name,
@@ -72,7 +85,8 @@ contract OptionFactory {
         PodOption.OptionType _optionType,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _exerciseWindowSize
     ) public returns (wPodPut) {
         require(_expiration > block.timestamp, "Expiration should be in the future time");
 
@@ -83,11 +97,20 @@ contract OptionFactory {
             WETH_ADDRESS,
             _strikeAsset,
             _strikePrice,
-            _expiration
+            _expiration,
+            _exerciseWindowSize
         );
 
         options.push(option);
-        emit OptionCreated(msg.sender, option, WETH_ADDRESS, _strikeAsset, _strikePrice, _expiration);
+        emit OptionCreated(
+            msg.sender,
+            option,
+            WETH_ADDRESS,
+            _strikeAsset,
+            _strikePrice,
+            _expiration,
+            _exerciseWindowSize
+        );
         return option;
     }
 }
