@@ -50,7 +50,8 @@ contract PodPut is PodOption {
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
-        uint256 _expiration
+        uint256 _expiration,
+        uint256 _exerciseWindowSize
     )
         public
         PodOption(
@@ -60,7 +61,8 @@ contract PodPut is PodOption {
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
-            _expiration
+            _expiration,
+            _exerciseWindowSize
         )
     {}
 
@@ -160,7 +162,7 @@ contract PodPut is PodOption {
      * Options can only be exchanged while the series is NOT expired.
      * @param amount The amount option tokens to be exercised
      */
-    function exercise(uint256 amount) external override beforeExpiration {
+    function exercise(uint256 amount) external override afterExpiration beforeExerciseWindow {
         require(amount > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
@@ -191,7 +193,7 @@ contract PodPut is PodOption {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external virtual override afterExpiration {
+    function withdraw() external virtual override afterExerciseWindow {
         uint256 amount = lockedBalance[msg.sender];
         require(amount > 0, "You do not have balance to withdraw");
 
