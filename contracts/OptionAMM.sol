@@ -4,8 +4,11 @@ contract OptionAMM {
     
     uint256 currentSigma;
     address option;
-    uint256 riskFree = 0;
     address stableAsset;
+    uint256 deamortizedOptionBalance;
+    uint256 deamortizedStableBalance;
+    uint256 riskFree = 0;
+    
 
     struct UserBalance {
         uint256 optionBalance;
@@ -21,6 +24,10 @@ contract OptionAMM {
     }
     
     function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
+
+    if (isInitialLiquidity) {
+        // Do another thing
+    }
         
     uint spotPrice = CHAINLINK(option.underlyingAsset, option.expiration);
     // 1. new Calculated BS Price => new spot, new time, last sigma
