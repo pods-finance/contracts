@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
+import "../interfaces/INormalDistribution.sol";
+
 /**
  * Normal distribution
  */
-contract NormalDistribution {
+contract NormalDistribution is INormalDistribution {
     mapping(int256 => int256) probabilities;
 
     constructor() public {
@@ -227,14 +229,10 @@ contract NormalDistribution {
      * @param decimals Amount of decimals of z
      * @return The probability of z
      */
-    function getProbability(int256 z, uint256 decimals)
-        public
-        view
-        returns(int256)
-    {
+    function getProbability(int256 z, uint256 decimals) external override view returns (int256) {
         require(decimals >= 2);
-        int256 truncateZ = (z / int256(10 ** (decimals - 2))) * 100;
-        int256 responseDecimals = int256(10 ** (decimals - 4));
+        int256 truncateZ = (z / int256(10**(decimals - 2))) * 100;
+        int256 responseDecimals = int256(10**(decimals - 4));
 
         // Handle negative z
         if (z < 0) {

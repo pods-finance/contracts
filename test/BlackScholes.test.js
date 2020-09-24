@@ -12,8 +12,8 @@ const scenarios = [
   }
 ]
 
-describe('BlackScholes', () => {
-  let BlackScholes, bs
+describe.only('BlackScholes', () => {
+  let BlackScholes, bs, normalDistribution
 
   before(async () => {
     const FixidityLib = await ethers.getContractFactory('FixidityLib')
@@ -33,6 +33,10 @@ describe('BlackScholes', () => {
     const exponent = await ExponentLib.deploy()
     await exponent.deployed()
 
+    const NormalDistribution = await ethers.getContractFactory('NormalDistribution')
+    normalDistribution = await NormalDistribution.deploy()
+    await normalDistribution.deployed()
+
     BlackScholes = await getContractFactoryWithLibraries('BlackScholes', {
       FixidityLib: fixidity.address,
       LogarithmLib: logarithm.address,
@@ -41,7 +45,7 @@ describe('BlackScholes', () => {
   })
 
   beforeEach(async () => {
-    bs = await BlackScholes.deploy()
+    bs = await BlackScholes.deploy(normalDistribution.address)
   })
 
   scenarios.forEach(scenario => {

@@ -19,13 +19,17 @@ async function main () {
   const exponent = await ExponentLib.deploy()
   await exponent.deployed()
 
+  const NormalDistribution = await ethers.getContractFactory('NormalDistribution')
+  const normalDistribution = await NormalDistribution.deploy()
+  await normalDistribution.deployed()
+
   const BlackScholes = await getContractFactoryWithLibraries('BlackScholes', {
     FixidityLib: fixidity.address,
     LogarithmLib: logarithm.address,
     ExponentLib: exponent.address,
   })
 
-  const bs = await BlackScholes.deploy()
+  const bs = await BlackScholes.deploy(normalDistribution.address)
   await bs.deployed()
   console.log('BlackScholes Address: ', bs.address)
 }
