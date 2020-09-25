@@ -15,12 +15,25 @@ contract OptionAMM {
     uint256 deamortizedOptionBalance;
     uint256 deamortizedStableBalance;
     uint256 fImp;
+    uint256 totalStable;
+    uint256 totalOptions;
+    uint256 spotPrice;
+    uint256 timeToMaturity;
+    uint256 newPrice;
+    uint256 fImpOpening;
     uint256 riskFree = 0;
 
     struct UserBalance {
         uint256 optionBalance;
         uint256 stableBalance;
         uint256 fImp;
+    }
+
+    struct Mult {
+        uint256 AA;
+        uint256 AB;
+        uint256 BA;
+        uint256 BB;
     }
 
     mapping(address => UserBalance) balances;
@@ -31,9 +44,14 @@ contract OptionAMM {
     event BuyExact(address indexed caller, uint256 amount);
     event SellExact(address indexed caller, uint256 amount);
 
-    constructor(address _optionAddress, address _stableAsset) public {
+    constructor(
+        address _optionAddress,
+        address _stableAsset,
+        uint256 _strikePrice
+    ) public {
         stableAsset = _stableAsset;
         option = _optionAddress;
+        strikePrice = _strikePrice;
     }
 
     function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
@@ -47,7 +65,7 @@ contract OptionAMM {
         if (isInitialLiquidity) {
             require(amountOfStable > 0 && amountOfOptions > 0, "You should add both tokens on first liquidity");
 
-            fImpOpening = 1;
+            fImpOpening = 10**54;
             deamortizedOptionBalance = amountOfOptions;
             deamortizedStableBalance = amountOfStable;
         } else {
@@ -70,6 +88,12 @@ contract OptionAMM {
 
         // 3) Update User properties (BalanceUserA, BalanceUserB, fImpMoment)
         UserBalance memory userBalance = UserBalance(amountOfOptions, amountOfStable, fImpOpening);
+
+        if (balances[msg.sender].fImp != 0) {
+            // Update position logic
+            // Remove Liquidity + Add liquidty (total) => Economizar bsPrice
+        }
+
         balances[msg.sender] = userBalance;
 
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
@@ -88,46 +112,46 @@ contract OptionAMM {
 
     function removeLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
         // 2) Calculate Totals
-        uint256 totalStable = IERC20(stableAsset).balanceOf(address(this));
-        uint256 totalOptions = IERC20(option).balanceOf(address(this));
+        totalStable = IERC20(stableAsset).balanceOf(address(this));
+        totalOptions = IERC20(option).balanceOf(address(this));
 
-        uint256 spotPrice = CHAINLINK(underlyingAsset);
+        require(amountOfStable > totalStable && amountOfOptions > totalOptions, "not enough liquidity");
+
+        spotPrice = CHAINLINK(underlyingAsset);
         // 1. new Calculated BS Price => new spot, new time, last sigma
-        uint256 timeToMaturity = expiration - block.timestamp;
-        uint256 newPrice = BS(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
+        timeToMaturity = expiration - block.timestamp;
+        newPrice = BS(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
 
         // 2) FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
         // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
-        uint256 fImpOpening = totalOptions.mul(spotPrice).add(totalStable).div(
+        fImpOpening = totalOptions.mul(spotPrice).add(totalStable).div(
             deamortizedOptionBalance.mul(spotPrice).add(deamortizedStableBalance)
         );
 
-        // 3) Calculate rescue multipliers
+        Mult memory multipliers = _getMultipliers(totalStable, totalOptions, fImpOpening);
 
-        (uint256 optionAmountAvaiableToWithdraw, uint256 stableAmountAvaiableToWithdraw) = calculateAvaiableAmount(
-            deamortizedStableBalance,
-            deamortizedOptionBalance,
-            totalStable,
-            totalOptions,
-            amountOfOptions,
-            amountOfStable,
-            fImpOpening,
-            balances[msg.sender].fImp
+        (uint256 optionAmountAvaiableForRescue, uint256 stableAmountAvaiableForRescue) = _getAvaiableForRescueAmounts(
+            balances[msg.sender].optionBalance,
+            balances[msg.sender].stableBalance,
+            balances[msg.sender].fImp,
+            multipliers
         );
 
         require(
-            amountOfStable < stableAmountAvaiableToWithdraw && amountOfOptions < optionAmountAvaiableToWithdraw,
-            "You cant remove those quantities"
+            amountOfStable < stableAmountAvaiableForRescue && amountOfOptions < optionAmountAvaiableForRescue,
+            "Not enough liquidity for rescue"
         );
 
+        (uint256 qA, uint256 qB) = _getNewAmortizedBalances(multipliers, amountOfStable, amountOfOptions);
+
         // 4) Update users properties
-        balances[msg.sender].optionBalance = balances[msg.sender].optionBalance.sub(amountOfOptions);
-        balances[msg.sender].stableBalance = balances[msg.sender].optionBalance.sub(amountOfStable);
+        balances[msg.sender].optionBalance = balances[msg.sender].optionBalance.sub(qA.mul(balances[msg.sender].fImp));
+        balances[msg.sender].stableBalance = balances[msg.sender].stableBalance.sub(qB.mul(balances[msg.sender].fImp));
         // 5) Generate impact on multipliers
 
-        //6) Update deamortizedBalances
-        deamortizedOptionBalance = deamortizedOptionBalance.sub(amountOfOptions.div(fImpOpening));
-        deamortizedStableBalance = deamortizedStableBalance.sub(amountOfStable.div(fImpOpening));
+        //6) Update deamortized Pool Balances
+        deamortizedOptionBalance = deamortizedOptionBalance.sub(qA);
+        deamortizedStableBalance = deamortizedStableBalance.sub(qB);
 
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
         require(IERC20(option).transfer(msg.sender, amountOfOptions), "Could not transfer option tokens from caller");
@@ -147,13 +171,13 @@ contract OptionAMM {
     ) public {
         // 1) Calculate BS
         // 1a) Consult spotPrice Oracle
-        uint256 spotPrice = CHAINLINK(underlyingAsset); //
-        uint256 timeToMaturity = expiration - block.timestamp; //expiration or endOfExerciseWindow
-        uint256 newPrice = BS(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree); //riskFree = 0
+        spotPrice = CHAINLINK(underlyingAsset); //
+        timeToMaturity = expiration - block.timestamp; //expiration or endOfExerciseWindow
+        newPrice = BS(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree); //riskFree = 0
 
         // 2) Calculate Totals
-        uint256 totalStable = IERC20(stableAsset).balanceOf(address(this));
-        uint256 totalOptions = IERC20(option).balanceOf(address(this));
+        totalStable = IERC20(stableAsset).balanceOf(address(this));
+        totalOptions = IERC20(option).balanceOf(address(this));
 
         // 2a) Calculate Avaiable Pools
         uint256 poolOptions = min(totalOptions, totalStable.div(newPrice));
@@ -179,38 +203,52 @@ contract OptionAMM {
         emit BuyExact(msg.sender, amount);
     }
 
-    function calculateAvaiableAmount(
-        uint256 deamortizedStableBalance,
-        uint256 deamortizedOptionBalance,
+    function _getMultipliers(
         uint256 totalStable,
         uint256 totalOptions,
-        uint256 amountOfOptions,
-        uint256 amountOfStable,
-        uint256 fImpOpening,
-        uint256 depositedImp
-    ) internal view returns (uint256, uint256) {
-        uint256 auxStableStable = (min(deamortizedStableBalance.mul(fImpOpening), totalStable)).div(
-            deamortizedStableBalance
-        );
+        uint256 fImpOpening
+    ) internal returns (Mult memory multipliers) {
+        uint256 mAA = (min(deamortizedStableBalance.mul(fImpOpening), totalStable)).div(deamortizedStableBalance);
+        uint256 mBB = (min(deamortizedOptionBalance.mul(fImpOpening), totalOptions)).div(deamortizedOptionBalance);
+        uint256 mAB = totalOptions.sub(mBB.mul(deamortizedOptionBalance)).div(deamortizedStableBalance);
+        uint256 mBA = totalStable.sub(mAA.mul(deamortizedStableBalance)).div(deamortizedOptionBalance);
 
-        uint256 auxOptionOption = (min(deamortizedOptionBalance.mul(fImpOpening), totalOptions)).div(
-            deamortizedOptionBalance
-        );
+        multipliers = Mult(mAA, mBB, mAB, mBA);
+    }
 
-        uint256 auxStableOption = totalOptions.sub(auxOptionOption.mul(deamortizedOptionBalance)).div(
-            deamortizedStableBalance
-        );
+    function _getAvaiableForRescueAmounts(
+        uint256 userAmountStable,
+        uint256 userAmountOption,
+        uint256 userImp,
+        Mult memory m
+    ) internal returns (uint256, uint256) {
+        uint256 MStableOption = userAmountStable.mul(m.AB).div(userImp);
+        uint256 MOptionOption = userAmountOption.mul(m.BB).div(userImp);
+        uint256 MStableStable = userAmountStable.mul(m.AA).div(userImp);
+        uint256 MOptionStable = userAmountOption.mul(m.BA).div(userImp);
 
-        uint256 auxOptionStable = totalStable.sub(auxStableStable.mul(deamortizedStableBalance)).div(
-            deamortizedOptionBalance
-        );
+        uint256 optionsAvaiableForRescue = MOptionOption.add(MStableOption);
+        uint256 stableAvaiableForRescue = MStableStable.add(MOptionStable);
+        return (optionsAvaiableForRescue, stableAvaiableForRescue);
+    }
 
-        uint256 MStableStable = amountOfStable.mul(auxStableStable).div(depositedImp);
-        uint256 MStableOption = amountOfStable.mul(auxStableOption).div(depositedImp);
-        uint256 MOptionStable = amountOfOptions.mul(auxOptionStable).div(depositedImp);
-        uint256 MOptionOption = amountOfOptions.mul(auxOptionOption).div(depositedImp);
+    function _getNewAmortizedBalances(
+        Mult memory m,
+        uint256 amountTokenA,
+        uint256 amountTokenB
+    ) internal returns (uint256, uint256) {
+        uint256 qA;
+        uint256 qB;
 
-        return (MOptionOption.add(MStableOption), MStableStable.add(MOptionStable));
+        if (m.AB == 0) {
+            qB = amountTokenB.div(m.BB);
+            qA = amountTokenA.sub(m.BA.mul(qB)).div(m.AA);
+        } else {
+            qB = amountTokenA.sub(m.AA.mul(amountTokenB.div(m.AB))).div(m.BA.sub(m.AA.mul(m.BB.div(m.AB))));
+            qA = amountTokenB.sub(m.BB.mul(qB)).div(m.AB);
+        }
+
+        return (qA, qB);
     }
 
     function BS(
