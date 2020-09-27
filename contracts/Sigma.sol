@@ -21,12 +21,12 @@ contract Sigma {
         uint256 priceLower,
         uint256 priceHigher,
         uint256 targetPrice
-    ) public pure returns (uint256 nextSigma) {
+    ) public pure returns (uint256) {
         uint256 numerator = targetPrice.sub(priceLower).mul(sigmaHigher.sub(sigmaLower));
         uint256 denominator = priceHigher.sub(priceLower);
 
         uint256 result = numerator.div(denominator);
-        nextSigma = sigmaLower.add(result);
+        uint256 nextSigma = sigmaLower.add(result);
         return nextSigma;
     }
 
