@@ -40,12 +40,13 @@ describe.only('BlackScholes', () => {
     BlackScholes = await getContractFactoryWithLibraries('BlackScholes', {
       FixidityLib: fixidity.address,
       LogarithmLib: logarithm.address,
-      ExponentLib: exponent.address,
+      ExponentLib: exponent.address
     })
   })
 
   beforeEach(async () => {
     bs = await BlackScholes.deploy(normalDistribution.address)
+    await normalDistribution.deployed()
   })
 
   scenarios.forEach(scenario => {
@@ -54,8 +55,8 @@ describe.only('BlackScholes', () => {
         scenario.spotPrice,
         scenario.strikePrice,
         scenario.sigma,
-        scenario.riskFree,
-        scenario.daysRemaining
+        scenario.daysRemaining,
+        scenario.riskFree
       )
 
       expect(putPrice).to.equal(scenario.expectedPutPrice)
