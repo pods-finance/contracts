@@ -1,6 +1,7 @@
 const { expect } = require('chai')
 const getTxCost = require('./util/getTxCost')
 const forceExpiration = require('./util/forceExpiration')
+const forceEndOfExerciseWindow = require('./util/forceEndOfExerciseWindow')
 const getTimestamp = require('./util/getTimestamp')
 
 const OPTION_TYPE_PUT = 0
@@ -76,7 +77,8 @@ scenarios.forEach(scenario => {
         OPTION_TYPE_PUT,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        await getTimestamp() + 5 * 60 * 60 * 1000
+        await getTimestamp() + 5 * 60 * 60 * 1000,
+        24 * 60 * 60 // 24h
       )
 
       const filterFrom = await factoryContract.filters.OptionCreated(deployerAddress)
@@ -199,8 +201,15 @@ scenarios.forEach(scenario => {
     })
 
     describe('Exercising options', () => {
+      it('should revert if user try to exercise before expiration', async () => {
+        await MintPhase(scenario.amountToMint)
+        // Transfer mint to Buyer address => This will happen through Uniswap
+        await waPodPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
+        await expect(waPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('Option has not expired yet')
+      })
       it('should revert if user have underlying enough, but dont have enough options', async () => {
         expect(await ethers.provider.getBalance(buyerAddress)).to.gte(scenario.amountToMint)
+        await forceExpiration(waPodPut)
         await expect(waPodPut.connect(buyer).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('ERC20: burn amount exceeds balance')
       })
 
@@ -220,6 +229,8 @@ scenarios.forEach(scenario => {
         expect(initialContractUnderlyingBalance).to.equal(0)
         expect(initialContractStrikeBalance).to.equal(scenario.strikePrice)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
+
+        await forceExpiration(waPodPut)
         const txExercise = await waPodPut.connect(buyer).exerciseEth({ value: scenario.amountToMint })
 
         const txCost = await getTxCost(txExercise)
@@ -235,12 +246,12 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeBalance).to.equal(0)
         expect(finalContractOptionSupply).to.equal(0)
       })
-      it('should revert if user try to exercise after expiration', async () => {
+      it('should revert if user try to exercise after exercise window closed', async () => {
         await MintPhase(scenario.amountToMint)
         // Transfer mint to Buyer address => This will happen through Uniswap
         await waPodPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
-        await forceExpiration(waPodPut)
-        await expect(waPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('Option has expired')
+        await forceEndOfExerciseWindow(waPodPut)
+        await expect(waPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('Window of exercise has closed already')
       })
     })
 
@@ -342,12 +353,12 @@ scenarios.forEach(scenario => {
 
     describe('Withdrawing options', () => {
       it('should revert if user try to withdraw before expiration', async () => {
-        await expect(waPodPut.connect(seller).withdraw()).to.be.revertedWith('Option has not expired yet')
+        await expect(waPodPut.connect(seller).withdraw()).to.be.revertedWith('Window of exercise not close yet')
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         // Set Expiration
-        await forceExpiration(waPodPut)
+        await forceEndOfExerciseWindow(waPodPut)
         await expect(waPodPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
       })
 
@@ -365,8 +376,7 @@ scenarios.forEach(scenario => {
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialContractStrikeBalance).to.equal(scenario.strikePrice.add(earnedInterest))
 
-        await forceExpiration(waPodPut)
-
+        await forceEndOfExerciseWindow(waPodPut)
         await waPodPut.connect(seller).withdraw()
 
         const finalSellerOptionBalance = await waPodPut.balanceOf(sellerAddress)
@@ -403,8 +413,7 @@ scenarios.forEach(scenario => {
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialContractStrikeBalance).to.gt(twoTimesAmountOfCollateral)
 
-        await forceExpiration(waPodPut)
-
+        await forceEndOfExerciseWindow(waPodPut)
         await waPodPut.connect(seller).withdraw()
 
         const finalSellerOptionBalance = await waPodPut.balanceOf(sellerAddress)
@@ -433,6 +442,8 @@ scenarios.forEach(scenario => {
         const halfAmountMint = ethers.BigNumber.from(scenario.amountToMint).div(2)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
         await mockStrikeAsset.earnInterest(waPodPut.address)
+
+        await forceExpiration(waPodPut)
         await ExercisePhase(halfAmountMint, seller, another, anotherAddress)
 
         const optionNumberOfDecimals = await waPodPut.decimals()
@@ -442,7 +453,7 @@ scenarios.forEach(scenario => {
         const initialSellerUnderlyingBalance = await ethers.provider.getBalance(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
 
-        await forceExpiration(waPodPut)
+        await forceEndOfExerciseWindow(waPodPut)
         const txWithdraw = await waPodPut.connect(seller).withdraw()
         const txCost = await getTxCost(txWithdraw)
         await expect(waPodPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
