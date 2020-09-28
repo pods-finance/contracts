@@ -2,19 +2,44 @@ pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./interfaces/IPriceProvider.sol";
+// import "../interfaces/IBlackScholes.sol";
+import "./interfaces/IPodOption.sol";
 
-contract OptionAMM {
+contract BS {
+    function getPutPrice(
+        uint256 spotPrice,
+        uint256 strikePrice,
+        uint256 sigma,
+        uint256 daysRemaining,
+        uint256 riskFree
+    ) public view returns (uint256) {
+        return 2;
+    }
+}
+
+contract OptionAMM is BS {
     using SafeMath for uint256;
 
-    uint256 currentSigma;
-    address option;
-    address stableAsset;
-    address underlyingAsset;
-    uint256 expiration;
-    uint256 strikePrice;
-    uint256 deamortizedOptionBalance;
-    uint256 deamortizedStableBalance;
-    uint256 fImp;
+    uint256 constant INITIAL_FIMP = 10**54;
+
+    // Constructor Info
+    address public option;
+    address public stableAsset;
+    IPriceProvider public priceProvider;
+
+    // Option Info
+    uint256 public expiration;
+    uint256 public strikePrice;
+    address public underlyingAsset;
+
+    // Updated by the user
+    uint256 public currentSigma;
+    uint256 public deamortizedOptionBalance;
+    uint256 public deamortizedStableBalance;
+    uint256 public fImp;
+
+    // instead of using local variables, trying to reduce stack too deep
     uint256 totalStable;
     uint256 totalOptions;
     uint256 spotPrice;
@@ -36,7 +61,7 @@ contract OptionAMM {
         uint256 BB;
     }
 
-    mapping(address => UserBalance) balances;
+    mapping(address => UserBalance) public balances;
 
     /** Events */
     event AddLiquidity(address indexed caller, uint256 amountOfStable, uint256 amountOfOptions);
@@ -47,11 +72,14 @@ contract OptionAMM {
     constructor(
         address _optionAddress,
         address _stableAsset,
-        uint256 _strikePrice
+        address _priceProvider
     ) public {
         stableAsset = _stableAsset;
         option = _optionAddress;
-        strikePrice = _strikePrice;
+        strikePrice = IPodOption(_optionAddress).strikePrice();
+        underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
+        expiration = IPodOption(_optionAddress).expiration();
+        priceProvider = IPriceProvider(_priceProvider);
     }
 
     function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
@@ -65,14 +93,14 @@ contract OptionAMM {
         if (isInitialLiquidity) {
             require(amountOfStable > 0 && amountOfOptions > 0, "You should add both tokens on first liquidity");
 
-            fImpOpening = 10**54;
+            fImpOpening = INITIAL_FIMP;
             deamortizedOptionBalance = amountOfOptions;
             deamortizedStableBalance = amountOfStable;
         } else {
-            uint256 spotPrice = CHAINLINK(underlyingAsset);
+            uint256 spotPrice = priceProvider.getAssetPrice(underlyingAsset);
             // 1. new Calculated BS Price => new spot, new time, last sigma
             uint256 timeToMaturity = expiration - block.timestamp;
-            uint256 newPrice = BS(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
+            uint256 newPrice = getPutPrice(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
 
             // 2) FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
             // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
@@ -120,7 +148,7 @@ contract OptionAMM {
         spotPrice = CHAINLINK(underlyingAsset);
         // 1. new Calculated BS Price => new spot, new time, last sigma
         timeToMaturity = expiration - block.timestamp;
-        newPrice = BS(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
+        newPrice = getPutPrice(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
 
         // 2) FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
         // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
@@ -173,7 +201,8 @@ contract OptionAMM {
         // 1a) Consult spotPrice Oracle
         spotPrice = CHAINLINK(underlyingAsset); //
         timeToMaturity = expiration - block.timestamp; //expiration or endOfExerciseWindow
-        newPrice = BS(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree); //riskFree = 0
+        newPrice = getPutPrice(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
+        (spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree); //riskFree = 0
 
         // 2) Calculate Totals
         totalStable = IERC20(stableAsset).balanceOf(address(this));
@@ -249,16 +278,6 @@ contract OptionAMM {
         }
 
         return (qA, qB);
-    }
-
-    function BS(
-        uint256 spotPrice,
-        uint256 strikePrice,
-        uint256 sigma,
-        uint256 daysRemaining,
-        uint256 riskFree
-    ) public view returns (uint256) {
-        return 2;
     }
 
     function CHAINLINK(address asset) public view returns (uint256 price) {
