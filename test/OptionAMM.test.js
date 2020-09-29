@@ -3,6 +3,9 @@ const BigNumber = require('bignumber.js')
 const forceExpiration = require('./util/forceExpiration')
 const forceEndOfExerciseWindow = require('./util/forceEndOfExerciseWindow')
 const getTimestamp = require('./util/getTimestamp')
+const deployBlackScholes = require('./util/deployBlackScholes')
+const getPriceProviderMock = require('./util/getPriceProviderMock')
+const createNewOption = require('./util/createNewOption')
 
 const OPTION_TYPE_PUT = 0
 
@@ -18,7 +21,9 @@ const scenarios = [
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
     amountOfStableToAddLiquidity: 1e8,
-    initialFImp: ethers.BigNumber.from('10').pow(54)
+    initialFImp: ethers.BigNumber.from('10').pow(54),
+    initialSpotPrice: 9000,
+    volatilityIntensity: 'low'
   }
 ]
 
@@ -27,8 +32,8 @@ scenarios.forEach(scenario => {
     let mockUnderlyingAsset
     let mockStrikeAsset
     let factoryContract
-    let priceProvider
-    let priceProviderAddress
+    let priceProviderMock
+    let blackScholes
     let podPut
     let podPutAddress
     let optionAMM
@@ -52,6 +57,7 @@ scenarios.forEach(scenario => {
     }
 
     before(async function () {
+      let ContractFactory, MockERC20, MockWETH
       [deployer, seller, buyer, delegator] = await ethers.getSigners()
       deployerAddress = await deployer.getAddress()
       sellerAddress = await seller.getAddress()
@@ -60,51 +66,41 @@ scenarios.forEach(scenario => {
 
       // 1) Deploy Option
       // 2) Use same strike Asset
-      const MockERC20 = await ethers.getContractFactory('MintableERC20')
-      const ContractFactory = await ethers.getContractFactory('OptionFactory')
-      const MockWETH = await ethers.getContractFactory('WETH')
+      ;[ContractFactory, MockERC20, MockWETH, blackScholes] = await Promise.all([
+        ethers.getContractFactory('OptionFactory'),
+        ethers.getContractFactory('MintableERC20'),
+        ethers.getContractFactory('WETH'),
+        deployBlackScholes()
+      ])
 
+      console.log(1)
       const mockWeth = await MockWETH.deploy()
-      factoryContract = await ContractFactory.deploy(mockWeth.address)
-      mockUnderlyingAsset = await MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals)
-      mockStrikeAsset = await MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
 
-      // call transaction
-      const txIdNewOption = await factoryContract.createOption(
-        'pod:WBTC:USDC:5000:A',
+      ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
+        ContractFactory.deploy(mockWeth.address),
+        MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
+        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
+      ])
+      console.log(2)
+      // Deploy option
+      podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
         'pod:WBTC:USDC:5000:A',
         OPTION_TYPE_PUT,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
         await getTimestamp() + 5 * 60 * 60 * 1000,
-        24 * 60 * 60 // 24h
-      )
+        24 * 60 * 60)
 
-      const filterFrom = await factoryContract.filters.OptionCreated(deployerAddress)
-      const eventDetails = await factoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
-
-      if (eventDetails.length) {
-        const { option } = eventDetails[0].args
-        podPut = await ethers.getContractAt('PodPut', option)
-        podPutAddress = podPut.address
-      } else {
-        console.log('Something went wrong: No events found')
-      }
-
-      await podPut.deployed()
-
-      // 2) Deploy Price Provider
-      const PriceProvider = await ethers.getContractFactory('PriceProvider')
-      priceProvider = await PriceProvider.deploy([], [])
-      await priceProvider.deployed()
-      priceProviderAddress = priceProvider.address
+      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, mockUnderlyingAsset.address)
+      priceProviderMock = mock.priceProvider
     })
 
     beforeEach(async function () {
       // 1) Deploy OptionAMM
       const OptionAMM = await ethers.getContractFactory('OptionAMM')
-      optionAMM = await OptionAMM.deploy(podPutAddress, mockStrikeAsset.address, priceProviderAddress)
+      optionAMM = await OptionAMM.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address)
+
       await optionAMM.deployed()
     })
 
@@ -112,7 +108,7 @@ scenarios.forEach(scenario => {
       it('should have correct option data (strikePrice, expiration, strikeAsset)', async () => {
         expect(await optionAMM.stableAsset()).to.equal(mockStrikeAsset.address)
         expect(await optionAMM.option()).to.equal(podPut.address)
-        expect(await optionAMM.priceProvider()).to.equal(priceProviderAddress)
+        expect(await optionAMM.priceProvider()).to.equal(priceProviderMock.address)
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
