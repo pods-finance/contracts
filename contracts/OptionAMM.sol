@@ -3,7 +3,7 @@ pragma solidity ^0.6.8;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/IPriceProvider.sol";
-// import "../interfaces/IBlackScholes.sol";
+import "./interfaces/IBlackScholes.sol";
 import "./interfaces/IPodOption.sol";
 
 contract BS {
@@ -27,6 +27,7 @@ contract OptionAMM is BS {
     address public option;
     address public stableAsset;
     IPriceProvider public priceProvider;
+    IBlackScholes public blackScholes;
 
     // Option Info
     uint256 public expiration;
@@ -72,7 +73,8 @@ contract OptionAMM is BS {
     constructor(
         address _optionAddress,
         address _stableAsset,
-        address _priceProvider
+        address _priceProvider,
+        address _blackScholes
     ) public {
         stableAsset = _stableAsset;
         option = _optionAddress;
@@ -80,6 +82,8 @@ contract OptionAMM is BS {
         underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
         expiration = IPodOption(_optionAddress).expiration();
         priceProvider = IPriceProvider(_priceProvider);
+        blackScholes = IBlackScholes(_blackScholes);
+        currentSigma = 10**18;
     }
 
     function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
@@ -97,10 +101,8 @@ contract OptionAMM is BS {
             deamortizedOptionBalance = amountOfOptions;
             deamortizedStableBalance = amountOfStable;
         } else {
+            // 1.) get spot price
             uint256 spotPrice = priceProvider.getAssetPrice(underlyingAsset);
-            // 1. new Calculated BS Price => new spot, new time, last sigma
-            uint256 timeToMaturity = expiration - block.timestamp;
-            uint256 newPrice = getPutPrice(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
 
             // 2) FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
             // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
@@ -144,11 +146,8 @@ contract OptionAMM is BS {
         totalOptions = IERC20(option).balanceOf(address(this));
 
         require(amountOfStable > totalStable && amountOfOptions > totalOptions, "not enough liquidity");
-
-        spotPrice = CHAINLINK(underlyingAsset);
-        // 1. new Calculated BS Price => new spot, new time, last sigma
-        timeToMaturity = expiration - block.timestamp;
-        newPrice = getPutPrice(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
+        // 1) Spot Price
+        spotPrice = priceProvider.getAssetPrice(underlyingAsset);
 
         // 2) FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
         // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
@@ -199,18 +198,23 @@ contract OptionAMM is BS {
     ) public {
         // 1) Calculate BS
         // 1a) Consult spotPrice Oracle
-        spotPrice = CHAINLINK(underlyingAsset); //
+        spotPrice = priceProvider.getAssetPrice(underlyingAsset); //
         timeToMaturity = expiration - block.timestamp; //expiration or endOfExerciseWindow
-        newPrice = getPutPrice(spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree);
-        (spotPrice, strikePrice, currentSigma, timeToMaturity, riskFree); //riskFree = 0
+        int256 newPrice = blackScholes.getPutPrice(
+            int256(spotPrice),
+            int256(strikePrice),
+            int256(currentSigma),
+            int256(timeToMaturity),
+            int256(riskFree)
+        );
 
         // 2) Calculate Totals
         totalStable = IERC20(stableAsset).balanceOf(address(this));
         totalOptions = IERC20(option).balanceOf(address(this));
 
         // 2a) Calculate Avaiable Pools
-        uint256 poolOptions = min(totalOptions, totalStable.div(newPrice));
-        uint256 poolStable = min(totalStable, totalOptions.mul(newPrice));
+        uint256 poolOptions = min(totalOptions, totalStable.div(uint256(newPrice)));
+        uint256 poolStable = min(totalStable, totalOptions.mul(uint256(newPrice)));
 
         // 2c) Product Constant
         uint256 productConstant = poolOptions.mul(poolStable);
@@ -222,7 +226,7 @@ contract OptionAMM is BS {
         uint256 targetPrice = stableToTransfer.div(amount);
 
         // 4. Update currentSigma
-        currentSigma = findNextSigma(targetPrice, sigmaInitialGuess, currentSigma, newPrice);
+        currentSigma = findNextSigma(targetPrice, sigmaInitialGuess, currentSigma, uint256(newPrice));
 
         // 5. transfer assets
         require(IERC20(stableAsset).transferFrom(msg.sender, address(this), stableToTransfer), "not transfered asset");
@@ -278,10 +282,6 @@ contract OptionAMM is BS {
         }
 
         return (qA, qB);
-    }
-
-    function CHAINLINK(address asset) public view returns (uint256 price) {
-        price = 2;
     }
 
     function findNextSigma(
