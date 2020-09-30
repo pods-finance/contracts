@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/IPriceProvider.sol";
 import "./interfaces/IBlackScholes.sol";
 import "./interfaces/IPodOption.sol";
+import "@nomiclabs/buidler/console.sol";
 
 contract BS {
     function getPutPrice(
@@ -22,10 +23,13 @@ contract OptionAMM is BS {
     using SafeMath for uint256;
 
     uint256 constant INITIAL_FIMP = 10**54;
+    uint32 constant WAD_DECIMALS = 18;
 
     // Constructor Info
     address public option;
     address public stableAsset;
+    uint32 internal optionDecimals;
+    uint32 internal stableAssetDecimals;
     IPriceProvider public priceProvider;
     IBlackScholes public blackScholes;
 
@@ -76,8 +80,12 @@ contract OptionAMM is BS {
         address _priceProvider,
         address _blackScholes
     ) public {
-        stableAsset = _stableAsset;
+        stableAsset = IPodOption(_optionAddress).strikeAsset();
         option = _optionAddress;
+
+        optionDecimals = IPodOption(_optionAddress).decimals();
+        stableAssetDecimals = IPodOption(stableAsset).strikeAssetDecimals();
+
         strikePrice = IPodOption(_optionAddress).strikePrice();
         underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
         expiration = IPodOption(_optionAddress).expiration();
@@ -88,8 +96,7 @@ contract OptionAMM is BS {
 
     function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
         // 2) Calculate Totals
-        uint256 totalStable = IERC20(stableAsset).balanceOf(address(this));
-        uint256 totalOptions = IERC20(option).balanceOf(address(this));
+        (uint256 totalStable, uint256 totalOptions) = _getPoolBalances();
 
         bool isInitialLiquidity = totalStable == 0 || totalOptions == 0;
         uint256 fImpOpening;
@@ -117,7 +124,7 @@ contract OptionAMM is BS {
         }
 
         // 3) Update User properties (BalanceUserA, BalanceUserB, fImpMoment)
-        UserBalance memory userBalance = UserBalance(amountOfOptions, amountOfStable, fImpOpening);
+        UserBalance memory userBalance = UserBalance(amountOfStable, amountOfOptions, fImpOpening);
 
         if (balances[msg.sender].fImp != 0) {
             // Update position logic
@@ -141,19 +148,26 @@ contract OptionAMM is BS {
     }
 
     function removeLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
+        console.log("========removeLiquidity=======");
         // 2) Calculate Totals
-        totalStable = IERC20(stableAsset).balanceOf(address(this));
-        totalOptions = IERC20(option).balanceOf(address(this));
-
-        require(amountOfStable > totalStable && amountOfOptions > totalOptions, "not enough liquidity");
+        (uint256 normalizedTotalStable, uint256 normalizedtotalOptions) = _getPoolBalances();
+        console.log("amountOfStable", amountOfStable);
+        console.log("amountOfOptions", amountOfOptions);
+        console.log("totalStable", totalStable);
+        console.log("totalOptions", totalOptions);
+        console.log("is true", amountOfStable <= totalStable);
+        require(amountOfStable <= totalStable && amountOfOptions <= totalOptions, "not enough liquidity");
         // 1) Spot Price
+        console.log("========calculate Spot Price=======");
         spotPrice = priceProvider.getAssetPrice(underlyingAsset);
+        console.log("spotPrice", spotPrice);
 
         // 2) FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
         // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
         fImpOpening = totalOptions.mul(spotPrice).add(totalStable).div(
             deamortizedOptionBalance.mul(spotPrice).add(deamortizedStableBalance)
         );
+        console.log("fImpOpening", fImpOpening);
 
         Mult memory multipliers = _getMultipliers(totalStable, totalOptions, fImpOpening);
 
@@ -163,6 +177,9 @@ contract OptionAMM is BS {
             balances[msg.sender].fImp,
             multipliers
         );
+
+        console.log("optionAmountAvaiableForRescue", optionAmountAvaiableForRescue);
+        console.log("stableAmountAvaiableForRescue", stableAmountAvaiableForRescue);
 
         require(
             amountOfStable < stableAmountAvaiableForRescue && amountOfOptions < optionAmountAvaiableForRescue,
@@ -199,6 +216,7 @@ contract OptionAMM is BS {
         // 1) Calculate BS
         // 1a) Consult spotPrice Oracle
         spotPrice = priceProvider.getAssetPrice(underlyingAsset); //
+        console.log(spotPrice);
         timeToMaturity = expiration - block.timestamp; //expiration or endOfExerciseWindow
         int256 newPrice = blackScholes.getPutPrice(
             int256(spotPrice),
@@ -209,8 +227,10 @@ contract OptionAMM is BS {
         );
 
         // 2) Calculate Totals
-        totalStable = IERC20(stableAsset).balanceOf(address(this));
-        totalOptions = IERC20(option).balanceOf(address(this));
+        (uint256 totalStable, uint256 totalOptions) = _getPoolBalances();
+
+        console.logInt(newPrice);
+        console.log(uint256(newPrice));
 
         // 2a) Calculate Avaiable Pools
         uint256 poolOptions = min(totalOptions, totalStable.div(uint256(newPrice)));
@@ -234,6 +254,16 @@ contract OptionAMM is BS {
         require(IERC20(option).transfer(msg.sender, amount), "not transfered asset");
 
         emit BuyExact(msg.sender, amount);
+    }
+
+    function _getPoolBalances() internal returns (uint256, uint256) {
+        uint256 balanceOfTokenA = IERC20(stableAsset).balanceOf(address(this));
+        uint256 normalizedBalanceA = balanceOfTokenA.mul(10**(WAD_DECIMALS - stableAssetDecimals));
+
+        uint256 balanceOfTokenB = IERC20(option).balanceOf(address(this));
+        uint256 normalizedBalanceB = balanceOfTokenB.mul(10**(WAD_DECIMALS - optionDecimals));
+
+        return (normalizedBalanceA, normalizedBalanceB);
     }
 
     function _getMultipliers(
