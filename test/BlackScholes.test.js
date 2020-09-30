@@ -3,16 +3,26 @@ const getContractFactoryWithLibraries = require('./util/getContractFactoryWithLi
 
 const scenarios = [
   {
-    spotPrice: ethers.BigNumber.from((368 * 1e18).toString()),
-    strikePrice: ethers.BigNumber.from((320 * 1e18).toString()),
-    sigma: ethers.BigNumber.from((1.18 * 1e18).toString()),
-    riskFree: ethers.BigNumber.from(0),
-    daysRemaining: ethers.BigNumber.from((6.5 * 1e18).toString()),
-    expectedPutPrice: ethers.BigNumber.from((5.8 * 1e18).toString())
-  }
+    type: 'PUT',
+    spotPrice: toBigNumber(368 * 1e18),
+    strikePrice: toBigNumber(320 * 1e18),
+    sigma: toBigNumber(0.8 * 1e18),
+    riskFree: toBigNumber(0),
+    time: toBigNumber(0.009589041096 * 1e18), // 3.5 days
+    expectedPrice: toBigNumber(0.3991972191 * 1e18)
+  },
+  {
+    type: 'PUT',
+    spotPrice: toBigNumber(10500 * 1e18),
+    strikePrice: toBigNumber(11000 * 1e18),
+    sigma: toBigNumber(1.2 * 1e18),
+    riskFree: toBigNumber(0),
+    time: toBigNumber(0.03835616438 * 1e18), // 3.5 days
+    expectedPrice: toBigNumber(1275.126573 * 1e18)
+  },
 ]
 
-describe.only('BlackScholes', () => {
+describe('BlackScholes', () => {
   let BlackScholes, bs, normalDistribution
 
   before(async () => {
@@ -49,17 +59,30 @@ describe.only('BlackScholes', () => {
     await normalDistribution.deployed()
   })
 
-  scenarios.forEach(scenario => {
-    it('returns the put price', async () => {
+  scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
+    it( `calculated the put price correctly`, async () => {
       const putPrice = await bs.getPutPrice(
         scenario.spotPrice,
         scenario.strikePrice,
         scenario.sigma,
-        scenario.daysRemaining,
+        scenario.time,
         scenario.riskFree
       )
 
-      expect(putPrice).to.equal(scenario.expectedPutPrice)
+      console.log(`\tPut price: ${putPrice}`)
+
+      expect(approximately(scenario.expectedPrice, putPrice)).to.equal(true)
     })
   })
 })
+
+function approximately (expected, value, diff = 10) {
+  const lowerBound = expected.sub(expected.div(Math.floor(100 / diff)))
+  const higherBound = expected.add(expected.div(Math.floor(100 / diff)))
+
+  return value.gte(lowerBound) && value.lte(higherBound)
+}
+
+function toBigNumber (value) {
+  return ethers.BigNumber.from(value.toLocaleString('fullwide', {useGrouping:false}))
+}
