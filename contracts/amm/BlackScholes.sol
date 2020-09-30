@@ -47,7 +47,10 @@ contract BlackScholes {
         uint256 time,
         int256 riskFree
     ) public view returns (uint256) {
-        (int256 Nd1, int256 Nd2) = _getProbabilities(spotPrice, strikePrice, sigma, time, riskFree);
+        (int256 d1, int256 d2) = _getProbabilities(spotPrice, strikePrice, sigma, time, riskFree);
+
+        int256 Nd1 = normalDistribution.getProbability(d1, precisionDecimals);
+        int256 Nd2 = normalDistribution.getProbability(d2, precisionDecimals);
 
         int256 get = spotPrice.multiply(Nd1);
         int256 pay = strikePrice.multiply(Nd2);
@@ -72,7 +75,10 @@ contract BlackScholes {
         uint256 time,
         int256 riskFree
     ) public view returns (uint256) {
-        (int256 Nd1, int256 Nd2) = _getProbabilities(spotPrice, strikePrice, sigma, time, riskFree);
+        (int256 d1, int256 d2) = _getProbabilities(spotPrice, strikePrice, sigma, time, riskFree);
+
+        int256 Nd1 = normalDistribution.getProbability(-d1, precisionDecimals);
+        int256 Nd2 = normalDistribution.getProbability(-d2, precisionDecimals);
 
         int256 get = strikePrice.multiply(Nd2);
         int256 pay = spotPrice.multiply(Nd1);
@@ -118,10 +124,7 @@ contract BlackScholes {
         int256 d1 = n.divide(int256(d));
         int256 d2 = d1.subtract(int256(d));
 
-        Nd1 = normalDistribution.getProbability(-d1, precisionDecimals);
-        Nd2 = normalDistribution.getProbability(-d2, precisionDecimals);
-
-        return (Nd1, Nd2);
+        return (d1, d2);
     }
 
     /**
