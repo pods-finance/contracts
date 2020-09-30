@@ -20,15 +20,16 @@ const scenarios = [
     strikePriceDecimals: 6,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
-    amountOfStableToAddLiquidity: 1e8,
+    amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
     initialFImp: ethers.BigNumber.from('10').pow(54),
-    initialSpotPrice: 9000,
+    initialSpotPrice: '900000000000',
     volatilityIntensity: 'low'
   }
 ]
 
 scenarios.forEach(scenario => {
   describe('OptionAMM.sol - ' + scenario.name, () => {
+    const TEN = ethers.BigNumber.from('10')
     let mockUnderlyingAsset
     let mockStrikeAsset
     let factoryContract
@@ -39,8 +40,8 @@ scenarios.forEach(scenario => {
     let optionAMM
     let deployer
     let deployerAddress
-    let seller
-    let sellerAddress
+    let second
+    let secondAddress
     let buyer
     let buyerAddress
     let delegator
@@ -56,11 +57,22 @@ scenarios.forEach(scenario => {
       await podPut.connect(signer).mint(amountToMintBN.mul(10 ** optionsDecimals), owner)
     }
 
+    async function mintAndAddLiquidity (optionsAmount, stableAmount, signer = deployer, owner = deployerAddress) {
+      const optionWithDecimals = ethers.BigNumber.from(optionsAmount).mul(TEN.pow(scenario.underlyingAssetDecimals))
+      await MintPhase(optionsAmount, signer, owner)
+      await mockStrikeAsset.connect(signer).mint(stableAmount)
+      // Approve both Option and Stable Token
+      await mockStrikeAsset.connect(signer).approve(optionAMM.address, ethers.constants.MaxUint256)
+      await podPut.connect(signer).approve(optionAMM.address, ethers.constants.MaxUint256)
+
+      await optionAMM.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
+    }
+
     before(async function () {
       let ContractFactory, MockERC20, MockWETH
-      [deployer, seller, buyer, delegator] = await ethers.getSigners()
+      [deployer, second, buyer, delegator] = await ethers.getSigners()
       deployerAddress = await deployer.getAddress()
-      sellerAddress = await seller.getAddress()
+      secondAddress = await second.getAddress()
       buyerAddress = await buyer.getAddress()
       delegatorAddress = await delegator.getAddress()
 
@@ -73,7 +85,6 @@ scenarios.forEach(scenario => {
         deployBlackScholes()
       ])
 
-      console.log(1)
       const mockWeth = await MockWETH.deploy()
 
       ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
@@ -81,7 +92,6 @@ scenarios.forEach(scenario => {
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
       ])
-      console.log(2)
       // Deploy option
       podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
         'pod:WBTC:USDC:5000:A',
@@ -151,13 +161,64 @@ scenarios.forEach(scenario => {
         expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
         expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
       })
+
+      it('should add N+1 liquidity and update user balance accordingly', async () => {
+        // Mint option and Stable asset to the liquidity adder
+        await mintAndAddLiquidity(1, scenario.amountOfStableToAddLiquidity)
+        await mintAndAddLiquidity(2, scenario.amountOfStableToAddLiquidity.mul(2), second, secondAddress)
+
+        const userBalance = await optionAMM.balances(secondAddress)
+        console.log('userBalance')
+        console.log(userBalance)
+        // expect(userBalance.optionBalance).to.be.equal(optionBalance)
+        // expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
+        // expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
+      })
     })
 
     describe('Remove Liquidity', () => {
+      it('should remove liquidity completely', async () => {
+        // Mint option and Stable asset to the liquidity adder
+        const optionsToAddLiquidity = ethers.BigNumber.from('10').mul(TEN.pow(scenario.underlyingAssetDecimals))
+
+        await mintAndAddLiquidity(100, scenario.amountOfStableToAddLiquidity)
+        const amountToRemoveOptions = optionsToAddLiquidity
+
+        await optionAMM.removeLiquidity(amountToRemoveOptions, amountToRemoveOptions.div(2))
+
+        const userBalance = await optionAMM.balances(secondAddress)
+        console.log('userBalance')
+        console.log(userBalance)
+        // expect(userBalance.optionBalance).to.be.equal(optionBalance)
+        // expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
+        // expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
+      })
     })
 
     describe('Buy', () => {
+      it('should buy and update balances accordingly', async () => {
+        // Mint option and Stable asset to the liquidity adder
+        await MintPhase(1)
+        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
+        const optionBalance = await podPut.balanceOf(deployerAddress)
 
+        // Approve both Option and Stable Token
+        await mockStrikeAsset.approve(optionAMM.address, ethers.constants.MaxUint256)
+        await podPut.approve(optionAMM.address, ethers.constants.MaxUint256)
+
+        await optionAMM.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
+
+        const userBalance = await optionAMM.balances(deployerAddress)
+        expect(userBalance.optionBalance).to.be.equal(optionBalance)
+        expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
+        expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
+
+        // Approve both Option and Stable Token
+        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
+        await mockStrikeAsset.connect(second).approve(optionAMM.address, ethers.constants.MaxUint256)
+
+        await optionAMM.connect(second).buyExact(1, 100000, 1000000)
+      })
     })
     describe('Sell', () => {
     })
