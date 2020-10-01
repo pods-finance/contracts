@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -7,7 +8,7 @@ import "../interfaces/IPriceFeed.sol";
  * Storage of prices feeds by asset
  */
 contract PriceProvider is Ownable {
-    mapping(address => IPriceFeed) private assetPriceFeeds;
+    mapping(address => IPriceFeed) private _assetPriceFeeds;
 
     event AssetFeedUpdated(address indexed asset, address indexed feed);
 
@@ -30,7 +31,7 @@ contract PriceProvider is Ownable {
      * @return Current price
      */
     function getAssetPrice(address _asset) external view returns (int256) {
-        IPriceFeed feed = assetPriceFeeds[_asset];
+        IPriceFeed feed = _assetPriceFeeds[_asset];
         require(address(feed) != address(0), "Feed not registered");
 
         return feed.getLatestPrice();
@@ -42,7 +43,7 @@ contract PriceProvider is Ownable {
      * @return Price feed address
      */
     function getPriceFeed(address _asset) external view returns (address) {
-        return address(assetPriceFeeds[_asset]);
+        return address(_assetPriceFeeds[_asset]);
     }
 
     /**
@@ -53,7 +54,7 @@ contract PriceProvider is Ownable {
     function _setAssetFeeds(address[] memory _assets, address[] memory _feeds) internal {
         require(_assets.length == _feeds.length, "INCONSISTENT_PARAMS_LENGTH");
         for (uint256 i = 0; i < _assets.length; i++) {
-            assetPriceFeeds[_assets[i]] = IPriceFeed(_feeds[i]);
+            _assetPriceFeeds[_assets[i]] = IPriceFeed(_feeds[i]);
             emit AssetFeedUpdated(_assets[i], _feeds[i]);
         }
     }
