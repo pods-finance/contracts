@@ -8,17 +8,26 @@ require('./tasks/Balancer/index')
 
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')
+usePlugin('buidler-gas-reporter')
 
 module.exports = {
   networks: {
+    buidlerevm: {
+      gas: 119500000,
+      blockGasLimit: 119500000,
+      gasMultiplier: 2,
+      loggingEnabled: process.env.BUIDLER_LOGGING_ENABLED || false
+    },
     development: {
       protocol: 'http',
       host: 'localhost',
       port: 8545,
-      gas: 5000000,
-      gasPrice: 5e9,
+      gas: 119500000,
+      blockGasLimit: 119500000,
+      gasMultiplier: 2,
+      loggingEnabled: true,
       network_id: '*',
-      url: 'https://mainnet.infura.io/v3/' + process.env.INFURA_PROJECT_ID
+      url: 'http://127.0.0.1:8545'
     },
     ganache: {
       protocol: 'http',
@@ -46,6 +55,11 @@ module.exports = {
     }
   },
   mocha: {
-    timeout: 20001
+    timeout: 20000000001
+  },
+  gasReporter: {
+    currency: 'USD',
+    enabled: !!(process.env.REPORT_GAS),
+    coinmarketcap: process.env.ETHERSCAN_APIKEY
   }
 }

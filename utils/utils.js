@@ -51,8 +51,32 @@ function getFutureBlockNumber (currentBlockNumber, targetDate, networkVersion) {
   return futureBlockNumber
 }
 
+/**
+ * Returns a bool if matche the condition of the value been in a acceptable range
+ * @param {BigNumber} expected
+ * @param {BigNumber} value
+ * @param {Number} range
+ * @returns {Bool} is close enought to the range
+ */
+function approximately (expected, value, range = 10) {
+  const lowerBound = expected.sub(expected.div(Math.floor(100 / range)))
+  const higherBound = expected.add(expected.div(Math.floor(100 / range)))
+
+  return value.gte(lowerBound) && value.lte(higherBound)
+}
+/**
+ * Returns an ethers BigNumber
+ * @param {number} number
+ * @returns {BigNumber} futureBlockNumber
+ */
+function toBigNumber (value) {
+  return ethers.BigNumber.from(value.toLocaleString('fullwide', { useGrouping: false }))
+}
+
 module.exports = {
   getMonthLetter,
   getBlockDate,
-  getFutureBlockNumber
+  getFutureBlockNumber,
+  toBigNumber,
+  approximately
 }
