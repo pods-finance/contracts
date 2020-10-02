@@ -86,7 +86,7 @@ describe('Sigma', () => {
     sigma = await SigmaContract.deploy(blackScholes.address)
     await sigma.deployed()
   })
-  describe.only('FindNextSigma', () => {
+  describe('FindNextSigma', () => {
     it('Should return the next sigma value correctly', async () => {
       const nextSigma = await sigma.findNextSigma(
         scenarioNextSigma.sigmaLower,
