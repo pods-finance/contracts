@@ -47,7 +47,7 @@ contract Sigma {
             _timeToMaturity,
             int256(_riskFree)
         );
-        if (equalEnough(_targetPrice, calculatedInitialPrice, ACCEPTABLE_ERROR)) {
+        if (_equalEnough(_targetPrice, calculatedInitialPrice, ACCEPTABLE_ERROR)) {
             return (_sigmaInitialGuess, calculatedInitialPrice);
         } else {
             Boundaries memory boundaries = _getInitialBoundaries(
@@ -78,7 +78,7 @@ contract Sigma {
                 )
             );
 
-            while (equalEnough(_targetPrice, calculatedPrice, ACCEPTABLE_ERROR) == false) {
+            while (_equalEnough(_targetPrice, calculatedPrice, ACCEPTABLE_ERROR) == false) {
                 if (calculatedPrice < _targetPrice) {
                     boundaries.priceLower = calculatedPrice;
                     boundaries.sigmaLower = sN;
@@ -132,11 +132,11 @@ contract Sigma {
         return nextSigma;
     }
 
-    function equalEnough(
+    function _equalEnough(
         uint256 target,
         uint256 value,
         uint256 range
-    ) public pure returns (bool) {
+    ) internal pure returns (bool) {
         uint256 proportion = target / range;
         if (target > value) {
             uint256 diff = target - value;
