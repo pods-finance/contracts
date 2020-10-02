@@ -74,7 +74,7 @@ const initialSigmaNull = {
   expectedNewSigma: toBigNumber(1.2 * 1e18)
 }
 
-describe.only('Sigma', () => {
+describe('Sigma', () => {
   let sigma, blackScholes
 
   before(async () => {
@@ -98,7 +98,7 @@ describe.only('Sigma', () => {
       expect(nextSigma).to.equal(scenarioNextSigma.expectedNextSigma)
     })
   })
-  describe.only('FindNewSigma', () => {
+  describe('FindNewSigma', () => {
     scenarioNewSigma.forEach(scenario => {
       it('Should find the new sigma ' + scenario.name, async () => {
         const res = await sigma.findNewSigmaPut(
