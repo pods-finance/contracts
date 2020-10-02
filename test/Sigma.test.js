@@ -88,20 +88,19 @@ describe('Sigma', () => {
   })
   describe('FindNextSigma', () => {
     it('Should return the next sigma value correctly', async () => {
-      const nextSigma = await sigma.findNextSigma(
+      const nextSigma = await sigma.getCloserSigma([
         scenarioNextSigma.sigmaLower,
-        scenarioNextSigma.sigmaHigher,
         scenarioNextSigma.priceLower,
-        scenarioNextSigma.priceHigher,
-        scenarioNextSigma.targetPrice
-      )
+        scenarioNextSigma.sigmaHigher,
+        scenarioNextSigma.priceHigher
+      ], scenarioNextSigma.targetPrice)
       expect(nextSigma).to.equal(scenarioNextSigma.expectedNextSigma)
     })
   })
   describe('FindNewSigma', () => {
     scenarioNewSigma.forEach(scenario => {
       it('Should find the new sigma ' + scenario.name, async () => {
-        const res = await sigma.findNewSigmaPut(
+        const res = await sigma.getPutSigma(
           scenario.targetPrice,
           scenario.sigmaInitialGuess,
           scenario.spotPrice,
@@ -117,7 +116,7 @@ describe('Sigma', () => {
       })
     })
     it('Should revert if initial sigma is 0', async () => {
-      await expect(sigma.findNewSigmaPut(
+      await expect(sigma.getPutSigma(
         initialSigmaNull.targetPrice,
         initialSigmaNull.sigmaInitialGuess,
         initialSigmaNull.spotPrice,

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/IBlackScholes.sol";
@@ -21,17 +22,17 @@ contract Sigma {
     }
 
     /**
-     * Find the a aproximation of sigma given an target price
+     * Get an aproximation of sigma given a target price inside an error range
      *
      * @param _targetPrice The target price that we need to find the sigma for
      * @param _sigmaInitialGuess sigma guess in order to reduce gas costs
-     * @param _spotPrice Current spot price
+     * @param _spotPrice Current spot price of the underlying
      * @param _strikePrice Option strike price
      * @param _timeToMaturity Annualized time to maturity
      * @param _riskFree The risk-free rate
-     * @return newSigma
+     * @return (newSigma, calculatedPrice)
      */
-    function findNewSigmaPut(
+    function getPutSigma(
         uint256 _targetPrice,
         uint256 _sigmaInitialGuess,
         uint256 _spotPrice,
@@ -59,20 +60,13 @@ contract Sigma {
                 _timeToMaturity,
                 _riskFree
             );
-            uint256 p0 = _targetPrice;
-            uint256 sN = findNextSigma(
-                boundaries.sigmaLower,
-                boundaries.sigmaHigher,
-                boundaries.priceLower,
-                boundaries.priceHigher,
-                p0
-            );
+            uint256 calculatedSigma = getCloserSigma(boundaries, _targetPrice);
 
             uint256 calculatedPrice = uint256(
                 blackScholes.getPutPrice(
                     int256(_spotPrice),
                     int256(_strikePrice),
-                    sN,
+                    calculatedSigma,
                     _timeToMaturity,
                     int256(_timeToMaturity)
                 )
@@ -81,54 +75,45 @@ contract Sigma {
             while (_equalEnough(_targetPrice, calculatedPrice, ACCEPTABLE_ERROR) == false) {
                 if (calculatedPrice < _targetPrice) {
                     boundaries.priceLower = calculatedPrice;
-                    boundaries.sigmaLower = sN;
+                    boundaries.sigmaLower = calculatedSigma;
                 } else {
                     boundaries.priceHigher = calculatedPrice;
-                    boundaries.sigmaHigher = sN;
+                    boundaries.sigmaHigher = calculatedSigma;
                 }
-                sN = findNextSigma(
-                    boundaries.sigmaLower,
-                    boundaries.sigmaHigher,
-                    boundaries.priceLower,
-                    boundaries.priceHigher,
-                    p0
-                );
+                calculatedSigma = getCloserSigma(boundaries, _targetPrice);
 
                 calculatedPrice = uint256(
                     blackScholes.getPutPrice(
                         int256(_spotPrice),
                         int256(_strikePrice),
-                        sN,
+                        calculatedSigma,
                         _timeToMaturity,
                         int256(_timeToMaturity)
                     )
                 );
             }
-            return (sN, calculatedPrice);
+            return (calculatedSigma, calculatedPrice);
         }
     }
 
     /**********************************************************************************************
-    // findNextSigma                                                                              //
+    // Each time you run this function, returns you a closer sigma value to the target price p0   //
+    // getCloserSigma                                                                             //
     // sL = sigmaLower                                                                            //
     // sH = sigmaHigher                                 ( sH - sL )                               //
-    // pL = priceLower          sN = sL + ( p0 - pL ) * ------------                              //
+    // pL = priceLower          sN = sL + ( p0 - pL ) * -----------                               //
     // pH = priceHigher                                 ( pH - pL )                               //
     // p0 = targetPrice                                                                           //
     // sN = sigmaNext                                                                             //
     **********************************************************************************************/
-    function findNextSigma(
-        uint256 sigmaLower,
-        uint256 sigmaHigher,
-        uint256 priceLower,
-        uint256 priceHigher,
-        uint256 targetPrice
-    ) public pure returns (uint256) {
-        uint256 numerator = targetPrice.sub(priceLower).mul(sigmaHigher.sub(sigmaLower));
-        uint256 denominator = priceHigher.sub(priceLower);
+    function getCloserSigma(Boundaries memory boundaries, uint256 targetPrice) public pure returns (uint256) {
+        uint256 numerator = targetPrice.sub(boundaries.priceLower).mul(
+            boundaries.sigmaHigher.sub(boundaries.sigmaLower)
+        );
+        uint256 denominator = boundaries.priceHigher.sub(boundaries.priceLower);
 
         uint256 result = numerator.div(denominator);
-        uint256 nextSigma = sigmaLower.add(result);
+        uint256 nextSigma = boundaries.sigmaLower.add(result);
         return nextSigma;
     }
 
