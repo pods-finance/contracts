@@ -2,9 +2,113 @@
 pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./interfaces/IBlackScholes.sol";
+import "@nomiclabs/buidler/console.sol";
 
 contract Sigma {
     using SafeMath for uint256;
+    IBlackScholes public blackScholes;
+    uint256 constant ACCEPTABLE_ERROR = 14; // < 5%
+
+    struct Boundaries {
+        uint256 sigmaLower; // [wad]
+        uint256 priceLower; // [wad]
+        uint256 sigmaHigher; // [wad]
+        uint256 priceHigher; // [wad]
+    }
+
+    constructor(address _blackScholes) public {
+        blackScholes = IBlackScholes(_blackScholes);
+    }
+
+    /**
+     * Find the a aproximation of sigma given an target price
+     *
+     * @param _targetPrice The target price that we need to find the sigma for
+     * @param _sigmaInitialGuess sigma guess in order to reduce gas costs
+     * @param _spotPrice Current spot price
+     * @param _strikePrice Option strike price
+     * @param _timeToMaturity Annualized time to maturity
+     * @param _riskFree The risk-free rate
+     * @return newSigma
+     */
+    function findNewSigmaPut(
+        uint256 _targetPrice,
+        uint256 _sigmaInitialGuess,
+        uint256 _spotPrice,
+        uint256 _strikePrice,
+        uint256 _timeToMaturity,
+        uint256 _riskFree
+    ) public view returns (uint256, uint256) {
+        require(_sigmaInitialGuess > 0, "Sigma cant be null");
+        uint256 calculatedInitialPrice = blackScholes.getPutPrice(
+            int256(_spotPrice),
+            int256(_strikePrice),
+            _sigmaInitialGuess,
+            _timeToMaturity,
+            int256(_riskFree)
+        );
+        if (equalEnough(_targetPrice, calculatedInitialPrice, ACCEPTABLE_ERROR)) {
+            return (_sigmaInitialGuess, calculatedInitialPrice);
+        } else {
+            Boundaries memory boundaries = _getInitialBoundaries(
+                _targetPrice,
+                calculatedInitialPrice,
+                _sigmaInitialGuess,
+                _spotPrice,
+                _strikePrice,
+                _timeToMaturity,
+                _riskFree
+            );
+            uint256 p0 = _targetPrice;
+            uint256 sN = findNextSigma(
+                boundaries.sigmaLower,
+                boundaries.sigmaHigher,
+                boundaries.priceLower,
+                boundaries.priceHigher,
+                p0
+            );
+
+            uint256 calculatedPrice = uint256(
+                blackScholes.getPutPrice(
+                    int256(_spotPrice),
+                    int256(_strikePrice),
+                    sN,
+                    _timeToMaturity,
+                    int256(_timeToMaturity)
+                )
+            );
+
+            while (equalEnough(_targetPrice, calculatedPrice, ACCEPTABLE_ERROR) == false) {
+                console.log("7");
+                if (calculatedPrice < _targetPrice) {
+                    boundaries.priceLower = calculatedPrice;
+                    boundaries.sigmaLower = sN;
+                } else {
+                    boundaries.priceHigher = calculatedPrice;
+                    boundaries.sigmaHigher = sN;
+                }
+                sN = findNextSigma(
+                    boundaries.sigmaLower,
+                    boundaries.sigmaHigher,
+                    boundaries.priceLower,
+                    boundaries.priceHigher,
+                    p0
+                );
+
+                calculatedPrice = uint256(
+                    blackScholes.getPutPrice(
+                        int256(_spotPrice),
+                        int256(_strikePrice),
+                        sN,
+                        _timeToMaturity,
+                        int256(_timeToMaturity)
+                    )
+                );
+            }
+            return (sN, calculatedPrice);
+        }
+    }
 
     /**********************************************************************************************
     // findNextSigma                                                                              //
@@ -45,65 +149,34 @@ contract Sigma {
         }
     }
 
-    function findNewSigma(
-        uint256 targetPrice,
-        uint256 sigmaInitialGuess,
-        uint256 lastSigma,
-        uint256 lastPrice,
-        uint256 spotPrice,
-        uint256 strikePrice
-    ) public returns (uint256 newSigma) {
-        uint256 calculatedInitialPrice = BS(sigmaInitialGuess, spotPrice, strikePrice);
-        if (equalEnough(targetPrice, calculatedInitialPrice, 10)) {
-            return sigmaInitialGuess;
-        } else {
-            uint256 sL;
-            uint256 sH;
-            uint256 pL;
-            uint256 pH;
-            uint256 p0 = targetPrice;
+    function _getInitialBoundaries(
+        uint256 _targetPrice,
+        uint256 initialPrice,
+        uint256 initialSigma,
+        uint256 _spotPrice,
+        uint256 _strikePrice,
+        uint256 _timeToMaturity,
+        uint256 _riskFree
+    ) internal view returns (Boundaries memory b) {
+        b.sigmaLower = 0;
+        b.priceLower = 0;
+        uint256 newGuessPrice = initialPrice;
+        uint256 newGuessSigma = initialSigma;
 
-            // if selling - targetPrice < lastPrice
-            sH = lastSigma;
-            pH = lastPrice;
+        while (newGuessPrice < _targetPrice) {
+            b.sigmaLower = newGuessSigma;
+            b.priceLower = newGuessPrice;
 
-            // if buying - targetPrice > lastPrice
-            sL = lastSigma;
-            pL = lastPrice;
-
-            // Need to fill the other side with 40% lower or higher
-
-            if (calculatedInitialPrice > targetPrice && calculatedInitialPrice < lastPrice) {
-                sH = sigmaInitialGuess;
-                pH = calculatedInitialPrice;
-            } else if (calculatedInitialPrice < targetPrice && calculatedInitialPrice > lastPrice) {
-                sL = sigmaInitialGuess;
-                pL = calculatedInitialPrice;
-            }
-            uint256 calculatedPrice = lastPrice;
-            uint256 sN = lastSigma;
-            while (equalEnough(targetPrice, calculatedPrice, 10) == false) {
-                if (calculatedPrice > pL && calculatedPrice < targetPrice) {
-                    pL = calculatedPrice;
-                    sL = sN;
-                } else {
-                    pH = calculatedPrice;
-                    sH = sN;
-                }
-                sN = findNextSigma(sL, sH, pL, pH, p0);
-                calculatedPrice = BS(spotPrice, strikePrice, sN);
-            }
-
-            newSigma = sN;
-            return newSigma;
+            newGuessSigma = newGuessSigma.add(newGuessSigma.div(2));
+            newGuessPrice = blackScholes.getPutPrice(
+                int256(_spotPrice),
+                int256(_strikePrice),
+                newGuessSigma,
+                _timeToMaturity,
+                int256(_riskFree)
+            );
         }
-    }
-
-    function BS(
-        uint256,
-        uint256,
-        uint256
-    ) public returns (uint256) {
-        return 3;
+        b.sigmaHigher = newGuessSigma;
+        b.priceHigher = newGuessPrice;
     }
 }
