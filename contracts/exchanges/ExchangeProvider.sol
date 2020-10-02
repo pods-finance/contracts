@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
-
-abstract contract ExchangeProvider is Initializable {
+abstract contract ExchangeProvider {
     modifier withinDeadline(uint256 deadline) {
         require(deadline > block.timestamp, "Transaction timeout");
         _;

@@ -13,7 +13,7 @@ contract UniswapV1Provider is ExchangeProvider {
     uint256 public constant MIN_ETH_BOUGHT = 1;
     uint256 public constant MAX_ETH_SOLD = uint256(-1);
 
-    function initialize(IUniswapFactory _uniswapFactory) external initializer {
+    constructor(IUniswapFactory _uniswapFactory) public {
         uniswapFactory = _uniswapFactory;
     }
 

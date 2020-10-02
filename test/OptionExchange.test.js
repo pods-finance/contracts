@@ -41,9 +41,7 @@ describe('OptionExchange', () => {
     const factoryContract = await ContractFactory.deploy(weth.address)
     podPut = await makeOption(factoryContract, underlyingAsset, strikeAsset)
 
-    exchangeProvider = await UniswapV1Provider.deploy()
-    await exchangeProvider.initialize(uniswapFactory.address)
-
+    exchangeProvider = await UniswapV1Provider.deploy(uniswapFactory.address)
     exchange = await OptionExchange.deploy(exchangeProvider.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange

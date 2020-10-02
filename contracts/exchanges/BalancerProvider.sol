@@ -12,7 +12,7 @@ contract BalancerProvider is ExchangeProvider {
 
     uint256 public constant MAX_PRICE = uint256(-1);
 
-    function initialize(BPool _balancerPool) external initializer {
+    constructor(BPool _balancerPool) public {
         balancerPool = _balancerPool;
     }
 
