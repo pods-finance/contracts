@@ -2,9 +2,9 @@ pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./interfaces/IPriceProvider.sol";
-import "./interfaces/IBlackScholes.sol";
-import "./interfaces/IPodOption.sol";
+import "../interfaces/IPriceProvider.sol";
+import "../interfaces/IBlackScholes.sol";
+import "../interfaces/IPodOption.sol";
 import "@nomiclabs/buidler/console.sol";
 
 contract BS {

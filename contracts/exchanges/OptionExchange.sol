@@ -2,8 +2,8 @@
 pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/IPodPut.sol";
-import "./exchanges/ExchangeProvider.sol";
+import "../interfaces/IPodPut.sol";
+import "./ExchangeProvider.sol";
 
 /**
  * Represents a Proxy that can mint and sell on the behalf of a Option Seller,
