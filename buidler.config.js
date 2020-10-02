@@ -16,7 +16,7 @@ module.exports = {
       gas: 119500000,
       blockGasLimit: 119500000,
       gasMultiplier: 2,
-      loggingEnabled: process.env.BUIDLER_LOGGING_ENABLED || false
+      loggingEnabled: !!(process.env.BUIDLER_LOGGING_ENABLED) || false
     },
     development: {
       protocol: 'http',

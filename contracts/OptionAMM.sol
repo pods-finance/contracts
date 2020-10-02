@@ -1,6 +1,6 @@
 pragma solidity ^0.6.8;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/IPriceProvider.sol";
 import "./interfaces/IBlackScholes.sol";
@@ -84,7 +84,7 @@ contract OptionAMM is BS {
         option = _optionAddress;
 
         optionDecimals = IPodOption(_optionAddress).decimals();
-        stableAssetDecimals = IPodOption(stableAsset).strikeAssetDecimals();
+        stableAssetDecimals = ERC20(_stableAsset).decimals();
 
         strikePrice = IPodOption(_optionAddress).strikePrice();
         underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
@@ -135,12 +135,12 @@ contract OptionAMM is BS {
 
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
         require(
-            IERC20(option).transferFrom(msg.sender, address(this), amountOfOptions),
+            ERC20(option).transferFrom(msg.sender, address(this), amountOfOptions),
             "Could not transfer option tokens from caller"
         );
 
         require(
-            IERC20(stableAsset).transferFrom(msg.sender, address(this), amountOfStable),
+            ERC20(stableAsset).transferFrom(msg.sender, address(this), amountOfStable),
             "Could not transfer stable tokens from caller"
         );
 
@@ -198,10 +198,10 @@ contract OptionAMM is BS {
         deamortizedStableBalance = deamortizedStableBalance.sub(qB);
 
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
-        require(IERC20(option).transfer(msg.sender, amountOfOptions), "Could not transfer option tokens from caller");
+        require(ERC20(option).transfer(msg.sender, amountOfOptions), "Could not transfer option tokens from caller");
 
         require(
-            IERC20(stableAsset).transfer(msg.sender, amountOfStable),
+            ERC20(stableAsset).transfer(msg.sender, amountOfStable),
             "Could not transfer stable tokens from caller"
         );
 
@@ -218,18 +218,18 @@ contract OptionAMM is BS {
         spotPrice = priceProvider.getAssetPrice(underlyingAsset); //
         console.log(spotPrice);
         timeToMaturity = expiration - block.timestamp; //expiration or endOfExerciseWindow
-        int256 newPrice = blackScholes.getPutPrice(
+        uint256 newPrice = blackScholes.getPutPrice(
             int256(spotPrice),
             int256(strikePrice),
-            int256(currentSigma),
-            int256(timeToMaturity),
+            currentSigma,
+            timeToMaturity,
             int256(riskFree)
         );
 
         // 2) Calculate Totals
         (uint256 totalStable, uint256 totalOptions) = _getPoolBalances();
 
-        console.logInt(newPrice);
+        console.log(newPrice);
         console.log(uint256(newPrice));
 
         // 2a) Calculate Avaiable Pools
@@ -249,18 +249,18 @@ contract OptionAMM is BS {
         currentSigma = findNextSigma(targetPrice, sigmaInitialGuess, currentSigma, uint256(newPrice));
 
         // 5. transfer assets
-        require(IERC20(stableAsset).transferFrom(msg.sender, address(this), stableToTransfer), "not transfered asset");
+        require(ERC20(stableAsset).transferFrom(msg.sender, address(this), stableToTransfer), "not transfered asset");
 
-        require(IERC20(option).transfer(msg.sender, amount), "not transfered asset");
+        require(ERC20(option).transfer(msg.sender, amount), "not transfered asset");
 
         emit BuyExact(msg.sender, amount);
     }
 
     function _getPoolBalances() internal returns (uint256, uint256) {
-        uint256 balanceOfTokenA = IERC20(stableAsset).balanceOf(address(this));
+        uint256 balanceOfTokenA = ERC20(stableAsset).balanceOf(address(this));
         uint256 normalizedBalanceA = balanceOfTokenA.mul(10**(WAD_DECIMALS - stableAssetDecimals));
 
-        uint256 balanceOfTokenB = IERC20(option).balanceOf(address(this));
+        uint256 balanceOfTokenB = ERC20(option).balanceOf(address(this));
         uint256 normalizedBalanceB = balanceOfTokenB.mul(10**(WAD_DECIMALS - optionDecimals));
 
         return (normalizedBalanceA, normalizedBalanceB);

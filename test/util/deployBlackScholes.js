@@ -1,4 +1,3 @@
-
 const getContractFactoryWithLibraries = require('./getContractFactoryWithLibraries')
 
 module.exports = async function deployBlackScholes () {

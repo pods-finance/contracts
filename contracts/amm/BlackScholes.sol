@@ -110,7 +110,7 @@ contract BlackScholes {
         uint256 sigma,
         uint256 time,
         int256 riskFree
-    ) internal view returns (int256 Nd1, int256 Nd2) {
+    ) internal pure returns (int256 Nd1, int256 Nd2) {
         int256 sigma2 = int256(_mul(_normalized(sigma), _normalized(sigma)) / PRECISION_UNIT);
 
         int256 A = _cachedLn(spotPrice.divide(strikePrice));

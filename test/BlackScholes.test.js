@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const getContractFactoryWithLibraries = require('./util/getContractFactoryWithLibraries')
+const { toBigNumber, approximately } = require('../utils/utils')
 
 const scenarios = [
   {
@@ -19,7 +20,7 @@ const scenarios = [
     riskFree: toBigNumber(0),
     time: toBigNumber(0.03835616438 * 1e18), // 3.5 days
     expectedPrice: toBigNumber(1275.126573 * 1e18)
-  },
+  }
 ]
 
 describe('BlackScholes', () => {
@@ -60,7 +61,7 @@ describe('BlackScholes', () => {
   })
 
   scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
-    it( `calculated the put price correctly`, async () => {
+    it('calculated the put price correctly', async () => {
       const putPrice = await bs.getPutPrice(
         scenario.spotPrice,
         scenario.strikePrice,
@@ -75,14 +76,3 @@ describe('BlackScholes', () => {
     })
   })
 })
-
-function approximately (expected, value, diff = 10) {
-  const lowerBound = expected.sub(expected.div(Math.floor(100 / diff)))
-  const higherBound = expected.add(expected.div(Math.floor(100 / diff)))
-
-  return value.gte(lowerBound) && value.lte(higherBound)
-}
-
-function toBigNumber (value) {
-  return ethers.BigNumber.from(value.toLocaleString('fullwide', {useGrouping:false}))
-}
