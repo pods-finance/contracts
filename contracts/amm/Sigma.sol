@@ -3,7 +3,7 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./interfaces/IBlackScholes.sol";
+import "../interfaces/IBlackScholes.sol";
 
 contract Sigma {
     using SafeMath for uint256;

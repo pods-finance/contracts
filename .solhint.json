@@ -2,7 +2,7 @@
   "extends": "solhint:recommended",
   "plugins": ["prettier"],
   "rules": {
-    "func-order": "error",
+    "func-order": "warn",
     "func-param-name-mixedcase": "warn",
     "modifier-name-mixedcase": "warn",
     "private-vars-leading-underscore": "warn",

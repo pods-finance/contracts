@@ -152,66 +152,66 @@ scenarios.forEach(scenario => {
         await expect(optionAMM.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
 
-      it('should add first liquidity and update user balance accordingly', async () => {
-        // Mint option and Stable asset to the liquidity adder
-        await MintPhase(1)
-        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
-        const optionBalance = await podPut.balanceOf(deployerAddress)
+      // it('should add first liquidity and update user balance accordingly', async () => {
+      //   // Mint option and Stable asset to the liquidity adder
+      //   await MintPhase(1)
+      //   await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
+      //   const optionBalance = await podPut.balanceOf(deployerAddress)
 
-        // Approve both Option and Stable Token
-        await mockStrikeAsset.approve(optionAMM.address, ethers.constants.MaxUint256)
-        await podPut.approve(optionAMM.address, ethers.constants.MaxUint256)
+      //   // Approve both Option and Stable Token
+      //   await mockStrikeAsset.approve(optionAMM.address, ethers.constants.MaxUint256)
+      //   await podPut.approve(optionAMM.address, ethers.constants.MaxUint256)
 
-        await optionAMM.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
+      //   await optionAMM.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
 
-        const userBalance = await optionAMM.balances(deployerAddress)
-        expect(userBalance.optionBalance).to.be.equal(optionBalance)
-        expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
-        expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
-      })
+      //   const userBalance = await optionAMM.balances(deployerAddress)
+      //   expect(userBalance.optionBalance).to.be.equal(optionBalance)
+      //   expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
+      //   expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
+      // })
 
-      it('should add N+1 liquidity and update user balance accordingly', async () => {
-        // Mint option and Stable asset to the liquidity adder
-        await mintAndAddLiquidity(1, scenario.amountOfStableToAddLiquidity)
-        await mintAndAddLiquidity(2, scenario.amountOfStableToAddLiquidity.mul(2), second, secondAddress)
+      // it('should add N+1 liquidity and update user balance accordingly', async () => {
+      //   // Mint option and Stable asset to the liquidity adder
+      //   await mintAndAddLiquidity(1, scenario.amountOfStableToAddLiquidity)
+      //   await mintAndAddLiquidity(2, scenario.amountOfStableToAddLiquidity.mul(2), second, secondAddress)
 
-        const userBalance = await optionAMM.balances(secondAddress)
-        console.log('userBalance')
-        console.log(userBalance)
-        // expect(userBalance.optionBalance).to.be.equal(optionBalance)
-        // expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
-        // expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
-      })
+      //   const userBalance = await optionAMM.balances(secondAddress)
+      //   console.log('userBalance')
+      //   console.log(userBalance)
+      //   // expect(userBalance.optionBalance).to.be.equal(optionBalance)
+      //   // expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
+      //   // expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
+      // })
     })
 
-    describe('Remove Liquidity', () => {
-      it('should remove liquidity completely', async () => {
-        // Mint option and Stable asset to the liquidity adder
-        const optionsToAddLiquidity = ethers.BigNumber.from('10').mul(TEN.pow(scenario.underlyingAssetDecimals))
+    // describe('Remove Liquidity', () => {
+    //   it('should remove liquidity completely', async () => {
+    //     // Mint option and Stable asset to the liquidity adder
+    //     const optionsToAddLiquidity = ethers.BigNumber.from('10').mul(TEN.pow(scenario.underlyingAssetDecimals))
 
-        await mintAndAddLiquidity(10, scenario.amountOfStableToAddLiquidity)
+    //     await mintAndAddLiquidity(10, scenario.amountOfStableToAddLiquidity)
 
-        const amountOfStablePoolBefore = await mockStrikeAsset.balanceOf(optionAMM.address)
-        const amountOfOptionPoolBefore = await podPut.balanceOf(optionAMM.address)
+    //     const amountOfStablePoolBefore = await mockStrikeAsset.balanceOf(optionAMM.address)
+    //     const amountOfOptionPoolBefore = await podPut.balanceOf(optionAMM.address)
 
-        const amountOfOptionUserBefore = await podPut.balanceOf(deployerAddress)
-        const amountOfStableUserBefore = await mockStrikeAsset.balanceOf(deployerAddress)
+    //     const amountOfOptionUserBefore = await podPut.balanceOf(deployerAddress)
+    //     const amountOfStableUserBefore = await mockStrikeAsset.balanceOf(deployerAddress)
 
-        const userBalanceBefore = await optionAMM.balances(deployerAddress)
-        // console.log(userBalance)
+    //     const userBalanceBefore = await optionAMM.balances(deployerAddress)
+    //     // console.log(userBalance)
 
-        const amountToRemoveOptions = optionsToAddLiquidity
+    //     const amountToRemoveOptions = optionsToAddLiquidity
 
-        await optionAMM.removeLiquidity(scenario.amountOfStableToAddLiquidity, amountToRemoveOptions)
+    //     await optionAMM.removeLiquidity(scenario.amountOfStableToAddLiquidity, amountToRemoveOptions)
 
-        // const userBalance = await optionAMM.balances(secondAddress)
-        // console.log('userBalance')
-        // console.log(userBalance)
-        // expect(userBalance.optionBalance).to.be.equal(optionBalance)
-        // expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
-        // expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
-      })
-    })
+    //     // const userBalance = await optionAMM.balances(secondAddress)
+    //     // console.log('userBalance')
+    //     // console.log(userBalance)
+    //     // expect(userBalance.optionBalance).to.be.equal(optionBalance)
+    //     // expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
+    //     // expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
+    //   })
+    // })
 
     describe('Buy', () => {
       // it('should buy and update balances accordingly', async () => {

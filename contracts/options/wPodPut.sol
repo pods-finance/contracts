@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "./aPodPut.sol";
-import "./interfaces/IWETH.sol";
+import "./PodPut.sol";
+import "../interfaces/IWETH.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
@@ -42,7 +42,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * - Will sell 1 ETH for 300 USDC (the strike price) each.
  * - Will burn the corresponding amount of put tokens.
  */
-contract waPodPut is aPodPut {
+contract wPodPut is PodPut {
     IWETH public weth;
 
     constructor(
@@ -56,7 +56,7 @@ contract waPodPut is aPodPut {
         uint256 _exerciseWindowSize
     )
         public
-        aPodPut(
+        PodPut(
             _name,
             _symbol,
             _optionType,
@@ -71,49 +71,6 @@ contract waPodPut is aPodPut {
     }
 
     event Received(address sender, uint256 value);
-
-    /**
-     * Unlocks some amount of the strike token by burning option tokens.
-     *
-     * This mechanism ensures that users can only redeem tokens they've
-     * previously lock into this contract.
-     *
-     * Options can only be burned while the series is NOT expired.
-     */
-    function unwind(uint256 amount) external override beforeExpiration {
-        uint256 weightedBalance = weightedBalances[msg.sender];
-        require(weightedBalance > 0, "You do not have minted options");
-
-        uint256 userMintedOptions = mintedOptions[msg.sender];
-        require(amount <= userMintedOptions, "Exceed address minted options");
-
-        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
-
-        uint256 userWeightedWithdraw = weightedBalance.mul(amount).div(userMintedOptions);
-        uint256 strikeToReceive = userWeightedWithdraw.mul(strikeReserves).div(totalLockedWeighted);
-        uint256 underlyingToReceive = userWeightedWithdraw.mul(underlyingReserves).div(totalLockedWeighted);
-        require(strikeToReceive > 0, "Amount too low");
-
-        weightedBalances[msg.sender] = weightedBalances[msg.sender].sub(userWeightedWithdraw);
-        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amount);
-        totalLockedWeighted = totalLockedWeighted.sub(userWeightedWithdraw);
-
-        _burn(msg.sender, amount);
-
-        // Unlocks the strike token
-        require(
-            ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
-            "Couldn't transfer back strike tokens to caller"
-        );
-
-        if (underlyingReserves > 0) {
-            require(underlyingToReceive > 0, "Amount too low");
-            weth.withdraw(underlyingToReceive);
-            Address.sendValue(msg.sender, underlyingToReceive);
-        }
-        emit Unwind(msg.sender, amount);
-    }
 
     /**
      * Allow put token holders to use them to sell some amount of units
@@ -161,27 +118,35 @@ contract waPodPut is aPodPut {
      * and given to the caller.
      */
     function withdraw() external override afterExerciseWindow {
-        uint256 weightedBalance = weightedBalances[msg.sender];
-        require(weightedBalance > 0, "You do not have balance to withdraw");
+        uint256 amount = lockedBalance[msg.sender];
+        require(amount > 0, "You do not have balance to withdraw");
 
-        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+        // Calculates how many underlying/strike tokens the caller
+        // will get back
+        uint256 currentStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 strikeToReceive = _strikeToTransfer(amount);
+        uint256 underlyingToReceive = 0;
+        if (strikeToReceive > currentStrikeBalance) {
+            uint256 remainingStrikeAmount = strikeToReceive.sub(currentStrikeBalance);
+            strikeToReceive = currentStrikeBalance;
 
-        uint256 strikeToReceive = weightedBalance.mul(strikeReserves).div(totalLockedWeighted);
-        uint256 underlyingToReceive = weightedBalance.mul(underlyingReserves).div(totalLockedWeighted);
+            underlyingToReceive = _underlyingToTransfer(remainingStrikeAmount);
+        }
 
-        weightedBalances[msg.sender] = weightedBalances[msg.sender].sub(weightedBalance);
-        totalLockedWeighted = totalLockedWeighted.sub(weightedBalance);
+        lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
 
-        require(
-            ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
-            "Couldn't transfer back strike tokens to caller"
-        );
-        if (underlyingReserves > 0) {
+        // Unlocks the underlying/strike tokens
+        if (strikeToReceive > 0) {
+            require(
+                ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
+                "Could not transfer back strike tokens to caller"
+            );
+        }
+        if (underlyingToReceive > 0) {
             weth.withdraw(underlyingToReceive);
             Address.sendValue(msg.sender, underlyingToReceive);
         }
-        emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+        emit Withdraw(msg.sender, amount);
     }
 
     receive() external payable {
