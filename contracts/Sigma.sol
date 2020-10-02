@@ -3,7 +3,6 @@ pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/IBlackScholes.sol";
-import "@nomiclabs/buidler/console.sol";
 
 contract Sigma {
     using SafeMath for uint256;
@@ -80,7 +79,6 @@ contract Sigma {
             );
 
             while (equalEnough(_targetPrice, calculatedPrice, ACCEPTABLE_ERROR) == false) {
-                console.log("7");
                 if (calculatedPrice < _targetPrice) {
                     boundaries.priceLower = calculatedPrice;
                     boundaries.sigmaLower = sN;
