@@ -28,7 +28,7 @@ contract OptionExchange {
         uint256 outputBought
     );
 
-    constructor (ExchangeProvider _exchange) public {
+    constructor(ExchangeProvider _exchange) public {
         exchange = _exchange;
     }
 

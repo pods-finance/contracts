@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/IPodOption.sol";
+import "../interfaces/IOptionAMMExchange.sol";
 import "@nomiclabs/buidler/console.sol";
 
 contract BS {
@@ -19,7 +20,7 @@ contract BS {
     }
 }
 
-contract OptionAMM is BS {
+contract OptionAMMExchange is IOptionAMMExchange, BS {
     using SafeMath for uint256;
 
     uint256 constant INITIAL_FIMP = 10**54;
@@ -94,7 +95,7 @@ contract OptionAMM is BS {
         currentSigma = 10**18;
     }
 
-    function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
+    function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external override {
         // 2) Calculate Totals
         (uint256 totalStable, uint256 totalOptions) = _getPoolBalances();
 
@@ -147,7 +148,7 @@ contract OptionAMM is BS {
         emit AddLiquidity(msg.sender, amountOfOptions, amountOfStable);
     }
 
-    function removeLiquidity(uint256 amountOfStable, uint256 amountOfOptions) public {
+    function removeLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external override {
         console.log("========removeLiquidity=======");
         // 2) Calculate Totals
         (uint256 normalizedTotalStable, uint256 normalizedtotalOptions) = _getPoolBalances();
@@ -212,7 +213,7 @@ contract OptionAMM is BS {
         uint256 maxPayedStable,
         uint256 amount,
         uint256 sigmaInitialGuess
-    ) public {
+    ) external override {
         // 1) Calculate BS
         // 1a) Consult spotPrice Oracle
         spotPrice = priceProvider.getAssetPrice(underlyingAsset); //

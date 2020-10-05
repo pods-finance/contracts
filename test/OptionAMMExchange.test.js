@@ -28,7 +28,7 @@ const scenarios = [
 ]
 
 scenarios.forEach(scenario => {
-  describe('OptionAMM.sol - ' + scenario.name, () => {
+  describe('OptionAMMExchange.sol - ' + scenario.name, () => {
     const TEN = ethers.BigNumber.from('10')
     let mockUnderlyingAsset
     let mockStrikeAsset
@@ -37,7 +37,7 @@ scenarios.forEach(scenario => {
     let blackScholes
     let podPut
     let podPutAddress
-    let optionAMM
+    let exchange
     let deployer
     let deployerAddress
     let second
@@ -62,8 +62,8 @@ scenarios.forEach(scenario => {
       await MintPhase(optionsAmount, signer, owner)
       await mockStrikeAsset.connect(signer).mint(stableAmount)
       // Approve both Option and Stable Token
-      await mockStrikeAsset.connect(signer).approve(optionAMM.address, ethers.constants.MaxUint256)
-      await podPut.connect(signer).approve(optionAMM.address, ethers.constants.MaxUint256)
+      await mockStrikeAsset.connect(signer).approve(exchange.address, ethers.constants.MaxUint256)
+      await podPut.connect(signer).approve(exchange.address, ethers.constants.MaxUint256)
 
       const optionsDecimals = await podPut.decimals()
       const stableDecimals = await mockStrikeAsset.decimals()
@@ -73,7 +73,7 @@ scenarios.forEach(scenario => {
       console.log('stable decimasl', stableDecimals.toString())
       console.log('amount of Stable w/ decimals', scenario.amountOfStableToAddLiquidity.toString())
       console.log('amount of Stable added wo/ decimals', ethers.BigNumber.from(scenario.amountOfStableToAddLiquidity).div(TEN.pow(stableDecimals)).toString())
-      await optionAMM.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
+      await exchange.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
     }
 
     before(async function () {
@@ -115,41 +115,41 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
-      // 1) Deploy OptionAMM
-      const OptionAMM = await ethers.getContractFactory('OptionAMM')
-      optionAMM = await OptionAMM.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address)
+      // 1) Deploy OptionAMMExchange
+      const OptionAMMExchange = await ethers.getContractFactory('OptionAMMExchange')
+      exchange = await OptionAMMExchange.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address)
 
-      await optionAMM.deployed()
+      await exchange.deployed()
     })
 
     describe('Constructor/Initialization checks', () => {
       it('should have correct option data (strikePrice, expiration, strikeAsset)', async () => {
-        expect(await optionAMM.stableAsset()).to.equal(mockStrikeAsset.address)
-        expect(await optionAMM.option()).to.equal(podPut.address)
-        expect(await optionAMM.priceProvider()).to.equal(priceProviderMock.address)
+        expect(await exchange.stableAsset()).to.equal(mockStrikeAsset.address)
+        expect(await exchange.option()).to.equal(podPut.address)
+        expect(await exchange.priceProvider()).to.equal(priceProviderMock.address)
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
-        expect(await optionAMM.expiration()).to.equal(optionExpiration)
-        expect(await optionAMM.strikePrice()).to.equal(optionStrikePrice)
+        expect(await exchange.expiration()).to.equal(optionExpiration)
+        expect(await exchange.strikePrice()).to.equal(optionStrikePrice)
       })
     })
 
     describe('Add Liquidity', () => {
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(optionAMM.addLiquidity(0, 10000)).to.be.revertedWith('You should add both tokens on first liquidity')
+        await expect(exchange.addLiquidity(0, 10000)).to.be.revertedWith('You should add both tokens on first liquidity')
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
-        await expect(optionAMM.addLiquidity(1000, 10000)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+        await expect(exchange.addLiquidity(1000, 10000)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
       })
 
-      it('should revert if user do not approved one of assets to be spended by OptionAMM', async () => {
+      it('should revert if user do not approved one of assets to be spended by OptionAMMExchange', async () => {
         // Mint option and Stable asset to the liquidity adder
         await MintPhase(1)
         await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
         const optionBalance = await podPut.balanceOf(deployerAddress)
-        await expect(optionAMM.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+        await expect(exchange.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
 
       // it('should add first liquidity and update user balance accordingly', async () => {
@@ -159,12 +159,12 @@ scenarios.forEach(scenario => {
       //   const optionBalance = await podPut.balanceOf(deployerAddress)
 
       //   // Approve both Option and Stable Token
-      //   await mockStrikeAsset.approve(optionAMM.address, ethers.constants.MaxUint256)
-      //   await podPut.approve(optionAMM.address, ethers.constants.MaxUint256)
+      //   await mockStrikeAsset.approve(exchange.address, ethers.constants.MaxUint256)
+      //   await podPut.approve(exchange.address, ethers.constants.MaxUint256)
 
-      //   await optionAMM.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
+      //   await exchange.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
 
-      //   const userBalance = await optionAMM.balances(deployerAddress)
+      //   const userBalance = await exchange.balances(deployerAddress)
       //   expect(userBalance.optionBalance).to.be.equal(optionBalance)
       //   expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
       //   expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
@@ -175,7 +175,7 @@ scenarios.forEach(scenario => {
       //   await mintAndAddLiquidity(1, scenario.amountOfStableToAddLiquidity)
       //   await mintAndAddLiquidity(2, scenario.amountOfStableToAddLiquidity.mul(2), second, secondAddress)
 
-      //   const userBalance = await optionAMM.balances(secondAddress)
+      //   const userBalance = await exchange.balances(secondAddress)
       //   console.log('userBalance')
       //   console.log(userBalance)
       //   // expect(userBalance.optionBalance).to.be.equal(optionBalance)
@@ -191,20 +191,20 @@ scenarios.forEach(scenario => {
 
     //     await mintAndAddLiquidity(10, scenario.amountOfStableToAddLiquidity)
 
-    //     const amountOfStablePoolBefore = await mockStrikeAsset.balanceOf(optionAMM.address)
-    //     const amountOfOptionPoolBefore = await podPut.balanceOf(optionAMM.address)
+    //     const amountOfStablePoolBefore = await mockStrikeAsset.balanceOf(exchange.address)
+    //     const amountOfOptionPoolBefore = await podPut.balanceOf(exchange.address)
 
     //     const amountOfOptionUserBefore = await podPut.balanceOf(deployerAddress)
     //     const amountOfStableUserBefore = await mockStrikeAsset.balanceOf(deployerAddress)
 
-    //     const userBalanceBefore = await optionAMM.balances(deployerAddress)
+    //     const userBalanceBefore = await exchange.balances(deployerAddress)
     //     // console.log(userBalance)
 
     //     const amountToRemoveOptions = optionsToAddLiquidity
 
-    //     await optionAMM.removeLiquidity(scenario.amountOfStableToAddLiquidity, amountToRemoveOptions)
+    //     await exchange.removeLiquidity(scenario.amountOfStableToAddLiquidity, amountToRemoveOptions)
 
-    //     // const userBalance = await optionAMM.balances(secondAddress)
+    //     // const userBalance = await exchange.balances(secondAddress)
     //     // console.log('userBalance')
     //     // console.log(userBalance)
     //     // expect(userBalance.optionBalance).to.be.equal(optionBalance)
@@ -221,21 +221,21 @@ scenarios.forEach(scenario => {
       //   const optionBalance = await podPut.balanceOf(deployerAddress)
 
       //   // Approve both Option and Stable Token
-      //   await mockStrikeAsset.approve(optionAMM.address, ethers.constants.MaxUint256)
-      //   await podPut.approve(optionAMM.address, ethers.constants.MaxUint256)
+      //   await mockStrikeAsset.approve(exchange.address, ethers.constants.MaxUint256)
+      //   await podPut.approve(exchange.address, ethers.constants.MaxUint256)
 
-      //   await optionAMM.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
+      //   await exchange.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
 
-      //   const userBalance = await optionAMM.balances(deployerAddress)
+      //   const userBalance = await exchange.balances(deployerAddress)
       //   expect(userBalance.optionBalance).to.be.equal(optionBalance)
       //   expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
       //   expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
 
       //   // Approve both Option and Stable Token
       //   await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
-      //   await mockStrikeAsset.connect(second).approve(optionAMM.address, ethers.constants.MaxUint256)
+      //   await mockStrikeAsset.connect(second).approve(exchange.address, ethers.constants.MaxUint256)
 
-      //   await optionAMM.connect(second).buyExact(1, 100000, 1000000)
+      //   await exchange.connect(second).buyExact(1, 100000, 1000000)
       // })
     })
     describe('Sell', () => {
