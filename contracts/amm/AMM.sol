@@ -155,10 +155,13 @@ abstract contract AMM {
         _onTrade(tradeDetails);
 
         // 5. transfer assets
-        require(amountOfTokenBOut >= minAmountOfTokensB, "slippage higher than asked");
-        require(ERC20(tokenA).transferFrom(msg.sender, address(this), amountTokenA), "not transfered asset");
+        require(amountOfTokenBOut >= minAmountOfTokensB, "amount tokens out higher than min asked");
+        require(
+            ERC20(tokenA).transferFrom(msg.sender, address(this), amountTokenA),
+            "Could not transfer token A from caller"
+        );
 
-        require(ERC20(tokenB).transfer(msg.sender, amountOfTokenBOut), "not transfered asset");
+        require(ERC20(tokenB).transfer(msg.sender, amountOfTokenBOut), "Could not transfer token B to caller");
 
         emit BuyExact(msg.sender, amountTokenA, amountOfTokenBOut);
         return amountOfTokenBOut;
