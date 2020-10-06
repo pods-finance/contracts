@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -17,7 +18,7 @@ contract MockAMM is AMM {
     }
 
     function _getTradeDetails(uint256 amountIn) internal override returns (TradeDetails memory) {
-        TradeDetails memory tradeDetails = TradeDetails(amountTokensOut, "0x0");
+        TradeDetails memory tradeDetails = TradeDetails(amountTokensOut, bytes32(amountIn));
         return tradeDetails;
     }
 
