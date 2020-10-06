@@ -112,3 +112,4 @@ dist
 
 .openzeppelin/.session
 .idea
+.bin
