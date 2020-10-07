@@ -35,6 +35,7 @@ scenarios.forEach(scenario => {
     let factoryContract
     let priceProviderMock
     let blackScholes
+    let sigma
     let podPut
     let podPutAddress
     let exchange
@@ -77,7 +78,7 @@ scenarios.forEach(scenario => {
     }
 
     before(async function () {
-      let ContractFactory, MockERC20, MockWETH
+      let ContractFactory, MockERC20, MockWETH, Sigma
       [deployer, second, buyer, delegator] = await ethers.getSigners()
       deployerAddress = await deployer.getAddress()
       secondAddress = await second.getAddress()
@@ -86,14 +87,16 @@ scenarios.forEach(scenario => {
 
       // 1) Deploy Option
       // 2) Use same strike Asset
-      ;[ContractFactory, MockERC20, MockWETH, blackScholes] = await Promise.all([
+      ;[ContractFactory, MockERC20, MockWETH, blackScholes, Sigma] = await Promise.all([
         ethers.getContractFactory('OptionFactory'),
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
-        deployBlackScholes()
+        deployBlackScholes(),
+        ethers.getContractFactory('Sigma')
       ])
 
       const mockWeth = await MockWETH.deploy()
+      sigma = await Sigma.deploy(blackScholes.address)
 
       ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
         ContractFactory.deploy(mockWeth.address),
@@ -115,9 +118,9 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
-      // 1) Deploy OptionAMMExchange
-      const OptionAMMExchange = await ethers.getContractFactory('OptionAMMExchange')
-      exchange = await OptionAMMExchange.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address)
+      // 1) Deploy OptionAMM
+      const OptionAMM = await ethers.getContractFactory('OptionAMMExchange')
+      exchange = await OptionAMM.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address)
 
       await exchange.deployed()
     })

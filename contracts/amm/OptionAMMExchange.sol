@@ -4,23 +4,12 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
+import "../interfaces/ISigma.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMExchange.sol";
 import "@nomiclabs/buidler/console.sol";
 
-contract BS {
-    function getPutPrice(
-        uint256 spotPrice,
-        uint256 strikePrice,
-        uint256 sigma,
-        uint256 daysRemaining,
-        uint256 riskFree
-    ) public view returns (uint256) {
-        return 2;
-    }
-}
-
-contract OptionAMMExchange is IOptionAMMExchange, BS {
+contract OptionAMMExchange is IOptionAMMExchange {
     using SafeMath for uint256;
 
     uint256 constant INITIAL_FIMP = 10**54;
@@ -33,6 +22,7 @@ contract OptionAMMExchange is IOptionAMMExchange, BS {
     uint32 internal stableAssetDecimals;
     IPriceProvider public priceProvider;
     IBlackScholes public blackScholes;
+    ISigma public impliedVolatility;
 
     // Option Info
     uint256 public expiration;
@@ -79,7 +69,8 @@ contract OptionAMMExchange is IOptionAMMExchange, BS {
         address _optionAddress,
         address _stableAsset,
         address _priceProvider,
-        address _blackScholes
+        address _blackScholes,
+        address _sigma
     ) public {
         stableAsset = IPodOption(_optionAddress).strikeAsset();
         option = _optionAddress;
@@ -92,6 +83,10 @@ contract OptionAMMExchange is IOptionAMMExchange, BS {
         expiration = IPodOption(_optionAddress).expiration();
         priceProvider = IPriceProvider(_priceProvider);
         blackScholes = IBlackScholes(_blackScholes);
+        // Check if sigma black scholes version is the same as the above
+        impliedVolatility = ISigma(_sigma);
+        address sigmaBSAddress = impliedVolatility.blackScholes();
+        require(sigmaBSAddress == _blackScholes, "not same BS contract version");
         currentSigma = 10**18;
     }
 
@@ -209,6 +204,14 @@ contract OptionAMMExchange is IOptionAMMExchange, BS {
         emit RemoveLiquidity(msg.sender, amountOfOptions, amountOfStable);
     }
 
+    // getPutSigma(
+    //     uint256 _targetPrice,
+    //     uint256 _sigmaInitialGuess,
+    //     uint256 _spotPrice,
+    //     uint256 _strikePrice,
+    //     uint256 _timeToMaturity,
+    //     uint256 _riskFree
+
     function buyExact(
         uint256 maxPayedStable,
         uint256 amount,
@@ -247,7 +250,14 @@ contract OptionAMMExchange is IOptionAMMExchange, BS {
         uint256 targetPrice = stableToTransfer.div(amount);
 
         // 4. Update currentSigma
-        currentSigma = findNextSigma(targetPrice, sigmaInitialGuess, currentSigma, uint256(newPrice));
+        (currentSigma, ) = impliedVolatility.getPutSigma(
+            targetPrice,
+            sigmaInitialGuess,
+            spotPrice,
+            strikePrice,
+            timeToMaturity,
+            riskFree
+        );
 
         // 5. transfer assets
         require(ERC20(stableAsset).transferFrom(msg.sender, address(this), stableToTransfer), "not transfered asset");
@@ -313,15 +323,6 @@ contract OptionAMMExchange is IOptionAMMExchange, BS {
         }
 
         return (qA, qB);
-    }
-
-    function findNextSigma(
-        uint256 targetPrice,
-        uint256 sigmaInitialGuess,
-        uint256 currentSigma,
-        uint256 lastPrice
-    ) public view returns (uint256) {
-        return 2;
     }
 
     /**
