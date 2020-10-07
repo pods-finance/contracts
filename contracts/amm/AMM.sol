@@ -181,9 +181,12 @@ abstract contract AMM {
 
     function _getUserBalances(address user) internal view returns (uint256, uint256) {
         uint256 balanceOfTokenA = balances[user].tokenABalance;
-        uint256 balanceOfTokenB = balances[user].tokenBBalance;
+        uint256 normalizedBalanceA = balanceOfTokenA.mul(10**(uint256(WAD_DECIMALS - tokenADecimals)));
 
-        return (balanceOfTokenA, balanceOfTokenB);
+        uint256 balanceOfTokenB = balances[user].tokenBBalance;
+        uint256 normalizedBalanceB = balanceOfTokenB.mul(10**(uint256(WAD_DECIMALS - tokenBDecimals)));
+
+        return (normalizedBalanceA, normalizedBalanceB);
     }
 
     function _getMultipliers(
