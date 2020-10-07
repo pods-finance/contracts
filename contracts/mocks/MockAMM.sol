@@ -9,7 +9,7 @@ contract MockAMM is AMM {
     using SafeMath for uint256;
 
     uint256 public price = 10**18;
-    uint256 public amountTokensOut = 10**18;
+    uint256 public priceDecimals = 18;
 
     constructor(address _tokenA, address _tokenB) public AMM(_tokenA, _tokenB) {}
 
@@ -18,7 +18,9 @@ contract MockAMM is AMM {
     }
 
     function _getTradeDetails(uint256 amountIn) internal override returns (TradeDetails memory) {
+        uint256 amountTokensOut = amountIn.mul(price);
         TradeDetails memory tradeDetails = TradeDetails(amountTokensOut, bytes32(amountIn));
+
         return tradeDetails;
     }
 
