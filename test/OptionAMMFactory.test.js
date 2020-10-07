@@ -6,15 +6,16 @@ const getPriceProviderMock = require('./util/getPriceProviderMock')
 describe('OptionAMMFactory', () => {
   let caller
   let OptionAMMFactory, factory
-  let blackScholes, priceProviderMock, mockUnderlyingAsset
+  let blackScholes, priceProviderMock, sigma, mockUnderlyingAsset
   let option
 
   before(async () => {
     ;[caller] = await ethers.getSigners()
 
-    ;[OptionAMMFactory, MockERC20] = await Promise.all([
+    ;[OptionAMMFactory, MockERC20, Sigma] = await Promise.all([
       ethers.getContractFactory('OptionAMMFactory'),
       ethers.getContractFactory('MintableERC20'),
+      ethers.getContractFactory('Sigma')
     ])
 
     mockUnderlyingAsset = await MockERC20.deploy('USDC', 'USDC', 6)
@@ -23,17 +24,25 @@ describe('OptionAMMFactory', () => {
     blackScholes = await deployBlackScholes()
     const mock = await getPriceProviderMock(caller, '900000000000', mockUnderlyingAsset.address)
     priceProviderMock = mock.priceProvider
+
+    sigma = await Sigma.deploy(blackScholes.address)
   })
 
   beforeEach(async () => {
-    factory = await OptionAMMFactory.deploy(priceProviderMock.address, blackScholes.address)
+    factory = await OptionAMMFactory.deploy()
     await factory.deployed()
 
     option = await createMockOption()
   })
 
   it('should create new exchange', async () => {
-    const tx = factory.createExchange(option.address, mockUnderlyingAsset.address)
+    const tx = factory.createExchange(
+      option.address,
+      mockUnderlyingAsset.address,
+      priceProviderMock.address,
+      blackScholes.address,
+      sigma.address
+    )
     const exchange = await getExchangeCreated(factory, tx, caller)
 
     await expect(tx)
@@ -42,15 +51,34 @@ describe('OptionAMMFactory', () => {
   })
 
   it('should not create the same exchange twice', async () => {
-    await factory.createExchange(option.address, mockUnderlyingAsset.address)
+    await factory.createExchange(
+      option.address,
+      mockUnderlyingAsset.address,
+      priceProviderMock.address,
+      blackScholes.address,
+      sigma.address
+    )
 
-    const tx = factory.createExchange(option.address, mockUnderlyingAsset.address)
+    const tx = factory.createExchange(
+      option.address,
+      mockUnderlyingAsset.address,
+      priceProviderMock.address,
+      blackScholes.address,
+      sigma.address
+    )
 
     await expect(tx).to.be.revertedWith('Exchange already exists')
   })
 
   it('return a existent exchange', async () => {
-    const tx = factory.createExchange(option.address, mockUnderlyingAsset.address)
+    const tx = factory.createExchange(
+      option.address,
+      mockUnderlyingAsset.address,
+      priceProviderMock.address,
+      blackScholes.address,
+      sigma.address
+    )
+
     const exchange = await getExchangeCreated(factory, tx, caller)
 
     expect(await factory.getExchange(option.address)).to.be.equal(exchange)

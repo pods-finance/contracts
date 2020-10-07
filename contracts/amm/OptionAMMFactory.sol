@@ -8,15 +8,8 @@ import "./OptionAMMExchange.sol";
  */
 contract OptionAMMFactory is IOptionAMMFactory {
     mapping(address => OptionAMMExchange) private exchanges;
-    address public priceProvider;
-    address public priceMethod;
 
     event ExchangeCreated(address indexed deployer, OptionAMMExchange exchange);
-
-    constructor(address _priceProvider, address _priceMethod) public {
-        priceProvider = _priceProvider;
-        priceMethod = _priceMethod;
-    }
 
     /**
      * Returns the address of a previously created exchange
@@ -37,10 +30,22 @@ contract OptionAMMFactory is IOptionAMMFactory {
      * @param _stableAsset A stablecoin asset address
      * @return The address of the newly created exchange
      */
-    function createExchange(address _optionAddress, address _stableAsset) external override returns (address) {
+    function createExchange(
+        address _optionAddress,
+        address _stableAsset,
+        address _priceProvider,
+        address _priceMethod,
+        address _sigma
+    ) external override returns (address) {
         require(address(exchanges[_optionAddress]) == address(0), "Exchange already exists");
 
-        OptionAMMExchange exchange = new OptionAMMExchange(_optionAddress, _stableAsset, priceProvider, priceMethod);
+        OptionAMMExchange exchange = new OptionAMMExchange(
+            _optionAddress,
+            _stableAsset,
+            _priceProvider,
+            _priceMethod,
+            _sigma
+        );
 
         exchanges[_optionAddress] = exchange;
         emit ExchangeCreated(msg.sender, exchange);
