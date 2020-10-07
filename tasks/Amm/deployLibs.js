@@ -1,5 +1,5 @@
 
-const getContractFactoryWithLibraries = require('../../test/util/getContractFactoryWithLibraries')
+const getContractFactoryWithLibraries = require('../utils/getContractFactoryWithLibraries')
 
 internalTask('deployLibs', 'Deploy Math Libs')
   .setAction(async ({}, bre) => {

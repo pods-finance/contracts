@@ -1,5 +1,5 @@
 
-const getContractFactoryWithLibraries = require('../../test/util/getContractFactoryWithLibraries')
+const getContractFactoryWithLibraries = require('../utils/getContractFactoryWithLibraries')
 
 internalTask('deployBS', 'Deploy Black Scholes')
   .addParam('normaldist', 'Normal Distribution Address')
