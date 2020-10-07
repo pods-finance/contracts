@@ -7,4 +7,5 @@ internalTask('deployNormalDistribution', 'Deploy Normal Distribution Contract')
 
     await normalDistribution.deployed()
     console.log('Normal Distribution Address', normalDistribution.address)
+    return normalDistribution.address
   })
