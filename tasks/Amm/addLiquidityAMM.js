@@ -1,21 +1,20 @@
-const UniswapExchangeABI = require('../../abi/uniswap_exchange.json')
-
 internalTask('addLiquidityAMM', 'addLiquidityAMM')
-  .addOptionalParam('optionContractName', 'Option Contract type to use')
-  .addParam('token', 'Token Address to add liquidity')
-  .addParam('amountOfTokens', 'Max amount of Tokens')
-  .addParam('amountOfEth', 'Amount of Eth')
-  .addParam('deployerAddress', 'Sender address')
-  .addParam('factory', 'UniswapV1 factory address')
-  .setAction(async ({ token, amountOfEth, amountOfTokens, deployerAddress, factory }) => {
-    const tokenContract = await ethers.getContractAt('MockERC20', token)
+  .addParam('tokena', 'Token Address to add liquidity')
+  .addParam('tokenb', 'Token Address to add liquidity')
+  .addParam('amounta', 'Max amount of Tokens')
+  .addParam('amountb', 'Amount of Eth')
+  .addParam('pooladdress', 'poolAddress')
+  .setAction(async ({ tokena, tokenb, amounta, amountb, pooladdress }) => {
+    const TokenContractA = await ethers.getContractAt('MockERC20', tokena)
+    const TokenContractB = await ethers.getContractAt('MockERC20', tokenb)
+    const PoolContract = await ethers.getContractAt('OptionAMMPool', pooladdress)
     // Get Exchange Address
-    const tokenExchangeAddress = await run('getExchangeUniswapV1', { token, factory })
-    const ExchangeContract = new web3.eth.Contract(UniswapExchangeABI, tokenExchangeAddress)
     // Approve tokens to be added
-    const txIdApprove = await tokenContract.approve(tokenExchangeAddress, (ethers.constants.MaxUint256).toString())
-    await txIdApprove.wait()
+    await TokenContractA.approve(pooladdress, (ethers.constants.MaxUint256).toString())
+    await TokenContractB.approve(pooladdress, (ethers.constants.MaxUint256).toString())
     // Add liquidity per se
-    await ExchangeContract.methods.addLiquidity(0, amountOfTokens, (ethers.constants.MaxUint256).toString()).send({ from: deployerAddress, value: amountOfEth })
-    console.log('Liquidity Added')
+    const a = ethers.BigNumber.from(1)
+    const b = ethers.BigNumber.from(1)
+    await PoolContract.addLiquidity(a, b)
+    console.log('Liquidity Added: amountA: ' + amounta + ' and amountB: ' + amountb)
   })
