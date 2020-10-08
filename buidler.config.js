@@ -19,7 +19,7 @@ module.exports = {
       gasMultiplier: 2,
       loggingEnabled: !!(process.env.BUIDLER_LOGGING_ENABLED) || false
     },
-    development: {
+    local: {
       protocol: 'http',
       host: 'localhost',
       port: 8545,
