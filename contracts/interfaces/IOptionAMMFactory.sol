@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
 interface IOptionAMMFactory {
-    function createExchange(
+    function createPool(
         address _optionAddress,
         address _stableAsset,
         address _priceProvider,
@@ -9,5 +10,5 @@ interface IOptionAMMFactory {
         address _sigma
     ) external returns (address);
 
-    function getExchange(address _optionAddress) external view returns (address);
+    function getPool(address _optionAddress) external view returns (address);
 }

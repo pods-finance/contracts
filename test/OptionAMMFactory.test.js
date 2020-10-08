@@ -35,23 +35,23 @@ describe('OptionAMMFactory', () => {
     option = await createMockOption()
   })
 
-  it('should create new exchange', async () => {
-    const tx = factory.createExchange(
+  it('should create new pool', async () => {
+    const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
       blackScholes.address,
       sigma.address
     )
-    const exchange = await getExchangeCreated(factory, tx, caller)
+    const pool = await getPoolCreated(factory, tx, caller)
 
     await expect(tx)
-      .to.emit(factory, 'ExchangeCreated')
-      .withArgs(await caller.getAddress(), exchange)
+      .to.emit(factory, 'PoolCreated')
+      .withArgs(await caller.getAddress(), pool)
   })
 
-  it('should not create the same exchange twice', async () => {
-    await factory.createExchange(
+  it('should not create the same pool twice', async () => {
+    await factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
@@ -59,7 +59,7 @@ describe('OptionAMMFactory', () => {
       sigma.address
     )
 
-    const tx = factory.createExchange(
+    const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
@@ -67,11 +67,11 @@ describe('OptionAMMFactory', () => {
       sigma.address
     )
 
-    await expect(tx).to.be.revertedWith('Exchange already exists')
+    await expect(tx).to.be.revertedWith('Pool already exists')
   })
 
-  it('return a existent exchange', async () => {
-    const tx = factory.createExchange(
+  it('return a existent pool', async () => {
+    const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
@@ -79,16 +79,16 @@ describe('OptionAMMFactory', () => {
       sigma.address
     )
 
-    const exchange = await getExchangeCreated(factory, tx, caller)
+    const pool = await getPoolCreated(factory, tx, caller)
 
-    expect(await factory.getExchange(option.address)).to.be.equal(exchange)
+    expect(await factory.getPool(option.address)).to.be.equal(pool)
   })
 })
 
-async function getExchangeCreated (factory, tx, caller) {
+async function getPoolCreated (factory, tx, caller) {
   const receipt = await tx
-  const filterFrom = await factory.filters.ExchangeCreated(await caller.getAddress())
+  const filterFrom = await factory.filters.PoolCreated(await caller.getAddress())
   const eventDetails = await factory.queryFilter(filterFrom, receipt.blockNumber, receipt.blockNumber)
-  const { exchange } = eventDetails[0].args
-  return exchange
+  const { pool } = eventDetails[0].args
+  return pool
 }
