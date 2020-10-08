@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-interface IOptionAMMExchange {
+interface IOptionAMMPool {
     function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external;
 
     function removeLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external;
