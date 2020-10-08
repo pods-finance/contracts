@@ -6,10 +6,10 @@ import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/ISigma.sol";
 import "../interfaces/IPodOption.sol";
-import "../interfaces/IOptionAMMExchange.sol";
+import "../interfaces/IOptionAMMPool.sol";
 import "@nomiclabs/buidler/console.sol";
 
-contract OptionAMMExchange is IOptionAMMExchange {
+contract OptionAMMPool is IOptionAMMPool {
     using SafeMath for uint256;
 
     uint256 constant INITIAL_FIMP = 10**54;
