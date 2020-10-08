@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IPodPut.sol";
@@ -41,13 +42,15 @@ contract OptionExchange {
      * @param outputToken The token which the premium will be paid
      * @param minOutputAmount Minimum amount of output tokens accepted
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
+     * @param params Custom params sent to exchange
      */
     function sellOptions(
         IPodPut option,
         uint256 optionAmount,
         address outputToken,
         uint256 minOutputAmount,
-        uint256 deadline
+        uint256 deadline,
+        bytes calldata params
     ) external {
         uint256 strikeToTransfer = option.strikeToTransfer(optionAmount);
 
@@ -72,7 +75,8 @@ contract OptionExchange {
             optionAmount,
             minOutputAmount,
             deadline,
-            msg.sender
+            msg.sender,
+            params
         );
 
         emit OptionsSold(msg.sender, optionAddress, optionAmount, outputToken, outputBought);
@@ -87,13 +91,15 @@ contract OptionExchange {
      * @param inputToken The token spent to buy options
      * @param maxInputAmount Max amount of input tokens sold
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
+     * @param params Custom params sent to exchange
      */
     function buyExactOptions(
         IPodPut option,
         uint256 optionAmount,
         address inputToken,
         uint256 maxInputAmount,
-        uint256 deadline
+        uint256 deadline,
+        bytes calldata params
     ) external {
         address optionAddress = address(option);
 
@@ -112,7 +118,8 @@ contract OptionExchange {
             maxInputAmount,
             optionAmount,
             deadline,
-            msg.sender
+            msg.sender,
+            params
         );
 
         emit OptionsBought(msg.sender, optionAddress, optionAmount, inputToken, inputSold);
@@ -133,7 +140,8 @@ contract OptionExchange {
         uint256 minOptionAmount,
         address inputToken,
         uint256 inputAmount,
-        uint256 deadline
+        uint256 deadline,
+        bytes calldata params
     ) external {
         address optionAddress = address(option);
 
@@ -152,7 +160,8 @@ contract OptionExchange {
             inputAmount,
             minOptionAmount,
             deadline,
-            msg.sender
+            msg.sender,
+            params
         );
 
         emit OptionsBought(msg.sender, optionAddress, outputBought, inputToken, inputAmount);

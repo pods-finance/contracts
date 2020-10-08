@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
+pragma experimental ABIEncoderV2;
 
 abstract contract ExchangeProvider {
     modifier withinDeadline(uint256 deadline) {
@@ -13,7 +14,8 @@ abstract contract ExchangeProvider {
         uint256 inputAmount,
         uint256 minOutputAmount,
         uint256 deadline,
-        address recipient
+        address recipient,
+        bytes calldata params
     ) external virtual returns (uint256 outputBought);
 
     function swapWithExactOutput(
@@ -22,6 +24,7 @@ abstract contract ExchangeProvider {
         uint256 maxInputAmount,
         uint256 outputAmount,
         uint256 deadline,
-        address recipient
+        address recipient,
+        bytes calldata params
     ) external virtual returns (uint256 inputSold);
 }

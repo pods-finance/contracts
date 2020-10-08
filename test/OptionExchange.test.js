@@ -74,7 +74,8 @@ describe('OptionExchange', () => {
         amountToMint,
         outputToken,
         minOutputAmount,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx)
@@ -96,7 +97,8 @@ describe('OptionExchange', () => {
         amountToMint,
         outputToken,
         minOutputAmount,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx).to.be.revertedWith('Exchange not found')
@@ -123,7 +125,8 @@ describe('OptionExchange', () => {
         amountToMint,
         outputToken,
         minOutputAmount,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx).to.be.revertedWith('Transaction timeout')
@@ -145,7 +148,8 @@ describe('OptionExchange', () => {
         amountToBuy,
         inputToken,
         minAcceptedCost,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx)
@@ -167,7 +171,8 @@ describe('OptionExchange', () => {
         minAcceptedOptions,
         inputToken,
         inputAmount,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx)
@@ -186,7 +191,8 @@ describe('OptionExchange', () => {
         amountToBuy,
         inputToken,
         cost,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx).to.be.revertedWith('Exchange not found')
@@ -206,7 +212,8 @@ describe('OptionExchange', () => {
         amountToBuy,
         inputToken,
         cost,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx).to.be.revertedWith('Transaction timeout')

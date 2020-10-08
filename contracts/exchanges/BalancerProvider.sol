@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -22,7 +23,8 @@ contract BalancerProvider is ExchangeProvider {
         uint256 inputAmount,
         uint256 minOutputAmount,
         uint256 deadline,
-        address recipient
+        address recipient,
+        bytes calldata params // solhint-disable-line no-unused-vars
     ) external override withinDeadline(deadline) returns (uint256) {
         uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
         uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
@@ -59,7 +61,8 @@ contract BalancerProvider is ExchangeProvider {
         uint256 maxInputAmount,
         uint256 outputAmount,
         uint256 deadline,
-        address recipient
+        address recipient,
+        bytes calldata params // solhint-disable-line no-unused-vars
     ) external override withinDeadline(deadline) returns (uint256) {
         uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
         uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
