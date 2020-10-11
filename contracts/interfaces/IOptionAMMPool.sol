@@ -11,4 +11,10 @@ interface IOptionAMMPool {
         uint256 amount,
         uint256 sigmaInitialGuess
     ) external;
+
+    function buyExactInput(
+        uint256 amount,
+        uint256 minOptionBought,
+        uint256 sigmaInitialGuess
+    ) external;
 }

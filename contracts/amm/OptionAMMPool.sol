@@ -267,6 +267,14 @@ contract OptionAMMPool is IOptionAMMPool {
         emit BuyExact(msg.sender, amount);
     }
 
+    function buyExactInput(
+        uint256 amount,
+        uint256 minOptionBought,
+        uint256 sigmaInitialGuess
+    ) external override {
+        // TODO
+    }
+
     function _getPoolBalances() internal returns (uint256, uint256) {
         uint256 balanceOfTokenA = ERC20(stableAsset).balanceOf(address(this));
         uint256 normalizedBalanceA = balanceOfTokenA.mul(10**(WAD_DECIMALS - stableAssetDecimals));
