@@ -7,9 +7,9 @@ import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/ISigma.sol";
 import "../interfaces/IPodOption.sol";
-import "@nomiclabs/buidler/console.sol";
+import "../interfaces/IOptionAMMPool.sol";
 
-contract OptionAMM is AMM {
+contract OptionAMMPool is AMM {
     using SafeMath for uint256;
     uint256 constant INITIAL_SIGMA = 10**18;
 

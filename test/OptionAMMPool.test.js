@@ -28,7 +28,7 @@ const scenarios = [
 ]
 
 scenarios.forEach(scenario => {
-  describe('OptionAMM.sol - ' + scenario.name, () => {
+  describe('OptionAMMPool.sol - ' + scenario.name, () => {
     const TEN = ethers.BigNumber.from('10')
     let mockUnderlyingAsset
     let mockStrikeAsset
@@ -38,7 +38,7 @@ scenarios.forEach(scenario => {
     let sigma
     let podPut
     let podPutAddress
-    let optionAMM
+    let optionAMMPool
     let deployer
     let deployerAddress
     let second
@@ -63,12 +63,12 @@ scenarios.forEach(scenario => {
       await MintPhase(optionsAmount, signer, owner)
       await mockStrikeAsset.connect(signer).mint(stableAmount)
       // Approve both Option and Stable Token
-      await mockStrikeAsset.connect(signer).approve(optionAMM.address, ethers.constants.MaxUint256)
-      await podPut.connect(signer).approve(optionAMM.address, ethers.constants.MaxUint256)
+      await mockStrikeAsset.connect(signer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+      await podPut.connect(signer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
 
       const optionsDecimals = await podPut.decimals()
       const stableDecimals = await mockStrikeAsset.decimals()
-      await optionAMM.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
+      await optionAMMPool.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
     }
 
     before(async function () {
@@ -112,22 +112,22 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
-      // 1) Deploy OptionAMM
-      const OptionAMM = await ethers.getContractFactory('OptionAMM')
-      optionAMM = await OptionAMM.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address)
+      // 1) Deploy optionAMMPool
+      const OptionAMMPool = await ethers.getContractFactory('optionAMMPool')
+      optionAMMPool = await OptionAMMPool.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address)
 
-      await optionAMM.deployed()
+      await optionAMMPool.deployed()
     })
 
     describe('Constructor/Initialization checks', () => {
       it('should have correct option data (strikePrice, expiration, strikeAsset)', async () => {
-        expect(await optionAMM.tokenB()).to.equal(mockStrikeAsset.address)
-        expect(await optionAMM.tokenA()).to.equal(podPut.address)
-        expect(await optionAMM.priceProvider()).to.equal(priceProviderMock.address)
+        expect(await optionAMMPool.tokenB()).to.equal(mockStrikeAsset.address)
+        expect(await optionAMMPool.tokenA()).to.equal(podPut.address)
+        expect(await optionAMMPool.priceProvider()).to.equal(priceProviderMock.address)
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
-        const priceProperties = await optionAMM.priceProperties()
+        const priceProperties = await optionAMMPool.priceProperties()
 
         expect(priceProperties.expiration).to.equal(optionExpiration)
         expect(priceProperties.strikePrice).to.equal(optionStrikePrice)
@@ -136,19 +136,19 @@ scenarios.forEach(scenario => {
 
     describe('Add Liquidity', () => {
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(optionAMM.addLiquidity(0, 10000)).to.be.revertedWith('ou should add both tokens on the first liquidity')
+        await expect(optionAMMPool.addLiquidity(0, 10000)).to.be.revertedWith('ou should add both tokens on the first liquidity')
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
-        await expect(optionAMM.addLiquidity(1000, 10000)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+        await expect(optionAMMPool.addLiquidity(1000, 10000)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
       })
 
-      it('should revert if user do not approved one of assets to be spended by OptionAMM', async () => {
+      it('should revert if user do not approved one of assets to be spent by OptionAMMPool', async () => {
         // Mint option and Stable asset to the liquidity adder
         await MintPhase(1)
         await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
         const optionBalance = await podPut.balanceOf(deployerAddress)
-        await expect(optionAMM.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
     })
 

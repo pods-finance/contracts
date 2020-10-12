@@ -1,10 +1,11 @@
 require('dotenv').config()
 require('./tasks/utils/balance')
 require('./tasks/deployNewSerie')
-require('./tasks/deployOptionFactory')
+require('./tasks/option/deployOptionFactory')
 require('./tasks/UniswapV1/getExchangeUniswapV1')
 require('./tasks/deployOptionExchange')
 require('./tasks/Balancer/index')
+require('./tasks/Amm/index')
 
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')
@@ -18,7 +19,7 @@ module.exports = {
       gasMultiplier: 2,
       loggingEnabled: !!(process.env.BUIDLER_LOGGING_ENABLED) || false
     },
-    development: {
+    local: {
       protocol: 'http',
       host: 'localhost',
       port: 8545,
