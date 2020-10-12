@@ -27,4 +27,14 @@ abstract contract ExchangeProvider {
         address recipient,
         bytes calldata params
     ) external virtual returns (uint256 inputSold);
+
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountA,
+        uint256 amountB,
+        uint256 deadline,
+        address recipient,
+        bytes calldata params
+    ) external virtual;
 }

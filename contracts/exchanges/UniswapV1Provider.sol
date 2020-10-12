@@ -42,6 +42,18 @@ contract UniswapV1Provider is ExchangeProvider {
         return _swapWithExactOutput(inputToken, outputToken, maxInputAmount, outputAmount, deadline, recipient);
     }
 
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountA,
+        uint256 amountB,
+        uint256 deadline,
+        address recipient,
+        bytes calldata params
+    ) external override withinDeadline(deadline) {
+        // TODO
+    }
+
     /**
      * Returns the Uniswap Exchange associated with the token address
      *

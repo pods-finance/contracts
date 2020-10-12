@@ -29,6 +29,14 @@ contract OptionExchange {
         uint256 outputBought
     );
 
+    event OptionsStaked(
+        address indexed staker,
+        address indexed optionAddress,
+        uint256 amountOptions,
+        address token,
+        uint256 amountToken
+    );
+
     constructor(ExchangeProvider _exchange) public {
         exchange = _exchange;
     }
@@ -80,6 +88,36 @@ contract OptionExchange {
         );
 
         emit OptionsSold(msg.sender, optionAddress, optionAmount, outputToken, outputBought);
+    }
+
+    function addLiquidity(
+        IPodPut option,
+        uint256 optionAmount,
+        address token,
+        uint256 amountToken,
+        uint256 deadline,
+        bytes calldata params
+    ) external {
+        uint256 strikeToTransfer = option.strikeToTransfer(optionAmount);
+
+        IERC20 strikeAsset = IERC20(option.strikeAsset());
+        require(
+            strikeAsset.transferFrom(msg.sender, address(this), strikeToTransfer),
+            "Could not transfer strike tokens from caller"
+        );
+
+        address optionAddress = address(option);
+
+        // Approving Strike transfer to Option
+        strikeAsset.approve(optionAddress, strikeToTransfer);
+        option.mint(optionAmount, msg.sender);
+
+        // Approving Option transfer to Exchange
+        option.approve(address(exchange), optionAmount);
+
+        exchange.addLiquidity(optionAddress, token, optionAmount, amountToken, deadline, msg.sender, params);
+
+        emit OptionsStaked(msg.sender, optionAddress, optionAmount, token, amountToken);
     }
 
     /**

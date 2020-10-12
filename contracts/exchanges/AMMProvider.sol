@@ -64,8 +64,6 @@ contract AMMProvider is ExchangeProvider {
         uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
         IOptionAMMPool pool = _getPool(outputToken);
 
-        uint256 balanceBefore = ERC20(inputToken).balanceOf(address(this));
-
         // Take input amount from caller
         require(
             ERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
@@ -86,6 +84,32 @@ contract AMMProvider is ExchangeProvider {
 
         tokensSold = inputBalanceBefore.sub(inputBalanceAfter);
         return tokensSold;
+    }
+
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountA,
+        uint256 amountB,
+        uint256 deadline,
+        address recipient,
+        bytes calldata params
+    ) external override withinDeadline(deadline) {
+        IOptionAMMPool pool = _getPool(tokenA);
+
+        // Take tokenA amount from caller
+        require(
+            ERC20(tokenA).transferFrom(msg.sender, address(this), amountA),
+            "Could not transfer options from caller"
+        );
+
+        // Take tokenB amount from caller
+        require(
+            ERC20(tokenB).transferFrom(msg.sender, address(this), amountB),
+            "Could not transfer tokens from caller"
+        );
+
+        pool.addLiquidity(amountB, amountA);
     }
 
     /**
