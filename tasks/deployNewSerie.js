@@ -5,7 +5,7 @@ const erc20ABI = require('../abi/erc20.json')
 const { getBlockDate } = require('../utils/utils')
 require('./UniswapV1/createExchangeUniswapV1')
 require('./UniswapV1/addLiquidityUniswapV1')
-require('./mintOptions')
+require('./option/mintOptions')
 
 task('deploySerie', 'Initial Option series setup: create option, create an exchange and add liquidity')
   .addParam('underlying', 'symbol of underlying asset. (E.G: wbtc)')
