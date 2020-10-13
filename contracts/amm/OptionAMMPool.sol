@@ -146,6 +146,14 @@ contract OptionAMMPool is AMM {
         return newABPRice;
     }
 
+    function buyExactInput(
+        uint256 amount,
+        uint256 minOptionBought,
+        uint256 sigmaInitialGuess
+    ) external {
+        // TODO
+    }
+
     function _getTradeDetails(uint256 amountIn) internal override returns (TradeDetails memory) {
         uint256 spotPrice = priceProvider.getAssetPrice(priceProperties.underlyingAsset);
         uint256 timeToMaturity = _getTimeToMaturity();
