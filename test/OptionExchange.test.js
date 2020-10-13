@@ -41,9 +41,7 @@ describe('OptionExchange', () => {
     const factoryContract = await ContractFactory.deploy(weth.address)
     podPut = await makeOption(factoryContract, underlyingAsset, strikeAsset)
 
-    exchangeProvider = await UniswapV1Provider.deploy()
-    await exchangeProvider.initialize(uniswapFactory.address)
-
+    exchangeProvider = await UniswapV1Provider.deploy(uniswapFactory.address)
     exchange = await OptionExchange.deploy(exchangeProvider.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
@@ -76,7 +74,8 @@ describe('OptionExchange', () => {
         amountToMint,
         outputToken,
         minOutputAmount,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx)
@@ -98,7 +97,8 @@ describe('OptionExchange', () => {
         amountToMint,
         outputToken,
         minOutputAmount,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx).to.be.revertedWith('Exchange not found')
@@ -125,7 +125,8 @@ describe('OptionExchange', () => {
         amountToMint,
         outputToken,
         minOutputAmount,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx).to.be.revertedWith('Transaction timeout')
@@ -147,7 +148,8 @@ describe('OptionExchange', () => {
         amountToBuy,
         inputToken,
         minAcceptedCost,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx)
@@ -169,7 +171,8 @@ describe('OptionExchange', () => {
         minAcceptedOptions,
         inputToken,
         inputAmount,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx)
@@ -188,7 +191,8 @@ describe('OptionExchange', () => {
         amountToBuy,
         inputToken,
         cost,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx).to.be.revertedWith('Exchange not found')
@@ -208,7 +212,8 @@ describe('OptionExchange', () => {
         amountToBuy,
         inputToken,
         cost,
-        deadline
+        deadline,
+        [ethers.BigNumber.from(0)]
       )
 
       await expect(tx).to.be.revertedWith('Transaction timeout')

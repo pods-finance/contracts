@@ -8,10 +8,8 @@ async function main () {
     ethers.getContractFactory('OptionExchange')
   ])
 
-  const exchangeUniswapV1Provider = await ExchangeUniswapV1Provider.deploy()
+  const exchangeUniswapV1Provider = await ExchangeUniswapV1Provider.deploy(uniswapFactoryAddress)
   await exchangeUniswapV1Provider.deployed()
-
-  await exchangeUniswapV1Provider.initialize(uniswapFactoryAddress)
 
   const optionExchange = await OptionExchange.deploy(exchangeUniswapV1Provider.address)
   await optionExchange.deployed()

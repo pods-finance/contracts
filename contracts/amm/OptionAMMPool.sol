@@ -90,7 +90,11 @@ contract OptionAMMPool is IOptionAMMPool {
         currentSigma = 10**18;
     }
 
-    function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external override {
+    function addLiquidity(
+        uint256 amountOfStable,
+        uint256 amountOfOptions,
+        address owner
+    ) external override {
         // 2) Calculate Totals
         (uint256 totalStable, uint256 totalOptions) = _getPoolBalances();
 
@@ -265,6 +269,14 @@ contract OptionAMMPool is IOptionAMMPool {
         require(ERC20(option).transfer(msg.sender, amount), "not transfered asset");
 
         emit BuyExact(msg.sender, amount);
+    }
+
+    function buyExactInput(
+        uint256 amount,
+        uint256 minOptionBought,
+        uint256 sigmaInitialGuess
+    ) external override {
+        // TODO
     }
 
     function _getPoolBalances() internal returns (uint256, uint256) {
