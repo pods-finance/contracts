@@ -38,7 +38,7 @@ scenarios.forEach(scenario => {
     let sigma
     let podPut
     let podPutAddress
-    let pool
+    let optionAMMPool
     let deployer
     let deployerAddress
     let second
@@ -63,18 +63,12 @@ scenarios.forEach(scenario => {
       await MintPhase(optionsAmount, signer, owner)
       await mockStrikeAsset.connect(signer).mint(stableAmount)
       // Approve both Option and Stable Token
-      await mockStrikeAsset.connect(signer).approve(pool.address, ethers.constants.MaxUint256)
-      await podPut.connect(signer).approve(pool.address, ethers.constants.MaxUint256)
+      await mockStrikeAsset.connect(signer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+      await podPut.connect(signer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
 
       const optionsDecimals = await podPut.decimals()
       const stableDecimals = await mockStrikeAsset.decimals()
-      console.log('options decimasl', optionsDecimals.toString())
-      console.log('amount of options added w/ decimals', optionWithDecimals.toString())
-      console.log('amount of options added wo/ decimals', ethers.BigNumber.from(optionWithDecimals).div(TEN.pow(optionsDecimals)).toString())
-      console.log('stable decimasl', stableDecimals.toString())
-      console.log('amount of Stable w/ decimals', scenario.amountOfStableToAddLiquidity.toString())
-      console.log('amount of Stable added wo/ decimals', ethers.BigNumber.from(scenario.amountOfStableToAddLiquidity).div(TEN.pow(stableDecimals)).toString())
-      await pool.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
+      await optionAMMPool.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
     }
 
     before(async function () {
@@ -118,127 +112,47 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
-      // 1) Deploy OptionAMM
-      const OptionAMM = await ethers.getContractFactory('OptionAMMPool')
-      pool = await OptionAMM.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address)
+      // 1) Deploy optionAMMPool
+      const OptionAMMPool = await ethers.getContractFactory('OptionAMMPool')
+      optionAMMPool = await OptionAMMPool.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address)
 
-      await pool.deployed()
+      await optionAMMPool.deployed()
     })
 
     describe('Constructor/Initialization checks', () => {
       it('should have correct option data (strikePrice, expiration, strikeAsset)', async () => {
-        expect(await pool.stableAsset()).to.equal(mockStrikeAsset.address)
-        expect(await pool.option()).to.equal(podPut.address)
-        expect(await pool.priceProvider()).to.equal(priceProviderMock.address)
+        expect(await optionAMMPool.tokenB()).to.equal(mockStrikeAsset.address)
+        expect(await optionAMMPool.tokenA()).to.equal(podPut.address)
+        expect(await optionAMMPool.priceProvider()).to.equal(priceProviderMock.address)
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
-        expect(await pool.expiration()).to.equal(optionExpiration)
-        expect(await pool.strikePrice()).to.equal(optionStrikePrice)
+        const priceProperties = await optionAMMPool.priceProperties()
+
+        expect(priceProperties.expiration).to.equal(optionExpiration)
+        expect(priceProperties.strikePrice).to.equal(optionStrikePrice)
       })
     })
 
     describe('Add Liquidity', () => {
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(pool.addLiquidity(0, 10000)).to.be.revertedWith('You should add both tokens on the first liquidity')
+        await expect(optionAMMPool.addLiquidity(0, 10000)).to.be.revertedWith('ou should add both tokens on the first liquidity')
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
-        await expect(pool.addLiquidity(1000, 10000)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+        await expect(optionAMMPool.addLiquidity(1000, 10000)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
       })
 
-      it('should revert if user do not approved one of assets to be spended by OptionAMMPool', async () => {
+      it('should revert if user do not approved one of assets to be spent by OptionAMMPool', async () => {
         // Mint option and Stable asset to the liquidity adder
         await MintPhase(1)
         await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
         const optionBalance = await podPut.balanceOf(deployerAddress)
-        await expect(pool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
-
-      // it('should add first liquidity and update user balance accordingly', async () => {
-      //   // Mint option and Stable asset to the liquidity adder
-      //   await MintPhase(1)
-      //   await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
-      //   const optionBalance = await podPut.balanceOf(deployerAddress)
-
-      //   // Approve both Option and Stable Token
-      //   await mockStrikeAsset.approve(pool.address, ethers.constants.MaxUint256)
-      //   await podPut.approve(pool.address, ethers.constants.MaxUint256)
-
-      //   await pool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
-
-      //   const userBalance = await pool.balances(deployerAddress)
-      //   expect(userBalance.optionBalance).to.be.equal(optionBalance)
-      //   expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
-      //   expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
-      // })
-
-      // it('should add N+1 liquidity and update user balance accordingly', async () => {
-      //   // Mint option and Stable asset to the liquidity adder
-      //   await mintAndAddLiquidity(1, scenario.amountOfStableToAddLiquidity)
-      //   await mintAndAddLiquidity(2, scenario.amountOfStableToAddLiquidity.mul(2), second, secondAddress)
-
-      //   const userBalance = await pool.balances(secondAddress)
-      //   console.log('userBalance')
-      //   console.log(userBalance)
-      //   // expect(userBalance.optionBalance).to.be.equal(optionBalance)
-      //   // expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
-      //   // expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
-      // })
     })
 
-    // describe('Remove Liquidity', () => {
-    //   it('should remove liquidity completely', async () => {
-    //     // Mint option and Stable asset to the liquidity adder
-    //     const optionsToAddLiquidity = ethers.BigNumber.from('10').mul(TEN.pow(scenario.underlyingAssetDecimals))
-
-    //     await mintAndAddLiquidity(10, scenario.amountOfStableToAddLiquidity)
-
-    //     const amountOfStablePoolBefore = await mockStrikeAsset.balanceOf(pool.address)
-    //     const amountOfOptionPoolBefore = await podPut.balanceOf(pool.address)
-
-    //     const amountOfOptionUserBefore = await podPut.balanceOf(deployerAddress)
-    //     const amountOfStableUserBefore = await mockStrikeAsset.balanceOf(deployerAddress)
-
-    //     const userBalanceBefore = await pool.balances(deployerAddress)
-    //     // console.log(userBalance)
-
-    //     const amountToRemoveOptions = optionsToAddLiquidity
-
-    //     await pool.removeLiquidity(scenario.amountOfStableToAddLiquidity, amountToRemoveOptions)
-
-    //     // const userBalance = await pool.balances(secondAddress)
-    //     // console.log('userBalance')
-    //     // console.log(userBalance)
-    //     // expect(userBalance.optionBalance).to.be.equal(optionBalance)
-    //     // expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
-    //     // expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
-    //   })
-    // })
-
     describe('Buy', () => {
-      // it('should buy and update balances accordingly', async () => {
-      //   // Mint option and Stable asset to the liquidity adder
-      //   await MintPhase(1)
-      //   await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
-      //   const optionBalance = await podPut.balanceOf(deployerAddress)
-
-      //   // Approve both Option and Stable Token
-      //   await mockStrikeAsset.approve(pool.address, ethers.constants.MaxUint256)
-      //   await podPut.approve(pool.address, ethers.constants.MaxUint256)
-
-      //   await pool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())
-
-      //   const userBalance = await pool.balances(deployerAddress)
-      //   expect(userBalance.optionBalance).to.be.equal(optionBalance)
-      //   expect(userBalance.stableBalance).to.be.equal(scenario.amountOfStableToAddLiquidity)
-      //   expect(userBalance.fImp).to.be.equal(scenario.initialFImp)
-
-      //   // Approve both Option and Stable Token
-      //   await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
-      //   await mockStrikeAsset.connect(second).approve(pool.address, ethers.constants.MaxUint256)
-
-      //   await pool.connect(second).buyExact(1, 100000, 1000000)
       // })
     })
     describe('Sell', () => {
