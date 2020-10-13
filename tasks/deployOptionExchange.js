@@ -8,6 +8,7 @@ internalTask('deployOptionExchange', 'Deploy new option exchange using provider'
     const ExchangeProvider = await ethers.getContractFactory(provider)
     // 1) Deploy provider
     const exchangeProvider = await ExchangeProvider.deploy(factoryAddress)
+     console.log('Option Provider Address: ', exchangeProvider.address)
     // 2) Deploy Option Exchange
     console.log('----Start Deploy OptionExchange----')
     const ExchangeContract = await ethers.getContractFactory('OptionExchange')
