@@ -26,8 +26,8 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Get the current price of an asset
-     * @param _asset Address of asset
+     * Gets the current price of an asset
+     * @param _asset Address of an asset
      * @return Current price
      */
     function getAssetPrice(address _asset) external view returns (int256) {
@@ -38,8 +38,20 @@ contract PriceProvider is Ownable {
     }
 
     /**
+     * Gets the number of decimals of a PriceFeed
+     * @param _asset Address of an asset
+     * @return Price decimals
+     */
+    function getAssetDecimals(address _asset) external view returns (uint8) {
+        IPriceFeed feed = _assetPriceFeeds[_asset];
+        require(address(feed) != address(0), "Feed not registered");
+
+        return feed.decimals();
+    }
+
+    /**
      * Get the address of a registered price feed
-     * @param _asset Address of asset
+     * @param _asset Address of an asset
      * @return Price feed address
      */
     function getPriceFeed(address _asset) external view returns (address) {
