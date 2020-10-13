@@ -81,15 +81,15 @@ scenarios.forEach(scenario => {
 
     describe('Add Liquidity', () => {
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(amm.addLiquidity(0, 10000)).to.be.revertedWith('You should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(0, 10000, userAAddress)).to.be.revertedWith('You should add both tokens on the first liquidity')
 
-        await expect(amm.addLiquidity(100000, 0)).to.be.revertedWith('You should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(100000, 0, userAAddress)).to.be.revertedWith('You should add both tokens on the first liquidity')
 
-        await expect(amm.addLiquidity(0, 0)).to.be.revertedWith('You should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(0, 0, userAAddress)).to.be.revertedWith('You should add both tokens on the first liquidity')
       })
 
       it('should revert if user ask more assets than the user s balance', async () => {
-        await expect(amm.addLiquidity(1000, 10000)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+        await expect(amm.addLiquidity(1000, 10000, userAAddress)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
       })
 
       it('should match balances accordingly', async () => {
@@ -125,7 +125,7 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: userA,
-            params: [amountTokenAToMint, amountTokenBToMint]
+            params: [amountTokenAToMint, amountTokenBToMint, userAAddress]
           }
 
         ]
@@ -186,7 +186,7 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: userA,
-            params: [amountTokenAToMint, amountTokenBToMint]
+            params: [amountTokenAToMint, amountTokenBToMint, userAAddress]
           },
           {
             name: 'removeLiquidity',
@@ -292,19 +292,19 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [amountOfTokenAUser00, amountOfTokenBUser00, user00Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [amountOfTokenAUser01, 0, user01Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, amountOfTokenBUser02, user02Address]
           },
           {
             name: 'removeLiquidity',
@@ -433,19 +433,19 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [amountOfTokenAUser00, amountOfTokenBUser00, user00Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [amountOfTokenAUser01, 0, user01Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, amountOfTokenBUser02, user02Address]
           },
           {
             name: 'setPrice',
@@ -580,13 +580,13 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [amountOfTokenAUser00, amountOfTokenBUser00, user00Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [amountOfTokenAUser01, 0, user01Address]
           },
           {
             name: 'setPrice',
@@ -598,7 +598,7 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, amountOfTokenBUser02, user02Address]
           },
           {
             name: 'removeLiquidity',
@@ -743,19 +743,19 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [amountOfTokenAUser00, amountOfTokenBUser00, user00Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [amountOfTokenAUser01, 0, user01Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, amountOfTokenBUser02, user02Address]
           },
           {
             name: '_buyTokensWithExactTokens',
@@ -1093,19 +1093,19 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [amountOfTokenAUser00, amountOfTokenBUser00, user00Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [amountOfTokenAUser01, 0, user01Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, amountOfTokenBUser02, user02Address]
           },
           {
             name: '_buyTokensWithExactTokens',
@@ -1263,19 +1263,19 @@ scenarios.forEach(scenario => {
             name: 'addLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [amountOfTokenAUser00, amountOfTokenBUser00, user00Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [amountOfTokenAUser01, 0, user01Address]
           },
           {
             name: 'addLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, amountOfTokenBUser02, user02Address]
           },
           {
             name: '_buyTokensWithExactTokens',
