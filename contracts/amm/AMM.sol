@@ -45,7 +45,7 @@ abstract contract AMM {
     mapping(address => UserBalance) public balances;
 
     /** Events */
-    event AddLiquidity(address indexed caller, uint256 amountOfStable, uint256 amountOfOptions);
+    event AddLiquidity(address indexed caller, address indexed owner, uint256 amountOfStable, uint256 amountOfOptions);
     event RemoveLiquidity(address indexed caller, uint256 amountOfStable, uint256 amountOfOptions);
     event BuyExact(address indexed caller, uint256 amountIn, uint256 amountOut);
     event SellExact(address indexed caller, uint256 amountIn, uint256 amountOut);
@@ -58,7 +58,11 @@ abstract contract AMM {
         tokenBDecimals = ERC20(_tokenB).decimals();
     }
 
-    function addLiquidity(uint256 amountOfA, uint256 amountOfB) public {
+    function addLiquidity(
+        uint256 amountOfA,
+        uint256 amountOfB,
+        address owner
+    ) public {
         // 2) Calculate Totals
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
@@ -91,7 +95,7 @@ abstract contract AMM {
                 amountOfA,
                 amountOfB,
                 fImpOpening,
-                balances[msg.sender]
+                balances[owner]
             );
 
             // 4) Update demortizedBalances;
@@ -102,7 +106,7 @@ abstract contract AMM {
 
         // 3) Update User properties (BalanceUserA, BalanceUserB, fImpMoment)
         UserBalance memory userBalance = UserBalance(userAmountToStoreTokenA, userAmountToStoreTokenB, fImpOpening);
-        balances[msg.sender] = userBalance;
+        balances[owner] = userBalance;
 
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
         require(
@@ -115,7 +119,7 @@ abstract contract AMM {
             "Could not transfer stable tokens from caller"
         );
 
-        emit AddLiquidity(msg.sender, amountOfA, amountOfB);
+        emit AddLiquidity(msg.sender, owner, amountOfA, amountOfB);
     }
 
     function removeLiquidity(uint256 amountOfAOriginal, uint256 amountOfBOriginal) public {
