@@ -109,7 +109,7 @@ contract AMMProvider is ExchangeProvider {
             "Could not transfer tokens from caller"
         );
 
-        pool.addLiquidity(amountB, amountA);
+        pool.addLiquidity(amountB, amountA, recipient);
     }
 
     /**

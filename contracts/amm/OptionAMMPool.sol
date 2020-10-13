@@ -90,7 +90,11 @@ contract OptionAMMPool is IOptionAMMPool {
         currentSigma = 10**18;
     }
 
-    function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external override {
+    function addLiquidity(
+        uint256 amountOfStable,
+        uint256 amountOfOptions,
+        address owner
+    ) external override {
         // 2) Calculate Totals
         (uint256 totalStable, uint256 totalOptions) = _getPoolBalances();
 

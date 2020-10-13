@@ -2,7 +2,11 @@
 pragma solidity ^0.6.8;
 
 interface IOptionAMMPool {
-    function addLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external;
+    function addLiquidity(
+        uint256 amountOfStable,
+        uint256 amountOfOptions,
+        address recipient
+    ) external;
 
     function removeLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external;
 
