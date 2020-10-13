@@ -18,7 +18,7 @@ contract MockAMM is AMM {
     }
 
     function _getTradeDetails(uint256 amountIn) internal override returns (TradeDetails memory) {
-        uint256 amountTokensOut = amountIn.mul(price);
+        uint256 amountTokensOut = amountIn.mul(price).div(10**uint256(tokenADecimals));
         TradeDetails memory tradeDetails = TradeDetails(amountTokensOut, bytes32(amountIn));
 
         return tradeDetails;

@@ -45,7 +45,7 @@ abstract contract AMM {
     mapping(address => UserBalance) public balances;
 
     /** Events */
-    event AddLiquidity(address indexed caller, uint256 amountOfStable, uint256 amountOfOptions);
+    event AddLiquidity(address indexed caller, address indexed owner, uint256 amountOfStable, uint256 amountOfOptions);
     event RemoveLiquidity(address indexed caller, uint256 amountOfStable, uint256 amountOfOptions);
     event BuyExact(address indexed caller, uint256 amountIn, uint256 amountOut);
     event SellExact(address indexed caller, uint256 amountIn, uint256 amountOut);
@@ -58,12 +58,18 @@ abstract contract AMM {
         tokenBDecimals = ERC20(_tokenB).decimals();
     }
 
-    function addLiquidity(uint256 amountOfA, uint256 amountOfB) public {
+    function addLiquidity(
+        uint256 amountOfA,
+        uint256 amountOfB,
+        address owner
+    ) public {
         // 2) Calculate Totals
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
         bool isInitialLiquidity = totalTokenA == 0 || totalTokenB == 0;
         uint256 fImpOpening;
+        uint256 userAmountToStoreTokenA = amountOfA;
+        uint256 userAmountToStoreTokenB = amountOfB;
 
         if (isInitialLiquidity) {
             require(amountOfA > 0 && amountOfB > 0, "You should add both tokens on the first liquidity");
@@ -85,6 +91,13 @@ abstract contract AMM {
                 deamortizedTokenBBalance
             );
 
+            (userAmountToStoreTokenA, userAmountToStoreTokenB) = _getUserBalanceToStore(
+                amountOfA,
+                amountOfB,
+                fImpOpening,
+                balances[owner]
+            );
+
             // 4) Update demortizedBalances;
             // deamortizedBalance = deamortizedBalance + amount/fImpOpening
             deamortizedTokenABalance = deamortizedTokenABalance.add(amountOfA.mul(10**FIMP_PRECISION).div(fImpOpening));
@@ -92,14 +105,8 @@ abstract contract AMM {
         }
 
         // 3) Update User properties (BalanceUserA, BalanceUserB, fImpMoment)
-        UserBalance memory userBalance = UserBalance(amountOfA, amountOfB, fImpOpening);
-
-        if (balances[msg.sender].fImp != 0) {
-            // Update position logic
-            // Remove Liquidity + Add liquidty (total) => Economizar bsPrice
-        }
-
-        balances[msg.sender] = userBalance;
+        UserBalance memory userBalance = UserBalance(userAmountToStoreTokenA, userAmountToStoreTokenB, fImpOpening);
+        balances[owner] = userBalance;
 
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
         require(
@@ -112,7 +119,7 @@ abstract contract AMM {
             "Could not transfer stable tokens from caller"
         );
 
-        emit AddLiquidity(msg.sender, amountOfA, amountOfB);
+        emit AddLiquidity(msg.sender, owner, amountOfA, amountOfB);
     }
 
     function removeLiquidity(uint256 amountOfAOriginal, uint256 amountOfBOriginal) public {
@@ -191,10 +198,20 @@ abstract contract AMM {
         uint256 _ABPrice,
         uint256 _deamortizedTokenABalance,
         uint256 _deamortizedTokenBBalance
-    ) internal pure returns (uint256) {
-        uint256 fImpOpening = _totalTokenA.mul(_ABPrice).add(_totalTokenB).mul(10**FIMP_PRECISION).div(
-            _deamortizedTokenABalance.mul(_ABPrice).add(_deamortizedTokenBBalance)
-        );
+    ) internal view returns (uint256) {
+        uint256 numerator;
+        uint256 denominator;
+        {
+            numerator = _totalTokenA.mul(_ABPrice).div(10**uint256(tokenADecimals)).add(_totalTokenB).mul(
+                10**FIMP_PRECISION
+            );
+        }
+        {
+            denominator = _deamortizedTokenABalance.mul(_ABPrice).div(10**uint256(tokenADecimals)).add(
+                _deamortizedTokenBBalance
+            );
+        }
+        uint256 fImpOpening = numerator.div(denominator);
         return fImpOpening;
     }
 
@@ -202,23 +219,15 @@ abstract contract AMM {
 
     function _getPoolBalances() internal view returns (uint256, uint256) {
         uint256 balanceOfTokenA = ERC20(tokenA).balanceOf(address(this));
-        // uint256 normalizedBalanceA = balanceOfTokenA.mul(10**(uint256(WAD_DECIMALS - tokenADecimals)));
-
         uint256 balanceOfTokenB = ERC20(tokenB).balanceOf(address(this));
-        // uint256 normalizedBalanceB = balanceOfTokenB.mul(10**(uint256(WAD_DECIMALS - tokenBDecimals)));
 
-        // return (normalizedBalanceA, normalizedBalanceB);
         return (balanceOfTokenA, balanceOfTokenB);
     }
 
     function _getUserBalances(address user) internal view returns (uint256, uint256) {
         uint256 balanceOfTokenA = balances[user].tokenABalance;
-        // uint256 normalizedBalanceA = balanceOfTokenA.mul(10**(uint256(WAD_DECIMALS - tokenADecimals)));
-
         uint256 balanceOfTokenB = balances[user].tokenBBalance;
-        // uint256 normalizedBalanceB = balanceOfTokenB.mul(10**(uint256(WAD_DECIMALS - tokenBDecimals)));
 
-        // return (normalizedBalanceA, normalizedBalanceB);
         return (balanceOfTokenA, balanceOfTokenB);
     }
 
@@ -290,6 +299,23 @@ abstract contract AMM {
         }
 
         return (qA, qB);
+    }
+
+    function _getUserBalanceToStore(
+        uint256 amountOfA,
+        uint256 amountOfB,
+        uint256 fImpOpening,
+        UserBalance memory userBalance
+    ) internal pure returns (uint256, uint256) {
+        uint256 userToStoreTokenA = amountOfA;
+        uint256 userToStoreTokenB = amountOfB;
+
+        if (userBalance.fImp != 0) {
+            userToStoreTokenA = userBalance.tokenABalance.mul(fImpOpening).div(userBalance.fImp).add(amountOfA);
+            userToStoreTokenB = userBalance.tokenBBalance.mul(fImpOpening).div(userBalance.fImp).add(amountOfB);
+        }
+
+        return (userToStoreTokenA, userToStoreTokenB);
     }
 
     /**
