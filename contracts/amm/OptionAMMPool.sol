@@ -7,9 +7,9 @@ import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/ISigma.sol";
 import "../interfaces/IPodOption.sol";
-import "@nomiclabs/buidler/console.sol";
+import "../interfaces/IOptionAMMPool.sol";
 
-contract OptionAMM is AMM {
+contract OptionAMMPool is AMM {
     using SafeMath for uint256;
     uint256 constant INITIAL_SIGMA = 10**18;
 
@@ -144,6 +144,14 @@ contract OptionAMM is AMM {
 
         uint256 newABPRice = _calculateNewPrice(spotPrice, timeToMaturity);
         return newABPRice;
+    }
+
+    function buyExactInput(
+        uint256 amount,
+        uint256 minOptionBought,
+        uint256 sigmaInitialGuess
+    ) external {
+        // TODO
     }
 
     function _getTradeDetails(uint256 amountIn) internal override returns (TradeDetails memory) {

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IPodPut.sol";
@@ -28,6 +29,14 @@ contract OptionExchange {
         uint256 outputBought
     );
 
+    event OptionsStaked(
+        address indexed staker,
+        address indexed optionAddress,
+        uint256 amountOptions,
+        address token,
+        uint256 amountToken
+    );
+
     constructor(ExchangeProvider _exchange) public {
         exchange = _exchange;
     }
@@ -41,13 +50,15 @@ contract OptionExchange {
      * @param outputToken The token which the premium will be paid
      * @param minOutputAmount Minimum amount of output tokens accepted
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
+     * @param params Custom params sent to exchange
      */
     function sellOptions(
         IPodPut option,
         uint256 optionAmount,
         address outputToken,
         uint256 minOutputAmount,
-        uint256 deadline
+        uint256 deadline,
+        bytes calldata params
     ) external {
         uint256 strikeToTransfer = option.strikeToTransfer(optionAmount);
 
@@ -72,10 +83,41 @@ contract OptionExchange {
             optionAmount,
             minOutputAmount,
             deadline,
-            msg.sender
+            msg.sender,
+            params
         );
 
         emit OptionsSold(msg.sender, optionAddress, optionAmount, outputToken, outputBought);
+    }
+
+    function addLiquidity(
+        IPodPut option,
+        uint256 optionAmount,
+        address token,
+        uint256 amountToken,
+        uint256 deadline,
+        bytes calldata params
+    ) external {
+        uint256 strikeToTransfer = option.strikeToTransfer(optionAmount);
+
+        IERC20 strikeAsset = IERC20(option.strikeAsset());
+        require(
+            strikeAsset.transferFrom(msg.sender, address(this), strikeToTransfer),
+            "Could not transfer strike tokens from caller"
+        );
+
+        address optionAddress = address(option);
+
+        // Approving Strike transfer to Option
+        strikeAsset.approve(optionAddress, strikeToTransfer);
+        option.mint(optionAmount, msg.sender);
+
+        // Approving Option transfer to Exchange
+        option.approve(address(exchange), optionAmount);
+
+        exchange.addLiquidity(optionAddress, token, optionAmount, amountToken, deadline, msg.sender, params);
+
+        emit OptionsStaked(msg.sender, optionAddress, optionAmount, token, amountToken);
     }
 
     /**
@@ -87,13 +129,15 @@ contract OptionExchange {
      * @param inputToken The token spent to buy options
      * @param maxInputAmount Max amount of input tokens sold
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
+     * @param params Custom params sent to exchange
      */
     function buyExactOptions(
         IPodPut option,
         uint256 optionAmount,
         address inputToken,
         uint256 maxInputAmount,
-        uint256 deadline
+        uint256 deadline,
+        bytes calldata params
     ) external {
         address optionAddress = address(option);
 
@@ -112,7 +156,8 @@ contract OptionExchange {
             maxInputAmount,
             optionAmount,
             deadline,
-            msg.sender
+            msg.sender,
+            params
         );
 
         emit OptionsBought(msg.sender, optionAddress, optionAmount, inputToken, inputSold);
@@ -133,7 +178,8 @@ contract OptionExchange {
         uint256 minOptionAmount,
         address inputToken,
         uint256 inputAmount,
-        uint256 deadline
+        uint256 deadline,
+        bytes calldata params
     ) external {
         address optionAddress = address(option);
 
@@ -152,7 +198,8 @@ contract OptionExchange {
             inputAmount,
             minOptionAmount,
             deadline,
-            msg.sender
+            msg.sender,
+            params
         );
 
         emit OptionsBought(msg.sender, optionAddress, outputBought, inputToken, inputAmount);

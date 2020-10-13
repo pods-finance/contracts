@@ -5,16 +5,15 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ExchangeProvider.sol";
-import "../interfaces/BPool.sol";
+import "../interfaces/IOptionAMMFactory.sol";
+import "../interfaces/IOptionAMMPool.sol";
 
-contract BalancerProvider is ExchangeProvider {
+contract AMMProvider is ExchangeProvider {
     using SafeMath for uint256;
-    BPool public balancerPool;
+    IOptionAMMFactory public factory;
 
-    uint256 public constant MAX_PRICE = uint256(-1);
-
-    constructor(BPool _balancerPool) public {
-        balancerPool = _balancerPool;
+    constructor(IOptionAMMFactory _factory) public {
+        factory = _factory;
     }
 
     function swapWithExactInput(
@@ -24,10 +23,11 @@ contract BalancerProvider is ExchangeProvider {
         uint256 minOutputAmount,
         uint256 deadline,
         address recipient,
-        bytes calldata params // solhint-disable-line no-unused-vars
-    ) external override withinDeadline(deadline) returns (uint256) {
+        bytes calldata params
+    ) external override withinDeadline(deadline) returns (uint256 tokensBought) {
         uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
         uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
+        IOptionAMMPool pool = _getPool(outputToken);
 
         // Take input amount from caller
         require(
@@ -36,15 +36,10 @@ contract BalancerProvider is ExchangeProvider {
         );
 
         // Approve exchange usage
-        ERC20(inputToken).approve(address(balancerPool), inputAmount);
+        ERC20(inputToken).approve(address(pool), inputAmount);
 
-        (uint256 outputBought, ) = balancerPool.swapExactAmountIn(
-            inputToken,
-            inputAmount,
-            outputToken,
-            minOutputAmount,
-            MAX_PRICE
-        );
+        uint256 sigmaInitialGuess = _getSigmaInitialGuess(params);
+        pool.buyExactInput(inputAmount, minOutputAmount, sigmaInitialGuess);
 
         uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
         ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
@@ -52,7 +47,8 @@ contract BalancerProvider is ExchangeProvider {
         uint256 outputBalanceAfter = ERC20(outputToken).balanceOf(address(this));
         ERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
 
-        return outputBought;
+        tokensBought = outputBalanceBefore.sub(outputBalanceAfter);
+        return tokensBought;
     }
 
     function swapWithExactOutput(
@@ -62,10 +58,11 @@ contract BalancerProvider is ExchangeProvider {
         uint256 outputAmount,
         uint256 deadline,
         address recipient,
-        bytes calldata params // solhint-disable-line no-unused-vars
-    ) external override withinDeadline(deadline) returns (uint256) {
+        bytes calldata params
+    ) external override withinDeadline(deadline) returns (uint256 tokensSold) {
         uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
         uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
+        IOptionAMMPool pool = _getPool(outputToken);
 
         // Take input amount from caller
         require(
@@ -74,15 +71,10 @@ contract BalancerProvider is ExchangeProvider {
         );
 
         // Approve exchange usage
-        ERC20(inputToken).approve(address(balancerPool), maxInputAmount);
+        ERC20(inputToken).approve(address(pool), maxInputAmount);
 
-        (uint256 inputSold, ) = balancerPool.swapExactAmountOut(
-            inputToken,
-            maxInputAmount,
-            outputToken,
-            outputAmount,
-            MAX_PRICE
-        );
+        uint256 sigmaInitialGuess = _getSigmaInitialGuess(params);
+        pool.buyExact(maxInputAmount, outputAmount, sigmaInitialGuess);
 
         uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
         ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
@@ -90,7 +82,8 @@ contract BalancerProvider is ExchangeProvider {
         uint256 outputBalanceAfter = ERC20(outputToken).balanceOf(address(this));
         ERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
 
-        return inputSold;
+        tokensSold = inputBalanceBefore.sub(inputBalanceAfter);
+        return tokensSold;
     }
 
     function addLiquidity(
@@ -102,6 +95,42 @@ contract BalancerProvider is ExchangeProvider {
         address recipient,
         bytes calldata params
     ) external override withinDeadline(deadline) {
-        // TODO
+        IOptionAMMPool pool = _getPool(tokenA);
+
+        // Take tokenA amount from caller
+        require(
+            ERC20(tokenA).transferFrom(msg.sender, address(this), amountA),
+            "Could not transfer options from caller"
+        );
+
+        // Take tokenB amount from caller
+        require(
+            ERC20(tokenB).transferFrom(msg.sender, address(this), amountB),
+            "Could not transfer tokens from caller"
+        );
+
+        pool.addLiquidity(amountB, amountA, recipient);
+    }
+
+    /**
+     * Returns the AMM Exchange associated with the option address
+     *
+     * @param optionAddress An address of token to be traded
+     * @return IOptionAMMExchange
+     */
+    function _getPool(address optionAddress) internal view returns (IOptionAMMPool) {
+        address exchangeOptionAddress = factory.getPool(optionAddress);
+        require(exchangeOptionAddress != address(0), "Exchange not found");
+        return IOptionAMMPool(exchangeOptionAddress);
+    }
+
+    /**
+     * Extract the sigma from params sent
+     *
+     * @param params A byte array blob
+     * @return Interpreted sigma
+     */
+    function _getSigmaInitialGuess(bytes calldata params) internal pure returns (uint256) {
+        return abi.decode(params, (uint256));
     }
 }
