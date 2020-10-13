@@ -1,17 +1,17 @@
 
 internalTask('mintOptions', 'Mint options')
-  .addOptionalParam('optionContractName', 'Option Contract type to use')
-  .addParam('optionAddress', 'Option address')
-  .addParam('strikeAssetAddress', 'Strike Asset Address')
+  .addOptionalParam('contract', 'Option Contract type to use')
+  .addParam('option', 'Option address')
+  .addParam('strike', 'Strike Asset Address')
   .addParam('amount', 'Amount of Options to mint')
   .addParam('owner', 'Option owner')
-  .setAction(async ({ optionAddress, strikeAssetAddress, owner, amount, optionContractName = 'PodPut' }) => {
-    const strikeAssetContract = await ethers.getContractAt('MockERC20', strikeAssetAddress)
-    const OptionContract = await ethers.getContractAt(optionContractName, optionAddress)
+  .setAction(async ({ option, strike, owner, amount, contract = 'PodPut' }) => {
+    const strikeAssetContract = await ethers.getContractAt('MockERC20', strike)
+    const OptionContract = await ethers.getContractAt(contract, option)
 
     console.log('Strike Asset', await strikeAssetContract.symbol())
     // 1) Approve StrikeAsset between me and option Contract
-    await strikeAssetContract.approve(optionAddress, (ethers.constants.MaxUint256).toString())
+    await strikeAssetContract.approve(option, (ethers.constants.MaxUint256).toString())
 
     // 2) Call option Mint
     const txIdMint = await OptionContract.mint(amount, owner)
