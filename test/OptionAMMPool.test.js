@@ -113,7 +113,7 @@ scenarios.forEach(scenario => {
 
     beforeEach(async function () {
       // 1) Deploy optionAMMPool
-      const OptionAMMPool = await ethers.getContractFactory('optionAMMPool')
+      const OptionAMMPool = await ethers.getContractFactory('OptionAMMPool')
       optionAMMPool = await OptionAMMPool.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address)
 
       await optionAMMPool.deployed()
