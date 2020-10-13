@@ -2,6 +2,8 @@
 pragma solidity ^0.6.8;
 
 interface IChainlinkPriceFeed {
+    function decimals() external view returns (uint8);
+
     function latestRoundData()
         external
         view
