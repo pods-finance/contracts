@@ -38,6 +38,26 @@ scenarios.forEach(scenario => {
     let user03
     let user03Address
 
+    // returns tokenAInstance, tokenBInstance, AMMInstance
+    async function deployScenario () {
+      const MockERC20 = await ethers.getContractFactory('MintableERC20')
+
+      const [mockTokenA, mockTokenB] = await Promise.all([
+        MockERC20.deploy(scenario.tokenASymbol, scenario.tokenASymbol, scenario.tokenADecimals),
+        MockERC20.deploy(scenario.tokenBSymbol, scenario.tokenBSymbol, scenario.tokenBDecimals)
+      ])
+
+      mockTokenA.deployed()
+      mockTokenB.deployed()
+      // 1) Deploy OptionAMM
+      const MockAMM = await ethers.getContractFactory('MockAMM')
+      const amm = await MockAMM.deploy(mockTokenA.address, mockTokenB.address)
+
+      await amm.deployed()
+
+      return [mockTokenA, mockTokenB, amm]
+    }
+
     beforeEach(async function () {
       let MockERC20
       [userA, userB, userC, user00, user01, user02, user03] = await ethers.getSigners()
@@ -221,7 +241,7 @@ scenarios.forEach(scenario => {
     })
 
     describe('Scenario group APR - Add Liquidity / Price changes / Remove Liquidity', () => {
-      it('should match balances accordingly - 3 adds / 1 price change / 3 remove unorder', async () => {
+      it('should match balances accordingly - 3 adds / 1 price change / 3 remove un order', async () => {
         const amountOfTokenAUser00 = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenADecimals))
         const amountOfTokenBUser00 = await toBigNumber(3000).mul(toBigNumber(10 ** scenario.tokenBDecimals))
 
@@ -1349,7 +1369,266 @@ scenarios.forEach(scenario => {
     })
     describe('Re-Add Liquidity - The sum of withdraws in value for a combined deposit should be equal to a two separate ones', async () => {
       it('APR', async () => {
-        console.log('now implement re-add formula on the contract')
+        const amountOfTokenAUser00 = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenADecimals))
+        const amountOfTokenBUser00 = await toBigNumber(3000).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        const amountOfTokenAUser01 = toBigNumber(0)
+        const amountOfTokenBUser01 = await toBigNumber(100).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+        const amountOfTokenBUser01Withdraw = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        const amountOfTokenAUser02 = toBigNumber(0)
+        const amountOfTokenBUser02 = await toBigNumber(100).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        const amountOfTokenBUser02Withdraw = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        const amountOfTokenAUser03Bought = toBigNumber(2).mul(toBigNumber(10 ** scenario.tokenADecimals))
+
+        const tokenPrice00 = toBigNumber(400).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+        const tokenPrice01 = toBigNumber(500).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        const actionsA = [
+          {
+            name: 'mint',
+            contract: mockTokenA,
+            user: user00,
+            params: [amountOfTokenAUser00]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenB,
+            user: user00,
+            params: [amountOfTokenBUser00]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenB,
+            user: user01,
+            params: [amountOfTokenBUser01]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenB,
+            user: user02,
+            params: [amountOfTokenBUser02]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenA,
+            user: user03,
+            params: [amountOfTokenAUser03Bought]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenA,
+            user: user00,
+            params: [amm.address, amountOfTokenAUser00]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenB,
+            user: user00,
+            params: [amm.address, amountOfTokenBUser00]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenB,
+            user: user01,
+            params: [amm.address, amountOfTokenBUser01]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenB,
+            user: user02,
+            params: [amm.address, amountOfTokenBUser02]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenA,
+            user: user03,
+            params: [amm.address, amountOfTokenAUser03Bought]
+          },
+          {
+            name: 'setPrice',
+            contract: amm,
+            user: user00,
+            params: [tokenPrice00]
+          },
+          {
+            name: 'addLiquidity',
+            contract: amm,
+            user: user00,
+            params: [amountOfTokenAUser00, amountOfTokenBUser00, user00Address]
+          },
+          {
+            name: 'addLiquidity',
+            contract: amm,
+            user: user01,
+            params: [0, amountOfTokenBUser01, user01Address]
+          },
+          {
+            name: '_buyTokensWithExactTokens',
+            contract: amm,
+            user: user03,
+            params: [amountOfTokenAUser03Bought, 0]
+          },
+          {
+            name: 'setPrice',
+            contract: amm,
+            user: user00,
+            params: [tokenPrice01]
+          },
+          {
+            name: 'addLiquidity',
+            contract: amm,
+            user: user02,
+            params: [0, amountOfTokenBUser02, user02Address]
+          },
+          {
+            name: 'removeLiquidity',
+            contract: amm,
+            user: user01,
+            params: [0, amountOfTokenBUser01Withdraw]
+          },
+          {
+            name: 'removeLiquidity',
+            contract: amm,
+            user: user02,
+            params: [0, amountOfTokenBUser02Withdraw]
+          }
+        ]
+
+        const fnActionsA = actionsA.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActionsA) {
+          await fn()
+        }
+
+        const balanceAfterPoolTokenA = await mockTokenA.balanceOf(amm.address)
+        const balanceAfterPoolTokenB = await mockTokenB.balanceOf(amm.address)
+
+        const balanceAfterUser01TokenA = await mockTokenA.balanceOf(user01Address)
+        const balanceAfterUser01TokenB = await mockTokenB.balanceOf(user01Address)
+
+        const balanceAfterUser02TokenA = await mockTokenA.balanceOf(user02Address)
+        const balanceAfterUser02TokenB = await mockTokenB.balanceOf(user02Address)
+
+        // tokenC = tokenA / tokenD = tokenB
+        const [mockTokenC, mockTokenD, ammB] = await deployScenario()
+
+        const actionsB = [
+          {
+            name: 'mint',
+            contract: mockTokenC,
+            user: user00,
+            params: [amountOfTokenAUser00]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenD,
+            user: user00,
+            params: [amountOfTokenBUser00]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenD,
+            user: user01,
+            params: [amountOfTokenBUser01]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenD,
+            user: user01,
+            params: [amountOfTokenBUser01]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenC,
+            user: user03,
+            params: [amountOfTokenAUser03Bought]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenC,
+            user: user00,
+            params: [ammB.address, amountOfTokenAUser00]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenD,
+            user: user00,
+            params: [ammB.address, amountOfTokenBUser00]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenD,
+            user: user01,
+            params: [ammB.address, amountOfTokenBUser01.mul(toBigNumber(2))]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenC,
+            user: user03,
+            params: [ammB.address, amountOfTokenAUser03Bought]
+          },
+          {
+            name: 'setPrice',
+            contract: ammB,
+            user: user00,
+            params: [tokenPrice00]
+          },
+          {
+            name: 'addLiquidity',
+            contract: ammB,
+            user: user00,
+            params: [amountOfTokenAUser00, amountOfTokenBUser00, user00Address]
+          },
+          {
+            name: 'addLiquidity',
+            contract: ammB,
+            user: user01,
+            params: [0, amountOfTokenBUser01, user01Address]
+          },
+          {
+            name: '_buyTokensWithExactTokens',
+            contract: ammB,
+            user: user03,
+            params: [amountOfTokenAUser03Bought, 0]
+          },
+          {
+            name: 'setPrice',
+            contract: ammB,
+            user: user00,
+            params: [tokenPrice01]
+          },
+          {
+            name: 'addLiquidity',
+            contract: ammB,
+            user: user01,
+            params: [0, amountOfTokenBUser01, user01Address]
+          }
+        ]
+
+        const fnActionsB = actionsB.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActionsB) {
+          await fn()
+        }
+
+        const currentBalance = await ammB.balances(user01Address)
+        const currentBalanceTokenB = currentBalance.tokenBBalance
+        await ammB.connect(user01).removeLiquidity(0, currentBalanceTokenB.div(toBigNumber(2)))
+
+        const balanceAfterUser01TokenC = await mockTokenC.balanceOf(user01Address)
+        const balanceAfterUser01TokenD = await mockTokenD.balanceOf(user01Address)
+
+        expect(balanceAfterUser01TokenA.add(balanceAfterUser02TokenA).add(toBigNumber(1))).to.equal(balanceAfterUser01TokenC)
+        expect(balanceAfterUser01TokenB.add(balanceAfterUser02TokenB)).to.equal(balanceAfterUser01TokenD)
       })
     })
   })
