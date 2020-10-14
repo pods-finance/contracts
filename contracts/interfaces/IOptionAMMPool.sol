@@ -11,14 +11,14 @@ interface IOptionAMMPool {
     function removeLiquidity(uint256 amountOfStable, uint256 amountOfOptions) external;
 
     function buyExact(
-        uint256 maxPayedStable,
-        uint256 amount,
+        uint256 maxAmountIn,
+        uint256 amountOut,
         uint256 sigmaInitialGuess
     ) external;
 
-    function buyExactInput(
-        uint256 amount,
-        uint256 minOptionBought,
+    function buyTokensWithExactTokens(
+        uint256 amountIn,
+        uint256 minAmountOut,
         uint256 sigmaInitialGuess
     ) external;
 }

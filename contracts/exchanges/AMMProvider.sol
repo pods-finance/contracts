@@ -39,7 +39,7 @@ contract AMMProvider is ExchangeProvider {
         ERC20(inputToken).approve(address(pool), inputAmount);
 
         uint256 sigmaInitialGuess = _getSigmaInitialGuess(params);
-        pool.buyExactInput(inputAmount, minOutputAmount, sigmaInitialGuess);
+        pool.buyTokensWithExactTokens(inputAmount, minOutputAmount, sigmaInitialGuess);
 
         uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
         ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));

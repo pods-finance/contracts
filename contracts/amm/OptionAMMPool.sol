@@ -9,7 +9,9 @@ import "../interfaces/ISigma.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMPool.sol";
 
-contract OptionAMMPool is AMM {
+contract OptionAMMPool is
+    AMM /*, IOptionAMMPool*/
+{
     using SafeMath for uint256;
     uint256 constant INITIAL_SIGMA = 10**18;
 
@@ -144,14 +146,6 @@ contract OptionAMMPool is AMM {
 
         uint256 newABPRice = _calculateNewPrice(spotPrice, timeToMaturity);
         return newABPRice;
-    }
-
-    function buyExactInput(
-        uint256 amount,
-        uint256 minOptionBought,
-        uint256 sigmaInitialGuess
-    ) external {
-        // TODO
     }
 
     function _getTradeDetails(uint256 amountIn) internal override returns (TradeDetails memory) {
