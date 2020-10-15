@@ -248,7 +248,7 @@ abstract contract AMM {
         );
 
         Mult memory m = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
-        (uint256 maxWithdrawTokenA, uint256 maxWithdrawTokenB) = _getAvaiableForRescueAmounts(balances[user], m);
+        (uint256 maxWithdrawTokenA, uint256 maxWithdrawTokenB) = _getAvailableForRescueAmounts(balances[user], m);
         return (maxWithdrawTokenA, maxWithdrawTokenB);
     }
 
