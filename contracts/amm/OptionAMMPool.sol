@@ -138,7 +138,7 @@ contract OptionAMMPool is AMM {
         return tokenBOut;
     }
 
-    function _getABPrice() internal override returns (uint256) {
+    function _getABPrice() internal override view returns (uint256) {
         uint256 spotPrice = priceProvider.getAssetPrice(priceProperties.underlyingAsset);
         uint256 timeToMaturity = _getTimeToMaturity();
 

@@ -13,7 +13,7 @@ contract MockAMM is AMM {
 
     constructor(address _tokenA, address _tokenB) public AMM(_tokenA, _tokenB) {}
 
-    function _getABPrice() internal override returns (uint256) {
+    function _getABPrice() internal override view returns (uint256) {
         return price;
     }
 
