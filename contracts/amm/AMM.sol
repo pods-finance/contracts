@@ -217,6 +217,41 @@ abstract contract AMM {
 
     // function _buyExactTokensWithTokens(uint256 maxAmountOfTokensA, uint256 amountOfTokensB) internal virtual;
 
+    function getPoolBalances() public view returns (uint256, uint256) {
+        return _getPoolBalances();
+    }
+
+    function getWorthUserBalances(address user) public view returns (uint256, uint256) {
+        (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
+        uint256 ABPrice = _getABPrice();
+        uint256 fImpOpening = _getFImpOpening(
+            totalTokenA,
+            totalTokenB,
+            ABPrice,
+            deamortizedTokenABalance,
+            deamortizedTokenBBalance
+        );
+        uint256 worthBalanceTokenA = balances[user].tokenABalance.mul(fImpOpening).div(balances[user].fImp);
+        uint256 worthBalanceTokenB = balances[user].tokenBBalance.mul(fImpOpening).div(balances[user].fImp);
+        return (worthBalanceTokenA, worthBalanceTokenB);
+    }
+
+    function getMaxWithdrawBalances(address user) public view returns (uint256, uint256) {
+        (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
+        uint256 ABPrice = _getABPrice();
+        uint256 fImpOpening = _getFImpOpening(
+            totalTokenA,
+            totalTokenB,
+            ABPrice,
+            deamortizedTokenABalance,
+            deamortizedTokenBBalance
+        );
+
+        Mult memory m = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
+        (uint256 maxWithdrawTokenA, uint256 maxWithdrawTokenB) = _getAvaiableForRescueAmounts(balances[user], m);
+        return (maxWithdrawTokenA, maxWithdrawTokenB);
+    }
+
     function _getPoolBalances() internal view returns (uint256, uint256) {
         uint256 balanceOfTokenA = ERC20(tokenA).balanceOf(address(this));
         uint256 balanceOfTokenB = ERC20(tokenB).balanceOf(address(this));
@@ -266,16 +301,15 @@ abstract contract AMM {
         return multipliers;
     }
 
-    function _getAvaiableForRescueAmounts(
-        uint256 userTokenABalance,
-        uint256 userTokenBBalance,
-        uint256 userImp,
-        Mult memory m
-    ) internal pure returns (uint256, uint256) {
-        uint256 userMAB = userTokenBBalance.mul(m.AB).div(userImp);
-        uint256 userMBB = userTokenBBalance.mul(m.BB).div(userImp);
-        uint256 userMAA = userTokenABalance.mul(m.AA).div(userImp);
-        uint256 userMBA = userTokenABalance.mul(m.BA).div(userImp);
+    function _getAvaiableForRescueAmounts(UserBalance memory user, Mult memory m)
+        internal
+        pure
+        returns (uint256, uint256)
+    {
+        uint256 userMAB = user.tokenBBalance.mul(m.AB).div(user.fImp);
+        uint256 userMBB = user.tokenBBalance.mul(m.BB).div(user.fImp);
+        uint256 userMAA = user.tokenABalance.mul(m.AA).div(user.fImp);
+        uint256 userMBA = user.tokenABalance.mul(m.BA).div(user.fImp);
 
         uint256 tokenAAvaiableForRescue = userMAA.add(userMBA);
         uint256 tokenBAvaiableForRescue = userMBB.add(userMAB);
@@ -325,7 +359,7 @@ abstract contract AMM {
         return a < b ? a : b;
     }
 
-    function _getABPrice() internal virtual returns (uint256);
+    function _getABPrice() internal virtual view returns (uint256);
 
     function _onTrade(TradeDetails memory tradeDetails) internal virtual;
 
