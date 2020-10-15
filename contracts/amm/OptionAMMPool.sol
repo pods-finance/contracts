@@ -172,12 +172,12 @@ contract OptionAMMPool is AMM {
             priceProperties.riskFree
         );
 
-        TradeDetails memory tradeDetails = TradeDetails(tokenBOut, bytes32(newIV));
+        TradeDetails memory tradeDetails = TradeDetails(tokensBOut, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _onTrade(TradeDetails memory tradeDetails) internal override {
-        uint256 newSigma = uint256(tradeDetails.params);
+        uint256 newSigma = abi.decode(tradeDetails.params, (uint256));
         priceProperties.currentSigma = newSigma;
     }
 }
