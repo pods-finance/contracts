@@ -39,7 +39,7 @@ abstract contract AMM {
 
     struct TradeDetails {
         uint256 amountOut;
-        bytes32 params;
+        bytes params;
     }
 
     mapping(address => UserBalance) public balances;
