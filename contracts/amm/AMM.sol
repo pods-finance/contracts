@@ -301,7 +301,7 @@ abstract contract AMM {
         return multipliers;
     }
 
-    function _getAvaiableForRescueAmounts(UserBalance memory user, Mult memory m)
+    function _getAvailableForRescueAmounts(UserBalance memory user, Mult memory m)
         internal
         pure
         returns (uint256, uint256)
