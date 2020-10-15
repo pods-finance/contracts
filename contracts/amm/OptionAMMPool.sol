@@ -172,7 +172,7 @@ contract OptionAMMPool is AMM {
             priceProperties.riskFree
         );
 
-        TradeDetails memory tradeDetails = TradeDetails(tokensBOut, abi.encodePacked(newIV));
+        TradeDetails memory tradeDetails = TradeDetails(tokenBOut, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
