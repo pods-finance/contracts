@@ -1,7 +1,7 @@
 const { deployMockContract } = waffle
 const PriceFeedABI = require('../../abi/PriceFeed.json')
 
-module.exports = async function getPriceFeedMock (deployer, refPrice, tokenAddress) {
+module.exports = async function getPriceFeedMock (deployer, refPrice, refDecimals, tokenAddress) {
   const priceFeed = await deployMockContract(deployer, PriceFeedABI)
   const PriceProvider = await ethers.getContractFactory('PriceProvider')
 
@@ -10,6 +10,9 @@ module.exports = async function getPriceFeedMock (deployer, refPrice, tokenAddre
 
   await priceFeed.mock.getLatestPrice
     .returns(refPrice)
+
+  await priceFeed.mock.decimals
+    .returns(refDecimals)
 
   return {
     priceProvider
