@@ -6,6 +6,7 @@ const getTimestamp = require('./util/getTimestamp')
 const deployBlackScholes = require('./util/deployBlackScholes')
 const getPriceProviderMock = require('./util/getPriceProviderMock')
 const createNewOption = require('./util/createNewOption')
+const { toBigNumber, approximately } = require('../utils/utils')
 
 const OPTION_TYPE_PUT = 0
 
@@ -22,7 +23,8 @@ const scenarios = [
     amountToMintTooLow: 1,
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
     initialFImp: ethers.BigNumber.from('10').pow(54),
-    initialSpotPrice: '900000000000',
+    initialSpotPrice: ethers.BigNumber.from('36673000000'),
+    spotPriceDecimals: 8,
     volatilityIntensity: 'low'
   }
 ]
@@ -107,7 +109,7 @@ scenarios.forEach(scenario => {
         await getTimestamp() + 5 * 60 * 60 * 1000,
         24 * 60 * 60)
 
-      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, mockUnderlyingAsset.address)
+      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
       priceProviderMock = mock.priceProvider
     })
 
@@ -127,10 +129,17 @@ scenarios.forEach(scenario => {
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
+        const optionStrikePriceDecimals = await podPut.strikePriceDecimals()
         const priceProperties = await optionAMMPool.priceProperties()
+        const bsDecimals = await optionAMMPool.BS_RES_DECIMALS()
 
         expect(priceProperties.expiration).to.equal(optionExpiration)
-        expect(priceProperties.strikePrice).to.equal(optionStrikePrice)
+        expect(priceProperties.strikePrice).to.equal(optionStrikePrice.mul(toBigNumber(10).pow(bsDecimals.sub(optionStrikePriceDecimals))))
+      })
+      it('should return spotPrice accordingly', async () => {
+        const spotPrice = await optionAMMPool._getSpotPrice(mockUnderlyingAsset.address, 18)
+        const bsDecimals = await optionAMMPool.BS_RES_DECIMALS()
+        expect(spotPrice).to.equal(scenario.initialSpotPrice.mul(toBigNumber(10).pow(bsDecimals.sub(scenario.spotPriceDecimals))))
       })
     })
 
