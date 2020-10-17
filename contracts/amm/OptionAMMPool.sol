@@ -187,7 +187,7 @@ contract OptionAMMPool is AMM {
 
     function _getTradeDetails(uint256 amountIn) internal override returns (TradeDetails memory) {
         uint256 spotPrice = priceProvider.getAssetPrice(priceProperties.underlyingAsset);
-        uint256 timeToMaturity = _getTimeToMaturity();
+        uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newPrice = _calculateNewPrice(spotPrice, timeToMaturity);
 
