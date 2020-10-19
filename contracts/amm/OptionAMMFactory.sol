@@ -35,11 +35,19 @@ contract OptionAMMFactory is IOptionAMMFactory {
         address _stableAsset,
         address _priceProvider,
         address _priceMethod,
-        address _sigma
+        address _sigma,
+        uint256 _initialSigma
     ) external override returns (address) {
         require(address(pools[_optionAddress]) == address(0), "Pool already exists");
 
-        OptionAMMPool pool = new OptionAMMPool(_optionAddress, _stableAsset, _priceProvider, _priceMethod, _sigma);
+        OptionAMMPool pool = new OptionAMMPool(
+            _optionAddress,
+            _stableAsset,
+            _priceProvider,
+            _priceMethod,
+            _sigma,
+            _initialSigma
+        );
 
         pools[_optionAddress] = pool;
         emit PoolCreated(msg.sender, pool);

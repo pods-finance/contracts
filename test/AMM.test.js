@@ -778,10 +778,10 @@ scenarios.forEach(scenario => {
             params: [0, amountOfTokenBUser02, user02Address]
           },
           {
-            name: '_buyTokensWithExactTokens',
+            name: 'tradeExactAInput',
             contract: amm,
             user: user03,
-            params: [amountOfTokenAUser03Bought, 0]
+            params: [amountOfTokenAUser03Bought, 0, user03Address]
           },
           {
             name: 'removeLiquidity',
@@ -1128,10 +1128,10 @@ scenarios.forEach(scenario => {
             params: [0, amountOfTokenBUser02, user02Address]
           },
           {
-            name: '_buyTokensWithExactTokens',
+            name: 'tradeExactAInput',
             contract: amm,
             user: user03,
-            params: [amountOfTokenAUser04Bought, 0]
+            params: [amountOfTokenAUser04Bought, 0, user03Address]
           },
           {
             name: 'setPrice',
@@ -1298,10 +1298,10 @@ scenarios.forEach(scenario => {
             params: [0, amountOfTokenBUser02, user02Address]
           },
           {
-            name: '_buyTokensWithExactTokens',
+            name: 'tradeExactAInput',
             contract: amm,
             user: user03,
-            params: [amountOfTokenAUser04Bought, 0]
+            params: [amountOfTokenAUser04Bought, 0, user03Address]
           },
           {
             name: 'setPrice',
@@ -1466,10 +1466,10 @@ scenarios.forEach(scenario => {
             params: [0, amountOfTokenBUser01, user01Address]
           },
           {
-            name: '_buyTokensWithExactTokens',
+            name: 'tradeExactAInput',
             contract: amm,
             user: user03,
-            params: [amountOfTokenAUser03Bought, 0]
+            params: [amountOfTokenAUser03Bought, 0, user03Address]
           },
           {
             name: 'setPrice',
@@ -1592,10 +1592,10 @@ scenarios.forEach(scenario => {
             params: [0, amountOfTokenBUser01, user01Address]
           },
           {
-            name: '_buyTokensWithExactTokens',
+            name: 'tradeExactAInput',
             contract: ammB,
             user: user03,
-            params: [amountOfTokenAUser03Bought, 0]
+            params: [amountOfTokenAUser03Bought, 0, user03Address]
           },
           {
             name: 'setPrice',

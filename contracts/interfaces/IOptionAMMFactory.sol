@@ -7,7 +7,8 @@ interface IOptionAMMFactory {
         address _stableAsset,
         address _priceProvider,
         address _priceMethod,
-        address _sigma
+        address _sigma,
+        uint256 _initialSigma
     ) external returns (address);
 
     function getPool(address _optionAddress) external view returns (address);

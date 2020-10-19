@@ -2,13 +2,14 @@
 task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
-  .setAction(async ({ option, tokenb }, bre) => {
+  .addParam('initialsigma', 'Initial Sigma to start the pool')
+  .setAction(async ({ option, tokenb, initialsigma }, bre) => {
   // 1) Create Option
     const { optionAMMFactory, sigma, blackScholes, priceProvider } = require(`../../deployments/${bre.network.name}.json`)
 
     const OptionAMMFactory = await ethers.getContractAt('OptionAMMFactory', optionAMMFactory)
 
-    const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, priceProvider, blackScholes, sigma)
+    const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, priceProvider, blackScholes, sigma, initialsigma)
 
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()

@@ -25,7 +25,8 @@ const scenarios = [
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: ethers.BigNumber.from('36673000000'),
     spotPriceDecimals: 8,
-    volatilityIntensity: 'low'
+    volatilityIntensity: 'low',
+    initialSigma: '100000000000'
   }
 ]
 
@@ -116,7 +117,7 @@ scenarios.forEach(scenario => {
     beforeEach(async function () {
       // 1) Deploy optionAMMPool
       const OptionAMMPool = await ethers.getContractFactory('OptionAMMPool')
-      optionAMMPool = await OptionAMMPool.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address)
+      optionAMMPool = await OptionAMMPool.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address, scenario.initialSigma)
 
       await optionAMMPool.deployed()
     })
