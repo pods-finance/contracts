@@ -9,7 +9,7 @@ import "../interfaces/IFeePool.sol";
 contract FeePool is IFeePool, Ownable {
     using SafeMath for uint256;
 
-    uint256 private _fee;
+    uint256 private _feeValue;
     uint8 private _feeDecimals;
     address private _token;
 
@@ -19,31 +19,19 @@ contract FeePool is IFeePool, Ownable {
 
     constructor(
         address token,
-        uint256 fee,
-        uint8 decimals
+        uint256 feeValue,
+        uint8 feeDecimals
     ) public {
         _token = token;
-        _fee = fee;
-        _feeDecimals = decimals;
+        _feeValue = feeValue;
+        _feeDecimals = feeDecimals;
     }
 
     /**
      * Return the current fee value
      */
-    function getFee() external override view returns (uint256) {
-        return _fee;
-    }
-
-    /**
-     * Sets fee and the decimals
-     *
-     * @param fee Fee value
-     * @param decimals Decimals
-     */
-    function setFee(uint256 fee, uint8 decimals) external override onlyOwner {
-        _fee = fee;
-        _feeDecimals = decimals;
-        emit FeeUpdated(_token, _fee, _feeDecimals);
+    function getFeeValue() external override view returns (uint256) {
+        return _feeValue;
     }
 
     /**
@@ -63,13 +51,23 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
+     * Sets fee and the decimals
+     *
+     * @param value Fee value
+     * @param decimals Fee decimals
+     */
+    function setFee(uint256 value, uint8 decimals) external override onlyOwner {
+        _feeValue = value;
+        _feeDecimals = decimals;
+        emit FeeUpdated(_token, _feeValue, _feeDecimals);
+    }
+
+    /**
      * Calculate and collect the fees from an amount
      *
-     * @param amount Amount to charge on top
+     * @param collectable Amount to to collect in fees
      */
-    function collect(uint256 amount) external override {
-        uint256 collectable = _getCollectable(amount);
-
+    function collect(uint256 collectable) external override {
         require(ERC20(_token).transferFrom(msg.sender, address(this), collectable), "Could not collect fees");
         emit FeeCollected(_token, collectable);
     }
@@ -91,6 +89,6 @@ contract FeePool is IFeePool, Ownable {
      * @param amount Amount to charge on top
      */
     function _getCollectable(uint256 amount) internal view returns (uint256) {
-        return amount.mul(_fee).div(10**uint256(_feeDecimals));
+        return amount.sub(amount.mul(_feeValue).div(10**uint256(_feeDecimals)));
     }
 }

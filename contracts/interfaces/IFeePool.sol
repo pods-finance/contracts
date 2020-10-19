@@ -2,13 +2,13 @@
 pragma solidity ^0.6.8;
 
 interface IFeePool {
-    function getFee() external view returns (uint256);
-
-    function setFee(uint256 fee, uint8 decimals) external;
+    function getFeeValue() external view returns (uint256);
 
     function getFeeDecimals() external view returns (uint8);
 
     function getCollectable(uint256 amount) external view returns (uint256);
+
+    function setFee(uint256 value, uint8 decimals) external;
 
     function collect(uint256 amount) external;
 
