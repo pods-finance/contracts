@@ -22,9 +22,6 @@ abstract contract AMM {
     uint256 public deamortizedTokenABalance;
     uint256 public deamortizedTokenBBalance;
 
-    enum TradeDirection { AB, BA }
-    enum TradeType { In, Out }
-
     // Total Balance of each tokem is avaiable in eacch ERC20 token balanceOf()
     // instead of using local variables, trying to reduce stack too deep
     struct UserBalance {
@@ -40,19 +37,21 @@ abstract contract AMM {
         uint256 BB; // How much B Im getting for rescuing one B that i've deposited
     }
 
-  struct TradeDetails {
+    struct TradeDetails {
         uint256 amount;
+        uint256 fees;
         bytes params;
     }
-
 
     mapping(address => UserBalance) public balances;
 
     /** Events */
     event AddLiquidity(address indexed caller, address indexed owner, uint256 amountOfStable, uint256 amountOfOptions);
     event RemoveLiquidity(address indexed caller, uint256 amountOfStable, uint256 amountOfOptions);
-    event TradeExactInput(address indexed caller, uint256 amountIn, uint256 amountOut, TradeDirection direction);
-    event TradeExactOutput(address indexed caller, uint256 amountIn, uint256 amountOut);
+    event TradeExactAInput(address indexed caller, address indexed owner, uint256 exactAmountAIn, uint256 amountBOut);
+    event TradeExactBInput(address indexed caller, address indexed owner, uint256 exactAmountBIn, uint256 amountAOut);
+    event TradeExactAOutput(address indexed caller, address indexed owner, uint256 amountBIn, uint256 exactAmountAOut);
+    event TradeExactBOutput(address indexed caller, address indexed owner, uint256 amountAIn, uint256 exactAmountBOut);
 
     constructor(address _tokenA, address _tokenB) public {
         tokenA = _tokenA;
@@ -62,11 +61,11 @@ abstract contract AMM {
         tokenBDecimals = ERC20(_tokenB).decimals();
     }
 
-    function addLiquidity(
+    function _addLiquidity(
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) public beforeExpiration {
+    ) internal {
         // 2) Calculate Totals
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
@@ -126,7 +125,7 @@ abstract contract AMM {
         emit AddLiquidity(msg.sender, owner, amountOfA, amountOfB);
     }
 
-    function removeLiquidity(uint256 amountOfAOriginal, uint256 amountOfBOriginal) public {
+    function _removeLiquidity(uint256 amountOfAOriginal, uint256 amountOfBOriginal) internal {
         (uint256 userTokenABalance, uint256 userTokenBBalance) = _getUserBalances(msg.sender);
         require(
             amountOfAOriginal <= userTokenABalance && amountOfBOriginal <= userTokenBBalance,
@@ -176,133 +175,94 @@ abstract contract AMM {
 
         emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
     }
+    
+    function _tradeExactAInput(
+        uint256 exactAmountAIn,
+        uint256 minAmountBOut,
+        address owner
+    ) internal returns (uint256) {
+        TradeDetails memory tradeDetails = _getTradeDetailsExactAInput(exactAmountAIn);
+        uint256 amountBOut = tradeDetails.amount;
 
-    // function _buyTokensWithExactTokens(
-    //     uint256 amountTokenA,
-    //     uint256 minAmountOfTokensB,
-    //     TradeDirection direction
-    // ) public returns (uint256) {
-    //     TradeDetails memory tradeDetails = _getTradeDetails(amountTokenA, direction);
-    //     uint256 amountOfTokenBOut = tradeDetails.amountOut;
+        _onTradeExactAInput(tradeDetails);
 
-    //     _onTrade(tradeDetails);
-
-    //     // 5. transfer assets
-    //     require(amountOfTokenBOut >= minAmountOfTokensB, "amount tokens out higher than min asked");
-    //     require(
-    //         ERC20(tokenA).transferFrom(msg.sender, address(this), amountTokenA),
-    //         "Could not transfer token A from caller"
-    //     );
-
-    //     require(ERC20(tokenB).transfer(msg.sender, amountOfTokenBOut), "Could not transfer token B to caller");
-
-    //     emit TradeExactInput(msg.sender, amountTokenA, amountOfTokenBOut, direction);
-    //     return amountOfTokenBOut;
-    // }
-
-    function _tradeExactInput(
-        uint256 amountIn, //10 USDC
-        uint256 minAmountOut, // 0.3 Options
-        TradeDirection direction //AB = A in => B out
-    ) public returns (uint256) {
-        address tokenIn = tokenA;
-        address tokenOut = tokenB;
-
-        if (direction == TradeDirection.BA) {
-            tokenIn = tokenB;
-            tokenOut = tokenA;
-        }
-
-        TradeDetails memory tradeDetails = _getTradeDetails(amountIn, direction, TradeType.In);
-        uint256 amountOut = tradeDetails.amount;
-
-        _onTrade(tradeDetails);
-
-        // 5. transfer assets
-        require(amountOut >= minAmountOut, "amountOut lower than min asked");
+        require(amountBOut >= minAmountBOut, "amount tokens out lower than min asked");
         require(
-            ERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn),
+            ERC20(tokenA).transferFrom(msg.sender, address(this), exactAmountAIn),
             "Could not transfer token A from caller"
         );
 
-        require(ERC20(tokenOut).transfer(msg.sender, amountOut), "Could not transfer token B to caller");
+        require(ERC20(tokenB).transfer(owner, amountBOut), "Could not transfer token B to caller");
 
-        emit TradeExactInput(msg.sender, amountIn, amountOut, direction);
-        return amountOut;
+        emit TradeExactAInput(msg.sender, owner, exactAmountAIn, exactAmountAIn);
+        return amountBOut;
     }
 
-    function _tradeExactOutput(
-        uint256 amountOut,
-        uint256 maxAmountIn,
-        TradeDirection direction //AB = A in => B out
-    ) public returns (uint256) {
-        address tokenIn = tokenA;
-        address tokenOut = tokenB;
+    function _tradeExactAOutput(
+        uint256 exactAmountAOut,
+        uint256 maxAmountBIn,
+        address owner
+    ) internal returns (uint256) {
+        TradeDetails memory tradeDetails = _getTradeDetailsExactAOutput(exactAmountAOut);
+        uint256 amountBIn = tradeDetails.amount;
 
-        if (direction == TradeDirection.BA) {
-            tokenIn = tokenB;
-            tokenOut = tokenA;
-        }
+        _onTradeExactAOutput(tradeDetails);
 
-        TradeDetails memory tradeDetails = _getTradeDetails(amountOut, direction, TradeType.Out);
-        uint256 amountIn = tradeDetails.amount;
-
-
-        _onTrade(tradeDetails);
-
-        // 5. transfer assets
-        require(amountIn <= maxAmountIn, "amount tokens out higher than max asked");
+        require(amountBIn <= maxAmountBIn, "amount tokens out higher than max asked");
         require(
-            ERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn),
+            ERC20(tokenB).transferFrom(msg.sender, address(this), amountBIn),
             "Could not transfer token A from caller"
         );
 
-        require(ERC20(tokenOut).transfer(msg.sender, amountOut), "Could not transfer token B to caller");
+        require(ERC20(tokenA).transfer(owner, exactAmountAOut), "Could not transfer token B to caller");
 
-        emit TradeExactOutput(msg.sender, amountOut, amountIn, direction);
-        return amountOut;
+        emit TradeExactAOutput(msg.sender, owner, exactAmountAOut, amountBIn);
+        return amountBIn;
     }
 
-    // function _trade(
-    //     uint256 amountExact, //10 USDC
-    //     uint256 limitAmount, // 0.3 Options
-    //     TradeType tradeType //AB = A in => B out
-    // ) public returns (uint256) {
-    //     address tokenIn = tokenA;
-    //     address tokenOut = tokenB;
+    function _tradeExactBInput(
+        uint256 exactAmountBIn,
+        uint256 minAmountAOut,
+        address owner
+    ) internal returns (uint256) {
+        TradeDetails memory tradeDetails = _getTradeDetailsExactBInput(exactAmountBIn);
+        uint256 amountAOut = tradeDetails.amount;
 
-    //     if (direction == TradeDirection.BA) {
-    //         tokenIn = tokenB;
-    //         tokenOut = tokenA;
-    //     }
+        _onTradeExactBInput(tradeDetails);
 
-    //     TradeDetails memory tradeDetails = _getTradeDetails(amountIn, direction, TradeType.In);
-    //     uint256 amountOut = tradeDetails.amount;
+        require(amountAOut >= minAmountAOut, "amount tokens out lower than min asked");
+        require(
+            ERC20(tokenB).transferFrom(msg.sender, address(this), exactAmountBIn),
+            "Could not transfer token A from caller"
+        );
 
-    //     _onTrade(tradeDetails);
+        require(ERC20(tokenA).transfer(owner, amountAOut), "Could not transfer token B to caller");
 
-    //     if ( tradeType ) {
-    //         require(
-    //         ERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn),
-    //         "Could not transfer token A from caller"
-    //     );
+        emit TradeExactBInput(msg.sender, owner, amountAOut, exactAmountBIn);
+        return amountAOut;
+    }
 
-    //     require(ERC20(tokenOut).transfer(msg.sender, amountOut), "Could not transfer token B to caller");
+    function _tradeExactBOutput(
+        uint256 exactAmountBOut,
+        uint256 maxAmountAIn,
+        address owner
+    ) internal returns (uint256) {
+        TradeDetails memory tradeDetails = _getTradeDetailsExactBOutput(exactAmountBOut);
+        uint256 amountAIn = tradeDetails.amount;
 
-    //     }
+        _onTradeExactBInput(tradeDetails);
 
-    //     // 5. transfer assets
-    //     require(amountOut >= minAmountOut, "amountOut lower than min asked");
-    //     require(
-    //         ERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn),
-    //         "Could not transfer token A from caller"
-    //     );
+        require(amountAIn <= maxAmountAIn, "amount tokens out higher than max asked");
+        require(
+            ERC20(tokenA).transferFrom(msg.sender, address(this), amountAIn),
+            "Could not transfer token A from caller"
+        );
 
-    //     require(ERC20(tokenOut).transfer(msg.sender, amountOut), "Could not transfer token B to caller");
+        require(ERC20(tokenB).transfer(owner, exactAmountBOut), "Could not transfer token B to caller");
 
-    //     emit TradeExactInput(msg.sender, amountIn, amountOut, direction);
-    //     return amountOut;
-    // }
+        emit TradeExactBOutput(msg.sender, owner, amountAIn, exactAmountBOut);
+        return amountAIn;
+    }
 
     function _getFImpOpening(
         uint256 _totalTokenA,
@@ -473,20 +433,19 @@ abstract contract AMM {
 
     function _getABPrice() internal virtual view returns (uint256);
 
-    function _onTrade(TradeDetails memory tradeDetails) internal virtual;
+    function _getTradeDetailsExactAInput(uint256 amountAIn) internal virtual returns (TradeDetails memory);
 
-    function _getTradeDetails(uint256 amountIn, TradeDirection direction, TradeType type)
-        internal
-        virtual
-        returns (TradeDetails memory);
+    function _getTradeDetailsExactAOutput(uint256 amountAOut) internal virtual returns (TradeDetails memory);
 
-    function _getTradeDetailsIn(uint256 amountIn, TradeDirection direction)
-        internal
-        virtual
-        returns (TradeDetails memory);
+    function _getTradeDetailsExactBInput(uint256 amountBIn) internal virtual returns (TradeDetails memory);
 
-    function _getTradeDetailsOut(uint256 amountIn, TradeDirection direction)
-        internal
-        virtual
-        returns (TradeDetails memory);
+    function _getTradeDetailsExactBOutput(uint256 amountBOut) internal virtual returns (TradeDetails memory);
+
+    function _onTradeExactAInput(TradeDetails memory tradeDetails) internal virtual;
+
+    function _onTradeExactAOutput(TradeDetails memory tradeDetails) internal virtual;
+
+    function _onTradeExactBInput(TradeDetails memory tradeDetails) internal virtual;
+
+    function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal virtual;
 }

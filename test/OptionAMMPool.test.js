@@ -25,7 +25,8 @@ const scenarios = [
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: ethers.BigNumber.from('36673000000'),
     spotPriceDecimals: 8,
-    volatilityIntensity: 'low'
+    volatilityIntensity: 'low',
+    initialSigma: '100000000000'
   }
 ]
 
