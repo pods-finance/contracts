@@ -12,6 +12,8 @@ import "../interfaces/IOptionAMMPool.sol";
 contract OptionAMMPool is AMM {
     using SafeMath for uint256;
     uint256 constant INITIAL_SIGMA = 10**18;
+    uint256 public constant BS_RES_DECIMALS = 18;
+    uint256 constant SECONDS_IN_A_YEAR = 31536000;
 
     // External Contracts
     IPriceProvider public priceProvider;
@@ -39,9 +41,16 @@ contract OptionAMMPool is AMM {
         address _sigma
     ) public AMM(_optionAddress, _stableAsset) {
         priceProperties.currentSigma = INITIAL_SIGMA;
-        priceProperties.strikePrice = IPodOption(_optionAddress).strikePrice();
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
         priceProperties.expiration = IPodOption(_optionAddress).expiration();
+
+        uint256 strikePrice = IPodOption(_optionAddress).strikePrice();
+        uint256 strikePriceDecimals = IPodOption(_optionAddress).strikePriceDecimals();
+
+        require(strikePriceDecimals <= BS_RES_DECIMALS, "not suportable strikePrice unit");
+        uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
+
+        priceProperties.strikePrice = strikePriceWithRightDecimals;
 
         priceProvider = IPriceProvider(_priceProvider);
         priceMethod = IBlackScholes(_priceMethod);
@@ -119,8 +128,9 @@ contract OptionAMMPool is AMM {
         return newPrice;
     }
 
-    function _getTimeToMaturity() internal view returns (uint256) {
-        return priceProperties.expiration - block.timestamp;
+    // returns maturity in years with 18 decimals
+    function _getTimeToMaturityInYears() internal view returns (uint256) {
+        return ((priceProperties.expiration - block.timestamp) * (10**BS_RES_DECIMALS)) / (SECONDS_IN_A_YEAR);
     }
 
     function _getTokenBOut(uint256 newPrice, uint256 amountIn) internal view returns (uint256) {
@@ -139,11 +149,32 @@ contract OptionAMMPool is AMM {
     }
 
     function _getABPrice() internal override view returns (uint256) {
-        uint256 spotPrice = priceProvider.getAssetPrice(priceProperties.underlyingAsset);
-        uint256 timeToMaturity = _getTimeToMaturity();
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
+        uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPRice = _calculateNewPrice(spotPrice, timeToMaturity);
-        return newABPRice;
+        uint256 newABPriceWithDecimals = newABPRice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+        return newABPriceWithDecimals;
+    }
+
+    function getABPrice() public view returns (uint256) {
+        return _getABPrice();
+    }
+
+    function _getSpotPrice(address asset, uint256 decimalsOutput) public view returns (uint256) {
+        uint256 spotPrice = priceProvider.getAssetPrice(asset);
+        uint256 spotPriceDecimals = priceProvider.getAssetDecimals(asset);
+        uint256 diffDecimals;
+        uint256 spotPriceWithRightPrecision;
+
+        if (decimalsOutput <= spotPriceDecimals) {
+            diffDecimals = spotPriceDecimals.sub(decimalsOutput);
+            spotPriceWithRightPrecision = spotPrice.div(10**diffDecimals);
+        } else {
+            diffDecimals = decimalsOutput.sub(spotPriceDecimals);
+            spotPriceWithRightPrecision = spotPrice.mul(10**diffDecimals);
+        }
+        return spotPriceWithRightPrecision;
     }
 
     function buyExactInput(
@@ -156,7 +187,7 @@ contract OptionAMMPool is AMM {
 
     function _getTradeDetails(uint256 amountIn) internal override returns (TradeDetails memory) {
         uint256 spotPrice = priceProvider.getAssetPrice(priceProperties.underlyingAsset);
-        uint256 timeToMaturity = _getTimeToMaturity();
+        uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newPrice = _calculateNewPrice(spotPrice, timeToMaturity);
 

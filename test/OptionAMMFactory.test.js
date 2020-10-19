@@ -22,7 +22,7 @@ describe('OptionAMMFactory', () => {
     await mockUnderlyingAsset.deployed()
 
     blackScholes = await deployBlackScholes()
-    const mock = await getPriceProviderMock(caller, '900000000000', mockUnderlyingAsset.address)
+    const mock = await getPriceProviderMock(caller, '900000000000', 8, mockUnderlyingAsset.address)
     priceProviderMock = mock.priceProvider
 
     sigma = await Sigma.deploy(blackScholes.address)
