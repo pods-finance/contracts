@@ -11,6 +11,7 @@ const { toBigNumber, approximately } = require('../utils/utils')
 const OPTION_TYPE_PUT = 0
 
 const scenarios = [
+<<<<<<< HEAD
   {
     name: 'WBTC/USDC',
     underlyingAssetSymbol: 'WBTC',
@@ -18,15 +19,50 @@ const scenarios = [
     strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
     strikePrice: ethers.BigNumber.from(5000e6.toString()),
+=======
+  // {
+  //   name: 'WBTC/USDC',
+  //   underlyingAssetSymbol: 'WBTC',
+  //   underlyingAssetDecimals: 8,
+  //   expiration: 1604044800,
+  //   strikeAssetSymbol: 'USDC',
+  //   strikeAssetDecimals: 6,
+  //   strikePrice: ethers.BigNumber.from(5000e6.toString()),
+  //   strikePriceDecimals: 6,
+  //   amountToMint: ethers.BigNumber.from(1e8.toString()),
+  //   amountToMintTooLow: 1,
+  //   amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
+  //   initialFImp: ethers.BigNumber.from('10').pow(54),
+  //   initialSpotPrice: ethers.BigNumber.from('36673000000'),
+  //   spotPriceDecimals: 8,
+  //   initialSigma: '100000000000'
+  // },
+  {
+    name: 'WETH/USDC',
+    underlyingAssetSymbol: 'WETH',
+    underlyingAssetDecimals: 18,
+    expiration: 1604044800,
+    strikeAssetSymbol: 'USDC',
+    strikeAssetDecimals: 6,
+    strikePrice: toBigNumber(320e6),
+>>>>>>> 9645b25... added exactAOutput test
     strikePriceDecimals: 6,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
     initialFImp: ethers.BigNumber.from('10').pow(54),
+<<<<<<< HEAD
     initialSpotPrice: ethers.BigNumber.from('36673000000'),
     spotPriceDecimals: 8,
     volatilityIntensity: 'low',
     initialSigma: '100000000000'
+=======
+    initialSpotPrice: toBigNumber(375e8),
+    spotPriceDecimals: 8,
+    initialSigma: toBigNumber(0.661e18),
+    expectedNewIV: toBigNumber(0.66615e18)
+
+>>>>>>> 9645b25... added exactAOutput test
   }
 ]
 
@@ -50,6 +86,8 @@ scenarios.forEach(scenario => {
     let buyerAddress
     let delegator
     let delegatorAddress
+    let lp
+    let lpAddress
 
     async function MintPhase (amountOfOptionsToMint, signer = deployer, owner = deployerAddress) {
       const amountToMintBN = ethers.BigNumber.from(amountOfOptionsToMint)
@@ -74,13 +112,14 @@ scenarios.forEach(scenario => {
       await optionAMMPool.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
     }
 
-    before(async function () {
+    beforeEach(async function () {
       let ContractFactory, MockERC20, MockWETH, Sigma
-      [deployer, second, buyer, delegator] = await ethers.getSigners()
+      [deployer, second, buyer, delegator, lp] = await ethers.getSigners()
       deployerAddress = await deployer.getAddress()
       secondAddress = await second.getAddress()
       buyerAddress = await buyer.getAddress()
       delegatorAddress = await delegator.getAddress()
+      lpAddress = await lp.getAddress()
 
       // 1) Deploy Option
       // 2) Use same strike Asset
@@ -107,14 +146,11 @@ scenarios.forEach(scenario => {
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        await getTimestamp() + 5 * 60 * 60 * 1000,
+        scenario.expiration,
         24 * 60 * 60)
 
       const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
       priceProviderMock = mock.priceProvider
-    })
-
-    beforeEach(async function () {
       // 1) Deploy optionAMMPool
       const OptionAMMPool = await ethers.getContractFactory('OptionAMMPool')
       optionAMMPool = await OptionAMMPool.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address, scenario.initialSigma)
@@ -162,8 +198,91 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('Buy', () => {
-      // })
+    describe('tradeExactAInput', () => {
+      it('should match values accordingly', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100))
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(100).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          },
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: buyer,
+            params: [initialBuyerBalanceStrikeAsset]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: buyer,
+            params: [optionAMMPool.address, initialBuyerBalanceStrikeAsset]
+          },
+          {
+            name: 'tradeExactAOutput',
+            contract: optionAMMPool,
+            user: buyer,
+            params: [numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        // const balanceAfterTokenAPool = await mockTokenA.balanceOf(amm.address)
+        // const balanceAfterTokenBPool = await mockTokenB.balanceOf(amm.address)
+        //
+        const balanceAfterOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceAfterStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        expect(balanceAfterOptionBuyer).to.eq(numberOfOptionsToBuy)
+      })
     })
     describe('Sell', () => {
     })
