@@ -175,7 +175,7 @@ abstract contract AMM {
 
         emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
     }
-    
+
     function _tradeExactAInput(
         uint256 exactAmountAIn,
         uint256 minAmountBOut,

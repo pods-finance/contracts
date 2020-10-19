@@ -87,43 +87,47 @@ contract OptionAMMPool is AMM {
         return _addLiquidity(amountOfA, amountOfB, owner);
     }
 
-    function removeLiquidity(
-        uint256 amountOfA,
-        uint256 amountOfB,
-        address owner
-    ) external {
+    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external {
         return _removeLiquidity(amountOfA, amountOfB);
     }
 
     function tradeExactAInput(
         uint256 exactAmountAIn,
         uint256 minAmountBOut,
-        address owner
+        address owner,
+        uint256 sigmaInitialGuess
     ) external beforeExpiration returns (uint256) {
+        priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
     }
 
     function tradeExactAOutput(
         uint256 exactAmountAOut,
         uint256 maxAmountBIn,
-        address owner
+        address owner,
+        uint256 sigmaInitialGuess
     ) external beforeExpiration returns (uint256) {
+        priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
     }
 
     function tradeExactBInput(
         uint256 exactAmountBIn,
         uint256 minAmountAOut,
-        address owner
+        address owner,
+        uint256 sigmaInitialGuess
     ) external beforeExpiration returns (uint256) {
+        priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
     }
 
     function tradeExactBOutput(
         uint256 exactAmountBOut,
         uint256 maxAmountAIn,
-        address owner
+        address owner,
+        uint256 sigmaInitialGuess
     ) external beforeExpiration returns (uint256) {
+        priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
     }
 
@@ -135,7 +139,8 @@ contract OptionAMMPool is AMM {
             timeToMaturity,
             int256(priceProperties.riskFree)
         );
-        return newABPrice;
+        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+        return newABPriceWithDecimals;
     }
 
     // returns maturity in years with 18 decimals
@@ -154,8 +159,8 @@ contract OptionAMMPool is AMM {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
-        uint256 newABPRice = _calculateNewABPrice(spotPrice, timeToMaturity);
-        uint256 newABPriceWithDecimals = newABPRice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
         return newABPriceWithDecimals;
     }
 
@@ -185,8 +190,9 @@ contract OptionAMMPool is AMM {
         uint256 timeToMaturity,
         PriceProperties memory properties
     ) internal view returns (uint256) {
+        uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
         (uint256 newIV, ) = impliedVolatility.getPutSigma(
-            newTargetABPrice,
+            newTargetABPriceWithDecimals,
             properties.sigmaInitialGuess,
             spotPrice,
             properties.strikePrice,
@@ -365,28 +371,28 @@ contract OptionAMMPool is AMM {
     }
 
     function _getTradeDetailsExactAInput(uint256 exactAmountAIn) internal override returns (TradeDetails memory) {
-        (uint256 newIV, uint256 amountBOut, uint256 fees) = _getOptionTradeDetailsExactAInput(exactAmountAIn);
+        (uint256 amountBOut, uint256 newIV, uint256 fees) = _getOptionTradeDetailsExactAInput(exactAmountAIn);
 
         TradeDetails memory tradeDetails = TradeDetails(amountBOut, fees, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactAOutput(uint256 exactAmountAOut) internal override returns (TradeDetails memory) {
-        (uint256 newIV, uint256 amountBIn, uint256 fees) = _getOptionTradeDetailsExactAOutput(exactAmountAOut);
+        (uint256 amountBIn, uint256 newIV, uint256 fees) = _getOptionTradeDetailsExactAOutput(exactAmountAOut);
 
         TradeDetails memory tradeDetails = TradeDetails(amountBIn, fees, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactBInput(uint256 exactAmountBIn) internal override returns (TradeDetails memory) {
-        (uint256 newIV, uint256 amountAOut, uint256 fees) = _getOptionTradeDetailsExactAInput(exactAmountBIn);
+        (uint256 amountAOut, uint256 newIV, uint256 fees) = _getOptionTradeDetailsExactAInput(exactAmountBIn);
 
         TradeDetails memory tradeDetails = TradeDetails(amountAOut, fees, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactBOutput(uint256 exactAmountBOut) internal override returns (TradeDetails memory) {
-        (uint256 newIV, uint256 amountAIn, uint256 fees) = _getOptionTradeDetailsExactAOutput(exactAmountBOut);
+        (uint256 amountAIn, uint256 newIV, uint256 fees) = _getOptionTradeDetailsExactAOutput(exactAmountBOut);
 
         TradeDetails memory tradeDetails = TradeDetails(amountAIn, fees, abi.encodePacked(newIV));
         return tradeDetails;
