@@ -11,15 +11,6 @@ const { toBigNumber, approximately } = require('../utils/utils')
 const OPTION_TYPE_PUT = 0
 
 const scenarios = [
-<<<<<<< HEAD
-  {
-    name: 'WBTC/USDC',
-    underlyingAssetSymbol: 'WBTC',
-    underlyingAssetDecimals: 8,
-    strikeAssetSymbol: 'USDC',
-    strikeAssetDecimals: 6,
-    strikePrice: ethers.BigNumber.from(5000e6.toString()),
-=======
   // {
   //   name: 'WBTC/USDC',
   //   underlyingAssetSymbol: 'WBTC',
@@ -45,24 +36,15 @@ const scenarios = [
     strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
     strikePrice: toBigNumber(320e6),
->>>>>>> 9645b25... added exactAOutput test
     strikePriceDecimals: 6,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
     initialFImp: ethers.BigNumber.from('10').pow(54),
-<<<<<<< HEAD
-    initialSpotPrice: ethers.BigNumber.from('36673000000'),
-    spotPriceDecimals: 8,
-    volatilityIntensity: 'low',
-    initialSigma: '100000000000'
-=======
     initialSpotPrice: toBigNumber(375e8),
     spotPriceDecimals: 8,
     initialSigma: toBigNumber(0.661e18),
     expectedNewIV: toBigNumber(0.66615e18)
-
->>>>>>> 9645b25... added exactAOutput test
   }
 ]
 
@@ -96,7 +78,7 @@ scenarios.forEach(scenario => {
       // calculate amount of Strike necessary to mint
       await mockStrikeAsset.connect(signer).mint(scenario.strikePrice.mul(amountOfOptionsToMint))
 
-      await podPut.connect(signer).mint(amountToMintBN.mul(10 ** optionsDecimals), owner)
+      await podPut.connect(signer).mint(amountToMintBN.mul(toBigNumber(10).pow(optionsDecimals)), owner)
     }
 
     async function mintAndAddLiquidity (optionsAmount, stableAmount, signer = deployer, owner = deployerAddress) {
