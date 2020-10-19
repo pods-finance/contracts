@@ -25,8 +25,26 @@ const scenarios = [
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: ethers.BigNumber.from('36673000000'),
     spotPriceDecimals: 8,
-    volatilityIntensity: 'low',
     initialSigma: '100000000000'
+  },
+  {
+    name: 'WETH/USDC',
+    underlyingAssetSymbol: 'WETH',
+    underlyingAssetDecimals: 18,
+    expiration: 1604044800,
+    strikeAssetSymbol: 'USDC',
+    strikeAssetDecimals: 6,
+    strikePrice: toBigNumber(320e6),
+    strikePriceDecimals: 6,
+    amountToMint: ethers.BigNumber.from(1e8.toString()),
+    amountToMintTooLow: 1,
+    amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
+    initialFImp: ethers.BigNumber.from('10').pow(54),
+    initialSpotPrice: toBigNumber(375e8),
+    spotPriceDecimals: 8,
+    initialSigma: toBigNumber(0.661e18),
+    expectedNewIV: toBigNumber(0.66615e18)
+
   }
 ]
 
@@ -58,7 +76,7 @@ scenarios.forEach(scenario => {
       // calculate amount of Strike necessary to mint
       await mockStrikeAsset.connect(signer).mint(scenario.strikePrice.mul(amountOfOptionsToMint))
 
-      await podPut.connect(signer).mint(amountToMintBN.mul(10 ** optionsDecimals), owner)
+      await podPut.connect(signer).mint(amountToMintBN.mul(toBigNumber(10).pow(optionsDecimals)), owner)
     }
 
     async function mintAndAddLiquidity (optionsAmount, stableAmount, signer = deployer, owner = deployerAddress) {
@@ -162,8 +180,18 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('Buy', () => {
-      // })
+    describe('tradeExactAInput', () => {
+      it('should match values accordingly', async () => {
+      // 1) Mint strike Asset
+      // 2) Approve to Option contract
+      // 3) Mint Options
+      // 4) Mint more stable asset (tokenB)
+      // 5) Approve Option an Stable to Pool Contract
+      // 6) Add addLiquidity
+      // 7) Mint Stable amount to the buyer
+      // 8) Approve that amount to Pool
+      // 9) Call function tradeExactAInput
+      })
     })
     describe('Sell', () => {
     })
