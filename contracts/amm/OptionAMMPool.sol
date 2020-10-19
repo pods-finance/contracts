@@ -11,7 +11,6 @@ import "../interfaces/IOptionAMMPool.sol";
 
 contract OptionAMMPool is AMM {
     using SafeMath for uint256;
-    uint256 constant INITIAL_SIGMA = 10**18;
     uint256 public constant BS_RES_DECIMALS = 18;
     uint256 constant SECONDS_IN_A_YEAR = 31536000;
 
@@ -38,9 +37,10 @@ contract OptionAMMPool is AMM {
         address _stableAsset,
         address _priceProvider,
         address _priceMethod,
-        address _sigma
+        address _sigma,
+        uint256 _initialSigma
     ) public AMM(_optionAddress, _stableAsset) {
-        priceProperties.currentSigma = INITIAL_SIGMA;
+        priceProperties.currentSigma = _initialSigma;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
         priceProperties.expiration = IPodOption(_optionAddress).expiration();
 
