@@ -2,9 +2,9 @@
 pragma solidity ^0.6.8;
 
 interface IFeePool {
-    function getFeeValue() external view returns (uint256);
+    function feeValue() external view returns (uint256);
 
-    function getFeeDecimals() external view returns (uint8);
+    function feeDecimals() external view returns (uint8);
 
     function getCollectable(uint256 amount) external view returns (uint256);
 
@@ -12,5 +12,7 @@ interface IFeePool {
 
     function collect(uint256 amount) external;
 
-    function withdraw(uint256 amount, address to) external;
+    function withdraw(address to, uint256 amount) external;
+
+    function mint(address to, uint256 amount) external;
 }

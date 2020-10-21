@@ -4,12 +4,18 @@ const { toBigNumber } = require('../../utils/utils')
 describe.only('FeePool', () => {
   let FeePool, pool
   let usdc
-  let user
+  let owner0, owner1, feePayer
+  let owner0Address, owner1Address
   const initialFee = toBigNumber(997)
   const initialDecimals = toBigNumber(3)
 
   before(async () => {
-    [user] = await ethers.getSigners()
+    ;[owner0, owner1, feePayer] = await ethers.getSigners()
+    ;[owner0Address, owner1Address] = await Promise.all([
+      owner0.getAddress(),
+      owner1.getAddress(),
+    ])
+
     FeePool = await ethers.getContractFactory('FeePool')
 
     const USDC = await ethers.getContractFactory('MintableERC20')
@@ -22,70 +28,200 @@ describe.only('FeePool', () => {
     await pool.deployed()
   })
 
-  it('sets the contract with initial params', async () => {
-    expect(await pool.getFeeValue()).to.equal(initialFee)
-    expect(await pool.getFeeDecimals()).to.equal(initialDecimals)
+  afterEach(async () => {
+    // Clear balances between tests
+    await usdc.connect(owner0).burn(await usdc.balanceOf(owner0Address))
+    await usdc.connect(owner1).burn(await usdc.balanceOf(owner1Address))
   })
 
-  it('updates the params', async () => {
-    const newFeeValue = toBigNumber(5)
-    const newFeeDecimals = toBigNumber(1)
-    const transaction = pool.setFee(newFeeValue, newFeeDecimals)
+  describe('Fee parameters', () => {
+    it('sets the contract with initial params', async () => {
+      expect(await pool.getFeeValue()).to.equal(initialFee)
+      expect(await pool.getFeeDecimals()).to.equal(initialDecimals)
+    })
 
-    await expect(transaction)
-      .to.emit(pool, 'FeeUpdated')
-      .withArgs(usdc.address, newFeeValue, newFeeDecimals)
+    it('updates the contract parameters', async () => {
+      const newFeeValue = toBigNumber(5)
+      const newFeeDecimals = toBigNumber(1)
+      const transaction = pool.setFee(newFeeValue, newFeeDecimals)
 
-    expect(await pool.getFeeValue()).to.equal(newFeeValue)
-    expect(await pool.getFeeDecimals()).to.equal(newFeeDecimals)
+      await expect(transaction)
+        .to.emit(pool, 'FeeUpdated')
+        .withArgs(usdc.address, newFeeValue, newFeeDecimals)
+
+      expect(await pool.getFeeValue()).to.equal(newFeeValue)
+      expect(await pool.getFeeDecimals()).to.equal(newFeeDecimals)
+    })
   })
 
-  it('calculates the fee correctly', async () => {
-    const amount = toBigNumber(1e18)
-    const expectedFees = toBigNumber(0.003 * 1e18)
+  describe('Fee collection', () => {
+    it('calculates the fee correctly', async () => {
+      const amount = toBigNumber(1e18)
+      const expectedFees = toBigNumber(0.003 * 1e18)
 
-    expect(await pool.getCollectable(amount)).to.equal(expectedFees)
+      expect(await pool.getCollectable(amount)).to.equal(expectedFees)
+    })
+
+    it('collects the due amount in fees', async () => {
+      const amount = toBigNumber(1e18)
+      const expectedFees = toBigNumber(0.003 * 1e18)
+
+      await usdc.connect(owner0).mint(amount)
+      await usdc.connect(owner0).approve(pool.address, expectedFees)
+      const transaction = pool.connect(owner0).collect(amount)
+
+      await expect(transaction)
+        .to.emit(pool, 'FeeCollected')
+        .withArgs(usdc.address, expectedFees)
+
+      expect(await usdc.balanceOf(owner0Address)).to.equal(amount.sub(expectedFees))
+      expect(await usdc.balanceOf(pool.address)).to.equal(expectedFees)
+    })
   })
 
-  it('collects the due amount in fees', async () => {
-    const feeAmount = toBigNumber(1e18)
+  describe('Fee shares', () => {
+    it('triggers the events when minting and withdrawing', async () => {
+      const owner0Shares = toBigNumber(50)
+      const mintTransaction = pool.mint(owner0Address, owner0Shares)
 
-    await usdc.connect(user).mint(feeAmount)
-    await usdc.connect(user).approve(pool.address, feeAmount)
-    const transaction = pool.collect(feeAmount)
+      await expect(mintTransaction)
+        .to.emit(pool, 'ShareMinted')
+        .withArgs(usdc.address, owner0Address, owner0Shares)
 
-    await expect(transaction)
-      .to.emit(pool, 'FeeCollected')
-      .withArgs(usdc.address, feeAmount)
+      let totalFees = toBigNumber(0)
 
-    expect(await usdc.balanceOf(await user.getAddress())).to.equal(0)
-    expect(await usdc.balanceOf(pool.address)).to.equal(feeAmount)
-  })
+      const collectFrom = async amount => {
+        const collection = toBigNumber(amount)
+        const expectedFees = await pool.getCollectable(collection)
+        await usdc.connect(feePayer).mint(expectedFees)
+        await usdc.connect(feePayer).approve(pool.address, expectedFees)
+        await pool.connect(feePayer).collect(collection)
+        expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.add(expectedFees))
+        totalFees = totalFees.add(expectedFees)
+      }
 
-  it('withdraws the collected fees', async () => {
-    const userAddress = await user.getAddress()
-    let amountToWithdraw = toBigNumber(0)
+      // Collect some fees
+      await collectFrom(100 * 1e18)
+      await collectFrom(50 * 1e18)
+      await collectFrom(43.333 * 1e18)
 
-    const deposit = async value => {
-      const amount = toBigNumber(value)
-      await usdc.connect(user).mint(amount)
-      await usdc.connect(user).approve(pool.address, amount)
-      await pool.collect(amount)
-      amountToWithdraw = amountToWithdraw.add(amount)
-    }
+      const withdrawTransaction = pool.connect(owner0).withdraw(owner0Address, owner0Shares)
 
-    await deposit(1e18)
-    await deposit(2 * 1e18)
-    await deposit(10.542 * 1e18)
+      await expect(withdrawTransaction)
+        .to.emit(pool, 'FeeWithdrawn')
+        .withArgs(usdc.address, owner0Address, totalFees, owner0Shares)
+    })
 
-    expect(await usdc.balanceOf(userAddress)).to.equal(0)
+    it('should be able to withdraw all fees if its the only share owner', async () => {
+      const owner0Shares = toBigNumber(50)
+      await pool.mint(owner0Address, owner0Shares)
+      const owner0Balance = await pool.balanceOf(owner0Address)
+      expect(owner0Balance.shares).to.equal(owner0Shares)
+      expect(owner0Balance.shares).to.equal(await pool.totalShares())
+      expect(owner0Balance.liability).to.equal(0)
 
-    const transaction = pool.withdraw(amountToWithdraw, userAddress)
+      let totalFees = toBigNumber(0)
 
-    await expect(transaction)
-      .to.emit(pool, 'FeeWithdrawn')
-      .withArgs(usdc.address, amountToWithdraw, userAddress)
+      const collectFrom = async amount => {
+        const collection = toBigNumber(amount)
+        const expectedFees = await pool.getCollectable(collection)
+        await usdc.connect(feePayer).mint(expectedFees)
+        await usdc.connect(feePayer).approve(pool.address, expectedFees)
+        await pool.connect(feePayer).collect(collection)
+        expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.add(expectedFees))
+        totalFees = totalFees.add(expectedFees)
+      }
 
-    expect(await usdc.balanceOf(userAddress)).to.equal(amountToWithdraw)
+      // Collect some fees
+      await collectFrom(100 * 1e18)
+      await collectFrom(50 * 1e18)
+      await collectFrom(43.333 * 1e18)
+
+      // Withdraws all collected fees
+      await pool.connect(owner0).withdraw(owner0Address, owner0Shares)
+      expect(await usdc.balanceOf(owner0Address)).to.equal(totalFees)
+      expect(await usdc.balanceOf(pool.address)).to.equal(0)
+    })
+
+    it.only('should mint shares proportionally to their participation', async () => {
+      // Owner 0 enters the pool
+      const owner0Shares = toBigNumber(50)
+      await pool.mint(owner0Address, owner0Shares)
+      const owner0Balance = await pool.balanceOf(owner0Address)
+      expect(owner0Balance.shares).to.equal(owner0Shares)
+      expect(owner0Balance.liability).to.equal(0)
+
+      let totalFees = toBigNumber(0)
+
+      const collectFrom = async amount => {
+        const collection = toBigNumber(amount)
+        const expectedFees = await pool.getCollectable(collection)
+        await usdc.connect(feePayer).mint(expectedFees)
+        await usdc.connect(feePayer).approve(pool.address, expectedFees)
+        await pool.connect(feePayer).collect(collection)
+        expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.add(expectedFees))
+        totalFees = totalFees.add(expectedFees)
+      }
+
+      // Collect some fees
+      await collectFrom(100 * 1e18)
+      await collectFrom(50 * 1e18)
+
+      // Owner 1 enters the pool after some fees were collected,
+      // therefore being eligible to withdraw fees proportionally from now onwards
+      const owner1Shares = toBigNumber(50)
+      await pool.mint(owner1Address, owner1Shares)
+      const owner1Balance = await pool.balanceOf(owner1Address)
+      expect(owner1Balance.shares).to.equal(owner1Shares)
+      expect(owner1Balance.liability).to.equal(totalFees)
+
+      await collectFrom(400 * 1e18)
+
+      console.log(`
+        Pool balance:    ${await usdc.balanceOf(pool.address)}
+        Pool quotes:     ${await pool.totalShares()}
+      `)
+
+      // Owner 0 withdraws
+      // const owner0Withdrawal = await pool.getCollectable(toBigNumber((100 + 50 + (400 / 2)) * 1e18))
+      await pool.connect(owner0).withdraw(owner0Address, owner0Shares)
+      console.log(`
+        Owner0 quotes:   ${owner0Shares}
+        Owner0 withdrew: ${await usdc.balanceOf(owner0Address)}
+        Pool balance:    ${await usdc.balanceOf(pool.address)}
+        Pool quotes:     ${await pool.totalShares()}
+      `)
+      // expect(await usdc.balanceOf(owner0Address)).to.equal(owner0Withdrawal)
+      // expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.sub(owner0Withdrawal))
+
+      // Owner 1 withdraws
+      // const owner1Withdrawal = totalFees.sub(owner0Withdrawal)
+      const owner1Withdrawal = await pool.getCollectable(toBigNumber((400 / 2) * 1e18))
+      await pool.connect(owner1).withdraw(owner1Address, owner1Shares)
+      console.log(`
+        Owner1 quotes:   ${owner1Shares}
+        Owner1 withdrew: ${await usdc.balanceOf(owner1Address)}
+        Pool balance:    ${await usdc.balanceOf(pool.address)}
+        Pool quotes:     ${await pool.totalShares()}
+      `)
+      // expect(await usdc.balanceOf(owner1Address)).to.equal(owner1Withdrawal)
+      // expect(await usdc.balanceOf(pool.address)).to.equal(0)
+    })
+
+    it('should not allow to withdraw without enough share balance', async () => {
+      const owner0Shares = toBigNumber(50)
+      const moreThanOwned = toBigNumber(100)
+      await pool.mint(owner0Address, owner0Shares)
+      const moreThanOwnedTransaction = pool.connect(owner0).withdraw(owner0Address, moreThanOwned)
+
+      await expect(moreThanOwnedTransaction)
+        .to.be.revertedWith('Burn exceeds balance')
+
+      const neverMintedShares = toBigNumber(100)
+      const neverMintedTransaction = pool.connect(owner1).withdraw(owner1Address, neverMintedShares)
+
+      await expect(neverMintedTransaction)
+        .to.be.revertedWith('Burn exceeds balance')
+    })
   })
 })
