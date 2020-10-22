@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IFeePool.sol";
 
-import "@nomiclabs/buidler/console.sol";
-
 /**
  * FeePool
  *
@@ -25,6 +23,7 @@ contract FeePool is IFeePool, Ownable {
 
     mapping(address => Balance) private _balances;
     uint256 private _shares;
+    uint256 private _totalLiability;
 
     uint256 private _feeValue;
     uint8 private _feeDecimals;
@@ -104,8 +103,6 @@ contract FeePool is IFeePool, Ownable {
     function collect(uint256 amount) external override {
         uint256 collectable = _getCollectable(amount);
         require(ERC20(_token).transferFrom(msg.sender, address(this), collectable), "Could not collect fees");
-        console.log("Collected", collectable);
-        //        console.log("Total    ", ERC20(_token).balanceOf(address(this)));
         emit FeeCollected(_token, collectable);
     }
 
@@ -119,20 +116,15 @@ contract FeePool is IFeePool, Ownable {
         require(_balances[to].shares >= amount, "Burn exceeds balance");
 
         uint256 feesCollected = ERC20(_token).balanceOf(address(this));
-        uint256 shareValue = feesCollected.div(_shares);
+        uint256 shareValue = feesCollected.add(_totalLiability).div(_shares);
 
         uint256 amortizedLiability = amount.mul(_balances[to].liability).div(_balances[to].shares);
         uint256 withdrawAmount = amount.mul(shareValue).sub(amortizedLiability);
-        //        console.log("feesCollected", feesCollected);
-        //        console.log("amortizedLiability", amortizedLiability);
-        //        console.log("liability", _balances[to].liability);
-        //        console.log("_shares", _shares);
-        //        console.log("Total share value", amount.mul(shareValue));
-        //        console.log("withdrawAmount", withdrawAmount);
 
         _balances[to].shares = _balances[to].shares.sub(amount);
         _balances[to].liability = _balances[to].liability.sub(amortizedLiability);
         _shares = _shares.sub(amount);
+        _totalLiability = _totalLiability.sub(amortizedLiability);
 
         require(ERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
         emit FeeWithdrawn(_token, to, withdrawAmount, amount);
@@ -151,7 +143,7 @@ contract FeePool is IFeePool, Ownable {
 
         // Otherwise it should divide the total collected by total shares minted
         if (_shares > 0) {
-            shareValue = feesCollected.div(_shares);
+            shareValue = feesCollected.add(_totalLiability).div(_shares);
         }
 
         uint256 newLiability = amount.mul(shareValue);
@@ -159,6 +151,7 @@ contract FeePool is IFeePool, Ownable {
         _balances[to].shares = _balances[to].shares.add(amount);
         _balances[to].liability = _balances[to].liability.add(newLiability);
         _shares = _shares.add(amount);
+        _totalLiability = _totalLiability.add(newLiability);
 
         emit ShareMinted(_token, to, amount);
     }

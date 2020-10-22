@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const { toBigNumber } = require('../../utils/utils')
 
-describe.only('FeePool', () => {
+describe('FeePool', () => {
   let FeePool, pool
   let usdc
   let owner0, owner1, feePayer
@@ -36,8 +36,8 @@ describe.only('FeePool', () => {
 
   describe('Fee parameters', () => {
     it('sets the contract with initial params', async () => {
-      expect(await pool.getFeeValue()).to.equal(initialFee)
-      expect(await pool.getFeeDecimals()).to.equal(initialDecimals)
+      expect(await pool.feeValue()).to.equal(initialFee)
+      expect(await pool.feeDecimals()).to.equal(initialDecimals)
     })
 
     it('updates the contract parameters', async () => {
@@ -49,8 +49,8 @@ describe.only('FeePool', () => {
         .to.emit(pool, 'FeeUpdated')
         .withArgs(usdc.address, newFeeValue, newFeeDecimals)
 
-      expect(await pool.getFeeValue()).to.equal(newFeeValue)
-      expect(await pool.getFeeDecimals()).to.equal(newFeeDecimals)
+      expect(await pool.feeValue()).to.equal(newFeeValue)
+      expect(await pool.feeDecimals()).to.equal(newFeeDecimals)
     })
   })
 
@@ -143,7 +143,7 @@ describe.only('FeePool', () => {
       expect(await usdc.balanceOf(pool.address)).to.equal(0)
     })
 
-    it.only('should mint shares proportionally to their participation', async () => {
+    it('should mint shares proportionally to their participation', async () => {
       // Owner 0 enters the pool
       const owner0Shares = toBigNumber(50)
       await pool.mint(owner0Address, owner0Shares)
@@ -177,35 +177,17 @@ describe.only('FeePool', () => {
 
       await collectFrom(400 * 1e18)
 
-      console.log(`
-        Pool balance:    ${await usdc.balanceOf(pool.address)}
-        Pool quotes:     ${await pool.totalShares()}
-      `)
-
       // Owner 0 withdraws
-      // const owner0Withdrawal = await pool.getCollectable(toBigNumber((100 + 50 + (400 / 2)) * 1e18))
+      const owner0Withdrawal = await pool.getCollectable(toBigNumber((100 + 50 + (400 / 2)) * 1e18))
       await pool.connect(owner0).withdraw(owner0Address, owner0Shares)
-      console.log(`
-        Owner0 quotes:   ${owner0Shares}
-        Owner0 withdrew: ${await usdc.balanceOf(owner0Address)}
-        Pool balance:    ${await usdc.balanceOf(pool.address)}
-        Pool quotes:     ${await pool.totalShares()}
-      `)
-      // expect(await usdc.balanceOf(owner0Address)).to.equal(owner0Withdrawal)
-      // expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.sub(owner0Withdrawal))
+      expect(await usdc.balanceOf(owner0Address)).to.equal(owner0Withdrawal)
+      expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.sub(owner0Withdrawal))
 
       // Owner 1 withdraws
-      // const owner1Withdrawal = totalFees.sub(owner0Withdrawal)
-      const owner1Withdrawal = await pool.getCollectable(toBigNumber((400 / 2) * 1e18))
+      const owner1Withdrawal = totalFees.sub(owner0Withdrawal)
       await pool.connect(owner1).withdraw(owner1Address, owner1Shares)
-      console.log(`
-        Owner1 quotes:   ${owner1Shares}
-        Owner1 withdrew: ${await usdc.balanceOf(owner1Address)}
-        Pool balance:    ${await usdc.balanceOf(pool.address)}
-        Pool quotes:     ${await pool.totalShares()}
-      `)
-      // expect(await usdc.balanceOf(owner1Address)).to.equal(owner1Withdrawal)
-      // expect(await usdc.balanceOf(pool.address)).to.equal(0)
+      expect(await usdc.balanceOf(owner1Address)).to.equal(owner1Withdrawal)
+      expect(await usdc.balanceOf(pool.address)).to.equal(0)
     })
 
     it('should not allow to withdraw without enough share balance', async () => {
