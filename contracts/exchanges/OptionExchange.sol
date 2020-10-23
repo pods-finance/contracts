@@ -90,6 +90,16 @@ contract OptionExchange {
         emit OptionsSold(msg.sender, optionAddress, optionAmount, outputToken, outputBought);
     }
 
+    /**
+     * Mint options and add them as liquidity providing
+     *
+     * @param option The option contract to mint
+     * @param optionAmount Amount of options to mint
+     * @param token The output token which the premium will be paid
+     * @param amountToken Amount of output tokens accepted
+     * @param deadline The deadline in unix-timestamp that limits the transaction from happening
+     * @param params Custom params sent to exchange
+     */
     function addLiquidity(
         IPodPut option,
         uint256 optionAmount,
