@@ -219,31 +219,160 @@ contract NormalDistribution is INormalDistribution {
         _probabilities[20700] = 9808;
         _probabilities[20800] = 9812;
         _probabilities[20900] = 9817;
+        _probabilities[21000] = 9821;
+        _probabilities[21100] = 9826;
+        _probabilities[21200] = 9830;
+        _probabilities[21300] = 9834;
+        _probabilities[21400] = 9838;
+        _probabilities[21500] = 9842;
+        _probabilities[21600] = 9846;
+        _probabilities[21700] = 9850;
+        _probabilities[21800] = 9854;
+        _probabilities[21900] = 9857;
+        _probabilities[22000] = 9861;
+        _probabilities[22100] = 9864;
+        _probabilities[22200] = 9868;
+        _probabilities[22300] = 9871;
+        _probabilities[22400] = 9874;
+        _probabilities[22500] = 9879;
+        _probabilities[22600] = 9880;
+        _probabilities[22700] = 9884;
+        _probabilities[22800] = 9887;
+        _probabilities[22900] = 9890;
+        _probabilities[23000] = 9893;
+        _probabilities[23100] = 9896;
+        _probabilities[23200] = 9898;
+        _probabilities[23300] = 9901;
+        _probabilities[23400] = 9904;
+        _probabilities[23500] = 9906;
+        _probabilities[23600] = 9909;
+        _probabilities[23700] = 9911;
+        _probabilities[23800] = 9913;
+        _probabilities[23900] = 9916;
+        _probabilities[24000] = 9918;
+        _probabilities[24100] = 9920;
+        _probabilities[24200] = 9922;
+        _probabilities[24300] = 9924;
+        _probabilities[24400] = 9927;
+        _probabilities[24500] = 9929;
+        _probabilities[24600] = 9930;
+        _probabilities[24700] = 9932;
+        _probabilities[24800] = 9934;
+        _probabilities[24900] = 9936;
+        _probabilities[25000] = 9938;
+        _probabilities[25100] = 9940;
+        _probabilities[25200] = 9941;
+        _probabilities[25300] = 9943;
+        _probabilities[25400] = 9945;
+        _probabilities[25500] = 9946;
+        _probabilities[25600] = 9948;
+        _probabilities[25700] = 9949;
+        _probabilities[25800] = 9951;
+        _probabilities[25900] = 9952;
+        _probabilities[26000] = 9953;
+        _probabilities[26100] = 9955;
+        _probabilities[26200] = 9956;
+        _probabilities[26300] = 9957;
+        _probabilities[26400] = 9958;
+        _probabilities[26500] = 9960;
+        _probabilities[26600] = 9961;
+        _probabilities[26700] = 9962;
+        _probabilities[26800] = 9963;
+        _probabilities[26900] = 9964;
+        _probabilities[27000] = 9965;
+        _probabilities[27100] = 9966;
+        _probabilities[27200] = 9967;
+        _probabilities[27300] = 9968;
+        _probabilities[27400] = 9969;
+        _probabilities[27500] = 9970;
+        _probabilities[27600] = 9971;
+        _probabilities[27700] = 9972;
+        _probabilities[27800] = 9973;
+        _probabilities[27900] = 9974;
+        _probabilities[28000] = 9974;
+        _probabilities[28100] = 9975;
+        _probabilities[28200] = 9976;
+        _probabilities[28300] = 9977;
+        _probabilities[28400] = 9977;
+        _probabilities[28500] = 9978;
+        _probabilities[28600] = 9979;
+        _probabilities[28700] = 9979;
+        _probabilities[28800] = 9980;
+        _probabilities[28900] = 9981;
+        _probabilities[29000] = 9981;
+        _probabilities[29100] = 9982;
+        _probabilities[29200] = 9982;
+        _probabilities[29300] = 9983;
+        _probabilities[29400] = 9984;
+        _probabilities[29500] = 9984;
+        _probabilities[29600] = 9985;
+        _probabilities[29700] = 9985;
+        _probabilities[29800] = 9986;
+        _probabilities[29900] = 9986;
+        _probabilities[30000] = 9986;
+        _probabilities[30100] = 9987;
+        _probabilities[30200] = 9987;
+        _probabilities[30300] = 9988;
+        _probabilities[30400] = 9988;
+        _probabilities[30500] = 9989;
+        _probabilities[30600] = 9989;
+        _probabilities[30700] = 9989;
     }
 
     /**
      * Returns the probability of Z in a normal distribution curve
      * @dev For performance numbers are truncated to 2 decimals. Ex: 1134500000000000000(1.13) gets truncated to 113
-     * @dev For Z > ±0.209 the curve response gets more linear
+     * @dev For Z > ±0.307 the curve response gets more concentrated
      * @param z A point in the normal distribution
      * @param decimals Amount of decimals of z
      * @return The probability of z
      */
     function getProbability(int256 z, uint256 decimals) external override view returns (int256) {
         require(decimals >= 2, "NormalDistribution: z too small");
-        int256 truncateZ = (z / int256(10**(decimals - 2))) * 100;
+        int256 truncatedZ = mod((z / int256(10**(decimals - 2))) * 100);
         int256 responseDecimals = int256(10**(decimals - 4));
 
         // Handle negative z
         if (z < 0) {
-            return (10000 - _probabilities[-truncateZ]) * responseDecimals;
+            return (10000 - nearest(truncatedZ)) * responseDecimals;
         }
 
-        // As Z approach 0.209 it tends the distributing curve tends to be more linear
-        if (truncateZ > 20900) {
-            truncateZ = 20900;
-        }
+        return nearest(truncatedZ) * responseDecimals;
+    }
 
-        return _probabilities[truncateZ] * responseDecimals;
+    /**
+     * @dev Returns the module of a number.
+     */
+    function mod(int256 a) internal pure returns (int256) {
+        return a < 0 ? -a : a;
+    }
+
+    /**
+     * @dev Returns the nearest z value on the table
+     */
+    function nearest(int256 z) internal view returns (int256) {
+        if (z >= 36300) {
+            return 9999;
+        } else if (z >= 34900) {
+            return 9998;
+        } else if (z >= 34000) {
+            return 9997;
+        } else if (z >= 33300) {
+            return 9996;
+        } else if (z >= 32700) {
+            return 9995;
+        } else if (z >= 32200) {
+            return 9994;
+        } else if (z >= 31800) {
+            return 9993;
+        } else if (z >= 31400) {
+            return 9992;
+        } else if (z >= 31100) {
+            return 9991;
+        } else if (z >= 30800) {
+            return 9990;
+        } else {
+            return _probabilities[z];
+        }
     }
 }
