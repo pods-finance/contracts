@@ -32,7 +32,7 @@ const scenarios = [
     name: 'WETH/USDC',
     underlyingAssetSymbol: 'WETH',
     underlyingAssetDecimals: 18,
-    expiration: 1604044800,
+    expiration: 60 * 60 * 24 * 7, // 7 days
     strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
     strikePrice: toBigNumber(320e6),
@@ -122,13 +122,15 @@ scenarios.forEach(scenario => {
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
       ])
       // Deploy option
+
+      const currentBlocktimestamp = await getTimestamp()
       podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
         'pod:WBTC:USDC:5000:A',
         OPTION_TYPE_PUT,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        scenario.expiration,
+        currentBlocktimestamp + scenario.expiration,
         24 * 60 * 60)
 
       const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
@@ -145,6 +147,8 @@ scenarios.forEach(scenario => {
         expect(await optionAMMPool.tokenB()).to.equal(mockStrikeAsset.address)
         expect(await optionAMMPool.tokenA()).to.equal(podPut.address)
         expect(await optionAMMPool.priceProvider()).to.equal(priceProviderMock.address)
+
+        console.log()
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
