@@ -213,7 +213,7 @@ scenarios.forEach(scenario => {
         await forceExpiration(wPodPut)
         await expect(
           wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)
-        ).to.be.revertedWith('Option has expired')
+        ).to.be.reverted
       })
     })
 

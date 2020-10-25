@@ -25,7 +25,7 @@ abstract contract AMM {
     // Total Balance of each tokem is avaiable in eacch ERC20 token balanceOf()
     // instead of using local variables, trying to reduce stack too deep
     struct UserBalance {
-        uint256 tokenABalance;
+        uint256 tokenABalance; //originalBalance
         uint256 tokenBBalance;
         uint256 fImp;
     }
@@ -39,7 +39,8 @@ abstract contract AMM {
 
     struct TradeDetails {
         uint256 amount;
-        uint256 fees;
+        uint256 feesTokenA;
+        uint256 feesTokenB;
         bytes params;
     }
 
@@ -111,6 +112,8 @@ abstract contract AMM {
         UserBalance memory userBalance = UserBalance(userAmountToStoreTokenA, userAmountToStoreTokenB, fImpOpening);
         balances[owner] = userBalance;
 
+        _onAddLiquidity(balances[owner], owner);
+
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
         require(
             ERC20(tokenA).transferFrom(msg.sender, address(this), amountOfA),
@@ -167,6 +170,8 @@ abstract contract AMM {
         uint256 amountToSendB = amountOfBOriginal.mul(multipliers.BB).add(amountOfAOriginal.mul(multipliers.AB)).div(
             balances[msg.sender].fImp
         );
+
+        _onRemoveLiquidity(balances[msg.sender], msg.sender);
 
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
         require(ERC20(tokenA).transfer(msg.sender, amountToSendA), "Could not transfer token A from caller");
@@ -416,6 +421,7 @@ abstract contract AMM {
         uint256 userToStoreTokenA = amountOfA;
         uint256 userToStoreTokenB = amountOfB;
 
+        //Re-add Liquidity case
         if (userBalance.fImp != 0) {
             userToStoreTokenA = userBalance.tokenABalance.mul(fImpOpening).div(userBalance.fImp).add(amountOfA);
             userToStoreTokenB = userBalance.tokenBBalance.mul(fImpOpening).div(userBalance.fImp).add(amountOfB);
@@ -448,4 +454,8 @@ abstract contract AMM {
     function _onTradeExactBInput(TradeDetails memory tradeDetails) internal virtual;
 
     function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal virtual;
+
+    function _onRemoveLiquidity(UserBalance memory userBalance, address owner) internal virtual;
+
+    function _onAddLiquidity(UserBalance memory userBalance, address owner) internal virtual;
 }
