@@ -72,7 +72,8 @@ task('deploySerie', 'Initial Option series setup: create option, create an excha
       optionParams.underlyingAsset,
       optionParams.strikeAsset,
       optionParams.strikePrice,
-      optionParams.expirationDate
+      optionParams.expirationDate,
+      String(24 * 60 * 60) // TODO PR
     ]
 
     // 1) Create Option
@@ -118,7 +119,7 @@ task('deploySerie', 'Initial Option series setup: create option, create an excha
     await run('createExchangeUniswapV1', { token: optionAddress, factoryAddress: uniswapFactory, deployerAddress })
 
     // 3) Mint options
-    await run('mintOptions', { optionAddress, strikeAssetAddress, amount: amountOfOptionsToAddLiquidity, owner: deployerAddress, optionContractName })
+    await run('mintOptions', { option: optionAddress, strike: strikeAssetAddress, amount: amountOfOptionsToAddLiquidity, owner: deployerAddress, contract: optionContractName })
 
     // 4) Add Liquidity to Uniswap Exchange
     await run('addLiquidityUniswapV1', { token: optionAddress, amountOfTokens: amountOfOptionsToAddLiquidity, amountOfEth: amountOfEthToAddLiquidity, deployerAddress, factory: uniswapFactory })
