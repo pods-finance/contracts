@@ -2,6 +2,7 @@
 pragma solidity ^0.6.8;
 
 import "../interfaces/INormalDistribution.sol";
+import "@nomiclabs/buidler/console.sol";
 
 /**
  * Normal distribution
@@ -231,19 +232,25 @@ contract NormalDistribution is INormalDistribution {
      */
     function getProbability(int256 z, uint256 decimals) external override view returns (int256) {
         require(decimals >= 2, "NormalDistribution: z too small");
-        int256 truncateZ = (z / int256(10**(decimals - 2))) * 100;
+        int256 truncateZ = mod((z / int256(10**(decimals - 2))) * 100);
         int256 responseDecimals = int256(10**(decimals - 4));
 
-        // Handle negative z
-        if (z < 0) {
-            return (10000 - _probabilities[-truncateZ]) * responseDecimals;
-        }
-
-        // As Z approach 0.209 it tends the distributing curve tends to be more linear
+        // As Z approach 0.209 it is approximated to the nearest point stored possible
         if (truncateZ > 20900) {
             truncateZ = 20900;
         }
+        // Handle negative z
+        if (z < 0) {
+            return (10000 - _probabilities[truncateZ]) * responseDecimals;
+        }
 
         return _probabilities[truncateZ] * responseDecimals;
+    }
+
+    /**
+     * @dev Returns the module of a number.
+     */
+    function mod(int256 a) internal pure returns (int256) {
+        return a < 0 ? -a : a;
     }
 }
