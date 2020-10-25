@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
 import "../interfaces/IOptionAMMFactory.sol";
 import "./OptionAMMPool.sol";
+import "./FeePool.sol";
 
 /**
  * OptionAMMFactory
@@ -28,6 +30,10 @@ contract OptionAMMFactory is IOptionAMMFactory {
      *
      * @param _optionAddress The address of option token
      * @param _stableAsset A stablecoin asset address
+     * @param _priceProvider contract address of the PriceProvider contract for spotPrice
+     * @param _priceMethod contract address of the PriceMethod contract (E.g: BlackScholes)
+     * @param _sigma contract address of the sigma (implied Volatility) contract
+     * @param _initialSigma Initial number of sigma (implied volatility)
      * @return The address of the newly created pool
      */
     function createPool(
@@ -40,13 +46,18 @@ contract OptionAMMFactory is IOptionAMMFactory {
     ) external override returns (address) {
         require(address(pools[_optionAddress]) == address(0), "Pool already exists");
 
+        FeePool feePoolTokenA = new FeePool(_stableAsset, 99985, 5);
+        FeePool feePoolTokenB = new FeePool(_stableAsset, 99985, 5);
+
         OptionAMMPool pool = new OptionAMMPool(
             _optionAddress,
             _stableAsset,
             _priceProvider,
             _priceMethod,
             _sigma,
-            _initialSigma
+            _initialSigma,
+            address(feePoolTokenA),
+            address(feePoolTokenB)
         );
 
         pools[_optionAddress] = pool;
