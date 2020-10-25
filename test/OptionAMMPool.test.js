@@ -146,7 +146,6 @@ scenarios.forEach(scenario => {
         expect(await optionAMMPool.tokenA()).to.equal(podPut.address)
         expect(await optionAMMPool.priceProvider()).to.equal(priceProviderMock.address)
 
-        console.log()
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
