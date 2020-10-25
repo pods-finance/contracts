@@ -41,7 +41,7 @@ module.exports = {
     kovan: {
       accounts: {
         mnemonic: process.env.DEV_MNEMONIC,
-        initialIndex: 1,
+        initialIndex: parseInt(process.env.ADDRESS_INDEX),
         count: 1
       },
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,

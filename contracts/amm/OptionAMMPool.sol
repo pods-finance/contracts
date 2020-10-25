@@ -475,7 +475,6 @@ contract OptionAMMPool is AMM {
     }
 
     function _onRemoveLiquidity(UserBalance memory _userBalance, address owner) internal override {
-        // Retirar fee
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
         uint256 amountOfQuotesA = currentQuotesA.sub(_userBalance.tokenABalance.div(_userBalance.fImp));
