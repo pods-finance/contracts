@@ -73,7 +73,7 @@ contract MockAMM is AMM {
         price = _price;
     }
 
-    function _onTrade(TradeDetails memory) internal {
+    function _onTrade(TradeDetails memory) internal pure {
         return;
     }
 
