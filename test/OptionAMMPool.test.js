@@ -158,7 +158,7 @@ scenarios.forEach(scenario => {
         expect(priceProperties.strikePrice).to.equal(optionStrikePrice.mul(toBigNumber(10).pow(bsDecimals.sub(optionStrikePriceDecimals))))
       })
       it('should return spotPrice accordingly', async () => {
-        const spotPrice = await optionAMMPool._getSpotPrice(mockUnderlyingAsset.address, 18)
+        const spotPrice = await optionAMMPool.getSpotPrice(mockUnderlyingAsset.address, 18)
         const bsDecimals = await optionAMMPool.BS_RES_DECIMALS()
         expect(spotPrice).to.equal(scenario.initialSpotPrice.mul(toBigNumber(10).pow(bsDecimals.sub(scenario.spotPriceDecimals))))
       })

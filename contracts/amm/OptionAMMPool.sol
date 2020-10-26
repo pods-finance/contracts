@@ -10,10 +10,25 @@ import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMPool.sol";
 import "../interfaces/IFeePool.sol";
 
+/**
+ * Represents an Option specific single-sided AMM.
+ *
+ * The tokenA MUST be an PodOption contract implementation.
+ * The tokenB is preferable to be an stable asset such as DAI or USDC.
+ *
+ * There are 4 external contracts used by this contract:
+ *
+ * - priceProvider: responsiible for the the spot price of the option's underlying asset.
+ * - priceMethod: responsible for the current price of the option itself.
+ * - impliedVolatility: responsible for one of the priceMethod inputs:
+ *     implied Volatility (also known as sigma)
+ * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
+ */
+
 contract OptionAMMPool is AMM {
     using SafeMath for uint256;
     uint256 public constant BS_RES_DECIMALS = 18;
-    uint256 constant SECONDS_IN_A_YEAR = 31536000;
+    uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
 
     // External Contracts
     IPriceProvider public priceProvider;
@@ -80,13 +95,6 @@ contract OptionAMMPool is AMM {
         _;
     }
 
-    /**
-     * Internal function to check expiration
-     */
-    function _hasExpired() internal view returns (bool) {
-        return block.timestamp >= priceProperties.expiration;
-    }
-
     function addLiquidity(
         uint256 amountOfA,
         uint256 amountOfB,
@@ -139,99 +147,8 @@ contract OptionAMMPool is AMM {
         return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
     }
 
-    function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
-        uint256 newABPrice;
-
-        if (priceProperties.optionType == 0) {
-            newABPrice = priceMethod.getPutPrice(
-                int256(spotPrice),
-                int256(priceProperties.strikePrice),
-                priceProperties.currentSigma,
-                timeToMaturity,
-                int256(priceProperties.riskFree)
-            );
-        } else {
-            newABPrice = priceMethod.getCallPrice(
-                int256(spotPrice),
-                int256(priceProperties.strikePrice),
-                priceProperties.currentSigma,
-                timeToMaturity,
-                int256(priceProperties.riskFree)
-            );
-        }
-        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
-        return newABPriceWithDecimals;
-    }
-
-    // returns maturity in years with 18 decimals
-    function _getTimeToMaturityInYears() internal view returns (uint256) {
-        return ((priceProperties.expiration - block.timestamp) * (10**BS_RES_DECIMALS)) / (SECONDS_IN_A_YEAR);
-    }
-
-    function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256, uint256) {
-        (uint256 totalAmountA, uint256 totalAmountB) = _getPoolBalances();
-        uint256 poolAmountA = min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
-        uint256 poolAmountB = min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
-        return (poolAmountA, poolAmountB);
-    }
-
-    function _getABPrice() internal override view returns (uint256) {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
-        uint256 timeToMaturity = _getTimeToMaturityInYears();
-
-        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
-        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
-        return newABPriceWithDecimals;
-    }
-
-    function getABPrice() public view returns (uint256) {
+    function getABPrice() external view returns (uint256) {
         return _getABPrice();
-    }
-
-    function _getSpotPrice(address asset, uint256 decimalsOutput) public view returns (uint256) {
-        uint256 spotPrice = priceProvider.getAssetPrice(asset);
-        uint256 spotPriceDecimals = priceProvider.getAssetDecimals(asset);
-        uint256 diffDecimals;
-        uint256 spotPriceWithRightPrecision;
-
-        if (decimalsOutput <= spotPriceDecimals) {
-            diffDecimals = spotPriceDecimals.sub(decimalsOutput);
-            spotPriceWithRightPrecision = spotPrice.div(10**diffDecimals);
-        } else {
-            diffDecimals = decimalsOutput.sub(spotPriceDecimals);
-            spotPriceWithRightPrecision = spotPrice.mul(10**diffDecimals);
-        }
-        return spotPriceWithRightPrecision;
-    }
-
-    function _getNewIV(
-        uint256 newTargetABPrice,
-        uint256 spotPrice,
-        uint256 timeToMaturity,
-        PriceProperties memory properties
-    ) internal view returns (uint256) {
-        uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
-        uint256 newIV;
-        if (priceProperties.optionType == 0) {
-            (newIV, ) = impliedVolatility.getPutSigma(
-                newTargetABPriceWithDecimals,
-                properties.sigmaInitialGuess,
-                spotPrice,
-                properties.strikePrice,
-                timeToMaturity,
-                properties.riskFree
-            );
-        } else {
-            (newIV, ) = impliedVolatility.getCallSigma(
-                newTargetABPriceWithDecimals,
-                properties.sigmaInitialGuess,
-                spotPrice,
-                properties.strikePrice,
-                timeToMaturity,
-                properties.riskFree
-            );
-        }
-        return newIV;
     }
 
     function getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
@@ -284,6 +201,108 @@ contract OptionAMMPool is AMM {
         )
     {
         return _getOptionTradeDetailsExactBOutput(exactAmountBOut);
+    }
+
+    function getSpotPrice(address asset, uint256 decimalsOutput) external view returns (uint256) {
+        return _getSpotPrice(asset, decimalsOutput);
+    }
+
+    /**
+     * Internal function to check expiration
+     */
+    function _hasExpired() internal view returns (bool) {
+        return block.timestamp >= priceProperties.expiration;
+    }
+
+    function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
+        uint256 newABPrice;
+
+        if (priceProperties.optionType == 0) {
+            newABPrice = priceMethod.getPutPrice(
+                int256(spotPrice),
+                int256(priceProperties.strikePrice),
+                priceProperties.currentSigma,
+                timeToMaturity,
+                int256(priceProperties.riskFree)
+            );
+        } else {
+            newABPrice = priceMethod.getCallPrice(
+                int256(spotPrice),
+                int256(priceProperties.strikePrice),
+                priceProperties.currentSigma,
+                timeToMaturity,
+                int256(priceProperties.riskFree)
+            );
+        }
+        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+        return newABPriceWithDecimals;
+    }
+
+    // returns maturity in years with 18 decimals
+    function _getTimeToMaturityInYears() internal view returns (uint256) {
+        return ((priceProperties.expiration - block.timestamp) * (10**BS_RES_DECIMALS)) / (_SECONDS_IN_A_YEAR);
+    }
+
+    function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256, uint256) {
+        (uint256 totalAmountA, uint256 totalAmountB) = _getPoolBalances();
+        uint256 poolAmountA = min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
+        uint256 poolAmountB = min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
+        return (poolAmountA, poolAmountB);
+    }
+
+    function _getABPrice() internal override view returns (uint256) {
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
+        uint256 timeToMaturity = _getTimeToMaturityInYears();
+
+        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+        return newABPriceWithDecimals;
+    }
+
+    function _getSpotPrice(address asset, uint256 decimalsOutput) internal view returns (uint256) {
+        uint256 spotPrice = priceProvider.getAssetPrice(asset);
+        uint256 spotPriceDecimals = priceProvider.getAssetDecimals(asset);
+        uint256 diffDecimals;
+        uint256 spotPriceWithRightPrecision;
+
+        if (decimalsOutput <= spotPriceDecimals) {
+            diffDecimals = spotPriceDecimals.sub(decimalsOutput);
+            spotPriceWithRightPrecision = spotPrice.div(10**diffDecimals);
+        } else {
+            diffDecimals = decimalsOutput.sub(spotPriceDecimals);
+            spotPriceWithRightPrecision = spotPrice.mul(10**diffDecimals);
+        }
+        return spotPriceWithRightPrecision;
+    }
+
+    function _getNewIV(
+        uint256 newTargetABPrice,
+        uint256 spotPrice,
+        uint256 timeToMaturity,
+        PriceProperties memory properties
+    ) internal view returns (uint256) {
+        uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+        uint256 newIV;
+        if (priceProperties.optionType == 0) {
+            (newIV, ) = impliedVolatility.getPutSigma(
+                newTargetABPriceWithDecimals,
+                properties.sigmaInitialGuess,
+                spotPrice,
+                properties.strikePrice,
+                timeToMaturity,
+                properties.riskFree
+            );
+        } else {
+            (newIV, ) = impliedVolatility.getCallSigma(
+                newTargetABPriceWithDecimals,
+                properties.sigmaInitialGuess,
+                spotPrice,
+                properties.strikePrice,
+                timeToMaturity,
+                properties.riskFree
+            );
+        }
+        return newIV;
     }
 
     function _getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
