@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const { toBigNumber } = require('../../utils/utils')
 
-describe.only('FeePool', () => {
+describe('FeePool', () => {
   let FeePool, pool
   let usdc
   let owner0, owner1, feePayer, poolOwner
