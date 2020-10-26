@@ -6,6 +6,7 @@ const getTimestamp = require('./util/getTimestamp')
 const deployBlackScholes = require('./util/deployBlackScholes')
 const getPriceProviderMock = require('./util/getPriceProviderMock')
 const createNewOption = require('./util/createNewOption')
+const createNewPool = require('./util/createNewPool')
 const { toBigNumber, approximately } = require('../utils/utils')
 
 const OPTION_TYPE_PUT = 0
@@ -32,7 +33,7 @@ const scenarios = [
     name: 'WETH/USDC',
     underlyingAssetSymbol: 'WETH',
     underlyingAssetDecimals: 18,
-    expiration: Math.floor(new Date().getTime() / 1000) + 60 * 60 * 24 * 7, // 7 days
+    expiration: 60 * 60 * 24 * 7, // 7 days
     strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
     strikePrice: toBigNumber(320e6),
@@ -54,6 +55,7 @@ scenarios.forEach(scenario => {
     let mockUnderlyingAsset
     let mockStrikeAsset
     let factoryContract
+    let optionAMMFactory
     let priceProviderMock
     let blackScholes
     let sigma
@@ -95,7 +97,7 @@ scenarios.forEach(scenario => {
     }
 
     beforeEach(async function () {
-      let ContractFactory, MockERC20, MockWETH, Sigma
+      let ContractFactory, MockERC20, MockWETH, Sigma, OptionAMMFactory
       [deployer, second, buyer, delegator, lp] = await ethers.getSigners()
       deployerAddress = await deployer.getAddress()
       secondAddress = await second.getAddress()
@@ -105,39 +107,39 @@ scenarios.forEach(scenario => {
 
       // 1) Deploy Option
       // 2) Use same strike Asset
-      ;[ContractFactory, MockERC20, MockWETH, blackScholes, Sigma] = await Promise.all([
+      ;[ContractFactory, MockERC20, MockWETH, blackScholes, Sigma, OptionAMMFactory] = await Promise.all([
         ethers.getContractFactory('OptionFactory'),
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         deployBlackScholes(),
-        ethers.getContractFactory('Sigma')
+        ethers.getContractFactory('Sigma'),
+        ethers.getContractFactory('OptionAMMFactory')
       ])
 
       const mockWeth = await MockWETH.deploy()
       sigma = await Sigma.deploy(blackScholes.address)
 
-      ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
+      ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset, optionAMMFactory] = await Promise.all([
         ContractFactory.deploy(mockWeth.address),
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
-        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
+        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
+        OptionAMMFactory.deploy()
       ])
       // Deploy option
+      const currentBlocktimestamp = await getTimestamp()
       podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
         'pod:WBTC:USDC:5000:A',
         OPTION_TYPE_PUT,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        scenario.expiration,
+        currentBlocktimestamp + scenario.expiration,
         24 * 60 * 60)
 
       const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
       priceProviderMock = mock.priceProvider
       // 1) Deploy optionAMMPool
-      const OptionAMMPool = await ethers.getContractFactory('OptionAMMPool')
-      optionAMMPool = await OptionAMMPool.deploy(podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address, scenario.initialSigma)
-
-      await optionAMMPool.deployed()
+      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address, scenario.initialSigma)
     })
 
     describe('Constructor/Initialization checks', () => {
@@ -145,7 +147,6 @@ scenarios.forEach(scenario => {
         expect(await optionAMMPool.tokenB()).to.equal(mockStrikeAsset.address)
         expect(await optionAMMPool.tokenA()).to.equal(podPut.address)
         expect(await optionAMMPool.priceProvider()).to.equal(priceProviderMock.address)
-
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
@@ -183,6 +184,9 @@ scenarios.forEach(scenario => {
 
     describe('tradeExactAInput', () => {
       it('should match values accordingly', async () => {
+        const feeAddressA = await optionAMMPool.feePoolA()
+        const feeAddressB = await optionAMMPool.feePoolB()
+
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100))
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
@@ -240,13 +244,13 @@ scenarios.forEach(scenario => {
             contract: mockStrikeAsset,
             user: buyer,
             params: [optionAMMPool.address, initialBuyerBalanceStrikeAsset]
-          },
-          {
-            name: 'tradeExactAOutput',
-            contract: optionAMMPool,
-            user: buyer,
-            params: [numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma]
           }
+          // {
+          //   name: 'tradeExactAOutput',
+          //   contract: optionAMMPool,
+          //   user: buyer,
+          //   params: [numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma]
+          // }
         ]
 
         const fnActions = actions.map(action => {
@@ -258,13 +262,25 @@ scenarios.forEach(scenario => {
           await fn()
         }
 
-        // const balanceAfterTokenAPool = await mockTokenA.balanceOf(amm.address)
-        // const balanceAfterTokenBPool = await mockTokenB.balanceOf(amm.address)
-        //
+        const buyerStrikeAmountBeforeTrade = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        await optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+
+        const buyerStrikeAmountAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
+        const priceOfTheTrade = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
+
+        const feesBN = (new BigNumber(priceOfTheTrade.toString()).multipliedBy(new BigNumber(0.0003))).toFixed(0, 2)
+        const fees = toBigNumber(feesBN.toString())
+
         const balanceAfterOptionBuyer = await podPut.balanceOf(buyerAddress)
         const balanceAfterStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
+        const balanceAfterStrikeFeePoolA = await mockStrikeAsset.balanceOf(feeAddressA)
+        const balanceAfterStrikeFeePoolB = await mockStrikeAsset.balanceOf(feeAddressB)
+
         expect(balanceAfterOptionBuyer).to.eq(numberOfOptionsToBuy)
+        expect(balanceAfterStrikeFeePoolA).to.eq(balanceAfterStrikeFeePoolB)
+        expect(fees.toString()).to.eq(balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB).toString())
       })
     })
     describe('Sell', () => {
