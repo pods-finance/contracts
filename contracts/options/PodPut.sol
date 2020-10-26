@@ -4,7 +4,7 @@ pragma solidity ^0.6.8;
 import "./PodOption.sol";
 
 /**
- * Represents a tokenized american put option series for some
+ * Represents a tokenized european put option series for some
  * long/short token pair.
  *
  * It is fungible and it is meant to be freely tradable until its
@@ -34,7 +34,7 @@ import "./PodOption.sol";
  * - Will unlock their USDC from this contract
  * - Will burn the corresponding amount of put tokens
  *
- * Put token holders may call exchange() until the expiration date, to
+ * Put token holders may call exercise() between the expiration date and end of the exercise window, to
  * exercise their option, which in turn:
  *
  * - Will sell 1 DAI for 1 USDC (the strike price) each.

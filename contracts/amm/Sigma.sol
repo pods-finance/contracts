@@ -22,7 +22,7 @@ contract Sigma {
     }
 
     /**
-     * Get an aproximation of sigma given a target price inside an error range
+     * Get an approximation of sigma given a target price inside an error range
      *
      * @param _targetPrice The target price that we need to find the sigma for
      * @param _sigmaInitialGuess sigma guess in order to reduce gas costs

@@ -121,7 +121,7 @@ contract FeePool is IFeePool, Ownable {
      * @param to To whom the fees should be transferred
      * @param amount Shares to burn
      */
-    function withdraw(address to, uint256 amount) external override {
+    function withdraw(address to, uint256 amount) external override onlyOwner {
         require(_balances[to].shares >= amount, "Burn exceeds balance");
 
         uint256 feesCollected = ERC20(_token).balanceOf(address(this));
@@ -145,7 +145,7 @@ contract FeePool is IFeePool, Ownable {
      * @param to To whom the tokens should be minted
      * @param amount Amount to mint
      */
-    function mint(address to, uint256 amount) external override {
+    function mint(address to, uint256 amount) external override onlyOwner {
         uint256 feesCollected = ERC20(_token).balanceOf(address(this));
         // If no share was minted, share value should worth nothing
         uint256 shareValue = 0;

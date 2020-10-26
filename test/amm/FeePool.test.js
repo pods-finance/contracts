@@ -4,13 +4,13 @@ const { toBigNumber } = require('../../utils/utils')
 describe('FeePool', () => {
   let FeePool, pool
   let usdc
-  let owner0, owner1, feePayer
+  let owner0, owner1, feePayer, poolOwner
   let owner0Address, owner1Address
   const initialFee = toBigNumber(997)
   const initialDecimals = toBigNumber(3)
 
   before(async () => {
-    ;[owner0, owner1, feePayer] = await ethers.getSigners()
+    ;[owner0, owner1, feePayer, poolOwner] = await ethers.getSigners()
     ;[owner0Address, owner1Address] = await Promise.all([
       owner0.getAddress(),
       owner1.getAddress(),
@@ -24,7 +24,7 @@ describe('FeePool', () => {
   })
 
   beforeEach(async () => {
-    pool = await FeePool.deploy(usdc.address, initialFee, initialDecimals)
+    pool = await FeePool.connect(poolOwner).deploy(usdc.address, initialFee, initialDecimals)
     await pool.deployed()
   })
 
@@ -82,7 +82,7 @@ describe('FeePool', () => {
   describe('Fee shares', () => {
     it('triggers the events when minting and withdrawing', async () => {
       const owner0Shares = toBigNumber(50)
-      const mintTransaction = pool.mint(owner0Address, owner0Shares)
+      const mintTransaction = pool.connect(poolOwner).mint(owner0Address, owner0Shares)
 
       await expect(mintTransaction)
         .to.emit(pool, 'ShareMinted')
@@ -105,7 +105,7 @@ describe('FeePool', () => {
       await collectFrom(50 * 1e18)
       await collectFrom(43.333 * 1e18)
 
-      const withdrawTransaction = pool.connect(owner0).withdraw(owner0Address, owner0Shares)
+      const withdrawTransaction = pool.connect(poolOwner).withdraw(owner0Address, owner0Shares)
 
       await expect(withdrawTransaction)
         .to.emit(pool, 'FeeWithdrawn')
@@ -114,7 +114,7 @@ describe('FeePool', () => {
 
     it('should be able to withdraw all fees if its the only share owner', async () => {
       const owner0Shares = toBigNumber(50)
-      await pool.mint(owner0Address, owner0Shares)
+      await pool.connect(poolOwner).mint(owner0Address, owner0Shares)
       const owner0Balance = await pool.balanceOf(owner0Address)
       expect(owner0Balance.shares).to.equal(owner0Shares)
       expect(owner0Balance.shares).to.equal(await pool.totalShares())
@@ -138,7 +138,7 @@ describe('FeePool', () => {
       await collectFrom(43.333 * 1e18)
 
       // Withdraws all collected fees
-      await pool.connect(owner0).withdraw(owner0Address, owner0Shares)
+      await pool.connect(poolOwner).withdraw(owner0Address, owner0Shares)
       expect(await usdc.balanceOf(owner0Address)).to.equal(totalFees)
       expect(await usdc.balanceOf(pool.address)).to.equal(0)
     })
@@ -146,7 +146,7 @@ describe('FeePool', () => {
     it('should mint shares proportionally to their participation', async () => {
       // Owner 0 enters the pool
       const owner0Shares = toBigNumber(50)
-      await pool.mint(owner0Address, owner0Shares)
+      await pool.connect(poolOwner).mint(owner0Address, owner0Shares)
       const owner0Balance = await pool.balanceOf(owner0Address)
       expect(owner0Balance.shares).to.equal(owner0Shares)
       expect(owner0Balance.liability).to.equal(0)
@@ -170,7 +170,7 @@ describe('FeePool', () => {
       // Owner 1 enters the pool after some fees were collected,
       // therefore being eligible to withdraw fees proportionally from now onwards
       const owner1Shares = toBigNumber(50)
-      await pool.mint(owner1Address, owner1Shares)
+      await pool.connect(poolOwner).mint(owner1Address, owner1Shares)
       const owner1Balance = await pool.balanceOf(owner1Address)
       expect(owner1Balance.shares).to.equal(owner1Shares)
       expect(owner1Balance.liability).to.equal(totalFees)
@@ -179,13 +179,13 @@ describe('FeePool', () => {
 
       // Owner 0 withdraws
       const owner0Withdrawal = await pool.getCollectable(toBigNumber((100 + 50 + (400 / 2)) * 1e18))
-      await pool.connect(owner0).withdraw(owner0Address, owner0Shares)
+      await pool.connect(poolOwner).withdraw(owner0Address, owner0Shares)
       expect(await usdc.balanceOf(owner0Address)).to.equal(owner0Withdrawal)
       expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.sub(owner0Withdrawal))
 
       // Owner 1 withdraws
       const owner1Withdrawal = totalFees.sub(owner0Withdrawal)
-      await pool.connect(owner1).withdraw(owner1Address, owner1Shares)
+      await pool.connect(poolOwner).withdraw(owner1Address, owner1Shares)
       expect(await usdc.balanceOf(owner1Address)).to.equal(owner1Withdrawal)
       expect(await usdc.balanceOf(pool.address)).to.equal(0)
     })
@@ -193,14 +193,14 @@ describe('FeePool', () => {
     it('should not allow to withdraw without enough share balance', async () => {
       const owner0Shares = toBigNumber(50)
       const moreThanOwned = toBigNumber(100)
-      await pool.mint(owner0Address, owner0Shares)
-      const moreThanOwnedTransaction = pool.connect(owner0).withdraw(owner0Address, moreThanOwned)
+      await pool.connect(poolOwner).mint(owner0Address, owner0Shares)
+      const moreThanOwnedTransaction = pool.connect(poolOwner).withdraw(owner0Address, moreThanOwned)
 
       await expect(moreThanOwnedTransaction)
         .to.be.revertedWith('Burn exceeds balance')
 
       const neverMintedShares = toBigNumber(100)
-      const neverMintedTransaction = pool.connect(owner1).withdraw(owner1Address, neverMintedShares)
+      const neverMintedTransaction = pool.connect(poolOwner).withdraw(owner1Address, neverMintedShares)
 
       await expect(neverMintedTransaction)
         .to.be.revertedWith('Burn exceeds balance')

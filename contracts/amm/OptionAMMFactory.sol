@@ -60,6 +60,9 @@ contract OptionAMMFactory is IOptionAMMFactory {
             address(feePoolTokenB)
         );
 
+        feePoolTokenA.transferOwnership(address(pool));
+        feePoolTokenB.transferOwnership(address(pool));
+
         pools[_optionAddress] = pool;
         emit PoolCreated(msg.sender, pool);
 
