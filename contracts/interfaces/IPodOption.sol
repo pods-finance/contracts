@@ -16,6 +16,8 @@ interface IPodOption {
 
     function expiration() external view returns (uint256);
 
+    function optionType() external view returns (uint256);
+
     function endOfExerciseWindow() external view returns (uint256);
 
     function name() external view returns (string memory);

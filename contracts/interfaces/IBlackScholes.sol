@@ -10,4 +10,12 @@ interface IBlackScholes {
         uint256 daysRemaining,
         int256 riskFree
     ) external view returns (uint256);
+
+    function getCallPrice(
+        int256 spotPrice,
+        int256 strikePrice,
+        uint256 sigma,
+        uint256 daysRemaining,
+        int256 riskFree
+    ) external view returns (uint256);
 }

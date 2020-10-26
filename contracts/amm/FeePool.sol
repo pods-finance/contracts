@@ -77,6 +77,15 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
+     * Return shares of an address
+     *
+     * @param owner Balance owner
+     */
+    function sharesOf(address owner) external override view returns (uint256) {
+        return _balances[owner].shares;
+    }
+
+    /**
      * Total count of shares created
      */
     function totalShares() external view returns (uint256) {

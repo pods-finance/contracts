@@ -8,6 +8,8 @@ interface IFeePool {
 
     function getCollectable(uint256 amount) external view returns (uint256);
 
+    function sharesOf(address owner) external view returns (uint256);
+
     function setFee(uint256 value, uint8 decimals) external;
 
     function collect(uint256 amount) external;
