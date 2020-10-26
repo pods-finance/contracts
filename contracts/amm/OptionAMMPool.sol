@@ -328,7 +328,7 @@ contract OptionAMMPool is AMM {
 
         uint256 amountAOut = poolAmountA.sub(productConstant.div(poolAmountB.add(poolBIn)));
 
-        uint256 newTargetABPrice = poolBIn.mul(10**tokenADecimals).div(amountAOut);
+        uint256 newTargetABPrice = poolBIn.mul(10**uint256(tokenADecimals)).div(amountAOut);
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
