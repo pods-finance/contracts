@@ -55,6 +55,23 @@ describe('OptionExchange', () => {
     expect(await exchangeProvider.uniswapFactory()).to.equal(uniswapFactory.address)
   })
 
+  describe('Mint', () => {
+    it('mints the exact amount of options', async () => {
+      const amountToMint = ethers.BigNumber.from(1e8.toString())
+      const collateralAmount = await podPut.strikePrice()
+
+      await strikeAsset.connect(caller).mint(collateralAmount)
+      expect(await strikeAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
+
+      await exchange.connect(caller).mintOptions(
+        podPut.address,
+        amountToMint
+      )
+
+      expect(await podPut.balanceOf(callerAddress)).to.equal(amountToMint)
+    })
+  })
+
   describe('Sell', () => {
     it('sells the exact amount of options', async () => {
       const outputToken = strikeAsset.address
