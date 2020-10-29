@@ -91,6 +91,31 @@ contract OptionExchange {
     }
 
     /**
+     * Mints an amount of options and return to caller
+     * @notice Mint options
+     *
+     * @param option The option contract to mint
+     * @param optionAmount Amount of options to mint
+     */
+    function mintOptions(IPodPut option, uint256 optionAmount) external {
+        uint256 strikeToTransfer = option.strikeToTransfer(optionAmount);
+
+        IERC20 strikeAsset = IERC20(option.strikeAsset());
+        require(
+            strikeAsset.transferFrom(msg.sender, address(this), strikeToTransfer),
+            "Could not transfer strike tokens from caller"
+        );
+
+        address optionAddress = address(option);
+
+        // Approving Strike transfer to Option
+        strikeAsset.approve(optionAddress, strikeToTransfer);
+        option.mint(optionAmount, msg.sender);
+
+        require(option.transfer(msg.sender, optionAmount), "Could not transfer back options to caller");
+    }
+
+    /**
      * Mint options and add them as liquidity providing
      *
      * @param option The option contract to mint
