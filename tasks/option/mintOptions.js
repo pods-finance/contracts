@@ -5,19 +5,29 @@ internalTask('mintOptions', 'Mint options')
   .addOptionalParam('contract', 'Option Contract type to use')
   .addOptionalParam('owner', 'Option owner')
   .setAction(async ({ option, owner, amount, contract = 'PodPut' }, bre) => {
+    const [caller] = await bre.web3.eth.getAccounts()
     if(!owner) {
-      const [defaultOwner] = await bre.web3.eth.getAccounts()
-      owner = defaultOwner
+      owner = caller
     }
     const optionContract = await ethers.getContractAt(contract, option)
     const strikeAssetContract = await ethers.getContractAt('MockERC20', await optionContract.strikeAsset())
+    const strikeBalance = await strikeAssetContract.balanceOf(caller)
+    const strikeToTransfer = await optionContract.strikeToTransfer(amount)
 
-    console.log('Strike Asset', await strikeAssetContract.symbol())
+    if (strikeBalance.lt(strikeToTransfer)) {
+      console.error(`Not enough ${await strikeAssetContract.symbol()}!\nRequired: ${strikeToTransfer}\nCaller has: ${strikeBalance}`)
+      return
+    }
+
     // 1) Approve StrikeAsset between me and option Contract
     await strikeAssetContract.approve(option, (ethers.constants.MaxUint256).toString())
+
+    const optionsBefore = await optionContract.balanceOf(owner)
 
     // 2) Call option Mint
     const txIdMint = await optionContract.mint(amount, owner)
     await txIdMint.wait()
-    console.log('Option Balance after mint', (await optionContract.balanceOf(owner)).toString())
+
+    const optionsAfter = await optionContract.balanceOf(owner)
+    console.log(`Minted ${optionsAfter.sub(optionsBefore)} ${await optionContract.name()} to address: ${owner}`)
   })
