@@ -5,9 +5,9 @@ internalTask('mintOptions', 'Mint options')
   .addOptionalParam('contract', 'Option Contract type to use')
   .addOptionalParam('owner', 'Option owner')
   .setAction(async ({ option, owner, amount, contract = 'PodPut' }, bre) => {
-    const [caller] = await bre.web3.eth.getAccounts()
+    const [caller] = await ethers.getSigners()
     if(!owner) {
-      owner = caller
+      owner = await caller.getAddress()
     }
     const optionContract = await ethers.getContractAt(contract, option)
     const strikeAssetContract = await ethers.getContractAt('MockERC20', await optionContract.strikeAsset())
