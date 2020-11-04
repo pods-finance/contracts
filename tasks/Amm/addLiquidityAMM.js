@@ -1,20 +1,31 @@
+const approveTransferERC20 = require('../utils/approveTransferERC20')
+
 internalTask('addLiquidityAMM', 'addLiquidityAMM')
-  .addParam('tokena', 'Token Address to add liquidity')
-  .addParam('tokenb', 'Token Address to add liquidity')
-  .addParam('amounta', 'Max amount of Tokens')
-  .addParam('amountb', 'Amount of Eth')
   .addParam('pooladdress', 'poolAddress')
-  .setAction(async ({ tokena, tokenb, amounta, amountb, pooladdress }) => {
-    const TokenContractA = await ethers.getContractAt('MockERC20', tokena)
-    const TokenContractB = await ethers.getContractAt('MockERC20', tokenb)
-    const PoolContract = await ethers.getContractAt('OptionAMMPool', pooladdress)
-    // Get Exchange Address
+  .addParam('amounta', 'Amount of tokens A')
+  .addParam('amountb', 'Amount of tokens B')
+  .addOptionalParam('owner', 'Liquidity owner')
+  .setAction(async ({ amounta, amountb, pooladdress, owner }) => {
+    const [caller] = await ethers.getSigners()
+    const callerAddress = await caller.getAddress()
+
+    if(!owner) {
+      owner = callerAddress
+    }
+
+    const pool = await ethers.getContractAt('OptionAMMPool', pooladdress)
+    const tokenA = await ethers.getContractAt('MockERC20', await pool.tokenA())
+    const tokenB = await ethers.getContractAt('MockERC20', await pool.tokenB())
+
+    const amountA = ethers.BigNumber.from(amounta).mul(ethers.BigNumber.from(10).pow(await tokenA.decimals()))
+    const amountB = ethers.BigNumber.from(amountb).mul(ethers.BigNumber.from(10).pow(await tokenB.decimals()))
+
     // Approve tokens to be added
-    await TokenContractA.approve(pooladdress, (ethers.constants.MaxUint256).toString())
-    await TokenContractB.approve(pooladdress, (ethers.constants.MaxUint256).toString())
+    await approveTransferERC20(tokenA, pooladdress, amountA)
+
+    await approveTransferERC20(tokenB, pooladdress, amountB)
+
     // Add liquidity per se
-    const a = ethers.BigNumber.from(1)
-    const b = ethers.BigNumber.from(1)
-    await PoolContract.addLiquidity(a, b)
-    console.log('Liquidity Added: amountA: ' + amounta + ' and amountB: ' + amountb)
+    await pool.addLiquidity(amountA, amountB, owner)
+    console.log(`Liquidity added to pool: ${pooladdress}\nAmountA: ${amounta} ${await tokenA.symbol()}\nAmountB: ${amountb} ${await tokenB.symbol()}`)
   })
