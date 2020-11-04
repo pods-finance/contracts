@@ -9,23 +9,8 @@ task('deployNewOption', 'Deploy New Option')
   .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, aave }, bre) => {
     const optionFactoryNameAddress = aave ? 'aOptionFactory' : 'optionFactory'
     const optionFactoryContractName = aave ? 'aOptionFactory' : 'OptionFactory'
-    let optionContractName
     const strikeAsset = strike.toUpperCase()
     const underlyingAsset = underlying.toUpperCase()
-
-    if (aave) {
-      if (underlyingAsset === 'WETH') {
-        optionContractName = 'waPodPut'
-      } else {
-        optionContractName = 'aPodPut'
-      }
-    } else {
-      if (underlyingAsset === 'WETH') {
-        optionContractName = 'wPodPut'
-      } else {
-        optionContractName = 'PodPut'
-      }
-    }
 
     const strikeAssetAddress = require(`../../deployments/${bre.network.name}.json`)[strikeAsset]
     const underlyingAssetAddress = require(`../../deployments/${bre.network.name}.json`)[underlyingAsset]
