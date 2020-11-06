@@ -7,7 +7,7 @@ const readFile = util.promisify(fs.readFile)
 
 module.exports = async function saveJSON (filePath, values) {
   try {
-    const _filePath = path.resolve(filePath)
+    const _filePath = path.join(__dirname, filePath)
     const content = await readFile(_filePath)
     const current = JSON.parse(content)
     const updated = Object.assign(current, values)
