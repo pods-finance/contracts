@@ -61,6 +61,7 @@ contract OptionAMMPool is AMM {
         address _feePoolB
     ) public AMM(_optionAddress, _stableAsset) {
         priceProperties.currentSigma = _initialSigma;
+        priceProperties.sigmaInitialGuess = _initialSigma;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
         priceProperties.expiration = IPodOption(_optionAddress).expiration();
         priceProperties.optionType = IPodOption(_optionAddress).optionType();
@@ -466,7 +467,7 @@ contract OptionAMMPool is AMM {
     }
 
     function _getTradeDetailsExactBInput(uint256 exactAmountBIn) internal override returns (TradeDetails memory) {
-        (uint256 amountAOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactAInput(
+        (uint256 amountAOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactBInput(
             exactAmountBIn
         );
 
@@ -475,7 +476,7 @@ contract OptionAMMPool is AMM {
     }
 
     function _getTradeDetailsExactBOutput(uint256 exactAmountBOut) internal override returns (TradeDetails memory) {
-        (uint256 amountAIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactAOutput(
+        (uint256 amountAIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactBOutput(
             exactAmountBOut
         );
 

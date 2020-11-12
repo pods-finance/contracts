@@ -8,7 +8,7 @@ import "../interfaces/IBlackScholes.sol";
 contract Sigma {
     using SafeMath for uint256;
     IBlackScholes public blackScholes;
-    uint256 constant ACCEPTABLE_ERROR = 33; // < 3%
+    uint256 constant ACCEPTABLE_ERROR = 10; // < 3%
 
     struct Boundaries {
         uint256 sigmaLower; // [wad]
@@ -68,7 +68,7 @@ contract Sigma {
                     int256(_strikePrice),
                     calculatedSigma,
                     _timeToMaturity,
-                    int256(_timeToMaturity)
+                    int256(_riskFree)
                 )
             );
 
@@ -88,7 +88,7 @@ contract Sigma {
                         int256(_strikePrice),
                         calculatedSigma,
                         _timeToMaturity,
-                        int256(_timeToMaturity)
+                        int256(_riskFree)
                     )
                 );
             }
