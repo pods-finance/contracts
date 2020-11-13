@@ -76,6 +76,7 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
+      await forceExpiration(0, 1)
       const MockERC20 = await ethers.getContractFactory('MintableERC20')
       const ContractFactory = await ethers.getContractFactory('OptionFactory')
       const MockWETH = await ethers.getContractFactory('WETH')
@@ -93,7 +94,7 @@ scenarios.forEach(scenario => {
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        await getTimestamp() + 5 * 60 * 60 * 1000,
+        await getTimestamp() + 24 * 60 * 60,
         24 * 60 * 60 // 24h
       )
 

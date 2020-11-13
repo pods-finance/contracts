@@ -57,6 +57,7 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
+      await forceExpiration(0, 1)
       // const aPodPut = await ethers.getContractFactory('aPodPut')
       const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockWETH = await ethers.getContractFactory('WETH')

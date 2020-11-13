@@ -10,6 +10,7 @@ require('./tasks/Amm/index')
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')
 usePlugin('buidler-gas-reporter')
+usePlugin('solidity-coverage')
 
 module.exports = {
   networks: {
@@ -23,9 +24,7 @@ module.exports = {
       protocol: 'http',
       host: 'localhost',
       port: 8545,
-      gas: 119500000,
-      blockGasLimit: 119500000,
-      gasMultiplier: 2,
+      gas: 800,
       loggingEnabled: true,
       network_id: '*',
       url: 'http://127.0.0.1:8545'
@@ -46,6 +45,9 @@ module.exports = {
       },
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       network_id: 42
+    },
+    coverage: {
+      url: 'http://localhost:8555'
     }
   },
   solc: {
