@@ -25,29 +25,19 @@ contract AMMProvider is ExchangeProvider {
         address recipient,
         bytes calldata params
     ) external override withinDeadline(deadline) returns (uint256 tokensBought) {
-        uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
-        uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
         IOptionAMMPool pool = _getPool(outputToken);
 
         // Take input amount from caller
         require(
             ERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
-            "Could not transfer tokens from caller"
+            "AMMProvider/could-not-transfer-tokens-from-caller"
         );
 
         // Approve exchange usage
         ERC20(inputToken).approve(address(pool), inputAmount);
 
-        uint256 sigmaInitialGuess = _getSigmaInitialGuess(params);
-        pool.tradeExactAInput(inputAmount, minOutputAmount, recipient, sigmaInitialGuess);
+        tokensBought = pool.tradeExactBInput(inputAmount, minOutputAmount, recipient, _getSigmaInitialGuess(params));
 
-        uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
-        ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
-
-        uint256 outputBalanceAfter = ERC20(outputToken).balanceOf(address(this));
-        ERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
-
-        tokensBought = outputBalanceBefore.sub(outputBalanceAfter);
         return tokensBought;
     }
 
@@ -60,29 +50,26 @@ contract AMMProvider is ExchangeProvider {
         address recipient,
         bytes calldata params
     ) external override withinDeadline(deadline) returns (uint256 tokensSold) {
-        uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
-        uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
         IOptionAMMPool pool = _getPool(outputToken);
 
         // Take input amount from caller
         require(
             ERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
-            "Could not transfer tokens from caller"
+            "AMMProvider/could-not-transfer-tokens-from-caller"
         );
 
         // Approve exchange usage
         ERC20(inputToken).approve(address(pool), maxInputAmount);
 
-        uint256 sigmaInitialGuess = _getSigmaInitialGuess(params);
-        pool.tradeExactAInput(maxInputAmount, outputAmount, recipient, sigmaInitialGuess);
+        tokensSold = pool.tradeExactAOutput(outputAmount, maxInputAmount, recipient, _getSigmaInitialGuess(params));
 
-        uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
-        ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
+        if (tokensSold < maxInputAmount) {
+            require(
+                ERC20(inputToken).transfer(recipient, maxInputAmount.sub(tokensSold)),
+                "AMMProvider/could-not-transfer-tokens-to-recipient"
+            );
+        }
 
-        uint256 outputBalanceAfter = ERC20(outputToken).balanceOf(address(this));
-        ERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
-
-        tokensSold = inputBalanceBefore.sub(inputBalanceAfter);
         return tokensSold;
     }
 
