@@ -55,7 +55,6 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
-      await forceExpiration(0, 1)
       const MockERC20 = await ethers.getContractFactory('MintableERC20')
       const MockWETH = await ethers.getContractFactory('WETH')
       const ContractFactory = await ethers.getContractFactory('OptionFactory')

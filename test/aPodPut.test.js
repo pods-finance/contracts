@@ -2,6 +2,7 @@ const { expect } = require('chai')
 const getTimestamp = require('./util/getTimestamp')
 const forceExpiration = require('./util/forceExpiration')
 const forceEndOfExerciseWindow = require('./util/forceEndOfExerciseWindow')
+const { takeSnapshot, revertToSnapshot } = require('./util/snapshot')
 
 const OPTION_TYPE_PUT = 0
 
@@ -45,6 +46,8 @@ scenarios.forEach(scenario => {
     let buyer
     let buyerAddress
     let txIdNewOption
+    let snapshot
+    let snapshotId
 
     before(async function () {
       [deployer, seller, buyer, another] = await ethers.getSigners()
@@ -53,6 +56,9 @@ scenarios.forEach(scenario => {
       buyerAddress = await buyer.getAddress()
       anotherAddress = await another.getAddress()
       // 1) Deploy Factory
+
+      snapshot = await takeSnapshot()
+      snapshotId = snapshot.result
     })
 
     beforeEach(async function () {
@@ -94,6 +100,10 @@ scenarios.forEach(scenario => {
       }
 
       await aPodPut.deployed()
+    })
+
+    afterEach(async () => {
+      await revertToSnapshot(snapshotId)
     })
 
     async function MintPhase (amountOfOptionsToMint, signer = seller, owner = sellerAddress) {
