@@ -56,12 +56,13 @@ scenarios.forEach(scenario => {
       buyerAddress = await buyer.getAddress()
       anotherAddress = await another.getAddress()
       // 1) Deploy Factory
-
-      snapshot = await takeSnapshot()
-      snapshotId = snapshot.result
     })
 
     beforeEach(async function () {
+      snapshot = await takeSnapshot()
+      snapshotId = snapshot.result
+
+      console.log('getTimestamps', await getTimestamp())
       // const aPodPut = await ethers.getContractFactory('aPodPut')
       const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockERC20 = await ethers.getContractFactory('MintableERC20')
