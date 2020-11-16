@@ -2,6 +2,7 @@ const { expect } = require('chai')
 const getTimestamp = require('./util/getTimestamp')
 const forceExpiration = require('./util/forceExpiration')
 const forceEndOfExerciseWindow = require('./util/forceEndOfExerciseWindow')
+const { takeSnapshot, revertToSnapshot } = require('./util/snapshot')
 
 const OPTION_TYPE_PUT = 0
 
@@ -45,6 +46,8 @@ scenarios.forEach(scenario => {
     let buyer
     let buyerAddress
     let txIdNewOption
+    let snapshot
+    let snapshotId
 
     before(async function () {
       [deployer, seller, buyer, another] = await ethers.getSigners()
@@ -56,7 +59,9 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
-      // const aPodPut = await ethers.getContractFactory('aPodPut')
+      snapshot = await takeSnapshot()
+      snapshotId = snapshot.result
+
       const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockERC20 = await ethers.getContractFactory('MintableERC20')
       const MockWETHContract = await ethers.getContractFactory('WETH')
@@ -79,7 +84,7 @@ scenarios.forEach(scenario => {
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
-        await getTimestamp() + 5 * 60 * 60 * 1000,
+        await getTimestamp() + 24 * 60 * 60 * 7,
         24 * 60 * 60 // 24h
       )
 
@@ -94,6 +99,10 @@ scenarios.forEach(scenario => {
       }
 
       await aPodPut.deployed()
+    })
+
+    afterEach(async () => {
+      await revertToSnapshot(snapshotId)
     })
 
     async function MintPhase (amountOfOptionsToMint, signer = seller, owner = sellerAddress) {

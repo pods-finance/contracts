@@ -29,4 +29,14 @@ jobs:
         run: yarn test --no-compile
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}       
+          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
+      - name: coverage
+        run: yarn run coverage
+        env:
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
+      - name: "Upload report to Coveralls"
+        uses: "coverallsapp/github-action@master"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: "./coverage/lcov.info"    
