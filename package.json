@@ -7,7 +7,8 @@
     "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "prettier:fix": "./node_modules/.bin/prettier --write contracts/**/*.sol",
     "test": "buidler test",
-    "compile": "buidler compile"
+    "compile": "buidler compile",
+    "coverage": "buidler coverage --network coverage"
   },
   "repository": {
     "type": "git",
