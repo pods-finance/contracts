@@ -1,6 +1,5 @@
-module.exports = async function forceExpiration (option, number) {
-  let expirableTimestamp = number
-  if (!number) {
+module.exports = async function forceExpiration (option, expirableTimestamp) {
+  if (!expirableTimestamp) {
     expirableTimestamp = (await option.expiration()).toNumber()
   }
   await ethers.provider.send('evm_mine', [expirableTimestamp])
