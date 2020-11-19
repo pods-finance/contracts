@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPodPut.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
+import "@nomiclabs/buidler/console.sol";
 
 /**
  * Represents a Proxy that can mint and sell on the behalf of a Option Seller,
@@ -45,7 +46,7 @@ contract OptionExchange {
     }
 
     modifier withinDeadline(uint256 deadline) {
-        require(deadline > block.timestamp, "Transaction timeout");
+        require(deadline > block.timestamp, "OptionExchange/deadline-expired");
         _;
     }
 
@@ -70,7 +71,7 @@ contract OptionExchange {
      * @param token The token which the premium will be paid
      * @param minTokenAmount Minimum amount of output tokens accepted
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
-     * @param params Custom params sent to pool
+     * @param sigma The initial volatility guess
      */
     function mintAndSellOptions(
         IPodPut option,
@@ -78,7 +79,7 @@ contract OptionExchange {
         address token,
         uint256 minTokenAmount,
         uint256 deadline,
-        bytes calldata params
+        uint256 sigma
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
 
@@ -87,12 +88,7 @@ contract OptionExchange {
         // Approving Option transfer to Exchange
         option.approve(address(pool), optionAmount);
 
-        uint256 tokensBought = pool.tradeExactAInput(
-            optionAmount,
-            minTokenAmount,
-            msg.sender,
-            _getSigmaInitialGuess(params)
-        );
+        uint256 tokensBought = pool.tradeExactAInput(optionAmount, minTokenAmount, msg.sender, sigma);
 
         emit OptionsSold(msg.sender, address(option), optionAmount, token, tokensBought);
     }
@@ -104,15 +100,13 @@ contract OptionExchange {
      * @param optionAmount Amount of options to mint
      * @param token The output token which the premium will be paid
      * @param tokenAmount Amount of output tokens accepted
-     * @param deadline The deadline in unix-timestamp that limits the transaction from happening
      */
     function mintAndAddLiquidity(
         IPodPut option,
         uint256 optionAmount,
         address token,
-        uint256 tokenAmount,
-        uint256 deadline
-    ) external withinDeadline(deadline) {
+        uint256 tokenAmount
+    ) external {
         IOptionAMMPool pool = _getPool(option);
 
         _mint(option, optionAmount);
@@ -142,7 +136,7 @@ contract OptionExchange {
      * @param token The token spent to buy options
      * @param maxTokenAmount Max amount of input tokens sold
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
-     * @param params Custom params sent to pool
+     * @param sigma The initial volatility guess
      */
     function buyExactOptions(
         IPodPut option,
@@ -150,7 +144,7 @@ contract OptionExchange {
         address token,
         uint256 maxTokenAmount,
         uint256 deadline,
-        bytes calldata params
+        uint256 sigma
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
 
@@ -163,12 +157,7 @@ contract OptionExchange {
         // Approve pool usage
         IERC20(token).approve(address(pool), maxTokenAmount);
 
-        uint256 tokensSold = pool.tradeExactAOutput(
-            optionAmount,
-            maxTokenAmount,
-            msg.sender,
-            _getSigmaInitialGuess(params)
-        );
+        uint256 tokensSold = pool.tradeExactAOutput(optionAmount, maxTokenAmount, msg.sender, sigma);
 
         // Transfer back unused funds
         if (tokensSold < maxTokenAmount) {
@@ -197,7 +186,7 @@ contract OptionExchange {
         address token,
         uint256 tokenAmount,
         uint256 deadline,
-        bytes calldata params
+        uint256 sigma
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
 
@@ -210,12 +199,7 @@ contract OptionExchange {
         // Approve pool usage
         IERC20(token).approve(address(pool), tokenAmount);
 
-        uint256 optionsBought = pool.tradeExactBInput(
-            tokenAmount,
-            minOptionAmount,
-            msg.sender,
-            _getSigmaInitialGuess(params)
-        );
+        uint256 optionsBought = pool.tradeExactBInput(tokenAmount, minOptionAmount, msg.sender, sigma);
 
         emit OptionsBought(msg.sender, address(option), optionsBought, token, tokenAmount);
     }
@@ -250,15 +234,5 @@ contract OptionExchange {
         address exchangeOptionAddress = factory.getPool(address(option));
         require(exchangeOptionAddress != address(0), "OptionExchange/pool-not-found");
         return IOptionAMMPool(exchangeOptionAddress);
-    }
-
-    /**
-     * Extract the sigma from params sent
-     *
-     * @param params A byte array blob
-     * @return Interpreted sigma
-     */
-    function _getSigmaInitialGuess(bytes calldata params) internal pure returns (uint256) {
-        return abi.decode(params, (uint256));
     }
 }

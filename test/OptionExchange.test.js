@@ -1,12 +1,16 @@
 const { expect } = require('chai')
-const getUniswapMock = require('./util/getUniswapMock')
 const getTimestamp = require('./util/getTimestamp')
+const createMockOption = require('./util/createMockOption')
+const deployBlackScholes = require('./util/deployBlackScholes')
+const getPriceProviderMock = require('./util/getPriceProviderMock')
+
+const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
 describe('OptionExchange', () => {
-  let ContractFactory, MockERC20, OptionExchange, WETH, UniswapV1Provider
-  let exchange, exchangeProvider, uniswapFactory, createExchange, clearMock
-  let underlyingAsset, strikeAsset, weth
-  let podPut
+  let OptionExchange, OptionAMMFactory
+  let exchange
+  let stableAsset, strikeAsset
+  let option, pool, optionAMMFactory
   let deployer, deployerAddress
   let caller, callerAddress
 
@@ -15,248 +19,314 @@ describe('OptionExchange', () => {
     deployerAddress = await deployer.getAddress()
     callerAddress = await caller.getAddress()
 
-    let uniswapMock
-
-    ;[ContractFactory, MockERC20, OptionExchange, WETH, UniswapV1Provider, uniswapMock] = await Promise.all([
-      ethers.getContractFactory('OptionFactory'),
-      ethers.getContractFactory('MintableERC20'),
+    ;[OptionExchange, OptionAMMFactory, option] = await Promise.all([
       ethers.getContractFactory('OptionExchange'),
-      ethers.getContractFactory('WETH'),
-      ethers.getContractFactory('UniswapV1Provider'),
-      getUniswapMock(deployer)
+      ethers.getContractFactory('OptionAMMFactory'),
+      createMockOption()
     ])
 
-    uniswapFactory = uniswapMock.uniswapFactory
-    createExchange = uniswapMock.createExchange
-    clearMock = uniswapMock.clearMock
-
-    ;[underlyingAsset, strikeAsset, weth] = await Promise.all([
-      MockERC20.deploy('WBTC', 'WBTC', 8),
-      MockERC20.deploy('USDC', 'USDC', 6),
-      WETH.deploy()
-    ])
+    strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
+    stableAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
   })
 
   beforeEach(async () => {
-    const factoryContract = await ContractFactory.deploy(weth.address)
-    podPut = await makeOption(factoryContract, underlyingAsset, strikeAsset)
+    optionAMMFactory = await OptionAMMFactory.deploy()
+    pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
+    await addLiquidity(pool, deployer)
 
-    exchangeProvider = await UniswapV1Provider.deploy(uniswapFactory.address)
-    exchange = await OptionExchange.deploy(exchangeProvider.address)
+    exchange = await OptionExchange.deploy(optionAMMFactory.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
-    await strikeAsset.connect(caller).approve(exchange.address, ethers.constants.MaxUint256)
-
-    // Clears Uniswap mock
-    clearMock()
+    await stableAsset.connect(caller).approve(exchange.address, ethers.constants.MaxUint256)
   })
 
-  it('assigns the exchange address correctly', async () => {
-    expect(await exchangeProvider.uniswapFactory()).to.equal(uniswapFactory.address)
+  afterEach(async () => {
+    await stableAsset.connect(caller).burn(await stableAsset.balanceOf(callerAddress))
+    await strikeAsset.connect(caller).burn(await strikeAsset.balanceOf(callerAddress))
+    await option.connect(caller).transfer(BURN_ADDRESS, await option.balanceOf(callerAddress))
+  })
+
+  it('assigns the factory address correctly', async () => {
+    expect(await exchange.factory()).to.equal(optionAMMFactory.address)
   })
 
   describe('Mint', () => {
     it('mints the exact amount of options', async () => {
       const amountToMint = ethers.BigNumber.from(1e8.toString())
-      const collateralAmount = await podPut.strikePrice()
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
 
-      await strikeAsset.connect(caller).mint(collateralAmount)
-      expect(await strikeAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
+      await stableAsset.connect(caller).mint(collateralAmount)
+      expect(await stableAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
 
-      await exchange.connect(caller).mintOptions(
-        podPut.address,
+      await exchange.connect(caller).mint(
+        option.address,
         amountToMint
       )
 
-      expect(await podPut.balanceOf(callerAddress)).to.equal(amountToMint)
+      expect(await option.balanceOf(callerAddress)).to.equal(amountToMint)
     })
   })
 
-  describe('Sell', () => {
-    it('sells the exact amount of options', async () => {
-      const outputToken = strikeAsset.address
-      const minOutputAmount = ethers.BigNumber.from(200e6.toString())
-      const collateralAmount = await podPut.strikePrice()
-      const amountToMint = ethers.BigNumber.from(1e8.toString())
-      const deadline = await getTimestamp() + 60
-
-      // Creates the Uniswap exchange
-      await createExchange(podPut.address, minOutputAmount)
+  describe('Mint and Add Liquidity', () => {
+    it('mints and add the options to the pool as liquidity', async () => {
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+      const stableToAdd = ethers.BigNumber.from(200e6.toString())
 
       await strikeAsset.connect(caller).mint(collateralAmount)
-      expect(await strikeAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
+      await stableAsset.connect(caller).mint(stableToAdd)
 
-      const tx = exchange.connect(caller).sellOptions(
-        podPut.address,
+      const tx = exchange.connect(caller).mintAndAddLiquidity(
+        option.address,
         amountToMint,
-        outputToken,
-        minOutputAmount,
-        deadline,
-        [ethers.BigNumber.from(0)]
+        stableAsset.address,
+        stableToAdd
       )
 
       await expect(tx)
-        .to.emit(exchange, 'OptionsSold')
-        .withArgs(callerAddress, podPut.address, amountToMint, outputToken, minOutputAmount)
+        .to.emit(exchange, 'LiquidityAdded')
+        .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, stableToAdd)
     })
 
-    it('fails to sell when the exchange do not exist', async () => {
-      const outputToken = strikeAsset.address
-      const minOutputAmount = ethers.BigNumber.from(200e6.toString())
-      const collateralAmount = await podPut.strikePrice()
-      const amountToMint = ethers.BigNumber.from(1e8.toString())
+    it('fails to add liquidity when the pool do not exist', async () => {
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+      const stableToAdd = ethers.BigNumber.from(200e6.toString())
+
+      await strikeAsset.connect(caller).mint(collateralAmount)
+      await stableAsset.connect(caller).mint(stableToAdd)
+
+      const tx = exchange.connect(caller).mintAndAddLiquidity(
+        ethers.constants.AddressZero,
+        amountToMint,
+        stableAsset.address,
+        stableToAdd
+      )
+
+      await expect(tx).to.be.revertedWith('OptionExchange/pool-not-found')
+    })
+  })
+
+  describe('Mint and Sell', () => {
+    it('mints and sells the exact amount of options', async () => {
+      const minOutputAmount = ethers.BigNumber.from(100e6.toString())
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
       const deadline = await getTimestamp() + 60
 
       await strikeAsset.connect(caller).mint(collateralAmount)
 
-      const tx = exchange.connect(caller).sellOptions(
-        podPut.address,
+      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+
+      const tx = await exchange.connect(caller).mintAndSellOptions(
+        option.address,
         amountToMint,
-        outputToken,
+        stableAsset.address,
         minOutputAmount,
         deadline,
-        [ethers.BigNumber.from(0)]
+        sigma
       )
 
-      await expect(tx).to.be.revertedWith('Exchange not found')
+      const premium = await stableAsset.balanceOf(callerAddress)
 
-      // Burn unused tokens
-      await strikeAsset.connect(caller).burn(collateralAmount)
+      await expect(Promise.resolve(tx))
+        .to.emit(exchange, 'OptionsSold')
+        .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, premium)
     })
 
     it('fails when the deadline has passed', async () => {
-      const outputToken = strikeAsset.address
-      const minOutputAmount = ethers.BigNumber.from(200e6.toString())
-      const collateralAmount = await podPut.strikePrice()
-      const amountToMint = ethers.BigNumber.from(1e8.toString())
-      const deadline = await getTimestamp() //
-
-      // Creates the Uniswap exchange
-      await createExchange(podPut.address, minOutputAmount)
+      const minOutputAmount = ethers.BigNumber.from(100e6.toString())
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+      const deadline = await getTimestamp()
 
       await strikeAsset.connect(caller).mint(collateralAmount)
-      expect(await strikeAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
 
-      const tx = exchange.connect(caller).sellOptions(
-        podPut.address,
+      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+
+      const tx = exchange.connect(caller).mintAndSellOptions(
+        option.address,
         amountToMint,
-        outputToken,
+        stableAsset.address,
         minOutputAmount,
         deadline,
-        [ethers.BigNumber.from(0)]
+        sigma
       )
 
-      await expect(tx).to.be.revertedWith('Transaction timeout')
+      await expect(tx).to.be.revertedWith('OptionExchange/deadline-expired')
+    })
+
+    it('fails to sell when the pool do not exist', async () => {
+      const minOutputAmount = ethers.BigNumber.from(100e6.toString())
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+      const deadline = await getTimestamp() + 60
+
+      await stableAsset.connect(caller).mint(collateralAmount)
+
+      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+
+      const tx = exchange.connect(caller).mintAndSellOptions(
+        ethers.constants.AddressZero,
+        amountToMint,
+        stableAsset.address,
+        minOutputAmount,
+        deadline,
+        sigma
+      )
+
+      await expect(tx).to.be.revertedWith('OptionExchange/pool-not-found')
     })
   })
 
   describe('Buy', () => {
     it('buys the exact amount of options', async () => {
-      const inputToken = strikeAsset.address
       const minAcceptedCost = ethers.BigNumber.from(200e6.toString())
-      const amountToBuy = ethers.BigNumber.from(1e8.toString())
+      const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp() + 60
 
-      // Creates the Uniswap exchange
-      await createExchange(inputToken, minAcceptedCost)
+      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
 
-      const tx = exchange.connect(caller).buyExactOptions(
-        podPut.address,
+      await stableAsset.connect(caller).mint(minAcceptedCost)
+
+      const tx = await exchange.connect(caller).buyExactOptions(
+        option.address,
         amountToBuy,
-        inputToken,
+        stableAsset.address,
         minAcceptedCost,
         deadline,
-        [ethers.BigNumber.from(0)]
+        sigma
       )
 
-      await expect(tx)
+      const spentAmount = minAcceptedCost.sub(await stableAsset.balanceOf(callerAddress))
+
+      await expect(Promise.resolve(tx))
         .to.emit(exchange, 'OptionsBought')
-        .withArgs(callerAddress, podPut.address, amountToBuy, inputToken, minAcceptedCost)
+        .withArgs(callerAddress, option.address, amountToBuy, stableAsset.address, spentAmount)
     })
 
     it('buys options with a exact amount of tokens', async () => {
-      const inputToken = strikeAsset.address
       const inputAmount = ethers.BigNumber.from(200e6.toString())
-      const minAcceptedOptions = ethers.BigNumber.from(1e8.toString())
+      const minAcceptedOptions = ethers.BigNumber.from(1e7.toString())
       const deadline = await getTimestamp() + 60
 
-      // Creates the Uniswap exchange
-      await createExchange(inputToken, minAcceptedOptions)
+      const { 1: sigma } = await pool.getOptionTradeDetailsExactBInput(inputAmount)
 
-      const tx = exchange.connect(caller).buyOptionsWithExactTokens(
-        podPut.address,
+      await stableAsset.connect(caller).mint(inputAmount)
+
+      const tx = await exchange.connect(caller).buyOptionsWithExactTokens(
+        option.address,
         minAcceptedOptions,
-        inputToken,
+        stableAsset.address,
         inputAmount,
         deadline,
-        [ethers.BigNumber.from(0)]
+        sigma
       )
 
-      await expect(tx)
+      expect(await stableAsset.balanceOf(callerAddress)).to.equal(0)
+
+      const boughtOptions = await option.balanceOf(callerAddress)
+
+      await expect(Promise.resolve(tx))
         .to.emit(exchange, 'OptionsBought')
-        .withArgs(callerAddress, podPut.address, minAcceptedOptions, inputToken, inputAmount)
+        .withArgs(callerAddress, option.address, boughtOptions, stableAsset.address, inputAmount)
     })
 
-    it('fails to buy when the exchange do not exist', async () => {
-      const inputToken = strikeAsset.address
-      const cost = ethers.BigNumber.from(200e6.toString())
-      const amountToBuy = ethers.BigNumber.from(1e8.toString())
+    it('fails to buy when the pool do not exist', async () => {
+      const minAcceptedCost = ethers.BigNumber.from(200e6.toString())
+      const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp() + 60
 
+      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
+
+      await stableAsset.connect(caller).mint(minAcceptedCost)
+
       const tx = exchange.connect(caller).buyExactOptions(
-        podPut.address,
+        ethers.constants.AddressZero,
         amountToBuy,
-        inputToken,
-        cost,
+        stableAsset.address,
+        minAcceptedCost,
         deadline,
-        [ethers.BigNumber.from(0)]
+        sigma
       )
 
-      await expect(tx).to.be.revertedWith('Exchange not found')
+      await expect(tx).to.be.revertedWith('OptionExchange/pool-not-found')
     })
 
     it('fails when the deadline has passed', async () => {
-      const inputToken = strikeAsset.address
-      const cost = ethers.BigNumber.from(200e6.toString())
-      const amountToBuy = ethers.BigNumber.from(1e8.toString())
+      const minAcceptedCost = ethers.BigNumber.from(200e6.toString())
+      const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp()
 
-      // Creates the Uniswap exchange
-      await createExchange(podPut.address, cost)
+      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
+
+      await stableAsset.connect(caller).mint(minAcceptedCost)
 
       const tx = exchange.connect(caller).buyExactOptions(
-        podPut.address,
+        ethers.constants.AddressZero,
         amountToBuy,
-        inputToken,
-        cost,
+        stableAsset.address,
+        minAcceptedCost,
         deadline,
-        [ethers.BigNumber.from(0)]
+        sigma
       )
 
-      await expect(tx).to.be.revertedWith('Transaction timeout')
+      await expect(tx).to.be.revertedWith('OptionExchange/deadline-expired')
     })
   })
 })
 
-async function makeOption (factoryContract, underlyingAsset, strikeAsset) {
-  const OptionTypePut = 0
-  const strikePrice = ethers.BigNumber.from(8000e6.toString())
+async function createOptionAMMPool (option, optionAMMFactory, caller) {
+  const initialSigma = '660000000000000000'
 
-  const txIdNewOption = await factoryContract.createOption(
-    'pod:WBTC:USDC:8000:A',
-    'pod:WBTC:USDC:8000:A',
-    OptionTypePut,
-    underlyingAsset.address,
-    strikeAsset.address,
-    strikePrice,
-    await getTimestamp() + 5 * 60 * 60 * 1000,
-    20 * 60 * 60
+  const [Sigma, blackScholes, strikeAssetAddress, underlyingAssetAddress, callerAddress] = await Promise.all([
+    ethers.getContractFactory('Sigma'),
+    deployBlackScholes(),
+    option.strikeAsset(),
+    option.underlyingAsset(),
+    caller.getAddress()
+  ])
+
+  const sigma = await Sigma.deploy(blackScholes.address)
+  const mock = await getPriceProviderMock(caller, '9000000000', 6, underlyingAssetAddress)
+  const priceProviderMock = mock.priceProvider
+
+  const tx = await optionAMMFactory.createPool(
+    option.address,
+    strikeAssetAddress,
+    priceProviderMock.address,
+    blackScholes.address,
+    sigma.address,
+    initialSigma
   )
 
-  const [deployer] = await ethers.getSigners()
-  const filterFrom = await factoryContract.filters.OptionCreated(await deployer.getAddress())
-  const eventDetails = await factoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
+  const filterFrom = await optionAMMFactory.filters.PoolCreated(callerAddress)
+  const eventDetails = await optionAMMFactory.queryFilter(filterFrom, tx.blockNumber, tx.blockNumber)
 
-  const { option } = eventDetails[0].args
-  return await ethers.getContractAt('PodPut', option)
+  const { pool: poolAddress } = eventDetails[0].args
+  const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
+
+  return pool
+}
+
+async function addLiquidity (pool, owner) {
+  const ownerAddress = await owner.getAddress()
+  const option = await ethers.getContractAt('PodPut', await pool.tokenA())
+  const stableAsset = await ethers.getContractAt('MintableERC20', await pool.tokenB())
+  const strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
+
+  const optionsLiquidity = ethers.BigNumber.from(10e8)
+  const stableLiquidity = ethers.BigNumber.from(1000e6)
+
+  // Mint Options
+  await strikeAsset.connect(owner).mint(await option.strikeToTransfer(optionsLiquidity))
+  await strikeAsset.connect(owner).approve(option.address, ethers.constants.MaxUint256)
+  await option.connect(owner).mint(optionsLiquidity, ownerAddress)
+
+  // Mint stable
+  await stableAsset.connect(owner).mint(stableLiquidity)
+
+  await option.connect(owner).approve(pool.address, ethers.constants.MaxUint256)
+  await stableAsset.connect(owner).approve(pool.address, ethers.constants.MaxUint256)
+  await pool.connect(owner).addLiquidity(optionsLiquidity, stableLiquidity, ownerAddress)
 }
