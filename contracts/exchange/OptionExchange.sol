@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPodPut.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
-import "@nomiclabs/buidler/console.sol";
 
 /**
  * Represents a Proxy that can mint and sell on the behalf of a Option Seller,
