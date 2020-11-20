@@ -109,6 +109,12 @@ contract AMMProvider is ExchangeProvider {
             "Could not transfer tokens from caller"
         );
 
+        // Approving Option transfer to pool
+        ERC20(tokenA).approve(address(pool), amountA);
+
+        // Approving Token transfer to pool
+        ERC20(tokenB).approve(address(pool), amountB);
+
         pool.addLiquidity(amountB, amountA, recipient);
     }
 
