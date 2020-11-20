@@ -150,6 +150,14 @@ contract OptionExchange {
         // Approving Option transfer to Exchange
         option.approve(address(exchange), optionAmount);
 
+        require(
+            IERC20(token).transferFrom(msg.sender, address(this), amountToken),
+            "Could not transfer tokens from caller"
+        );
+
+        // Approving Token transfer to pool
+        IERC20(token).approve(address(exchange), amountToken);
+
         exchange.addLiquidity(optionAddress, token, optionAmount, amountToken, deadline, msg.sender, params);
 
         emit OptionsStaked(msg.sender, optionAddress, optionAmount, token, amountToken);
