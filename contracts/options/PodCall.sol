@@ -93,76 +93,113 @@ contract PodCall is PodOption {
     {}
 
     /**
-     * @notice Gets the amount of minted options given amount of strikeAsset`.
-     * @param strikeAmount of options that protect 1:1 underlying asset.
-     * @return optionsAmount amount of strike asset.
-     */
-    function amountOfMintedOptions(uint256 strikeAmount) external view returns (uint256) {
-        return _underlyingToTransfer(strikeAmount);
-    }
-
-    /**
-     * @notice Gets the amount of strikeAsset necessary to mint a given amount of options`.
-     * @param amount of options that protect 1:1 underlying asset.
-     * @return strikeAmount amount of strike asset.
-     */
-    function strikeToTransfer(uint256 amount) external view returns (uint256) {
-        return _strikeToTransfer(amount);
-    }
-
-    /**
-     * Locks some amount of the strike token and writes option tokens.
+     * Locks some amount of the underlying asset and writes option tokens.
      *
      * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
      *
      * It presumes the caller has already called IERC20.approve() on the
-     * strike token contract to move caller funds.
+     * underlying token contract to move caller funds.
      *
-     * This function is meant to be called by strike token holders wanting
+     * This function is meant to be called by underlying token holders wanting
      * to write option tokens.
      *
      * Options can only be minted while the series is NOT expired.
      *
-     * @param amount The amount option tokens to be issued; this will lock
-     * for instance amount * strikePrice units of strikeToken into this
+     * @param amountOfOptions The amount option tokens to be issued; this will lock
+     * same amount in a 1:1 ratio units of underlying asset into this
      * contract
-     * @param owner Which address will be the owner of the options
+     &
+     * @param owner The address that will store at shares. owner will
+     * be able to withdraw later on behalf of the sender. It is also important 
+     * to notice that the options tokens will not be send to owner, but to the msg.sender
      */
-    function mint(uint256 amount, address owner) external virtual override beforeExpiration {
-        lockedBalance[owner] = lockedBalance[owner].add(amount);
-        _mint(msg.sender, amount);
+    function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
+        require(amountOfOptions > 0, "Null amount");
 
+        // 1) Calculate strikeToTransfer
+        uint256 amountToReceive = amountOfOptions;
+        // amountToTransfer = 300
+        require(amountToReceive > 0, "Amount of options should be higher");
+        uint256 ownerShares;
+
+        if (totalShares > 0) {
+            // 2) Check current balances
+            ownerShares = _calculatedShares(amountOfOptions);
+            // 4.1) update totalShares
+            totalShares = totalShares.add(ownerShares);
+            // 4.2) update userMintedOptions
+            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
+            // 4.3) update userWeightBalance
+            shares[owner] = shares[owner].add(ownerShares);
+        } else {
+            ownerShares = amountOfOptions;
+
+            shares[owner] = ownerShares;
+            mintedOptions[owner] = amountOfOptions;
+            // totalShares = totalShares
+            totalShares = ownerShares;
+        }
+
+        _mint(msg.sender, amountOfOptions);
+
+        // 5) Update Total Strike Asset Pool
         require(
-            ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amount),
-            "Could not transfer strike tokens from caller"
+            ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountToReceive),
+            "Couldn't transfer strike tokens from caller"
         );
-        emit Mint(owner, amount);
+        emit Mint(owner, amountOfOptions);
     }
 
     /**
-     * Unlocks the amount of the underlying token by burning option tokens.
+     * Unlocks some amount of the underlying token by burning option tokens.
      *
      * This mechanism ensures that users can only redeem tokens they've
      * previously lock into this contract.
      *
-     * Options can only be burned while the series is NOT expired.
-     * @param amount The amount option tokens to be burned
+     * Options can only be unminted while the series is NOT expired.
      */
-    function unwind(uint256 amount) external virtual override beforeExpiration {
-        require(amount <= lockedBalance[msg.sender], "Not enough balance");
+    function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
+        uint256 ownerShares = shares[msg.sender];
+        require(ownerShares > 0, "You do not have minted options");
 
-        // Burn option tokens
-        lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
-        _burn(msg.sender, amount);
+        uint256 ownerMintedOptions = mintedOptions[msg.sender];
+        require(amountOfOptions <= ownerMintedOptions, "Exceed address minted options");
+
+        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+
+        uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
+
+        uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
+        uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
+
+        require(strikeToSend > 0, "Amount of options should be higher");
+
+        shares[msg.sender] = shares[msg.sender].sub(sharesToDeduce);
+        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
+        totalShares = totalShares.sub(sharesToDeduce);
+
+        _burn(msg.sender, amountOfOptions);
 
         // Unlocks the strike token
-        require(ERC20(underlyingAsset).transfer(msg.sender, amount), "Could not transfer back strike tokens to caller");
-        emit Unwind(msg.sender, amount);
+        require(
+            ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+            "Couldn't transfer back strike tokens to caller"
+        );
+
+        if (underlyingReserves > 0) {
+            require(underlyingToSend > 0, "Amount of options should be higher");
+            require(
+                ERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
+                "Couldn't transfer back strike tokens to caller"
+            );
+        }
+        emit Unmint(msg.sender, amountOfOptions);
     }
 
     /**
      * Allow call token holders to use them to buy some amount of units
-     * of the underlying token for the amount * strike price units of the
+     * of the underlying token for the amountOfOptions * strike price units of the
      * strike token.
      *
      * It presumes the caller has already called IERC20.approve() on the
@@ -170,73 +207,73 @@ contract PodCall is PodOption {
      *
      * During the process:
      *
-     * - The amount * strikePrice of strike tokens are transferred from the
+     * - The amountOfOptions units of underlying tokens are transferred to the
      * caller
-     * - The amount of option tokens are burned
-     * - The amount of underlying tokens are transferred to the caller
+     * - The amountOfOptions option tokens are burned
+     * - The amountOfOptions * strikePrice units of strike tokens are transferred into
+     * this contract as a payment for the underlying tokens
      *
-     * Options can only be exchanged while the series is BETWEEN window of exercise.
-     * @param amount The amount option tokens to be exercised
+     * or American options, this function can only called anytime before expiration.
+     * For European options, this function can only be called during the exerciseWindow.
+     * Meaning, after expiration and before the end of exercise window.
+     *
+     * @param amountOfOptions The amount option tokens to be exercised
      */
-    function exercise(uint256 amount) external override afterExpiration beforeExerciseWindow {
-        require(amount > 0, "Null amount");
+    function exercise(uint256 amountOfOptions) external override exerciseWindow {
+        require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
-        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
-        require(amountStrikeToTransfer > 0, "Amount too low");
+        uint256 amountStrikeToReceive = _strikeToTransfer(amountOfOptions);
+        require(amountStrikeToReceive > 0, "Amount of options should be higher");
 
-        // Burn the option tokens equivalent to the underlying requested
-        _burn(msg.sender, amount);
+        // Burn the exercised options
+        _burn(msg.sender, amountOfOptions);
 
-        // Retrieve the underlying asset from caller
+        // Retrieve the strike asset from caller
         require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
+            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
             "Could not transfer underlying tokens from caller"
         );
 
-        // Releases the strike asset to caller, completing the exchange
-        require(ERC20(underlyingAsset).transfer(msg.sender, amount), "Could not transfer underlying tokens to caller");
-        emit Exercise(msg.sender, amount);
+        // Releases the underlying asset to caller, completing the exchange
+        require(
+            ERC20(underlyingAsset).transfer(msg.sender, amountOfOptions),
+            "Could not transfer underlying tokens to caller"
+        );
+        emit Exercise(msg.sender, amountOfOptions);
     }
 
     /**
-     * After series expiration, allow addresses who have locked their underlying
+     * After series expiration, allow addresses who have locked their strike
      * asset tokens to withdraw them on first-come-first-serve basis.
      *
      * If there is not enough of strike asset because the series have been
-     * exercised, the remaining balance is converted into the strike asset
+     * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external virtual override afterExerciseWindow {
-        uint256 amount = lockedBalance[msg.sender];
-        require(amount > 0, "You do not have balance to withdraw");
+    function withdraw() external virtual override withdrawWindow {
+        uint256 ownerShares = shares[msg.sender];
+        require(ownerShares > 0, "You do not have balance to withdraw");
 
-        // Calculates how many underlying/strike tokens the caller
-        // will get back
-        uint256 currentUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
-        // uint256 underlyingToReceive = _strikeToTransfer(amount);
-        uint256 underlyingToReceive = amount;
-        uint256 strikeToReceive = 0;
-        if (underlyingToReceive > currentUnderlyingBalance) {
-            uint256 remainingUnderlyingAmount = underlyingToReceive.sub(currentUnderlyingBalance);
-            strikeToReceive = _strikeToTransfer(remainingUnderlyingAmount);
-        }
+        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
 
-        lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
+        uint256 strikeToReceive = ownerShares.mul(strikeReserves).div(totalShares);
+        uint256 underlyingToReceive = ownerShares.mul(underlyingReserves).div(totalShares);
 
-        // Unlocks the underlying/strike tokens
-        if (strikeToReceive > 0) {
-            require(
-                ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
-                "Could not transfer back strike tokens to caller"
-            );
-        }
-        if (underlyingToReceive > 0) {
+        totalShares = totalShares.sub(ownerShares);
+        shares[msg.sender] = 0;
+
+        require(
+            ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
+            "Couldn't transfer back strike tokens to caller"
+        );
+        if (underlyingReserves > 0) {
             require(
                 ERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
-                "Could not transfer back underlying tokens to caller"
+                "Couldn't transfer back strike tokens to caller"
             );
         }
-        emit Withdraw(msg.sender, amount);
+        emit Withdraw(msg.sender, mintedOptions[msg.sender]);
     }
 
     function _strikeToTransfer(uint256 amount) internal view returns (uint256) {
@@ -244,13 +281,5 @@ contract PodCall is PodOption {
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
         return strikeAmount;
-    }
-
-    function _underlyingToTransfer(uint256 strikeAmount) internal view returns (uint256) {
-        uint256 underlyingAmount = strikeAmount
-            .mul(10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals))
-            .div(strikePrice);
-
-        return underlyingAmount;
     }
 }
