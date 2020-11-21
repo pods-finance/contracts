@@ -87,8 +87,8 @@ contract waPodPut is aPodPut {
         uint256 userMintedOptions = mintedOptions[msg.sender];
         require(amount <= userMintedOptions, "Exceed address minted options");
 
-        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 userWeightedWithdraw = weightedBalance.mul(amount).div(userMintedOptions);
         uint256 strikeToReceive = userWeightedWithdraw.mul(strikeReserves).div(totalLockedWeighted);
@@ -103,7 +103,7 @@ contract waPodPut is aPodPut {
 
         // Unlocks the strike token
         require(
-            ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
+            IERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
             "Couldn't transfer back strike tokens to caller"
         );
 
@@ -146,7 +146,7 @@ contract waPodPut is aPodPut {
         weth.deposit{ value: msg.value }();
         // Releases the strike asset to caller, completing the exchange
         require(
-            ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
+            IERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Could not transfer underlying tokens to caller"
         );
         emit Exercise(msg.sender, amount);
@@ -164,8 +164,8 @@ contract waPodPut is aPodPut {
         uint256 weightedBalance = weightedBalances[msg.sender];
         require(weightedBalance > 0, "You do not have balance to withdraw");
 
-        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 strikeToReceive = weightedBalance.mul(strikeReserves).div(totalLockedWeighted);
         uint256 underlyingToReceive = weightedBalance.mul(underlyingReserves).div(totalLockedWeighted);
@@ -174,7 +174,7 @@ contract waPodPut is aPodPut {
         totalLockedWeighted = totalLockedWeighted.sub(weightedBalance);
 
         require(
-            ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
+            IERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
             "Couldn't transfer back strike tokens to caller"
         );
         if (underlyingReserves > 0) {

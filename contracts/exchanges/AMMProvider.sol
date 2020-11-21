@@ -2,7 +2,7 @@
 pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ExchangeProvider.sol";
 import "../interfaces/IOptionAMMFactory.sol";
@@ -25,27 +25,27 @@ contract AMMProvider is ExchangeProvider {
         address recipient,
         bytes calldata params
     ) external override withinDeadline(deadline) returns (uint256 tokensBought) {
-        uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
-        uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
+        uint256 inputBalanceBefore = IERC20(inputToken).balanceOf(address(this));
+        uint256 outputBalanceBefore = IERC20(outputToken).balanceOf(address(this));
         IOptionAMMPool pool = _getPool(outputToken);
 
         // Take input amount from caller
         require(
-            ERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
+            IERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
             "Could not transfer tokens from caller"
         );
 
         // Approve exchange usage
-        ERC20(inputToken).approve(address(pool), inputAmount);
+        IERC20(inputToken).approve(address(pool), inputAmount);
 
         uint256 sigmaInitialGuess = _getSigmaInitialGuess(params);
         pool.tradeExactAInput(inputAmount, minOutputAmount, recipient, sigmaInitialGuess);
 
-        uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
-        ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
+        uint256 inputBalanceAfter = IERC20(inputToken).balanceOf(address(this));
+        IERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
 
-        uint256 outputBalanceAfter = ERC20(outputToken).balanceOf(address(this));
-        ERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
+        uint256 outputBalanceAfter = IERC20(outputToken).balanceOf(address(this));
+        IERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
 
         tokensBought = outputBalanceBefore.sub(outputBalanceAfter);
         return tokensBought;
@@ -60,27 +60,27 @@ contract AMMProvider is ExchangeProvider {
         address recipient,
         bytes calldata params
     ) external override withinDeadline(deadline) returns (uint256 tokensSold) {
-        uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
-        uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
+        uint256 inputBalanceBefore = IERC20(inputToken).balanceOf(address(this));
+        uint256 outputBalanceBefore = IERC20(outputToken).balanceOf(address(this));
         IOptionAMMPool pool = _getPool(outputToken);
 
         // Take input amount from caller
         require(
-            ERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
+            IERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
             "Could not transfer tokens from caller"
         );
 
         // Approve exchange usage
-        ERC20(inputToken).approve(address(pool), maxInputAmount);
+        IERC20(inputToken).approve(address(pool), maxInputAmount);
 
         uint256 sigmaInitialGuess = _getSigmaInitialGuess(params);
         pool.tradeExactAInput(maxInputAmount, outputAmount, recipient, sigmaInitialGuess);
 
-        uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
-        ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
+        uint256 inputBalanceAfter = IERC20(inputToken).balanceOf(address(this));
+        IERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
 
-        uint256 outputBalanceAfter = ERC20(outputToken).balanceOf(address(this));
-        ERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
+        uint256 outputBalanceAfter = IERC20(outputToken).balanceOf(address(this));
+        IERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
 
         tokensSold = inputBalanceBefore.sub(inputBalanceAfter);
         return tokensSold;
@@ -99,13 +99,13 @@ contract AMMProvider is ExchangeProvider {
 
         // Take tokenA amount from caller
         require(
-            ERC20(tokenA).transferFrom(msg.sender, address(this), amountA),
+            IERC20(tokenA).transferFrom(msg.sender, address(this), amountA),
             "Could not transfer options from caller"
         );
 
         // Take tokenB amount from caller
         require(
-            ERC20(tokenB).transferFrom(msg.sender, address(this), amountB),
+            IERC20(tokenB).transferFrom(msg.sender, address(this), amountB),
             "Could not transfer tokens from caller"
         );
 

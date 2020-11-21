@@ -2,7 +2,7 @@
 pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ExchangeProvider.sol";
 import "../interfaces/IUniswapV1.sol";
@@ -78,12 +78,12 @@ contract UniswapV1Provider is ExchangeProvider {
 
         // Take input amount from caller
         require(
-            ERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
+            IERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
             "Could not transfer tokens from caller"
         );
 
         // Approve exchange usage
-        ERC20(inputToken).approve(address(exchange), inputAmount);
+        IERC20(inputToken).approve(address(exchange), inputAmount);
 
         try
             exchange.tokenToTokenTransferInput(
@@ -111,16 +111,16 @@ contract UniswapV1Provider is ExchangeProvider {
     ) internal returns (uint256) {
         IUniswapExchange exchange = _getExchange(inputToken);
 
-        uint256 balanceBefore = ERC20(inputToken).balanceOf(address(this));
+        uint256 balanceBefore = IERC20(inputToken).balanceOf(address(this));
 
         // Take input amount from caller
         require(
-            ERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
+            IERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
             "Could not transfer tokens from caller"
         );
 
         // Approve exchange usage
-        ERC20(inputToken).approve(address(exchange), maxInputAmount);
+        IERC20(inputToken).approve(address(exchange), maxInputAmount);
 
         try
             exchange.tokenToTokenTransferOutput(
@@ -132,8 +132,8 @@ contract UniswapV1Provider is ExchangeProvider {
                 outputToken
             )
         returns (uint256 tokensSold) {
-            uint256 balanceAfter = ERC20(inputToken).balanceOf(address(this));
-            ERC20(inputToken).transfer(recipient, balanceAfter.sub(balanceBefore));
+            uint256 balanceAfter = IERC20(inputToken).balanceOf(address(this));
+            IERC20(inputToken).transfer(recipient, balanceAfter.sub(balanceBefore));
             return tokensSold;
         } catch {
             revert("Uniswap trade failed");

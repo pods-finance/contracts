@@ -2,7 +2,7 @@
 pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ExchangeProvider.sol";
 import "../interfaces/BPool.sol";
@@ -26,17 +26,17 @@ contract BalancerProvider is ExchangeProvider {
         address recipient,
         bytes calldata params // solhint-disable-line no-unused-vars
     ) external override withinDeadline(deadline) returns (uint256) {
-        uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
-        uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
+        uint256 inputBalanceBefore = IERC20(inputToken).balanceOf(address(this));
+        uint256 outputBalanceBefore = IERC20(outputToken).balanceOf(address(this));
 
         // Take input amount from caller
         require(
-            ERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
+            IERC20(inputToken).transferFrom(msg.sender, address(this), inputAmount),
             "Could not transfer tokens from caller"
         );
 
         // Approve exchange usage
-        ERC20(inputToken).approve(address(balancerPool), inputAmount);
+        IERC20(inputToken).approve(address(balancerPool), inputAmount);
 
         (uint256 outputBought, ) = balancerPool.swapExactAmountIn(
             inputToken,
@@ -46,11 +46,11 @@ contract BalancerProvider is ExchangeProvider {
             MAX_PRICE
         );
 
-        uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
-        ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
+        uint256 inputBalanceAfter = IERC20(inputToken).balanceOf(address(this));
+        IERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
 
-        uint256 outputBalanceAfter = ERC20(outputToken).balanceOf(address(this));
-        ERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
+        uint256 outputBalanceAfter = IERC20(outputToken).balanceOf(address(this));
+        IERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
 
         return outputBought;
     }
@@ -64,17 +64,17 @@ contract BalancerProvider is ExchangeProvider {
         address recipient,
         bytes calldata params // solhint-disable-line no-unused-vars
     ) external override withinDeadline(deadline) returns (uint256) {
-        uint256 inputBalanceBefore = ERC20(inputToken).balanceOf(address(this));
-        uint256 outputBalanceBefore = ERC20(outputToken).balanceOf(address(this));
+        uint256 inputBalanceBefore = IERC20(inputToken).balanceOf(address(this));
+        uint256 outputBalanceBefore = IERC20(outputToken).balanceOf(address(this));
 
         // Take input amount from caller
         require(
-            ERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
+            IERC20(inputToken).transferFrom(msg.sender, address(this), maxInputAmount),
             "Could not transfer tokens from caller"
         );
 
         // Approve exchange usage
-        ERC20(inputToken).approve(address(balancerPool), maxInputAmount);
+        IERC20(inputToken).approve(address(balancerPool), maxInputAmount);
 
         (uint256 inputSold, ) = balancerPool.swapExactAmountOut(
             inputToken,
@@ -84,11 +84,11 @@ contract BalancerProvider is ExchangeProvider {
             MAX_PRICE
         );
 
-        uint256 inputBalanceAfter = ERC20(inputToken).balanceOf(address(this));
-        ERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
+        uint256 inputBalanceAfter = IERC20(inputToken).balanceOf(address(this));
+        IERC20(inputToken).transfer(recipient, inputBalanceAfter.sub(inputBalanceBefore));
 
-        uint256 outputBalanceAfter = ERC20(outputToken).balanceOf(address(this));
-        ERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
+        uint256 outputBalanceAfter = IERC20(outputToken).balanceOf(address(this));
+        IERC20(outputToken).transfer(recipient, outputBalanceAfter.sub(outputBalanceBefore));
 
         return inputSold;
     }
