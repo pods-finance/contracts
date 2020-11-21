@@ -130,7 +130,10 @@ contract PodCall is PodOption {
         _burn(msg.sender, amount);
 
         // Unlocks the strike token
-        require(IERC20(underlyingAsset).transfer(msg.sender, amount), "Could not transfer back strike tokens to caller");
+        require(
+            IERC20(underlyingAsset).transfer(msg.sender, amount),
+            "Could not transfer back strike tokens to caller"
+        );
         emit Unwind(msg.sender, amount);
     }
 
