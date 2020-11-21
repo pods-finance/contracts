@@ -93,8 +93,8 @@ contract aPodPut is PodPut {
         require(amountToTransfer > 0, "Amount too low");
 
         if (totalLockedWeighted > 0) {
-            uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-            uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+            uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+            uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
             uint256 numerator = amountToTransfer.mul(totalLockedWeighted);
             uint256 denominator = strikeReserves.add(
@@ -113,7 +113,7 @@ contract aPodPut is PodPut {
 
         _mint(msg.sender, amount);
         require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
+            IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
             "Couldn't transfer strike tokens from caller"
         );
         emit Mint(owner, amount);
@@ -134,8 +134,8 @@ contract aPodPut is PodPut {
         uint256 userMintedOptions = mintedOptions[msg.sender];
         require(amount <= userMintedOptions, "Exceed address minted options");
 
-        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 userWeightedWithdraw = weightedBalance.mul(amount).div(userMintedOptions);
 
@@ -152,14 +152,14 @@ contract aPodPut is PodPut {
 
         // Unlocks the strike token
         require(
-            ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
+            IERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
             "Couldn't transfer back strike tokens to caller"
         );
 
         if (underlyingReserves > 0) {
             require(underlyingToReceive > 0, "Amount too low");
             require(
-                ERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
+                IERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
                 "Couldn't transfer back strike tokens to caller"
             );
         }
@@ -178,8 +178,8 @@ contract aPodPut is PodPut {
         uint256 weightedBalance = weightedBalances[msg.sender];
         require(weightedBalance > 0, "You do not have balance to withdraw");
 
-        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 strikeToReceive = weightedBalance.mul(strikeReserves).div(totalLockedWeighted);
         uint256 underlyingToReceive = weightedBalance.mul(underlyingReserves).div(totalLockedWeighted);
@@ -188,12 +188,12 @@ contract aPodPut is PodPut {
         totalLockedWeighted = totalLockedWeighted.sub(weightedBalance);
 
         require(
-            ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
+            IERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
             "Couldn't transfer back strike tokens to caller"
         );
         if (underlyingReserves > 0) {
             require(
-                ERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
+                IERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
                 "Couldn't transfer back strike tokens to caller"
             );
         }

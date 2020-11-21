@@ -103,7 +103,7 @@ contract wPodPut is PodPut {
         weth.deposit{ value: msg.value }();
         // Releases the strike asset to caller, completing the exchange
         require(
-            ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
+            IERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Could not transfer underlying tokens to caller"
         );
         emit Exercise(msg.sender, amount);
@@ -123,7 +123,7 @@ contract wPodPut is PodPut {
 
         // Calculates how many underlying/strike tokens the caller
         // will get back
-        uint256 currentStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 currentStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
         uint256 strikeToReceive = _strikeToTransfer(amount);
         uint256 underlyingToReceive = 0;
         if (strikeToReceive > currentStrikeBalance) {
@@ -138,7 +138,7 @@ contract wPodPut is PodPut {
         // Unlocks the underlying/strike tokens
         if (strikeToReceive > 0) {
             require(
-                ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
+                IERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
                 "Could not transfer back strike tokens to caller"
             );
         }
