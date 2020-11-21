@@ -76,6 +76,9 @@ abstract contract PodOption is ERC20 {
         require(Address.isContract(_underlyingAsset), "PodOption/underlying-asset-is-not-a-contract");
         require(Address.isContract(_strikeAsset), "PodOption/strike-asset-is-not-a-contract");
         require(_underlyingAsset != _strikeAsset, "PodOption/underlying-asset-and-strike-asset-must-differ");
+        require(_expiration > block.timestamp, "PodOption/expiration-should-be-in-a-future-timestamp");
+        require(_exerciseWindowSize > 0, "PodOption/exercise-window-size-must-be-greater-than-zero");
+        require(_strikePrice > 0, "PodOption/strike-price-must-be-greater-than-zero");
 
         optionType = _optionType;
         expiration = _expiration;

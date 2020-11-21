@@ -43,8 +43,6 @@ contract aOptionFactory {
         uint256 _expiration,
         uint256 _exerciseWindowSize
     ) public returns (aPodPut) {
-        require(_expiration > block.timestamp, "Expiration should be in the future time");
-
         aPodPut option = new aPodPut(
             _name,
             _symbol,
@@ -89,8 +87,6 @@ contract aOptionFactory {
         uint256 _expiration,
         uint256 _exerciseWindowSize
     ) public returns (waPodPut) {
-        require(_expiration > block.timestamp, "Expiration should be in the future time");
-
         waPodPut option = new waPodPut(
             _name,
             _symbol,
