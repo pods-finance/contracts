@@ -110,7 +110,7 @@ contract PodPut is PodOption {
 
         require(amountStrikeToTransfer > 0, "Amount too low");
         require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
+            IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToTransfer),
             "Could not transfer strike tokens from caller"
         );
         emit Mint(owner, amount);
@@ -137,7 +137,7 @@ contract PodPut is PodOption {
 
         // Unlocks the strike token
         require(
-            ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
+            IERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Could not transfer back strike tokens to caller"
         );
         emit Unwind(msg.sender, amount);
@@ -173,13 +173,13 @@ contract PodPut is PodOption {
 
         // Retrieve the underlying asset from caller
         require(
-            ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amount),
+            IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amount),
             "Could not transfer underlying tokens from caller"
         );
 
         // Releases the strike asset to caller, completing the exchange
         require(
-            ERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
+            IERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
             "Could not transfer underlying tokens to caller"
         );
         emit Exercise(msg.sender, amount);
@@ -199,7 +199,7 @@ contract PodPut is PodOption {
 
         // Calculates how many underlying/strike tokens the caller
         // will get back
-        uint256 currentStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 currentStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
         uint256 strikeToReceive = _strikeToTransfer(amount);
         uint256 underlyingToReceive = 0;
         if (strikeToReceive > currentStrikeBalance) {
@@ -214,13 +214,13 @@ contract PodPut is PodOption {
         // Unlocks the underlying/strike tokens
         if (strikeToReceive > 0) {
             require(
-                ERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
+                IERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
                 "Could not transfer back strike tokens to caller"
             );
         }
         if (underlyingToReceive > 0) {
             require(
-                ERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
+                IERC20(underlyingAsset).transfer(msg.sender, underlyingToReceive),
                 "Could not transfer back underlying tokens to caller"
             );
         }

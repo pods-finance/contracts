@@ -142,7 +142,7 @@ abstract contract PodOption is ERC20 {
      * locked inside this contract
      */
     function underlyingBalance() external view returns (uint256) {
-        return ERC20(underlyingAsset).balanceOf(address(this));
+        return IERC20(underlyingAsset).balanceOf(address(this));
     }
 
     /**
@@ -150,7 +150,7 @@ abstract contract PodOption is ERC20 {
      * inside this contract
      */
     function strikeBalance() external view returns (uint256) {
-        return ERC20(strikeAsset).balanceOf(address(this));
+        return IERC20(strikeAsset).balanceOf(address(this));
     }
 
     /**

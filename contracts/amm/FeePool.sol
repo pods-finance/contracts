@@ -3,7 +3,7 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IFeePool.sol";
 
@@ -111,7 +111,7 @@ contract FeePool is IFeePool, Ownable {
      */
     function collect(uint256 amount) external override {
         uint256 collectable = _getCollectable(amount);
-        require(ERC20(_token).transferFrom(msg.sender, address(this), collectable), "Could not collect fees");
+        require(IERC20(_token).transferFrom(msg.sender, address(this), collectable), "Could not collect fees");
         emit FeeCollected(_token, collectable);
     }
 
@@ -124,7 +124,7 @@ contract FeePool is IFeePool, Ownable {
     function withdraw(address to, uint256 amount) external override onlyOwner {
         require(_balances[to].shares >= amount, "Burn exceeds balance");
 
-        uint256 feesCollected = ERC20(_token).balanceOf(address(this));
+        uint256 feesCollected = IERC20(_token).balanceOf(address(this));
         uint256 shareValue = feesCollected.add(_totalLiability).div(_shares);
 
         uint256 amortizedLiability = amount.mul(_balances[to].liability).div(_balances[to].shares);
@@ -135,7 +135,7 @@ contract FeePool is IFeePool, Ownable {
         _shares = _shares.sub(amount);
         _totalLiability = _totalLiability.sub(amortizedLiability);
 
-        require(ERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
+        require(IERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
         emit FeeWithdrawn(_token, to, withdrawAmount, amount);
     }
 
@@ -146,7 +146,7 @@ contract FeePool is IFeePool, Ownable {
      * @param amount Amount to mint
      */
     function mint(address to, uint256 amount) external override onlyOwner {
-        uint256 feesCollected = ERC20(_token).balanceOf(address(this));
+        uint256 feesCollected = IERC20(_token).balanceOf(address(this));
         // If no share was minted, share value should worth nothing
         uint256 shareValue = 0;
 
