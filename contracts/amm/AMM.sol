@@ -3,6 +3,7 @@ pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
  * Represents a generalized contract for a single-sided AMM pair.
@@ -101,6 +102,8 @@ abstract contract AMM {
     event TradeExactBOutput(address indexed caller, address indexed owner, uint256 amountAIn, uint256 exactAmountBOut);
 
     constructor(address _tokenA, address _tokenB) public {
+        require(Address.isContract(_tokenA), "AMM/token-a-is-not-a-contract");
+        require(Address.isContract(_tokenB), "AMM/token-b-is-not-a-contract");
         tokenA = _tokenA;
         tokenB = _tokenB;
 
