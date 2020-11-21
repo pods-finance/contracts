@@ -3,6 +3,7 @@ pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 abstract contract PodOption is ERC20 {
     enum OptionType { PUT, CALL }
@@ -72,6 +73,10 @@ abstract contract PodOption is ERC20 {
         uint256 _expiration,
         uint256 _exerciseWindowSize
     ) public ERC20(name, symbol) {
+        require(Address.isContract(_underlyingAsset), "PodOption/underlying-asset-is-not-a-contract");
+        require(Address.isContract(_strikeAsset), "PodOption/strike-asset-is-not-a-contract");
+        require(_underlyingAsset != _strikeAsset, "PodOption/underlying-asset-and-strike-asset-must-differ");
+
         optionType = _optionType;
         expiration = _expiration;
         endOfExerciseWindow = _expiration + _exerciseWindowSize;
