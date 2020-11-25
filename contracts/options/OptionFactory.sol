@@ -2,7 +2,7 @@
 pragma solidity ^0.6.8;
 
 import "./PodPut.sol";
-import "./wPodPut.sol";
+import "./WPodPut.sol";
 
 contract OptionFactory {
     PodPut[] public options;
@@ -87,10 +87,10 @@ contract OptionFactory {
         uint256 _strikePrice,
         uint256 _expiration,
         uint256 _exerciseWindowSize
-    ) public returns (wPodPut) {
+    ) public returns (WPodPut) {
         require(_expiration > block.timestamp, "Expiration should be in the future time");
 
-        wPodPut option = new wPodPut(
+        WPodPut option = new WPodPut(
             _name,
             _symbol,
             _optionType,
