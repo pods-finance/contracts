@@ -4,6 +4,21 @@ pragma solidity ^0.6.8;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * This contract represents the basic structure of the financial instrument
+ * known as Option. The shared logic between both a PUT or a CALL option type.
+ *
+ * There are four main actions that can be called in an Option:
+ *
+ * A) mint => The seller can lock collateral and create new options before expiration.
+ * B) unmint => The seller who previously minted can choose for leaving his position any given time
+ * until expiration.
+ * C) exercise => The buyer the can exchange his option for the collateral at the strike price.
+ * D) withdraw => The seller can retrieve collateral at the end of the series.
+ *
+ * Depending on the type (PUT / CALL) or the style (American / European), those functions have
+ * different behave and should be override accordingly.
+ **/
 abstract contract PodOption is ERC20 {
     using SafeMath for uint8;
     enum OptionType { PUT, CALL }
