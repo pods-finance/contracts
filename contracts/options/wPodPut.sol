@@ -42,35 +42,65 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * - Will sell 1 ETH for 300 USDC (the strike price) each.
  * - Will burn the corresponding amount of put tokens.
  */
-contract wPodPut is PodPut {
+contract WPodPut is PodPut {
     IWETH public weth;
 
     constructor(
         string memory _name,
         string memory _symbol,
-        PodOption.OptionType _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
         uint256 _exerciseWindowSize
-    )
-        public
-        PodPut(
-            _name,
-            _symbol,
-            _optionType,
-            _underlyingAsset,
-            _strikeAsset,
-            _strikePrice,
-            _expiration,
-            _exerciseWindowSize
-        )
-    {
+    ) public PodPut(_name, _symbol, _underlyingAsset, _strikeAsset, _strikePrice, _expiration, _exerciseWindowSize) {
         weth = IWETH(_underlyingAsset);
     }
 
     event Received(address sender, uint256 value);
+
+    /**
+     * Unlocks some amount of the strike token by burning option tokens.
+     *
+     * This mechanism ensures that users can only redeem tokens they've
+     * previously lock into this contract.
+     *
+     * Options can only be burned while the series is NOT expired.
+     */
+    function unmint(uint256 amountOfOptions) external override beforeExpiration {
+        uint256 ownerShares = shares[msg.sender];
+        require(ownerShares > 0, "You do not have minted options");
+
+        uint256 userMintedOptions = mintedOptions[msg.sender];
+        require(amountOfOptions <= userMintedOptions, "Exceed address minted options");
+
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
+
+        uint256 ownerSharesToReduce = ownerShares.mul(amountOfOptions).div(userMintedOptions);
+        uint256 strikeToSend = ownerSharesToReduce.mul(strikeReserves).div(totalShares);
+        uint256 underlyingToSend = ownerSharesToReduce.mul(underlyingReserves).div(totalShares);
+        require(strikeToSend > 0, "Amount too low");
+
+        shares[msg.sender] = shares[msg.sender].sub(ownerSharesToReduce);
+        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
+        totalShares = totalShares.sub(ownerSharesToReduce);
+
+        _burn(msg.sender, amountOfOptions);
+
+        // Unlocks the strike token
+        require(
+            IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+            "Couldn't transfer back strike tokens to caller"
+        );
+
+        if (underlyingReserves > 0) {
+            require(underlyingToSend > 0, "Amount too low");
+            weth.withdraw(underlyingToSend);
+            Address.sendValue(msg.sender, underlyingToSend);
+        }
+        emit Unmint(msg.sender, amountOfOptions);
+    }
 
     /**
      * Allow put token holders to use them to sell some amount of units
