@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract PodOption is ERC20 {
+    using SafeMath for uint8;
     enum OptionType { PUT, CALL }
 
     OptionType public optionType;
@@ -225,5 +226,15 @@ abstract contract PodOption is ERC20 {
      */
     function _isAfterExerciseWindow() internal view returns (bool) {
         return block.timestamp >= endOfExerciseWindow;
+    }
+
+    /**
+     * Internal function to calculate the amount of strike asset needed given the option amount
+     */
+    function _strikeToTransfer(uint256 amountOfOptions) internal view returns (uint256) {
+        uint256 strikeAmount = amountOfOptions.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
+        return strikeAmount;
     }
 }
