@@ -79,14 +79,14 @@ contract PodPut is PodOption {
      *
      * Options can only be minted while the series is NOT expired.
      *
-     * @param amount The amount option tokens to be issued; this will lock
+     * @param amountOfOptions The amount option tokens to be issued; this will lock
      * for instance amount * strikePrice units of strikeToken into this
      * contract
      */
-    function mint(uint256 amount, address owner) external override beforeExpiration {
-        require(amount > 0, "Null amount");
+    function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
+        require(amountOfOptions > 0, "Null amount");
 
-        uint256 amountToTransfer = _strikeToTransfer(amount);
+        uint256 amountToTransfer = _strikeToTransfer(amountOfOptions);
         require(amountToTransfer > 0, "Amount too low");
 
         if (totalShares > 0) {
@@ -100,20 +100,20 @@ contract PodPut is PodOption {
 
             uint256 ownerShares = numerator.div(denominator);
             totalShares = totalShares.add(ownerShares);
-            mintedOptions[owner] = mintedOptions[owner].add(amount);
+            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
             shares[owner] = shares[owner].add(ownerShares);
         } else {
             shares[owner] = amountToTransfer;
-            mintedOptions[owner] = amount;
+            mintedOptions[owner] = amountOfOptions;
             totalShares = amountToTransfer;
         }
 
-        _mint(msg.sender, amount);
+        _mint(msg.sender, amountOfOptions);
         require(
             IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
             "Couldn't transfer strike tokens from caller"
         );
-        emit Mint(owner, amount);
+        emit Mint(owner, amountOfOptions);
     }
 
     /**
@@ -124,17 +124,17 @@ contract PodPut is PodOption {
      *
      * Options can only be burned while the series is NOT expired.
      */
-    function unmint(uint256 amount) external virtual override beforeExpiration {
+    function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "You do not have minted options");
 
         uint256 userMintedOptions = mintedOptions[msg.sender];
-        require(amount <= userMintedOptions, "Exceed address minted options");
+        require(amountOfOptions <= userMintedOptions, "Exceed address minted options");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
-        uint256 ownerSharesToReduce = ownerShares.mul(amount).div(userMintedOptions);
+        uint256 ownerSharesToReduce = ownerShares.mul(amountOfOptions).div(userMintedOptions);
 
         uint256 strikeToSend = ownerSharesToReduce.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = ownerSharesToReduce.mul(underlyingReserves).div(totalShares);
@@ -142,10 +142,10 @@ contract PodPut is PodOption {
         require(strikeToSend > 0, "Amount too low");
 
         shares[msg.sender] = shares[msg.sender].sub(ownerSharesToReduce);
-        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amount);
+        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
         totalShares = totalShares.sub(ownerSharesToReduce);
 
-        _burn(msg.sender, amount);
+        _burn(msg.sender, amountOfOptions);
 
         // Unlocks the strike token
         require(
@@ -160,7 +160,49 @@ contract PodPut is PodOption {
                 "Couldn't transfer back strike tokens to caller"
             );
         }
-        emit Unmint(msg.sender, amount);
+        emit Unmint(msg.sender, amountOfOptions);
+    }
+
+    /**
+     * Allow put token holders to use them to sell some amount of units
+     * of the underlying token for the amount * strike price units of the
+     * strike token.
+     *
+     * It presumes the caller has already called IERC20.approve() on the
+     * underlying token contract to move caller funds.
+     *
+     * During the process:
+     *
+     * - The amount * strikePrice of strike tokens are transferred to the
+     * caller
+     * - The amount of option tokens are burned
+     * - The amount of underlying tokens are transferred into
+     * this contract as a payment for the strike tokens
+     *
+     * Options can only be exchanged while the series is NOT expired.
+     * @param amountOfOptions The amount option tokens to be exercised
+     */
+    function exercise(uint256 amountOfOptions) external override afterExpiration beforeExerciseWindow {
+        require(amountOfOptions > 0, "Null amount");
+        // Calculate the strike amount equivalent to pay for the underlying requested
+        uint256 amountOfStrikeToTransfer = _strikeToTransfer(amountOfOptions);
+        require(amountOfStrikeToTransfer > 0, "Amount too low");
+
+        // Burn the option tokens equivalent to the underlying requested
+        _burn(msg.sender, amountOfOptions);
+
+        // Retrieve the underlying asset from caller
+        require(
+            ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountOfOptions),
+            "Could not transfer underlying tokens from caller"
+        );
+
+        // Releases the strike asset to caller, completing the exchange
+        require(
+            ERC20(strikeAsset).transfer(msg.sender, amountOfStrikeToTransfer),
+            "Could not transfer underlying tokens to caller"
+        );
+        emit Exercise(msg.sender, amountOfOptions);
     }
 
     /**

@@ -103,10 +103,10 @@ abstract contract PodOption is ERC20 {
      *
      * Options can only be minted while the series is NOT expired.
      *
-     * @param amount The amount option tokens to be issued
+     * @param amountOfOptions The amount option tokens to be issued
      * @param owner Which address will be the owner of the options
      */
-    function mint(uint256 amount, address owner) external virtual;
+    function mint(uint256 amountOfOptions, address owner) external virtual;
 
     /**
      * Allow option token holders to use them to exercise the amount of units
@@ -116,9 +116,9 @@ abstract contract PodOption is ERC20 {
      * to move caller funds.
      *
      * Options can only be exchanged while the series is NOT expired.
-     * @param amount The amount option tokens to be exercised
+     * @param amountOfOptions The amount option tokens to be exercised
      */
-    function exercise(uint256 amount) external virtual;
+    function exercise(uint256 amountOfOptions) external virtual;
 
     /**
      * After series expiration, allow addresses who have locked their
@@ -136,9 +136,9 @@ abstract contract PodOption is ERC20 {
      * previously lock into this contract.
      *
      * Options can only be burned while the series is NOT expired.
-     * @param amount The amount option tokens to be burned
+     * @param amountOfOptions The amount option tokens to be burned
      */
-    function unwind(uint256 amount) external virtual;
+    function unmint(uint256 amountOfOptions) external virtual;
 
     /**
      * Utility function to check the amount of the underlying tokens

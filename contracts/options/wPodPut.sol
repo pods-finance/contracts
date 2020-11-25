@@ -90,23 +90,23 @@ contract wPodPut is PodPut {
      * Options can only be exchanged while the series is NOT expired.
      */
     function exerciseEth() external payable afterExpiration beforeExerciseWindow {
-        uint256 amount = msg.value;
-        require(amount > 0, "Null amount");
+        uint256 amountOfOptions = msg.value;
+        require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
-        uint256 amountStrikeToTransfer = _strikeToTransfer(amount);
-        require(amountStrikeToTransfer > 0, "Amount too low");
+        uint256 strikeToSend = _strikeToTransfer(amountOfOptions);
+        require(strikeToSend > 0, "Amount too low");
 
         // Burn the option tokens equivalent to the underlying requested
-        _burn(msg.sender, amount);
+        _burn(msg.sender, amountOfOptions);
 
         // Retrieve the underlying asset from caller
         weth.deposit{ value: msg.value }();
         // Releases the strike asset to caller, completing the exchange
         require(
-            IERC20(strikeAsset).transfer(msg.sender, amountStrikeToTransfer),
+            IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
             "Could not transfer underlying tokens to caller"
         );
-        emit Exercise(msg.sender, amount);
+        emit Exercise(msg.sender, amountOfOptions);
     }
 
     /**
@@ -118,35 +118,27 @@ contract wPodPut is PodPut {
      * and given to the caller.
      */
     function withdraw() external override afterExerciseWindow {
-        uint256 amount = lockedBalance[msg.sender];
-        require(amount > 0, "You do not have balance to withdraw");
+        uint256 ownerShares = shares[msg.sender];
+        require(ownerShares > 0, "You do not have balance to withdraw");
 
-        // Calculates how many underlying/strike tokens the caller
-        // will get back
-        uint256 currentStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 strikeToReceive = _strikeToTransfer(amount);
-        uint256 underlyingToReceive = 0;
-        if (strikeToReceive > currentStrikeBalance) {
-            uint256 remainingStrikeAmount = strikeToReceive.sub(currentStrikeBalance);
-            strikeToReceive = currentStrikeBalance;
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
-            underlyingToReceive = _underlyingToTransfer(remainingStrikeAmount);
+        uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
+        uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
+
+        shares[msg.sender] = shares[msg.sender].sub(ownerShares);
+        totalShares = totalShares.sub(ownerShares);
+
+        require(
+            IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+            "Couldn't transfer back strike tokens to caller"
+        );
+        if (underlyingReserves > 0) {
+            weth.withdraw(underlyingToSend);
+            Address.sendValue(msg.sender, underlyingToSend);
         }
-
-        lockedBalance[msg.sender] = lockedBalance[msg.sender].sub(amount);
-
-        // Unlocks the underlying/strike tokens
-        if (strikeToReceive > 0) {
-            require(
-                IERC20(strikeAsset).transfer(msg.sender, strikeToReceive),
-                "Could not transfer back strike tokens to caller"
-            );
-        }
-        if (underlyingToReceive > 0) {
-            weth.withdraw(underlyingToReceive);
-            Address.sendValue(msg.sender, underlyingToReceive);
-        }
-        emit Withdraw(msg.sender, amount);
+        emit Withdraw(msg.sender, mintedOptions[msg.sender]);
     }
 
     receive() external payable {
