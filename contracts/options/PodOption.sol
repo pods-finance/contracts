@@ -54,11 +54,13 @@ abstract contract PodOption is ERC20 {
      * Tracks how much of the strike token each address has locked
      * inside this contract
      */
-    mapping(address => uint256) public lockedBalance;
+    mapping(address => uint256) public shares;
+    mapping(address => uint256) public mintedOptions;
+    uint256 public totalShares = 0;
 
     /** Events */
     event Mint(address indexed seller, uint256 amount);
-    event Unwind(address indexed seller, uint256 amount);
+    event Unmint(address indexed seller, uint256 amount);
     event Exercise(address indexed buyer, uint256 amount);
     event Withdraw(address indexed seller, uint256 amount);
 
