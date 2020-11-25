@@ -1,8 +1,8 @@
 const { expect } = require('chai')
-const getTimestamp = require('./util/getTimestamp')
-const forceExpiration = require('./util/forceExpiration')
-const forceEndOfExerciseWindow = require('./util/forceEndOfExerciseWindow')
-const { takeSnapshot, revertToSnapshot } = require('./util/snapshot')
+const getTimestamp = require('../util/getTimestamp')
+const forceExpiration = require('../util/forceExpiration')
+const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 
 const scenarios = [
   {

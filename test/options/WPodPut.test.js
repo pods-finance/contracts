@@ -1,8 +1,8 @@
 const { expect } = require('chai')
-const getTxCost = require('./util/getTxCost')
-const forceExpiration = require('./util/forceExpiration')
-const forceEndOfExerciseWindow = require('./util/forceEndOfExerciseWindow')
-const getTimestamp = require('./util/getTimestamp')
+const getTxCost = require('../util/getTxCost')
+const forceExpiration = require('../util/forceExpiration')
+const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const getTimestamp = require('../util/getTimestamp')
 
 const scenarios = [
   {

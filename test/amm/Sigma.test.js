@@ -1,6 +1,6 @@
 const { expect } = require('chai')
-const deployBlackScholes = require('./util/deployBlackScholes')
-const { toBigNumber, approximately } = require('../utils/utils')
+const deployBlackScholes = require('../util/deployBlackScholes')
+const { toBigNumber, approximately } = require('../../utils/utils')
 
 const scenarioNextSigma = {
   sigmaLower: ethers.BigNumber.from((1.2428 * 1e18).toString()),

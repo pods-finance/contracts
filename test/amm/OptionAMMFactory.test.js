@@ -1,7 +1,7 @@
 const { expect } = require('chai')
-const createMockOption = require('./util/createMockOption')
-const deployBlackScholes = require('./util/deployBlackScholes')
-const getPriceProviderMock = require('./util/getPriceProviderMock')
+const createMockOption = require('../util/createMockOption')
+const deployBlackScholes = require('../util/deployBlackScholes')
+const getPriceProviderMock = require('../util/getPriceProviderMock')
 
 describe('OptionAMMFactory', () => {
   let caller

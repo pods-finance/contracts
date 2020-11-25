@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
-const getTimestamp = require('./util/getTimestamp')
-const { toBigNumber, approximately } = require('../utils/utils')
+const getTimestamp = require('../util/getTimestamp')
+const { toBigNumber, approximately } = require('../../utils/utils')
 
 const OPTION_TYPE_PUT = 0
 
