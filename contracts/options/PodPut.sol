@@ -4,41 +4,66 @@ pragma solidity ^0.6.8;
 import "./PodOption.sol";
 
 /**
- * Represents a tokenized american put option series for some
+ * This contract represents a tokenized European Put option series for some
  * long/short token pair.
  *
- * It is fungible and it is meant to be freely tradeable until its
- * expiration time, when its transfer functions will be blocked
- * and the only available operation will be for the option writers
- * to unlock their collateral.
+ * Put options represents the right, not the obligation to sell the underlying asset
+ * for strike price units of the strike asset.
  *
- * Let's take an example: there is such a put option series where buyers
- * may sell 1 DAI for 1 USDC until Dec 31, 2019.
+ * There are four main actions that can be done with an option:
+ *
+ * Sellers can mint fungible Put option tokens by locking strikePrice * amountOfOptions
+ * strike asset units until expiration. Buyers can exercise their Put, meaning
+ * selling their underlying asset for strikePrice * amountOfOptions units of strike asset.
+ * At the end, seller can retrieve back his collateral, that could be the underlying asset
+ * AND/OR strike based on his initial position.
+ *
+ * There are many option's style, but the most usual are: American and European.
+ * The difference between them are the moments that the buyer is allowed to exercise and
+ * the moment that seller can retrieve his locked collateral.
+ *
+ *  Exercise:
+ *  American -> any moment until expiration
+ *  European -> only after expiration and until the end of the exercise window
+ *
+ *  Withdraw:
+ *  American -> after expiration
+ *  European -> after end of exercise window
+ *
+ * Let's take an example: there is such an European Put option series where buyers
+ * may buy 1 WETH for 300 USDC until Dec 31, 2020.
  *
  * In this case:
  *
- * - Expiration date: Dec 31, 2019
- * - Underlying asset: DAI
+ * - Expiration date: Dec 31, 2020
+ * - Underlying asset: WETH
  * - Strike asset: USDC
- * - Strike price: 1 USDC
+ * - Strike price: 300 USDC
  *
  * USDC holders may call mint() until the expiration date, which in turn:
  *
  * - Will lock their USDC into this contract
- * - Will issue put tokens corresponding to this USDC amount
- * - These put tokens will be freely tradable until the expiration date
+ * - Will mint/issue option tokens corresponding to this USDC amount
+ * - These options could be sold in our AMM or in any other market
  *
- * USDC holders who also hold the option tokens may call burn() until the
+ * USDC holders who also hold the option tokens may call unmint() until the
  * expiration date, which in turn:
  *
  * - Will unlock their USDC from this contract
- * - Will burn the corresponding amount of put tokens
+ * - Will burn the corresponding amount of options tokens
  *
- * Put token holders may call redeem() until the expiration date, to
- * exercise their option, which in turn:
+ * Option token holders may call exercise() after the expiration date and
+ * before the end of exercise window, to exercise their option, which in turn:
  *
- * - Will sell 1 DAI for 1 USDC (the strike price) each.
- * - Will burn the corresponding amount of put tokens.
+ * - Will sell 1 ETH for 300 USDC (the strike price) each.
+ * - Will burn the corresponding amount of option tokens.
+ *
+ * USDC holders that minted options initially can call withdraw() after the
+ * end of exercise window, which in turn:
+ *
+ * - Will give back his amount of collateral locked. That could be o mix of
+ * underlying asset and strike asset based if and how the pool was exercised.
+ *
  */
 contract PodPut is PodOption {
     constructor(
