@@ -171,6 +171,13 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
+     * External function to calculate the amount of strike asset needed given the option amount
+     */
+    function strikeToTransfer(uint256 amountOfOptions) external view returns (uint256) {
+        return _strikeToTransfer(amountOfOptions);
+    }
+
+    /**
      * Maker modifier for functions which are only allowed to be executed
      * BEFORE series expiration.
      */
