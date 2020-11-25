@@ -41,12 +41,9 @@ import "./PodOption.sol";
  * - Will burn the corresponding amount of put tokens.
  */
 contract PodPut is PodOption {
-    using SafeMath for uint8;
-
     constructor(
         string memory _name,
         string memory _symbol,
-        PodOption.OptionType _optionType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -57,7 +54,7 @@ contract PodPut is PodOption {
         PodOption(
             _name,
             _symbol,
-            _optionType,
+            PodOption.OptionType.PUT,
             _underlyingAsset,
             _strikeAsset,
             _strikePrice,
