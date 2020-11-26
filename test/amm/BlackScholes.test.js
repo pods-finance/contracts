@@ -1,6 +1,6 @@
 const { expect } = require('chai')
-const getContractFactoryWithLibraries = require('./util/getContractFactoryWithLibraries')
-const { toBigNumber, approximately } = require('../utils/utils')
+const getContractFactoryWithLibraries = require('../util/getContractFactoryWithLibraries')
+const { toBigNumber, approximately } = require('../../utils/utils')
 
 const scenarios = [
   {

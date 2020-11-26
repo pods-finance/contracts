@@ -1,13 +1,13 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
-const forceExpiration = require('./util/forceExpiration')
-const forceEndOfExerciseWindow = require('./util/forceEndOfExerciseWindow')
-const getTimestamp = require('./util/getTimestamp')
-const deployBlackScholes = require('./util/deployBlackScholes')
-const getPriceProviderMock = require('./util/getPriceProviderMock')
-const createNewOption = require('./util/createNewOption')
-const createNewPool = require('./util/createNewPool')
-const { toBigNumber, approximately } = require('../utils/utils')
+const forceExpiration = require('../util/forceExpiration')
+const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const getTimestamp = require('../util/getTimestamp')
+const deployBlackScholes = require('../util/deployBlackScholes')
+const getPriceProviderMock = require('../util/getPriceProviderMock')
+const createNewOption = require('../util/createNewOption')
+const createNewPool = require('../util/createNewPool')
+const { toBigNumber, approximately } = require('../../utils/utils')
 
 const OPTION_TYPE_PUT = 0
 
@@ -129,7 +129,6 @@ scenarios.forEach(scenario => {
       const currentBlocktimestamp = await getTimestamp()
       podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
         'pod:WBTC:USDC:5000:A',
-        OPTION_TYPE_PUT,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
