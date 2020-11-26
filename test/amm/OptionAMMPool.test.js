@@ -7,6 +7,7 @@ const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createNewOption = require('../util/createNewOption')
 const createNewPool = require('../util/createNewPool')
+const createOptionFactory = require('../util/createOptionFactory')
 const { toBigNumber, approximately } = require('../../utils/utils')
 
 const OPTION_TYPE_PUT = 0
@@ -120,7 +121,7 @@ scenarios.forEach(scenario => {
       sigma = await Sigma.deploy(blackScholes.address)
 
       ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset, optionAMMFactory] = await Promise.all([
-        ContractFactory.deploy(mockWeth.address),
+        createOptionFactory(mockWeth.address),
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
         OptionAMMFactory.deploy()
@@ -129,6 +130,7 @@ scenarios.forEach(scenario => {
       const currentBlocktimestamp = await getTimestamp()
       podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
         'pod:WBTC:USDC:5000:A',
+        OPTION_TYPE_PUT,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,

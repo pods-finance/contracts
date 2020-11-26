@@ -4,6 +4,10 @@ const forceExpiration = require('../util/forceExpiration')
 const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
 const getTimestamp = require('../util/getTimestamp')
 
+const EXERCISE_TYPE_EUROPEAN = 1 // European
+
+const OPTION_TYPE_PUT = 0 // Put
+
 const scenarios = [
   {
     name: 'ETH/USDC',
@@ -59,19 +63,25 @@ scenarios.forEach(scenario => {
       const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockWETH = await ethers.getContractFactory('WETH')
       const ContractFactory = await ethers.getContractFactory('OptionFactory')
+      const WPodPutBuilder = await ethers.getContractFactory('WPodPutBuilder')
+      const PodPutBuilder = await ethers.getContractFactory('PodPutBuilder')
 
       mockUnderlyingAsset = await MockWETH.deploy()
+      const wPodPutBuilder = await WPodPutBuilder.deploy(mockUnderlyingAsset.address)
+      const podPutBuilder = await PodPutBuilder.deploy()
       mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
-      factoryContract = await ContractFactory.deploy(mockUnderlyingAsset.address)
+      factoryContract = await ContractFactory.deploy(mockUnderlyingAsset.address, podPutBuilder.address, wPodPutBuilder.address)
 
       await factoryContract.deployed()
       await mockUnderlyingAsset.deployed()
       await mockStrikeAsset.deployed()
 
       // call transaction
-      txIdNewOption = await factoryContract.createEthOption(
+      txIdNewOption = await factoryContract.createOption(
         scenario.name,
         scenario.name,
+        OPTION_TYPE_PUT,
+        mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
         await getTimestamp() + 5 * 60 * 60 * 1000,
