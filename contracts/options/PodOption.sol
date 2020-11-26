@@ -22,10 +22,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 abstract contract PodOption is ERC20 {
     using SafeMath for uint8;
     enum OptionType { PUT, CALL }
-    enum ExerciseType { AMERICAN, EUROPEAN }
 
     OptionType public optionType;
-    ExerciseType public exerciseType;
 
     /**
      * The asset used as the underlying token, e.g. DAI
