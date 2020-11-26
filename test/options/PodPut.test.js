@@ -79,7 +79,6 @@ scenarios.forEach(scenario => {
       txIdNewOption = await factoryContract.createOption(
         scenario.name,
         scenario.name,
-        OPTION_TYPE_PUT,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
