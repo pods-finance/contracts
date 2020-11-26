@@ -4,10 +4,14 @@ let optionFactory
 let underlyingAsset
 let strikeAsset
 
+const OPTION_TYPE_PUT = 0
+const EXERCISE_TYPE_EUROPEAN = 0
+
 const ScenarioA = {
   name: 'Pods Put WBTC USDC 5000 2020-06-23',
   symbol: 'podWBTC:20AA',
-  optionType: 1,
+  optionType: OPTION_TYPE_PUT,
+  exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
   expiration: new Date().getTime() + 5 * 60 * 60 * 1000,
   exerciseWindowSize: 24 * 60 * 60 // 24h
@@ -30,7 +34,7 @@ describe('WPodPutBuilder', function () {
   })
 
   it('Should create a new WPodPut Option correctly and not revert', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
 
     await expect(optionFactory.buildOption(...funcParameters)).to.not.be.reverted
   })

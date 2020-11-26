@@ -48,12 +48,25 @@ contract WPodPut is PodPut {
     constructor(
         string memory _name,
         string memory _symbol,
+        PodOption.ExerciseType _exerciseType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
         uint256 _exerciseWindowSize
-    ) public PodPut(_name, _symbol, _underlyingAsset, _strikeAsset, _strikePrice, _expiration, _exerciseWindowSize) {
+    )
+        public
+        PodPut(
+            _name,
+            _symbol,
+            _exerciseType,
+            _underlyingAsset,
+            _strikeAsset,
+            _strikePrice,
+            _expiration,
+            _exerciseWindowSize
+        )
+    {
         weth = IWETH(_underlyingAsset);
     }
 
@@ -119,7 +132,7 @@ contract WPodPut is PodPut {
      *
      * Options can only be exchanged while the series is NOT expired.
      */
-    function exerciseEth() external payable afterExpiration beforeExerciseWindow {
+    function exerciseEth() external payable exerciseWindow {
         uint256 amountOfOptions = msg.value;
         require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
@@ -147,7 +160,7 @@ contract WPodPut is PodPut {
      * exercised, the remaining balance is converted into the underlying asset
      * and given to the caller.
      */
-    function withdraw() external override afterExerciseWindow {
+    function withdraw() external override withdrawWindow {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "You do not have balance to withdraw");
 

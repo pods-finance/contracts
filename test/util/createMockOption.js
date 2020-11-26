@@ -1,7 +1,7 @@
 const getTimestamp = require('./getTimestamp')
 const createOptionFactory = require('./createOptionFactory')
 
-const EXERCISE_TYPE_EUROPEAN = 1
+const EXERCISE_TYPE_EUROPEAN = 0
 const OPTION_TYPE_PUT = 0
 
 module.exports = async function createMockOption () {
@@ -24,6 +24,7 @@ module.exports = async function createMockOption () {
     'pod:WBTC:USDC:8000:A',
     'pod:WBTC:USDC:8000:A',
     OPTION_TYPE_PUT,
+    EXERCISE_TYPE_EUROPEAN,
     underlyingAsset.address,
     strikeAsset.address,
     strikePrice,

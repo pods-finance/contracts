@@ -6,6 +6,7 @@ const createOptionFactory = require('../util/createOptionFactory')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 
 const OPTION_TYPE_PUT = 0 // European
+const EXERCISE_TYPE_EUROPEAN = 0 // European
 
 const scenarios = [
   {
@@ -80,6 +81,7 @@ scenarios.forEach(scenario => {
         scenario.name,
         scenario.name,
         OPTION_TYPE_PUT,
+        EXERCISE_TYPE_EUROPEAN,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
@@ -401,7 +403,7 @@ scenarios.forEach(scenario => {
 
     describe('Withdrawing options', () => {
       it('should revert if user try to withdraw before expiration', async () => {
-        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('Window of exercise not close yet')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('Window of exercise has not ended yet')
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
