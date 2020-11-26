@@ -215,8 +215,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-      Modifier with the conditions to be able to exercise 
-      based on option exerciseType.
+     * Modifier with the conditions to be able to exercise
+     * based on option exerciseType.
      */
     modifier beforeExerciseWindow() {
         if (_isAfterExerciseWindow()) {
@@ -226,8 +226,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-      Modifier with the conditions to be able to withdraw 
-      based on exerciseType.
+     * Modifier with the conditions to be able to withdraw
+     * based on exerciseType.
      */
     modifier afterExerciseWindow() {
         if (!_isAfterExerciseWindow()) {
