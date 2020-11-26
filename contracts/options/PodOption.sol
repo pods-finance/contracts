@@ -16,14 +16,16 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * C) exercise => The buyer the can exchange his option for the collateral at the strike price.
  * D) withdraw => The seller can retrieve collateral at the end of the series.
  *
- * Depending on the type (PUT / CALL) or the style (American / European), those functions have
+ * Depending on the type (PUT / CALL) or the style (AMERICAN / EUROPEAN), those functions have
  * different behave and should be override accordingly.
  **/
 abstract contract PodOption is ERC20 {
     using SafeMath for uint8;
     enum OptionType { PUT, CALL }
+    enum ExerciseType { AMERICAN, EUROPEAN }
 
     OptionType public optionType;
+    ExerciseType public exerciseType;
 
     /**
      * The asset used as the underlying token, e.g. DAI
@@ -215,8 +217,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-     * Maker modifier for functions which are only allowed to be executed
-     * BEFORE window of exercise
+      Modifier with the conditions to be able to exercise 
+      based on option exerciseType.
      */
     modifier beforeExerciseWindow() {
         if (_isAfterExerciseWindow()) {
@@ -226,8 +228,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-     * Maker modifier for functions which are only allowed to be executed
-     * AFTER series expiration.
+      Modifier with the conditions to be able to withdraw 
+      based on exerciseType.
      */
     modifier afterExerciseWindow() {
         if (!_isAfterExerciseWindow()) {
