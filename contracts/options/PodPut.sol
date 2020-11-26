@@ -44,7 +44,8 @@ import "./PodOption.sol";
  *
  * - Will lock their USDC into this contract
  * - Will mint/issue option tokens corresponding to this USDC amount
- * - These options could be sold in our AMM or in any other market
+ * - This contract is agnostic about where to sell/buy and how much should be the
+ * the option premium.
  *
  * USDC holders who also hold the option tokens may call unmint() until the
  * expiration date, which in turn:
