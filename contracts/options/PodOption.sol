@@ -236,8 +236,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-      Modifier with the conditions to be able to exercise 
-      based on option exerciseType.
+      * Modifier with the conditions to be able to exercise 
+      * based on option exerciseType.
      */
     modifier exerciseWindow() {
         if (exerciseType == ExerciseType.EUROPEAN) {
