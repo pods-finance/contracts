@@ -282,7 +282,6 @@ scenarios.forEach(scenario => {
         expect(balanceAfterOptionBuyer).to.eq(numberOfOptionsToBuy)
         expect(balanceAfterStrikeFeePoolA).to.eq(balanceAfterStrikeFeePoolB)
         expect(approximately(fees, balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB), 5)).to.be.true
-        
       })
     })
     describe('Sell', () => {
