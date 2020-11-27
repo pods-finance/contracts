@@ -1,13 +1,14 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
-const forceExpiration = require('./util/forceExpiration')
-const forceEndOfExerciseWindow = require('./util/forceEndOfExerciseWindow')
-const getTimestamp = require('./util/getTimestamp')
-const deployBlackScholes = require('./util/deployBlackScholes')
-const getPriceProviderMock = require('./util/getPriceProviderMock')
-const createNewOption = require('./util/createNewOption')
-const createNewPool = require('./util/createNewPool')
-const { toBigNumber, approximately } = require('../utils/utils')
+const forceExpiration = require('../util/forceExpiration')
+const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const getTimestamp = require('../util/getTimestamp')
+const deployBlackScholes = require('../util/deployBlackScholes')
+const getPriceProviderMock = require('../util/getPriceProviderMock')
+const createNewOption = require('../util/createNewOption')
+const createNewPool = require('../util/createNewPool')
+const createOptionFactory = require('../util/createOptionFactory')
+const { toBigNumber, approximately } = require('../../utils/utils')
 
 const OPTION_TYPE_PUT = 0
 
@@ -120,7 +121,7 @@ scenarios.forEach(scenario => {
       sigma = await Sigma.deploy(blackScholes.address)
 
       ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset, optionAMMFactory] = await Promise.all([
-        ContractFactory.deploy(mockWeth.address),
+        createOptionFactory(mockWeth.address),
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
         OptionAMMFactory.deploy()
