@@ -2,7 +2,10 @@ const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const forceExpiration = require('../util/forceExpiration')
 const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const createOptionFactory = require('../util/createOptionFactory')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
+
+const OPTION_TYPE_PUT = 0 // European
 
 const scenarios = [
   {
@@ -63,7 +66,6 @@ scenarios.forEach(scenario => {
       const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockERC20 = await ethers.getContractFactory('MintableERC20')
       const MockWETHContract = await ethers.getContractFactory('WETH')
-      const ContractFactory = await ethers.getContractFactory('OptionFactory')
 
       mockWETH = await MockWETHContract.deploy()
       mockUnderlyingAsset = await MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals)
@@ -71,13 +73,12 @@ scenarios.forEach(scenario => {
 
       await mockUnderlyingAsset.deployed()
       await mockStrikeAsset.deployed()
-      factoryContract = await ContractFactory.deploy(mockWETH.address)
-      await factoryContract.deployed()
+      factoryContract = await createOptionFactory(mockWETH.address)
 
-      // call transaction
       txIdNewOption = await factoryContract.createOption(
         scenario.name,
         scenario.name,
+        OPTION_TYPE_PUT,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
