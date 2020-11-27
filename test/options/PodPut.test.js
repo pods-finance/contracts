@@ -245,6 +245,20 @@ scenarios.forEach(scenario => {
         )
         await expect(podPut).to.revertedWith('PodOption/strike-price-must-be-greater-than-zero')
       })
+
+      it('should not allow exercise windows shorter than 24 hours', async () => {
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          mockUnderlyingAsset.address,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          (24 * 60 * 60) - 1 // 24h - 1 second
+        )
+        await expect(podPut).to.revertedWith('PodOption/exercise-window-must-be-greater-than-or-equal-86400')
+      })
     })
 
     describe('Minting options', () => {
