@@ -18,7 +18,7 @@ import "../interfaces/IFeePool.sol";
  *
  * There are 4 external contracts used by this contract:
  *
- * - priceProvider: responsiible for the the spot price of the option's underlying asset.
+ * - priceProvider: responsible for the the spot price of the option's underlying asset.
  * - priceMethod: responsible for the current price of the option itself.
  * - impliedVolatility: responsible for one of the priceMethod inputs:
  *     implied Volatility (also known as sigma)
@@ -69,7 +69,7 @@ contract OptionAMMPool is AMM {
         uint256 strikePrice = IPodOption(_optionAddress).strikePrice();
         uint256 strikePriceDecimals = IPodOption(_optionAddress).strikePriceDecimals();
 
-        require(strikePriceDecimals <= BS_RES_DECIMALS, "not suportable strikePrice unit");
+        require(strikePriceDecimals <= BS_RES_DECIMALS, "not supported strikePrice unit");
         uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
