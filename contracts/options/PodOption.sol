@@ -22,6 +22,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
  **/
 abstract contract PodOption is ERC20 {
     using SafeMath for uint8;
+
+    /**
+     * Minimum allowed exercise window: 24 hours
+     */
+    uint256 public constant MIN_EXERCISE_WINDOW_SIZE = 86400;
+
     enum OptionType { PUT, CALL }
     enum ExerciseType { EUROPEAN, AMERICAN }
 
@@ -99,6 +105,10 @@ abstract contract PodOption is ERC20 {
         require(_expiration > block.timestamp, "PodOption/expiration-should-be-in-a-future-timestamp");
         require(_exerciseWindowSize > 0, "PodOption/exercise-window-size-must-be-greater-than-zero");
         require(_strikePrice > 0, "PodOption/strike-price-must-be-greater-than-zero");
+        require(
+            _exerciseWindowSize >= MIN_EXERCISE_WINDOW_SIZE,
+            "PodOption/exercise-window-must-be-greater-than-or-equal-86400"
+        );
 
         optionType = _optionType;
         exerciseType = _exerciseType;

@@ -5,13 +5,13 @@ const EXERCISE_TYPE_EUROPEAN = 0
 const OPTION_TYPE_PUT = 0
 
 module.exports = async function createMockOption () {
-  ;[ContractFactory, MockERC20, WETH] = await Promise.all([
+  const [ContractFactory, MockERC20, WETH] = await Promise.all([
     ethers.getContractFactory('OptionFactory'),
     ethers.getContractFactory('MintableERC20'),
     ethers.getContractFactory('WETH')
   ])
 
-  ;[underlyingAsset, strikeAsset, weth] = await Promise.all([
+  const [underlyingAsset, strikeAsset, weth] = await Promise.all([
     MockERC20.deploy('WBTC', 'WBTC', 8),
     MockERC20.deploy('USDC', 'USDC', 6),
     WETH.deploy()
@@ -29,7 +29,7 @@ module.exports = async function createMockOption () {
     strikeAsset.address,
     strikePrice,
     await getTimestamp() + 5 * 60 * 60 * 1000,
-    20 * 60 * 60
+    24 * 60 * 60
   )
 
   const [deployer] = await ethers.getSigners()
