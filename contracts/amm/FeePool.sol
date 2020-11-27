@@ -30,7 +30,6 @@ contract FeePool is IFeePool, Ownable {
     address private _token;
 
     event FeeUpdated(address token, uint256 newFee, uint8 newFeeDecimals);
-    event FeeCollected(address token, uint256 amountCollected);
     event FeeWithdrawn(address token, address to, uint256 amountWithdrawn, uint256 sharesBurned);
     event ShareMinted(address token, address to, uint256 amountMinted);
 
@@ -64,7 +63,7 @@ contract FeePool is IFeePool, Ownable {
      * @param amount Total transaction amount
      */
     function getCollectable(uint256 amount) external override view returns (uint256) {
-        return _getCollectable(amount);
+        return amount.mul(_feeValue).div(10**uint256(_feeDecimals));
     }
 
     /**
@@ -102,17 +101,6 @@ contract FeePool is IFeePool, Ownable {
         _feeValue = value;
         _feeDecimals = decimals;
         emit FeeUpdated(_token, _feeValue, _feeDecimals);
-    }
-
-    /**
-     * Calculate and collect the fees from an amount
-     *
-     * @param amount Total transaction amount
-     */
-    function collect(uint256 amount) external override {
-        uint256 collectable = _getCollectable(amount);
-        require(IERC20(_token).transferFrom(msg.sender, address(this), collectable), "Could not collect fees");
-        emit FeeCollected(_token, collectable);
     }
 
     /**
@@ -163,14 +151,5 @@ contract FeePool is IFeePool, Ownable {
         _totalLiability = _totalLiability.add(newLiability);
 
         emit ShareMinted(_token, to, amount);
-    }
-
-    /**
-     * Internal function to calculate the collectable from a given amount
-     *
-     * @param amount Total transaction amount
-     */
-    function _getCollectable(uint256 amount) internal view returns (uint256) {
-        return amount.sub(amount.mul(_feeValue).div(10**uint256(_feeDecimals)));
     }
 }

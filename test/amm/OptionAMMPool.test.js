@@ -270,7 +270,7 @@ scenarios.forEach(scenario => {
         const buyerStrikeAmountAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const priceOfTheTrade = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
 
-        const feesBN = (new BigNumber(priceOfTheTrade.toString()).multipliedBy(new BigNumber(0.0003))).toFixed(0, 2)
+        const feesBN = (new BigNumber(priceOfTheTrade.toString()).multipliedBy(new BigNumber(0.00003))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())
 
         const balanceAfterOptionBuyer = await podPut.balanceOf(buyerAddress)
@@ -281,7 +281,7 @@ scenarios.forEach(scenario => {
 
         expect(balanceAfterOptionBuyer).to.eq(numberOfOptionsToBuy)
         expect(balanceAfterStrikeFeePoolA).to.eq(balanceAfterStrikeFeePoolB)
-        expect(fees.toString()).to.eq(balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB).toString())
+        expect(approximately(fees, balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB), 5)).to.be.true
       })
     })
     describe('Sell', () => {
