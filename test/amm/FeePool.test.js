@@ -61,22 +61,6 @@ describe('FeePool', () => {
 
       expect(await pool.getCollectable(amount)).to.equal(expectedFees)
     })
-
-    it('collects the due amount in fees', async () => {
-      const amount = toBigNumber(1e18)
-      const expectedFees = toBigNumber(0.003 * 1e18)
-
-      await usdc.connect(owner0).mint(amount)
-      await usdc.connect(owner0).approve(pool.address, expectedFees)
-      const transaction = pool.connect(owner0).collect(amount)
-
-      await expect(transaction)
-        .to.emit(pool, 'FeeCollected')
-        .withArgs(usdc.address, expectedFees)
-
-      expect(await usdc.balanceOf(owner0Address)).to.equal(amount.sub(expectedFees))
-      expect(await usdc.balanceOf(pool.address)).to.equal(expectedFees)
-    })
   })
 
   describe('Fee shares', () => {
@@ -95,7 +79,7 @@ describe('FeePool', () => {
         const expectedFees = await pool.getCollectable(collection)
         await usdc.connect(feePayer).mint(expectedFees)
         await usdc.connect(feePayer).approve(pool.address, expectedFees)
-        await pool.connect(feePayer).collect(collection)
+        await usdc.connect(feePayer).transfer(pool.address, expectedFees)
         expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.add(expectedFees))
         totalFees = totalFees.add(expectedFees)
       }
@@ -127,7 +111,7 @@ describe('FeePool', () => {
         const expectedFees = await pool.getCollectable(collection)
         await usdc.connect(feePayer).mint(expectedFees)
         await usdc.connect(feePayer).approve(pool.address, expectedFees)
-        await pool.connect(feePayer).collect(collection)
+        await usdc.connect(feePayer).transfer(pool.address, expectedFees)
         expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.add(expectedFees))
         totalFees = totalFees.add(expectedFees)
       }
@@ -158,7 +142,7 @@ describe('FeePool', () => {
         const expectedFees = await pool.getCollectable(collection)
         await usdc.connect(feePayer).mint(expectedFees)
         await usdc.connect(feePayer).approve(pool.address, expectedFees)
-        await pool.connect(feePayer).collect(collection)
+        await usdc.connect(feePayer).transfer(pool.address, expectedFees)
         expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.add(expectedFees))
         totalFees = totalFees.add(expectedFees)
       }
