@@ -137,6 +137,114 @@ scenarios.forEach(scenario => {
       it('should have equal number of decimals StrikePrice and strikeAsset', async () => {
         expect(await podPut.strikePriceDecimals()).to.equal(await podPut.strikeAssetDecimals())
       })
+
+      it('should not allow underlyingAsset/strikeAsset with 0x0 address', async () => {
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          ethers.constants.AddressZero,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          24 * 60 * 60 // 24h
+        )
+        await expect(podPut).to.revertedWith('PodOption/underlying-asset-is-not-a-contract')
+
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          mockUnderlyingAsset.address,
+          ethers.constants.AddressZero,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          24 * 60 * 60 // 24h
+        )
+        await expect(podPut).to.revertedWith('PodOption/strike-asset-is-not-a-contract')
+      })
+
+      it('should not allow underlyingAsset/strikeAsset that are not contracts', async () => {
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          sellerAddress,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          24 * 60 * 60 // 24h
+        )
+        await expect(podPut).to.revertedWith('PodOption/underlying-asset-is-not-a-contract')
+
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          mockUnderlyingAsset.address,
+          sellerAddress,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          24 * 60 * 60 // 24h
+        )
+        await expect(podPut).to.revertedWith('PodOption/strike-asset-is-not-a-contract')
+      })
+
+      it('should not allow for underlyingAsset and strikeAsset too be the same address', async () => {
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          mockStrikeAsset.address,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          24 * 60 * 60 // 24h
+        )
+        await expect(podPut).to.revertedWith('PodOption/underlying-asset-and-strike-asset-must-differ')
+      })
+
+      it('should only allow expiration in the future', async () => {
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          mockUnderlyingAsset.address,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp(),
+          24 * 60 * 60 // 24h
+        )
+        await expect(podPut).to.revertedWith('PodOption/expiration-should-be-in-a-future-timestamp')
+      })
+
+      it('should not allow exerciseWindowSize lesser than or equal 0', async () => {
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          mockUnderlyingAsset.address,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          0
+        )
+        await expect(podPut).to.revertedWith('PodOption/exercise-window-size-must-be-greater-than-zero')
+      })
+
+      it('should not allow strikePrice lesser than or equal 0', async () => {
+        podPut = factoryContract.createOption(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          OPTION_TYPE_PUT,
+          mockUnderlyingAsset.address,
+          mockStrikeAsset.address,
+          0,
+          await getTimestamp() + 24 * 60 * 60,
+          24 * 60 * 60 // 24h
+        )
+        await expect(podPut).to.revertedWith('PodOption/strike-price-must-be-greater-than-zero')
+      })
     })
 
     describe('Minting options', () => {
