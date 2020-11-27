@@ -4,7 +4,23 @@ pragma solidity ^0.6.8;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * This contract represents the basic structure of the financial instrument
+ * known as Option. The shared logic between both a PUT or a CALL option type.
+ *
+ * There are four main actions that can be called in an Option:
+ *
+ * A) mint => The seller can lock collateral and create new options before expiration.
+ * B) unmint => The seller who previously minted can choose for leaving his position any given time
+ * until expiration.
+ * C) exercise => The buyer the can exchange his option for the collateral at the strike price.
+ * D) withdraw => The seller can retrieve collateral at the end of the series.
+ *
+ * Depending on the type (PUT / CALL) or the style (AMERICAN / EUROPEAN), those functions have
+ * different behave and should be override accordingly.
+ **/
 abstract contract PodOption is ERC20 {
+    using SafeMath for uint8;
     enum OptionType { PUT, CALL }
 
     OptionType public optionType;
@@ -54,11 +70,13 @@ abstract contract PodOption is ERC20 {
      * Tracks how much of the strike token each address has locked
      * inside this contract
      */
-    mapping(address => uint256) public lockedBalance;
+    mapping(address => uint256) public shares;
+    mapping(address => uint256) public mintedOptions;
+    uint256 public totalShares = 0;
 
     /** Events */
     event Mint(address indexed seller, uint256 amount);
-    event Unwind(address indexed seller, uint256 amount);
+    event Unmint(address indexed seller, uint256 amount);
     event Exercise(address indexed buyer, uint256 amount);
     event Withdraw(address indexed seller, uint256 amount);
 
@@ -100,10 +118,10 @@ abstract contract PodOption is ERC20 {
      *
      * Options can only be minted while the series is NOT expired.
      *
-     * @param amount The amount option tokens to be issued
+     * @param amountOfOptions The amount option tokens to be issued
      * @param owner Which address will be the owner of the options
      */
-    function mint(uint256 amount, address owner) external virtual;
+    function mint(uint256 amountOfOptions, address owner) external virtual;
 
     /**
      * Allow option token holders to use them to exercise the amount of units
@@ -113,9 +131,9 @@ abstract contract PodOption is ERC20 {
      * to move caller funds.
      *
      * Options can only be exchanged while the series is NOT expired.
-     * @param amount The amount option tokens to be exercised
+     * @param amountOfOptions The amount option tokens to be exercised
      */
-    function exercise(uint256 amount) external virtual;
+    function exercise(uint256 amountOfOptions) external virtual;
 
     /**
      * After series expiration, allow addresses who have locked their
@@ -133,16 +151,16 @@ abstract contract PodOption is ERC20 {
      * previously lock into this contract.
      *
      * Options can only be burned while the series is NOT expired.
-     * @param amount The amount option tokens to be burned
+     * @param amountOfOptions The amount option tokens to be burned
      */
-    function unwind(uint256 amount) external virtual;
+    function unmint(uint256 amountOfOptions) external virtual;
 
     /**
      * Utility function to check the amount of the underlying tokens
      * locked inside this contract
      */
     function underlyingBalance() external view returns (uint256) {
-        return ERC20(underlyingAsset).balanceOf(address(this));
+        return IERC20(underlyingAsset).balanceOf(address(this));
     }
 
     /**
@@ -150,7 +168,7 @@ abstract contract PodOption is ERC20 {
      * inside this contract
      */
     function strikeBalance() external view returns (uint256) {
-        return ERC20(strikeAsset).balanceOf(address(this));
+        return IERC20(strikeAsset).balanceOf(address(this));
     }
 
     /**
@@ -165,6 +183,13 @@ abstract contract PodOption is ERC20 {
      */
     function isAfterExerciseWindow() external view returns (bool) {
         return _isAfterExerciseWindow();
+    }
+
+    /**
+     * External function to calculate the amount of strike asset needed given the option amount
+     */
+    function strikeToTransfer(uint256 amountOfOptions) external view returns (uint256) {
+        return _strikeToTransfer(amountOfOptions);
     }
 
     /**
@@ -190,8 +215,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-     * Maker modifier for functions which are only allowed to be executed
-     * BEFORE window of exercise
+     * Modifier with the conditions to be able to exercise
+     * based on option exerciseType.
      */
     modifier beforeExerciseWindow() {
         if (_isAfterExerciseWindow()) {
@@ -201,8 +226,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-     * Maker modifier for functions which are only allowed to be executed
-     * AFTER series expiration.
+     * Modifier with the conditions to be able to withdraw
+     * based on exerciseType.
      */
     modifier afterExerciseWindow() {
         if (!_isAfterExerciseWindow()) {
@@ -223,5 +248,15 @@ abstract contract PodOption is ERC20 {
      */
     function _isAfterExerciseWindow() internal view returns (bool) {
         return block.timestamp >= endOfExerciseWindow;
+    }
+
+    /**
+     * Internal function to calculate the amount of strike asset needed given the option amount
+     */
+    function _strikeToTransfer(uint256 amountOfOptions) internal view returns (uint256) {
+        uint256 strikeAmount = amountOfOptions.mul(strikePrice).div(
+            10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
+        );
+        return strikeAmount;
     }
 }

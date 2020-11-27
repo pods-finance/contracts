@@ -509,12 +509,12 @@ contract OptionAMMPool is AMM {
         priceProperties.currentSigma = newSigma;
 
         require(
-            ERC20(tokenB).transfer(address(feePoolA), tradeDetails.feesTokenA),
+            IERC20(tokenB).transfer(address(feePoolA), tradeDetails.feesTokenA),
             "Could not transfer Fees to feePoolA"
         );
 
         require(
-            ERC20(tokenB).transfer(address(feePoolB), tradeDetails.feesTokenB),
+            IERC20(tokenB).transfer(address(feePoolB), tradeDetails.feesTokenB),
             "Could not transfer Fees to feePoolB"
         );
     }

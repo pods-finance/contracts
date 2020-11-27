@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
-const getTimestamp = require('./util/getTimestamp')
-const { toBigNumber, approximately } = require('../utils/utils')
+const getTimestamp = require('../util/getTimestamp')
+const { toBigNumber, approximately } = require('../../utils/utils')
 
 const OPTION_TYPE_PUT = 0
 
@@ -96,6 +96,26 @@ scenarios.forEach(scenario => {
       it('should have correct initial parameters', async () => {
         expect(await amm.tokenA()).to.equal(mockTokenA.address)
         expect(await amm.tokenB()).to.equal(mockTokenB.address)
+      })
+
+      it('should not allow tokens with 0x0 address', async () => {
+        const MockAMM = await ethers.getContractFactory('MockAMM')
+
+        amm = MockAMM.deploy(userAAddress, mockTokenB.address)
+        await expect(amm).to.revertedWith('AMM/token-a-is-not-a-contract')
+
+        amm = MockAMM.deploy(mockTokenA.address, userAAddress)
+        await expect(amm).to.revertedWith('AMM/token-b-is-not-a-contract')
+      })
+
+      it('should not allow tokens that are not contracts', async () => {
+        const MockAMM = await ethers.getContractFactory('MockAMM')
+
+        amm = MockAMM.deploy(ethers.constants.AddressZero, mockTokenB.address)
+        await expect(amm).to.revertedWith('AMM/token-a-is-not-a-contract')
+
+        amm = MockAMM.deploy(mockTokenA.address, ethers.constants.AddressZero)
+        await expect(amm).to.revertedWith('AMM/token-b-is-not-a-contract')
       })
     })
 

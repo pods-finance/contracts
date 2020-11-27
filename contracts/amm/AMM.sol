@@ -3,6 +3,7 @@ pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
  * Represents a generalized contract for a single-sided AMM pair.
@@ -39,12 +40,12 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  * - _onRemoveLiquidity:
  *     function that will be executed after balances updates and before
  *     token transfers. Usually used for handling fees
- * 
+ *
  *  Also, for which TradeType (E.g: ExactAInput) there are more two functions to override:
 
  * _getTradeDetails[$TradeType]:
  *   This function is responsible to return the TradeDetails struct, that contains basically the amount
- *   of the other token depending on the trade type. (E.g: ExactAInput => The TradeDetails will return the 
+ *   of the other token depending on the trade type. (E.g: ExactAInput => The TradeDetails will return the
  *   amount of B output).
  * _onTrade[$TradeType]:
 *     function that will be executed after balances updates and before
@@ -101,6 +102,8 @@ abstract contract AMM {
     event TradeExactBOutput(address indexed caller, address indexed owner, uint256 amountAIn, uint256 exactAmountBOut);
 
     constructor(address _tokenA, address _tokenB) public {
+        require(Address.isContract(_tokenA), "AMM/token-a-is-not-a-contract");
+        require(Address.isContract(_tokenB), "AMM/token-b-is-not-a-contract");
         tokenA = _tokenA;
         tokenB = _tokenB;
 
@@ -170,12 +173,12 @@ abstract contract AMM {
         _onAddLiquidity(balances[owner], owner);
 
         require(
-            ERC20(tokenA).transferFrom(msg.sender, address(this), amountOfA),
+            IERC20(tokenA).transferFrom(msg.sender, address(this), amountOfA),
             "Could not transfer option tokens from caller"
         );
 
         require(
-            ERC20(tokenB).transferFrom(msg.sender, address(this), amountOfB),
+            IERC20(tokenB).transferFrom(msg.sender, address(this), amountOfB),
             "Could not transfer stable tokens from caller"
         );
 
@@ -235,9 +238,9 @@ abstract contract AMM {
         _onRemoveLiquidity(balances[msg.sender], msg.sender);
 
         // 5. transferFrom(amountA) / transferFrom(amountB) = > Already updates the new balanceOf(a) / balanceOf(b)
-        require(ERC20(tokenA).transfer(msg.sender, amountToSendA), "Could not transfer token A from caller");
+        require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "Could not transfer token A from caller");
 
-        require(ERC20(tokenB).transfer(msg.sender, amountToSendB), "Could not transfer token B from caller");
+        require(IERC20(tokenB).transfer(msg.sender, amountToSendB), "Could not transfer token B from caller");
 
         emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
     }
@@ -254,11 +257,11 @@ abstract contract AMM {
 
         require(amountBOut >= minAmountBOut, "amount tokens out lower than min asked");
         require(
-            ERC20(tokenA).transferFrom(msg.sender, address(this), exactAmountAIn),
+            IERC20(tokenA).transferFrom(msg.sender, address(this), exactAmountAIn),
             "Could not transfer token A from caller"
         );
 
-        require(ERC20(tokenB).transfer(owner, amountBOut), "Could not transfer token B to caller");
+        require(IERC20(tokenB).transfer(owner, amountBOut), "Could not transfer token B to caller");
 
         emit TradeExactAInput(msg.sender, owner, exactAmountAIn, exactAmountAIn);
         return amountBOut;
@@ -276,11 +279,11 @@ abstract contract AMM {
 
         require(amountBIn <= maxAmountBIn, "amount tokens out higher than max asked");
         require(
-            ERC20(tokenB).transferFrom(msg.sender, address(this), amountBIn),
+            IERC20(tokenB).transferFrom(msg.sender, address(this), amountBIn),
             "Could not transfer token A from caller"
         );
 
-        require(ERC20(tokenA).transfer(owner, exactAmountAOut), "Could not transfer token B to caller");
+        require(IERC20(tokenA).transfer(owner, exactAmountAOut), "Could not transfer token B to caller");
 
         emit TradeExactAOutput(msg.sender, owner, exactAmountAOut, amountBIn);
         return amountBIn;
@@ -298,11 +301,11 @@ abstract contract AMM {
 
         require(amountAOut >= minAmountAOut, "amount tokens out lower than min asked");
         require(
-            ERC20(tokenB).transferFrom(msg.sender, address(this), exactAmountBIn),
+            IERC20(tokenB).transferFrom(msg.sender, address(this), exactAmountBIn),
             "Could not transfer token A from caller"
         );
 
-        require(ERC20(tokenA).transfer(owner, amountAOut), "Could not transfer token B to caller");
+        require(IERC20(tokenA).transfer(owner, amountAOut), "Could not transfer token B to caller");
 
         emit TradeExactBInput(msg.sender, owner, amountAOut, exactAmountBIn);
         return amountAOut;
@@ -320,11 +323,11 @@ abstract contract AMM {
 
         require(amountAIn <= maxAmountAIn, "amount tokens out higher than max asked");
         require(
-            ERC20(tokenA).transferFrom(msg.sender, address(this), amountAIn),
+            IERC20(tokenA).transferFrom(msg.sender, address(this), amountAIn),
             "Could not transfer token A from caller"
         );
 
-        require(ERC20(tokenB).transfer(owner, exactAmountBOut), "Could not transfer token B to caller");
+        require(IERC20(tokenB).transfer(owner, exactAmountBOut), "Could not transfer token B to caller");
 
         emit TradeExactBOutput(msg.sender, owner, amountAIn, exactAmountBOut);
         return amountAIn;
@@ -389,8 +392,8 @@ abstract contract AMM {
     }
 
     function _getPoolBalances() internal view returns (uint256, uint256) {
-        uint256 balanceOfTokenA = ERC20(tokenA).balanceOf(address(this));
-        uint256 balanceOfTokenB = ERC20(tokenB).balanceOf(address(this));
+        uint256 balanceOfTokenA = IERC20(tokenA).balanceOf(address(this));
+        uint256 balanceOfTokenB = IERC20(tokenB).balanceOf(address(this));
 
         return (balanceOfTokenA, balanceOfTokenB);
     }
