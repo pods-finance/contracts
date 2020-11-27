@@ -63,7 +63,7 @@ contract FeePool is IFeePool, Ownable {
      * @param amount Total transaction amount
      */
     function getCollectable(uint256 amount) external override view returns (uint256) {
-        return amount.sub(amount.mul(_feeValue).div(10**uint256(_feeDecimals)));
+        return amount.mul(_feeValue).div(10**uint256(_feeDecimals));
     }
 
     /**

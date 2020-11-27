@@ -6,7 +6,7 @@ describe('FeePool', () => {
   let usdc
   let owner0, owner1, feePayer, poolOwner
   let owner0Address, owner1Address
-  const initialFee = toBigNumber(997)
+  const initialFee = toBigNumber(3)
   const initialDecimals = toBigNumber(3)
 
   before(async () => {

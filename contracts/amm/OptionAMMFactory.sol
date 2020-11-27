@@ -46,8 +46,8 @@ contract OptionAMMFactory is IOptionAMMFactory {
     ) external override returns (address) {
         require(address(pools[_optionAddress]) == address(0), "Pool already exists");
 
-        FeePool feePoolTokenA = new FeePool(_stableAsset, 99985, 5);
-        FeePool feePoolTokenB = new FeePool(_stableAsset, 99985, 5);
+        FeePool feePoolTokenA = new FeePool(_stableAsset, 15, 6);
+        FeePool feePoolTokenB = new FeePool(_stableAsset, 15, 6);
 
         OptionAMMPool pool = new OptionAMMPool(
             _optionAddress,
