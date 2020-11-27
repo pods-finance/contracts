@@ -3,6 +3,7 @@ pragma solidity ^0.6.8;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
  * This contract represents the basic structure of the financial instrument
@@ -92,10 +93,17 @@ abstract contract PodOption is ERC20 {
         uint256 _expiration,
         uint256 _exerciseWindowSize
     ) public ERC20(name, symbol) {
+        require(Address.isContract(_underlyingAsset), "PodOption/underlying-asset-is-not-a-contract");
+        require(Address.isContract(_strikeAsset), "PodOption/strike-asset-is-not-a-contract");
+        require(_underlyingAsset != _strikeAsset, "PodOption/underlying-asset-and-strike-asset-must-differ");
+        require(_expiration > block.timestamp, "PodOption/expiration-should-be-in-a-future-timestamp");
+        require(_exerciseWindowSize > 0, "PodOption/exercise-window-size-must-be-greater-than-zero");
+        require(_strikePrice > 0, "PodOption/strike-price-must-be-greater-than-zero");
+
         optionType = _optionType;
         exerciseType = _exerciseType;
         expiration = _expiration;
-        endOfExerciseWindow = _expiration + _exerciseWindowSize;
+        endOfExerciseWindow = _expiration.add(_exerciseWindowSize);
 
         underlyingAsset = _underlyingAsset;
         underlyingAssetDecimals = ERC20(_underlyingAsset).decimals();

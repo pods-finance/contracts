@@ -253,12 +253,12 @@ contract PodPut is PodOption {
 
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Couldn't transfer back strike tokens to caller"
+            "Could not transfer back strike tokens to caller"
         );
         if (underlyingReserves > 0) {
             require(
                 IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
-                "Couldn't transfer back strike tokens to caller"
+                "Could not transfer back underlying tokens to caller"
             );
         }
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
