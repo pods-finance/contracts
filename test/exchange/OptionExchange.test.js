@@ -1,8 +1,8 @@
 const { expect } = require('chai')
-const getTimestamp = require('./util/getTimestamp')
-const createMockOption = require('./util/createMockOption')
-const deployBlackScholes = require('./util/deployBlackScholes')
-const getPriceProviderMock = require('./util/getPriceProviderMock')
+const getTimestamp = require('../util/getTimestamp')
+const createMockOption = require('../util/createMockOption')
+const deployBlackScholes = require('../util/deployBlackScholes')
+const getPriceProviderMock = require('../util/getPriceProviderMock')
 
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
