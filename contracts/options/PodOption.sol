@@ -92,7 +92,7 @@ abstract contract PodOption is ERC20 {
     ) public ERC20(name, symbol) {
         optionType = _optionType;
         expiration = _expiration;
-        endOfExerciseWindow = _expiration + _exerciseWindowSize;
+        endOfExerciseWindow = _expiration.add(_exerciseWindowSize);
 
         underlyingAsset = _underlyingAsset;
         underlyingAssetDecimals = ERC20(_underlyingAsset).decimals();
