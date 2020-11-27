@@ -5,10 +5,14 @@ let underlyingAsset
 let strikeAsset
 let mockWeth
 
+const OPTION_TYPE_PUT = 0
+const EXERCISE_TYPE_EUROPEAN = 0
+
 const ScenarioA = {
   name: 'Pods Put WBTC USDC 5000 2020-06-23',
   symbol: 'podWBTC:20AA',
-  optionType: 0,
+  optionType: OPTION_TYPE_PUT,
+  exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
   expiration: new Date().getTime() + 5 * 60 * 60 * 1000,
   exerciseWindowSize: 24 * 60 * 60 // 24h
@@ -38,13 +42,13 @@ describe('OptionFactory', function () {
   })
 
   it('Should create a new PodPut Option correctly and emit event', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
 
     await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })
 
   it('Should create a new WPodPut Option correctly and emit event', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, mockWeth.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, ScenarioA.exerciseType, mockWeth.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
 
     await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })

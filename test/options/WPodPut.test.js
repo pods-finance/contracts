@@ -4,8 +4,7 @@ const forceExpiration = require('../util/forceExpiration')
 const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
 const getTimestamp = require('../util/getTimestamp')
 
-const EXERCISE_TYPE_EUROPEAN = 1 // European
-
+const EXERCISE_TYPE_EUROPEAN = 0 // European
 const OPTION_TYPE_PUT = 0 // Put
 
 const scenarios = [
@@ -81,6 +80,7 @@ scenarios.forEach(scenario => {
         scenario.name,
         scenario.name,
         OPTION_TYPE_PUT,
+        EXERCISE_TYPE_EUROPEAN,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
@@ -360,7 +360,7 @@ scenarios.forEach(scenario => {
 
     describe('Withdrawing options', () => {
       it('should revert if user try to withdraw before expiration', async () => {
-        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('Window of exercise not close yet')
+        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('Window of exercise has not ended yet')
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {

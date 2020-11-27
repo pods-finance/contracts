@@ -29,9 +29,10 @@ abstract contract PodOption is ERC20 {
     uint256 public constant MIN_EXERCISE_WINDOW_SIZE = 86400;
 
     enum OptionType { PUT, CALL }
+    enum ExerciseType { EUROPEAN, AMERICAN }
 
     OptionType public optionType;
-
+    ExerciseType public exerciseType;
     /**
      * The asset used as the underlying token, e.g. DAI
      */
@@ -91,6 +92,7 @@ abstract contract PodOption is ERC20 {
         string memory name,
         string memory symbol,
         OptionType _optionType,
+        ExerciseType _exerciseType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -109,6 +111,7 @@ abstract contract PodOption is ERC20 {
         );
 
         optionType = _optionType;
+        exerciseType = _exerciseType;
         expiration = _expiration;
         endOfExerciseWindow = _expiration.add(_exerciseWindowSize);
 
@@ -199,8 +202,8 @@ abstract contract PodOption is ERC20 {
     /**
      * Checks if the options exercise window has closed.
      */
-    function isAfterExerciseWindow() external view returns (bool) {
-        return _isAfterExerciseWindow();
+    function isAfterEndOfExerciseWindow() external view returns (bool) {
+        return _isAfterEndOfExerciseWindow();
     }
 
     /**
@@ -233,23 +236,28 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-     * Modifier with the conditions to be able to exercise
-     * based on option exerciseType.
+      * Modifier with the conditions to be able to exercise 
+      * based on option exerciseType.
      */
-    modifier beforeExerciseWindow() {
-        if (_isAfterExerciseWindow()) {
-            revert("Window of exercise has closed already");
+    modifier exerciseWindow() {
+        if (exerciseType == ExerciseType.EUROPEAN) {
+            require(_hasExpired(), "Option has not expired yet");
+            require(!_isAfterEndOfExerciseWindow(), "Window of exercise has closed already");
+        } else {
+            require(!_hasExpired(), "Option has expired");
         }
         _;
     }
 
     /**
-     * Modifier with the conditions to be able to withdraw
-     * based on exerciseType.
+      * Modifier with the conditions to be able to withdraw 
+      * based on exerciseType.
      */
-    modifier afterExerciseWindow() {
-        if (!_isAfterExerciseWindow()) {
-            revert("Window of exercise not close yet");
+    modifier withdrawWindow() {
+        if (exerciseType == ExerciseType.EUROPEAN) {
+            require(_isAfterEndOfExerciseWindow(), "Window of exercise has not ended yet");
+        } else {
+            require(_hasExpired(), "Option has not expired yet");
         }
         _;
     }
@@ -264,7 +272,7 @@ abstract contract PodOption is ERC20 {
     /**
      * Internal function to check window exercise ended
      */
-    function _isAfterExerciseWindow() internal view returns (bool) {
+    function _isAfterEndOfExerciseWindow() internal view returns (bool) {
         return block.timestamp >= endOfExerciseWindow;
     }
 

@@ -11,6 +11,7 @@ const createOptionFactory = require('../util/createOptionFactory')
 const { toBigNumber, approximately } = require('../../utils/utils')
 
 const OPTION_TYPE_PUT = 0
+const EXERCISE_TYPE_EUROPEAN = 0
 
 const scenarios = [
   // {
@@ -131,6 +132,7 @@ scenarios.forEach(scenario => {
       podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
         'pod:WBTC:USDC:5000:A',
         OPTION_TYPE_PUT,
+        EXERCISE_TYPE_EUROPEAN,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
