@@ -236,8 +236,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-      * Modifier with the conditions to be able to exercise 
-      * based on option exerciseType.
+     * Modifier with the conditions to be able to exercise
+     * based on option exerciseType.
      */
     modifier exerciseWindow() {
         if (exerciseType == ExerciseType.EUROPEAN) {
@@ -250,8 +250,8 @@ abstract contract PodOption is ERC20 {
     }
 
     /**
-      * Modifier with the conditions to be able to withdraw 
-      * based on exerciseType.
+     * Modifier with the conditions to be able to withdraw
+     * based on exerciseType.
      */
     modifier withdrawWindow() {
         if (exerciseType == ExerciseType.EUROPEAN) {
@@ -284,5 +284,29 @@ abstract contract PodOption is ERC20 {
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
         return strikeAmount;
+    }
+
+    /**
+     * Calculate number of shares based on the amount of collateral locked by the seller
+     */
+    function _calculatedShares(uint256 amountOfCollateral) internal view returns (uint256 ownerShares) {
+        // 2) Check current balances
+        uint256 optionStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 optionUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
+
+        uint256 numerator = amountOfCollateral.mul(totalShares);
+        uint256 denominator;
+
+        if (optionType == OptionType.PUT) {
+            denominator = optionStrikeBalance.add(
+                optionUnderlyingBalance.mul(strikePrice).div((uint256(10)**underlyingAssetDecimals))
+            );
+        } else {
+            denominator = optionUnderlyingBalance.add(
+                optionStrikeBalance.mul((uint256(10)**underlyingAssetDecimals).div(strikePrice))
+            );
+        }
+        ownerShares = numerator.div(denominator);
+        return ownerShares;
     }
 }
