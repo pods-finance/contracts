@@ -16,6 +16,21 @@ contract ChainlinkPriceFeed is IPriceFeed {
         return price;
     }
 
+    function latestRoundData()
+        external
+        override
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
+        return IChainlinkPriceFeed(chainlinkFeedAddress).latestRoundData();
+    }
+
     function decimals() external override view returns (uint8) {
         return IChainlinkPriceFeed(chainlinkFeedAddress).decimals();
     }
