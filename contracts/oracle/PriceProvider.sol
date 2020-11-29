@@ -61,7 +61,7 @@ contract PriceProvider is Ownable {
     /**
      * Internal function to set price feeds for different assets
      * @param _assets Array of assets
-     * @param _feeds Arraay of price feeds
+     * @param _feeds Array of price feeds
      */
     function _setAssetFeeds(address[] memory _assets, address[] memory _feeds) internal {
         require(_assets.length == _feeds.length, "INCONSISTENT_PARAMS_LENGTH");

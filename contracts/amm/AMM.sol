@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * That means is possible to add and remove liquidity in any proportion
  * at any time, even 0 in one of the sides.
  *
- * The AMM is constituied by 3 core functions: Add Liquidity, Remove liquidity and Trade.
+ * The AMM is constituted by 3 core functions: Add Liquidity, Remove liquidity and Trade.
  *
  * There are 4 possible trade types between the token pair (tokenA and tokenB):
  *
@@ -28,7 +28,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *     tokenB as an exact Output, meaning that the input tokenA is variable.
  *     it is important to have a slippage control of the maximum acceptable amount of tokenA sent
  *
- * Several functions are provided as virtual and must be overrieded by the inheritor.
+ * Several functions are provided as virtual and must be overridden by the inheritor.
  *
  * - _getABPrice:
  *     function that will return the tokenA:tokenB price relation.
@@ -69,7 +69,7 @@ abstract contract AMM {
     uint256 public deamortizedTokenABalance;
     uint256 public deamortizedTokenBBalance;
 
-    // Total Balance of each tokem is avaiable in eacch ERC20 token balanceOf()
+    // Total Balance of each token is available in each ERC20 token balanceOf()
     // instead of using local variables, trying to reduce stack too deep
     struct UserBalance {
         uint256 tokenABalance; //originalBalance
@@ -112,7 +112,7 @@ abstract contract AMM {
     }
 
     /**
-     * _addLiquidity in any propotion of tokenA or tokenB
+     * _addLiquidity in any proportion of tokenA or tokenB
      * The inheritor contract should implement _getABPrice and _onAddLiquidity functions
      *
      * @param amountOfA amount of TokenA to add
@@ -160,7 +160,7 @@ abstract contract AMM {
                 balances[owner]
             );
 
-            // 4) Update demortizedBalances;
+            // 4) Update deamortizedBalances;
             // deamortizedBalance = deamortizedBalance + amount/fImpOpening
             deamortizedTokenABalance = deamortizedTokenABalance.add(amountOfA.mul(10**FIMP_PRECISION).div(fImpOpening));
             deamortizedTokenBBalance = deamortizedTokenBBalance.add(amountOfB.mul(10**FIMP_PRECISION).div(fImpOpening));
@@ -186,7 +186,7 @@ abstract contract AMM {
     }
 
     /**
-     * _removeLiquidity in any propotion of tokenA or tokenB
+     * _removeLiquidity in any proportion of tokenA or tokenB
      * The inheritor contract should implement _getABPrice and _onRemoveLiquidity functions
      *
      * @param amountOfAOriginal proportion of the original tokenA that want to me removed
@@ -450,9 +450,9 @@ abstract contract AMM {
         uint256 userMAA = user.tokenABalance.mul(m.AA).div(user.fImp);
         uint256 userMBA = user.tokenABalance.mul(m.BA).div(user.fImp);
 
-        uint256 tokenAAvaiableForRescue = userMAA.add(userMBA);
-        uint256 tokenBAvaiableForRescue = userMBB.add(userMAB);
-        return (tokenAAvaiableForRescue, tokenBAvaiableForRescue);
+        uint256 tokenAAvailableForRescue = userMAA.add(userMBA);
+        uint256 tokenBAvailableForRescue = userMBB.add(userMAB);
+        return (tokenAAvailableForRescue, tokenBAvailableForRescue);
     }
 
     function _getNewAmortizedBalances(
