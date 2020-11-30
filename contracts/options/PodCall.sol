@@ -111,7 +111,7 @@ contract PodCall is PodOption {
      * contract
      &
      * @param owner The address that will store at shares. owner will
-     * be able to withdraw later on behalf of the sender. It is also important 
+     * be able to withdraw later on behalf of the sender. It is also important
      * to notice that the options tokens will not be send to owner, but to the msg.sender
      */
     function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
@@ -145,7 +145,7 @@ contract PodCall is PodOption {
 
         // 5) Update Total Strike Asset Pool
         require(
-            ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountToReceive),
+            IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountToReceive),
             "Couldn't transfer strike tokens from caller"
         );
         emit Mint(owner, amountOfOptions);
@@ -171,8 +171,8 @@ contract PodCall is PodOption {
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
         require(amountOfOptions <= ownerMintedOptions, "Exceed address minted options");
 
-        uint256 optionStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 optionStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 optionUnderlyingBalance = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
 
@@ -189,14 +189,14 @@ contract PodCall is PodOption {
 
         // Unlocks the strike token
         require(
-            ERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
+            IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
             "Couldn't transfer back strike tokens to caller"
         );
 
         if (optionStrikeBalance > 0) {
             require(strikeToSend > 0, "Amount of options should be higher");
             require(
-                ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+                IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
                 "Couldn't transfer back strike tokens to caller"
             );
         }
@@ -235,13 +235,13 @@ contract PodCall is PodOption {
 
         // Retrieve the strike asset from caller
         require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
+            IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
             "Could not transfer underlying tokens from caller"
         );
 
         // Releases the underlying asset to caller, completing the exchange
         require(
-            ERC20(underlyingAsset).transfer(msg.sender, amountOfOptions),
+            IERC20(underlyingAsset).transfer(msg.sender, amountOfOptions),
             "Could not transfer underlying tokens to caller"
         );
         emit Exercise(msg.sender, amountOfOptions);
@@ -262,8 +262,8 @@ contract PodCall is PodOption {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "You do not have balance to withdraw");
 
-        uint256 optionStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 optionStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 optionUnderlyingBalance = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 strikeToSend = ownerShares.mul(optionStrikeBalance).div(totalShares);
         uint256 underlyingToSend = ownerShares.mul(optionUnderlyingBalance).div(totalShares);
@@ -272,12 +272,12 @@ contract PodCall is PodOption {
         shares[msg.sender] = 0;
 
         require(
-            ERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
+            IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
             "Couldn't transfer back strike tokens to caller"
         );
         if (strikeToSend > 0) {
             require(
-                ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+                IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
                 "Couldn't transfer back strike tokens to caller"
             );
         }
