@@ -4,9 +4,9 @@ pragma solidity ^0.6.8;
 
 import "../interfaces/INormalDistribution.sol";
 
-import "./lib/FixidityLib.sol";
-import "./lib/LogarithmLib.sol";
-import "./lib/ExponentLib.sol";
+import "../lib/FixidityLib.sol";
+import "../lib/LogarithmLib.sol";
+import "../lib/ExponentLib.sol";
 
 /**
  * Black-Scholes calculus
