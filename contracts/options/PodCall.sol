@@ -4,7 +4,7 @@ pragma solidity ^0.6.8;
 import "./PodOption.sol";
 
 /**
- * This contract represents a tokenized European call option series for some
+ * This contract represents a tokenized Call option series for some
  * long/short token pair.
  *
  * Call options represents the right, not the obligation to buy the underlying asset
@@ -225,7 +225,7 @@ contract PodCall is PodOption {
      *
      * @param amountOfOptions The amount option tokens to be exercised
      */
-    function exercise(uint256 amountOfOptions) external override exerciseWindow {
+    function exercise(uint256 amountOfOptions) external virtual override exerciseWindow {
         require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToReceive = _strikeToTransfer(amountOfOptions);
