@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "../lib/RequiredDecimals.sol";
 
 /**
  * Represents a generalized contract for a single-sided AMM pair.
@@ -53,7 +54,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  */
 
-abstract contract AMM {
+abstract contract AMM is RequiredDecimals {
     using SafeMath for uint256;
 
     uint256 constant INITIAL_FIMP = 10**27;
@@ -107,8 +108,8 @@ abstract contract AMM {
         tokenA = _tokenA;
         tokenB = _tokenB;
 
-        tokenADecimals = ERC20(_tokenA).decimals();
-        tokenBDecimals = ERC20(_tokenB).decimals();
+        tokenADecimals = tryDecimals(IERC20(_tokenA));
+        tokenBDecimals = tryDecimals(IERC20(_tokenB));
     }
 
     /**
