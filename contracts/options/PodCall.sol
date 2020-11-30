@@ -229,7 +229,6 @@ contract PodCall is PodOption {
         require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToReceive = _strikeToTransfer(amountOfOptions);
-        require(amountStrikeToReceive > 0, "Amount of options should be higher");
 
         // Burn the exercised options
         _burn(msg.sender, amountOfOptions);

@@ -319,7 +319,7 @@ async function addLiquidity (pool, owner) {
   const stableLiquidity = ethers.BigNumber.from(1000e6)
 
   // Mint Options
-  await strikeAsset.connect(owner).mint(await option.strikeToTransfer(optionsLiquidity))
+  await strikeAsset.connect(owner).mint((await option.strikeToTransfer(optionsLiquidity)).add(1))
   await strikeAsset.connect(owner).approve(option.address, ethers.constants.MaxUint256)
   await option.connect(owner).mint(optionsLiquidity, ownerAddress)
 

@@ -283,7 +283,8 @@ abstract contract PodOption is ERC20 {
         uint256 strikeAmount = amountOfOptions.mul(strikePrice).div(
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
-        return strikeAmount;
+        require(strikeAmount > 0, "Invalid amount of collateral");
+        return strikeAmount + 1;
     }
 
     /**

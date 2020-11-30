@@ -137,7 +137,6 @@ contract WPodPut is PodPut {
         require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 strikeToSend = _strikeToTransfer(amountOfOptions);
-        require(strikeToSend > 0, "Amount too low");
 
         // Burn the option tokens equivalent to the underlying requested
         _burn(msg.sender, amountOfOptions);
