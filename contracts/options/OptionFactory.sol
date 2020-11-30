@@ -8,6 +8,8 @@ contract OptionFactory {
     address[] public options;
     IOptionBuilder public podPutBuilder;
     IOptionBuilder public wPodPutBuilder;
+    IOptionBuilder public podCallBuilder;
+    IOptionBuilder public wPodCallBuilder;
     address public WETH_ADDRESS;
 
     event OptionCreated(
@@ -25,11 +27,15 @@ contract OptionFactory {
     constructor(
         address wethAddress,
         address _PodPutBuilder,
-        address _WPodPutBuilder
+        address _WPodPutBuilder,
+        address _PodCallBuilder,
+        address _WPodCallBuilder
     ) public {
         WETH_ADDRESS = wethAddress;
         podPutBuilder = IOptionBuilder(_PodPutBuilder);
         wPodPutBuilder = IOptionBuilder(_WPodPutBuilder);
+        podCallBuilder = IOptionBuilder(_PodCallBuilder);
+        wPodCallBuilder = IOptionBuilder(_WPodCallBuilder);
     }
 
     /**
@@ -64,7 +70,11 @@ contract OptionFactory {
                 builder = podPutBuilder;
             }
         } else {
-            // PodCall
+            if (_underlyingAsset == WETH_ADDRESS) {
+                builder = wPodCallBuilder;
+            } else {
+                builder = podCallBuilder;
+            }
         }
 
         option = builder.buildOption(
