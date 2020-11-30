@@ -4,6 +4,7 @@ pragma solidity ^0.6.8;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "../lib/RequiredDecimals.sol";
 
 /**
  * This contract represents the basic structure of the financial instrument
@@ -20,7 +21,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * Depending on the type (PUT / CALL) or the style (AMERICAN / EUROPEAN), those functions have
  * different behave and should be override accordingly.
  **/
-abstract contract PodOption is ERC20 {
+abstract contract PodOption is ERC20, RequiredDecimals {
     using SafeMath for uint8;
 
     /**
@@ -116,11 +117,11 @@ abstract contract PodOption is ERC20 {
         endOfExerciseWindow = _expiration.add(_exerciseWindowSize);
 
         underlyingAsset = _underlyingAsset;
-        underlyingAssetDecimals = ERC20(_underlyingAsset).decimals();
+        underlyingAssetDecimals = tryDecimals(IERC20(_underlyingAsset));
         _setupDecimals(underlyingAssetDecimals);
 
         strikeAsset = _strikeAsset;
-        strikeAssetDecimals = ERC20(_strikeAsset).decimals();
+        strikeAssetDecimals = tryDecimals(IERC20(_strikeAsset));
 
         strikePrice = _strikePrice;
         strikePriceDecimals = strikeAssetDecimals;
