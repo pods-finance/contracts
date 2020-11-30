@@ -112,7 +112,6 @@ contract PodPut is PodOption {
         require(amountOfOptions > 0, "Null amount");
 
         uint256 amountToTransfer = _strikeToTransfer(amountOfOptions);
-        require(amountToTransfer > 0, "Amount too low");
 
         if (totalShares > 0) {
             uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
