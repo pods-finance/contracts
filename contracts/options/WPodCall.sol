@@ -97,6 +97,8 @@ contract WPodCall is PodCall {
         weth = IWETH(_underlyingAsset);
     }
 
+    event Received(address sender, uint256 value);
+
     /**
      * Locks some amount of the underlying asset (ETH) and writes option tokens.
      *
@@ -114,7 +116,6 @@ contract WPodCall is PodCall {
     function mintEth(address owner) external payable beforeExpiration {
         uint256 amountOfOptions = msg.value;
         require(amountOfOptions > 0, "Null amount");
-        weth.deposit{ value: msg.value }();
 
         // 1) Calculate strikeToTransfer
         uint256 amountToReceive = amountOfOptions;
@@ -123,21 +124,22 @@ contract WPodCall is PodCall {
 
         if (totalShares > 0) {
             // 2) Check current balances
-            ownerShares = _calculatedShares(amountOfOptions);
+            ownerShares = _calculatedShares(amountToReceive);
             // 4.1) update totalShares
             totalShares = totalShares.add(ownerShares);
             // 4.2) update userMintedOptions
-            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
+            mintedOptions[owner] = mintedOptions[owner].add(amountToReceive);
             // 4.3) update userWeightBalance
             shares[owner] = shares[owner].add(ownerShares);
         } else {
-            ownerShares = amountOfOptions;
+            ownerShares = amountToReceive;
 
             shares[owner] = ownerShares;
-            mintedOptions[owner] = amountOfOptions;
+            mintedOptions[owner] = amountToReceive;
             // totalShares = totalShares
             totalShares = ownerShares;
         }
+        weth.deposit{ value: msg.value }();
 
         _mint(msg.sender, amountOfOptions);
         emit Mint(owner, amountOfOptions);
@@ -167,6 +169,7 @@ contract WPodCall is PodCall {
         uint256 optionUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
+        bool teste = sharesToDeduce == ownerShares;
 
         uint256 strikeToSend = sharesToDeduce.mul(optionStrikeBalance).div(totalShares);
         uint256 underlyingToSend = sharesToDeduce.mul(optionUnderlyingBalance).div(totalShares);
@@ -229,8 +232,6 @@ contract WPodCall is PodCall {
             "Could not transfer underlying tokens from caller"
         );
 
-        // Releases the underlying asset to caller, completing the exchange
-        // Unlocks the strike token
         weth.withdraw(amountOfOptions);
         Address.sendValue(msg.sender, amountOfOptions);
 
@@ -271,5 +272,9 @@ contract WPodCall is PodCall {
             );
         }
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 }
