@@ -80,7 +80,7 @@ scenarios.forEach(scenario => {
       const optionsDecimals = await podPut.decimals()
       await mockStrikeAsset.connect(signer).approve(podPut.address, ethers.constants.MaxUint256)
       // calculate amount of Strike necessary to mint
-      await mockStrikeAsset.connect(signer).mint(scenario.strikePrice.mul(amountOfOptionsToMint))
+      await mockStrikeAsset.connect(signer).mint(scenario.strikePrice.mul(amountOfOptionsToMint).add(1))
 
       await podPut.connect(signer).mint(amountToMintBN.mul(toBigNumber(10).pow(optionsDecimals)), owner)
     }
@@ -179,7 +179,7 @@ scenarios.forEach(scenario => {
       it('should revert if user do not approved one of assets to be spent by OptionAMMPool', async () => {
         // Mint option and Stable asset to the liquidity adder
         await MintPhase(1)
-        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
+        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity.add(1))
         const optionBalance = await podPut.balanceOf(deployerAddress)
         await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
@@ -191,7 +191,7 @@ scenarios.forEach(scenario => {
         const feeAddressB = await optionAMMPool.feePoolB()
 
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const initialBuyerBalanceStrikeAsset = toBigNumber(100).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
