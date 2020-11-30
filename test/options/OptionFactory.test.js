@@ -21,8 +21,10 @@ const ScenarioA = {
 describe('OptionFactory', function () {
   before(async function () {
     const OptionFactory = await ethers.getContractFactory('OptionFactory')
-    const PodPutFactory = await ethers.getContractFactory('PodPutBuilder')
-    const WPodPutFactory = await ethers.getContractFactory('WPodPutBuilder')
+    const PodPutBuilder = await ethers.getContractFactory('PodPutBuilder')
+    const WPodPutBuilder = await ethers.getContractFactory('WPodPutBuilder')
+    const PodCallBuilder = await ethers.getContractFactory('PodCallBuilder')
+    const WPodCallBuilder = await ethers.getContractFactory('WPodCallBuilder')
     const MockERC20 = await ethers.getContractFactory('MockERC20')
     const MockWETH = await ethers.getContractFactory('WETH')
 
@@ -30,11 +32,16 @@ describe('OptionFactory', function () {
     underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8, 1000e8)
     strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6, 1000e8)
 
-    const podPutFactory = await PodPutFactory.deploy()
+    const podPutFactory = await PodPutBuilder.deploy()
     await podPutFactory.deployed()
-    const wPodPutFactory = await WPodPutFactory.deploy(mockWeth.address)
+    const wPodPutFactory = await WPodPutBuilder.deploy(mockWeth.address)
     await wPodPutFactory.deployed()
-    optionFactory = await OptionFactory.deploy(mockWeth.address, podPutFactory.address, wPodPutFactory.address)
+    const podCallFactory = await PodCallBuilder.deploy()
+    await podPutFactory.deployed()
+    const wPodCallFactory = await WPodCallBuilder.deploy(mockWeth.address)
+    await wPodPutFactory.deployed()
+
+    optionFactory = await OptionFactory.deploy(mockWeth.address, podPutFactory.address, wPodPutFactory.address, podCallFactory.address, wPodCallFactory.address)
 
     await optionFactory.deployed()
     await underlyingAsset.deployed()

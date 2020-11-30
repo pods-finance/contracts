@@ -25,8 +25,8 @@ const scenarios = [
     underlyingAssetDecimals: 18,
     strikeAssetSymbol: 'aDAI',
     strikeAssetDecimals: 18,
-    strikePrice: ethers.BigNumber.from(300e6.toString()),
-    strikePriceDecimals: 6,
+    strikePrice: ethers.BigNumber.from(300e18.toString()),
+    strikePriceDecimals: 18,
     amountToMint: ethers.BigNumber.from(1e18.toString()),
     amountToMintTooLow: 1
   }
@@ -61,25 +61,18 @@ scenarios.forEach(scenario => {
       // const aPodPut = await ethers.getContractFactory('aPodPut')
       const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockWETH = await ethers.getContractFactory('WETH')
-      const ContractFactory = await ethers.getContractFactory('OptionFactory')
-      const WPodPutBuilder = await ethers.getContractFactory('WPodPutBuilder')
-      const PodPutBuilder = await ethers.getContractFactory('PodPutBuilder')
+      const WPodPut = await ethers.getContractFactory('WPodPut')
 
       mockUnderlyingAsset = await MockWETH.deploy()
-      const wPodPutBuilder = await WPodPutBuilder.deploy(mockUnderlyingAsset.address)
-      const podPutBuilder = await PodPutBuilder.deploy()
       mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
-      factoryContract = await ContractFactory.deploy(mockUnderlyingAsset.address, podPutBuilder.address, wPodPutBuilder.address)
 
-      await factoryContract.deployed()
       await mockUnderlyingAsset.deployed()
       await mockStrikeAsset.deployed()
 
       // call transaction
-      txIdNewOption = await factoryContract.createOption(
+      wPodPut = await WPodPut.deploy(
         scenario.name,
         scenario.name,
-        OPTION_TYPE_PUT,
         EXERCISE_TYPE_EUROPEAN,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
@@ -87,16 +80,6 @@ scenarios.forEach(scenario => {
         await getTimestamp() + 5 * 60 * 60 * 1000,
         24 * 60 * 60 // 24h
       )
-
-      const filterFrom = await factoryContract.filters.OptionCreated(deployerAddress)
-      const eventDetails = await factoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
-
-      if (eventDetails.length) {
-        const { option } = eventDetails[0].args
-        wPodPut = await ethers.getContractAt('WPodPut', option)
-      } else {
-        console.log('Something went wrong: No events found')
-      }
 
       await wPodPut.deployed()
     })
@@ -269,7 +252,7 @@ scenarios.forEach(scenario => {
         expect(initialContractUnderlyingBalance).to.equal(0)
         expect(initialContractStrikeBalance).to.equal(scenario.strikePrice.add(1))
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
-        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint))
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint)).to.not.be.reverted
 
         const finalSellerOptionBalance = await wPodPut.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -295,7 +278,7 @@ scenarios.forEach(scenario => {
         const initialContractStrikeBalance = await wPodPut.strikeBalance()
         const initialContractOptionSupply = await wPodPut.totalSupply()
 
-        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint))
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint)).to.not.be.reverted
 
         const finalSellerOptionBalance = await wPodPut.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
