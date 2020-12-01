@@ -14,7 +14,7 @@ const ScenarioA = {
   optionType: OPTION_TYPE_PUT,
   exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
-  expiration: new Date().getTime() + 5 * 60 * 60 * 1000,
+  expiration: new Date().getTime() + 24 * 60 * 60 * 7,
   exerciseWindowSize: 24 * 60 * 60 // 24h
 }
 
@@ -34,11 +34,11 @@ describe('OptionFactory', function () {
 
     const podPutFactory = await PodPutBuilder.deploy()
     await podPutFactory.deployed()
-    const wPodPutFactory = await WPodPutBuilder.deploy(mockWeth.address)
+    const wPodPutFactory = await WPodPutBuilder.deploy()
     await wPodPutFactory.deployed()
     const podCallFactory = await PodCallBuilder.deploy()
     await podPutFactory.deployed()
-    const wPodCallFactory = await WPodCallBuilder.deploy(mockWeth.address)
+    const wPodCallFactory = await WPodCallBuilder.deploy()
     await wPodPutFactory.deployed()
 
     optionFactory = await OptionFactory.deploy(mockWeth.address, podPutFactory.address, wPodPutFactory.address, podCallFactory.address, wPodCallFactory.address)

@@ -9,9 +9,9 @@ module.exports = async function createOptionFactory (wethAddress) {
 
   const [podPutBuilder, wPodPutBuilder, podCallBuilder, wPodCallBuilder] = await Promise.all([
     PodPutBuilder.deploy(),
-    WPodPutBuilder.deploy(wethAddress),
+    WPodPutBuilder.deploy(),
     PodCallBuilder.deploy(),
-    WPodCallBuilder.deploy(wethAddress)
+    WPodCallBuilder.deploy()
   ])
 
   const factoryContract = await OptionFactory.deploy(wethAddress, podPutBuilder.address, wPodPutBuilder.address, podCallBuilder.address, wPodCallBuilder.address)

@@ -13,20 +13,18 @@ const ScenarioA = {
   optionType: OPTION_TYPE_PUT,
   exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
-  expiration: new Date().getTime() + 5 * 60 * 60 * 1000,
+  expiration: new Date().getTime() + 24 * 60 * 60 * 7,
   exerciseWindowSize: 24 * 60 * 60 // 24h
 }
 
 describe('WPodPutBuilder', function () {
   before(async function () {
     const OptionFactory = await ethers.getContractFactory('WPodPutBuilder')
-    const MockERC20 = await ethers.getContractFactory('MockERC20')
-    const MockWETH = await ethers.getContractFactory('WETH')
+    const MintableERC20 = await ethers.getContractFactory('MintableERC20')
 
-    const mockWeth = await MockWETH.deploy()
-    underlyingAsset = mockWeth
-    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6, 1000e8)
-    optionFactory = await OptionFactory.deploy(mockWeth.address)
+    underlyingAsset = await MintableERC20.deploy('WBTC Token', 'USDC', 8)
+    strikeAsset = await MintableERC20.deploy('USDC Token', 'USDC', 6)
+    optionFactory = await OptionFactory.deploy()
 
     await optionFactory.deployed()
     await underlyingAsset.deployed()
