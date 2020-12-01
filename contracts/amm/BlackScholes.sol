@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // solhint-disable var-name-mixedcase
-pragma solidity ^0.6.8;
+pragma solidity 0.6.12;
 
 import "../interfaces/INormalDistribution.sol";
 

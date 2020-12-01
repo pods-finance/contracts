@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.8;
+pragma solidity 0.6.12;
 
 interface IPodOption {
     function underlyingAsset() external view returns (address);

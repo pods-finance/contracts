@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import "@openzeppelin/contracts/utils/Address.sol";
 
-pragma solidity ^0.6.8;
+pragma solidity 0.6.12;
 
 contract WETH {
     string public name = "Wrapped Ether";

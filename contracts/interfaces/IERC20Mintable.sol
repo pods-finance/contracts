@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.8;
+pragma solidity 0.6.12;
 
 interface IERC20Mintable {
     function mint(uint256 amount) external returns (bool);
