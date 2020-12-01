@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "./WPodPut.sol";
+import "./PodCall.sol";
+import "./PodOption.sol";
 
-contract WPodPutBuilder {
+contract PodCallBuilder {
     /**
      * @notice creates a new PodPut Contract
      * @param _name The option token name. Eg. "Pods Put WBTC-USDC 5000 2020-02-23"
@@ -24,8 +25,8 @@ contract WPodPutBuilder {
         uint256 _strikePrice,
         uint256 _expiration,
         uint256 _exerciseWindowSize
-    ) public returns (WPodPut) {
-        WPodPut option = new WPodPut(
+    ) public returns (PodCall) {
+        PodCall option = new PodCall(
             _name,
             _symbol,
             _exerciseType,

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.8;
 
-import "./PodOption.sol";
+import "./PodCall.sol";
+import "../interfaces/IWETH.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
- * This contract represents a tokenized Call option series for some
+ * This contract represents a tokenized European call option series for some
  * long/short token pair.
  *
  * Call options represents the right, not the obligation to buy the underlying asset
@@ -66,8 +68,9 @@ import "./PodOption.sol";
  * underlying asset and strike asset based if and how the pool was exercised.
  *
  */
-contract PodCall is PodOption {
+contract WPodCall is PodCall {
     using SafeMath for uint8;
+    IWETH public weth;
 
     constructor(
         string memory _name,
@@ -80,10 +83,9 @@ contract PodCall is PodOption {
         uint256 _exerciseWindowSize
     )
         public
-        PodOption(
+        PodCall(
             _name,
             _symbol,
-            PodOption.OptionType.CALL,
             _exerciseType,
             _underlyingAsset,
             _strikeAsset,
@@ -91,63 +93,55 @@ contract PodCall is PodOption {
             _expiration,
             _exerciseWindowSize
         )
-    {}
+    {
+        weth = IWETH(_underlyingAsset);
+    }
+
+    event Received(address sender, uint256 value);
 
     /**
-     * Locks some amount of the underlying asset and writes option tokens.
+     * Locks some amount of the underlying asset (ETH) and writes option tokens.
      *
      * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
      *
-     * It presumes the caller has already called IERC20.approve() on the
-     * underlying token contract to move caller funds.
-     *
-     * This function is meant to be called by underlying token holders wanting
+     * This function is meant to be called by ETH token holders wanting
      * to write option tokens.
      *
      * Options can only be minted while the series is NOT expired.
      *
-     * @param amountOfOptions The amount option tokens to be issued; this will lock
-     * same amount in a 1:1 ratio units of underlying asset into this
-     * contract
-     &
      * @param owner The address that will store at shares. owner will
      * be able to withdraw later on behalf of the sender. It is also important
      * to notice that the options tokens will not be send to owner, but to the msg.sender
      */
-    function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
+    function mintEth(address owner) external payable beforeExpiration {
+        uint256 amountOfOptions = msg.value;
         require(amountOfOptions > 0, "Null amount");
 
         // 1) Calculate strikeToTransfer
         uint256 amountToReceive = amountOfOptions;
         // amountToTransfer = 300
-        require(amountToReceive > 0, "Amount of options should be higher");
         uint256 ownerShares;
 
         if (totalShares > 0) {
             // 2) Check current balances
-            ownerShares = _calculatedShares(amountOfOptions);
+            ownerShares = _calculatedShares(amountToReceive);
             // 4.1) update totalShares
             totalShares = totalShares.add(ownerShares);
             // 4.2) update userMintedOptions
-            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
+            mintedOptions[owner] = mintedOptions[owner].add(amountToReceive);
             // 4.3) update userWeightBalance
             shares[owner] = shares[owner].add(ownerShares);
         } else {
-            ownerShares = amountOfOptions;
+            ownerShares = amountToReceive;
 
             shares[owner] = ownerShares;
-            mintedOptions[owner] = amountOfOptions;
+            mintedOptions[owner] = amountToReceive;
             // totalShares = totalShares
             totalShares = ownerShares;
         }
+        weth.deposit{ value: msg.value }();
 
         _mint(msg.sender, amountOfOptions);
-
-        // 5) Update Total Strike Asset Pool
-        require(
-            IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountToReceive),
-            "Couldn't transfer strike tokens from caller"
-        );
         emit Mint(owner, amountOfOptions);
     }
 
@@ -171,10 +165,11 @@ contract PodCall is PodOption {
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
         require(amountOfOptions <= ownerMintedOptions, "Exceed address minted options");
 
-        uint256 optionStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 optionStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 optionUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
+        bool teste = sharesToDeduce == ownerShares;
 
         uint256 strikeToSend = sharesToDeduce.mul(optionStrikeBalance).div(totalShares);
         uint256 underlyingToSend = sharesToDeduce.mul(optionUnderlyingBalance).div(totalShares);
@@ -188,15 +183,13 @@ contract PodCall is PodOption {
         _burn(msg.sender, amountOfOptions);
 
         // Unlocks the strike token
-        require(
-            IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
-            "Couldn't transfer back strike tokens to caller"
-        );
+        weth.withdraw(underlyingToSend);
+        Address.sendValue(msg.sender, underlyingToSend);
 
         if (optionStrikeBalance > 0) {
             require(strikeToSend > 0, "Amount of options should be higher");
             require(
-                IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+                ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
                 "Couldn't transfer back strike tokens to caller"
             );
         }
@@ -225,7 +218,7 @@ contract PodCall is PodOption {
      *
      * @param amountOfOptions The amount option tokens to be exercised
      */
-    function exercise(uint256 amountOfOptions) external virtual override exerciseWindow {
+    function exercise(uint256 amountOfOptions) external override exerciseWindow {
         require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToReceive = _strikeToTransfer(amountOfOptions);
@@ -235,15 +228,13 @@ contract PodCall is PodOption {
 
         // Retrieve the strike asset from caller
         require(
-            IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
+            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
             "Could not transfer underlying tokens from caller"
         );
 
-        // Releases the underlying asset to caller, completing the exchange
-        require(
-            IERC20(underlyingAsset).transfer(msg.sender, amountOfOptions),
-            "Could not transfer underlying tokens to caller"
-        );
+        weth.withdraw(amountOfOptions);
+        Address.sendValue(msg.sender, amountOfOptions);
+
         emit Exercise(msg.sender, amountOfOptions);
     }
 
@@ -262,8 +253,8 @@ contract PodCall is PodOption {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "You do not have balance to withdraw");
 
-        uint256 optionStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 optionStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 optionUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 strikeToSend = ownerShares.mul(optionStrikeBalance).div(totalShares);
         uint256 underlyingToSend = ownerShares.mul(optionUnderlyingBalance).div(totalShares);
@@ -271,16 +262,19 @@ contract PodCall is PodOption {
         totalShares = totalShares.sub(ownerShares);
         shares[msg.sender] = 0;
 
-        require(
-            IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
-            "Couldn't transfer back strike tokens to caller"
-        );
+        weth.withdraw(underlyingToSend);
+        Address.sendValue(msg.sender, underlyingToSend);
+
         if (strikeToSend > 0) {
             require(
-                IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+                ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
                 "Couldn't transfer back strike tokens to caller"
             );
         }
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 }

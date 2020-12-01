@@ -14,15 +14,17 @@ const ScenarioA = {
   optionType: OPTION_TYPE_PUT,
   exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
-  expiration: new Date().getTime() + 5 * 60 * 60 * 1000,
+  expiration: new Date().getTime() + 24 * 60 * 60 * 7,
   exerciseWindowSize: 24 * 60 * 60 // 24h
 }
 
 describe('OptionFactory', function () {
   before(async function () {
     const OptionFactory = await ethers.getContractFactory('OptionFactory')
-    const PodPutFactory = await ethers.getContractFactory('PodPutBuilder')
-    const WPodPutFactory = await ethers.getContractFactory('WPodPutBuilder')
+    const PodPutBuilder = await ethers.getContractFactory('PodPutBuilder')
+    const WPodPutBuilder = await ethers.getContractFactory('WPodPutBuilder')
+    const PodCallBuilder = await ethers.getContractFactory('PodCallBuilder')
+    const WPodCallBuilder = await ethers.getContractFactory('WPodCallBuilder')
     const MockERC20 = await ethers.getContractFactory('MockERC20')
     const MockWETH = await ethers.getContractFactory('WETH')
 
@@ -30,11 +32,16 @@ describe('OptionFactory', function () {
     underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8, 1000e8)
     strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6, 1000e8)
 
-    const podPutFactory = await PodPutFactory.deploy()
+    const podPutFactory = await PodPutBuilder.deploy()
     await podPutFactory.deployed()
-    const wPodPutFactory = await WPodPutFactory.deploy(mockWeth.address)
+    const wPodPutFactory = await WPodPutBuilder.deploy()
     await wPodPutFactory.deployed()
-    optionFactory = await OptionFactory.deploy(mockWeth.address, podPutFactory.address, wPodPutFactory.address)
+    const podCallFactory = await PodCallBuilder.deploy()
+    await podPutFactory.deployed()
+    const wPodCallFactory = await WPodCallBuilder.deploy()
+    await wPodPutFactory.deployed()
+
+    optionFactory = await OptionFactory.deploy(mockWeth.address, podPutFactory.address, wPodPutFactory.address, podCallFactory.address, wPodCallFactory.address)
 
     await optionFactory.deployed()
     await underlyingAsset.deployed()

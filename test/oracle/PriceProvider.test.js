@@ -33,18 +33,18 @@ describe('PriceProvider', () => {
       expect(await provider.getAssetDecimals(asset0)).to.equal(decimals)
     })
 
-    it('should set a new feed', async () =>  {
+    it('should set a new feed', async () => {
       const newPriceFeed = await createPriceFeedMock(50e6, 6, startedAt, updatedAt)
       const tx = provider.setAssetFeeds([asset1], [newPriceFeed.address])
 
       await expect(tx)
-        .to.emit(provider,'AssetFeedUpdated')
+        .to.emit(provider, 'AssetFeedUpdated')
         .withArgs(asset1, newPriceFeed.address)
 
       expect(await provider.getPriceFeed(asset1)).to.equal(newPriceFeed.address)
     })
 
-    it('should remove a feed', async () =>  {
+    it('should remove a feed', async () => {
       const newPriceFeed = await createPriceFeedMock(50e6, 6, startedAt, updatedAt)
       await provider.setAssetFeeds([asset1], [newPriceFeed.address])
       const tx = provider.removeAssetFeeds([asset1])
@@ -78,10 +78,10 @@ async function createPriceFeedMock (price, decimals, startedAt, updatedAt) {
     answer: price,
     startedAt,
     updatedAt,
-    answeredInRound: 1,
+    answeredInRound: 1
   }
 
-  const [ deployer ] = await ethers.getSigners()
+  const [deployer] = await ethers.getSigners()
   const mockChainlink = await deployMockContract(deployer, PriceFeed)
   await mockChainlink.mock.decimals.returns(decimals)
   await mockChainlink.mock.getLatestPrice.returns(roundData.answer)

@@ -4,7 +4,7 @@ pragma solidity ^0.6.8;
 import "./PodOption.sol";
 
 /**
- * This contract represents a tokenized European Put option series for some
+ * This contract represents a tokenized Put option series for some
  * long/short token pair.
  *
  * Put options represents the right, not the obligation to sell the underlying asset
@@ -206,7 +206,7 @@ contract PodPut is PodOption {
      * Options can only be exchanged while the series is NOT expired.
      * @param amountOfOptions The amount option tokens to be exercised
      */
-    function exercise(uint256 amountOfOptions) external override exerciseWindow {
+    function exercise(uint256 amountOfOptions) external virtual override exerciseWindow {
         require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountOfStrikeToTransfer = _strikeToTransfer(amountOfOptions);
