@@ -171,13 +171,13 @@ contract PodCall is PodOption {
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
         require(amountOfOptions <= ownerMintedOptions, "Exceed address minted options");
 
-        uint256 optionStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
 
-        uint256 strikeToSend = sharesToDeduce.mul(optionStrikeBalance).div(totalShares);
-        uint256 underlyingToSend = sharesToDeduce.mul(optionUnderlyingBalance).div(totalShares);
+        uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
+        uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
 
         require(underlyingToSend > 0, "Amount of options should be higher");
 
@@ -193,7 +193,7 @@ contract PodCall is PodOption {
             "Couldn't transfer back strike tokens to caller"
         );
 
-        if (optionStrikeBalance > 0) {
+        if (strikeReserves > 0) {
             require(strikeToSend > 0, "Amount of options should be higher");
             require(
                 IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
@@ -262,11 +262,11 @@ contract PodCall is PodOption {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "You do not have balance to withdraw");
 
-        uint256 optionStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
-        uint256 strikeToSend = ownerShares.mul(optionStrikeBalance).div(totalShares);
-        uint256 underlyingToSend = ownerShares.mul(optionUnderlyingBalance).div(totalShares);
+        uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
+        uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
 
         totalShares = totalShares.sub(ownerShares);
         shares[msg.sender] = 0;

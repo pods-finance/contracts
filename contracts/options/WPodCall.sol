@@ -165,14 +165,13 @@ contract WPodCall is PodCall {
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
         require(amountOfOptions <= ownerMintedOptions, "Exceed address minted options");
 
-        uint256 optionStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
-        bool teste = sharesToDeduce == ownerShares;
 
-        uint256 strikeToSend = sharesToDeduce.mul(optionStrikeBalance).div(totalShares);
-        uint256 underlyingToSend = sharesToDeduce.mul(optionUnderlyingBalance).div(totalShares);
+        uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
+        uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
 
         require(underlyingToSend > 0, "Amount of options should be higher");
 
@@ -186,7 +185,7 @@ contract WPodCall is PodCall {
         weth.withdraw(underlyingToSend);
         Address.sendValue(msg.sender, underlyingToSend);
 
-        if (optionStrikeBalance > 0) {
+        if (strikeReserves > 0) {
             require(strikeToSend > 0, "Amount of options should be higher");
             require(
                 ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
@@ -253,11 +252,11 @@ contract WPodCall is PodCall {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "You do not have balance to withdraw");
 
-        uint256 optionStrikeBalance = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
 
-        uint256 strikeToSend = ownerShares.mul(optionStrikeBalance).div(totalShares);
-        uint256 underlyingToSend = ownerShares.mul(optionUnderlyingBalance).div(totalShares);
+        uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
+        uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
 
         totalShares = totalShares.sub(ownerShares);
         shares[msg.sender] = 0;

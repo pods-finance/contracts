@@ -293,19 +293,19 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      */
     function _calculatedShares(uint256 amountOfCollateral) internal view returns (uint256 ownerShares) {
         // 2) Check current balances
-        uint256 optionStrikeBalance = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 optionUnderlyingBalance = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 numerator = amountOfCollateral.mul(totalShares);
         uint256 denominator;
 
         if (optionType == OptionType.PUT) {
-            denominator = optionStrikeBalance.add(
-                optionUnderlyingBalance.mul(strikePrice).div((uint256(10)**underlyingAssetDecimals))
+            denominator = strikeReserves.add(
+                underlyingReserves.mul(strikePrice).div((uint256(10)**underlyingAssetDecimals))
             );
         } else {
-            denominator = optionUnderlyingBalance.add(
-                optionStrikeBalance.mul((uint256(10)**underlyingAssetDecimals).div(strikePrice))
+            denominator = underlyingReserves.add(
+                strikeReserves.mul((uint256(10)**underlyingAssetDecimals).div(strikePrice))
             );
         }
         ownerShares = numerator.div(denominator);
