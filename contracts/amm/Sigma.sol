@@ -8,6 +8,7 @@ import "../interfaces/IBlackScholes.sol";
 contract Sigma {
     using SafeMath for uint256;
     IBlackScholes public blackScholes;
+    enum OptionType { PUT, CALL }
     uint256 constant ACCEPTABLE_ERROR = 10; // < 3%
 
     struct Boundaries {
@@ -21,6 +22,46 @@ contract Sigma {
         blackScholes = IBlackScholes(_blackScholes);
     }
 
+    function getPutSigma(
+        uint256 _targetPrice,
+        uint256 _sigmaInitialGuess,
+        uint256 _spotPrice,
+        uint256 _strikePrice,
+        uint256 _timeToMaturity,
+        uint256 _riskFree
+    ) external view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
+        (calculatedSigma, calculatedPrice) = getSigma(
+            _targetPrice,
+            _sigmaInitialGuess,
+            _spotPrice,
+            _strikePrice,
+            _timeToMaturity,
+            _riskFree,
+            OptionType.PUT
+        );
+        return (calculatedSigma, calculatedPrice);
+    }
+
+    function getCallSigma(
+        uint256 _targetPrice,
+        uint256 _sigmaInitialGuess,
+        uint256 _spotPrice,
+        uint256 _strikePrice,
+        uint256 _timeToMaturity,
+        uint256 _riskFree
+    ) external view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
+        (calculatedSigma, calculatedPrice) = getSigma(
+            _targetPrice,
+            _sigmaInitialGuess,
+            _spotPrice,
+            _strikePrice,
+            _timeToMaturity,
+            _riskFree,
+            OptionType.CALL
+        );
+        return (calculatedSigma, calculatedPrice);
+    }
+
     /**
      * Get an approximation of sigma given a target price inside an error range
      *
@@ -30,23 +71,27 @@ contract Sigma {
      * @param _strikePrice Option strike price
      * @param _timeToMaturity Annualized time to maturity
      * @param _riskFree The risk-free rate
-     * @return (newSigma, calculatedPrice)
+     * @param _optionType the option type (0 for PUt, 1 for Call)
+     * @return calculatedSigma The new sigma found given _targetPrice and inside ACCEPTABLE_ERROR
+     * @return calculatedPrice That is the real price found, in the best scenario, calculated price should be equal to _targetPrice
      */
-    function getPutSigma(
+    function getSigma(
         uint256 _targetPrice,
         uint256 _sigmaInitialGuess,
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
-        uint256 _riskFree
-    ) public view returns (uint256, uint256) {
+        uint256 _riskFree,
+        OptionType _optionType
+    ) public view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
         require(_sigmaInitialGuess > 0, "Sigma cant be null");
-        uint256 calculatedInitialPrice = blackScholes.getPutPrice(
-            int256(_spotPrice),
-            int256(_strikePrice),
+        uint256 calculatedInitialPrice = _getPrice(
+            _spotPrice,
+            _strikePrice,
             _sigmaInitialGuess,
             _timeToMaturity,
-            int256(_riskFree)
+            _riskFree,
+            _optionType
         );
         if (_equalEnough(_targetPrice, calculatedInitialPrice, ACCEPTABLE_ERROR)) {
             return (_sigmaInitialGuess, calculatedInitialPrice);
@@ -58,18 +103,18 @@ contract Sigma {
                 _spotPrice,
                 _strikePrice,
                 _timeToMaturity,
-                _riskFree
+                _riskFree,
+                _optionType
             );
-            uint256 calculatedSigma = getCloserSigma(boundaries, _targetPrice);
+            calculatedSigma = _getCloserSigma(boundaries, _targetPrice);
 
-            uint256 calculatedPrice = uint256(
-                blackScholes.getPutPrice(
-                    int256(_spotPrice),
-                    int256(_strikePrice),
-                    calculatedSigma,
-                    _timeToMaturity,
-                    int256(_riskFree)
-                )
+            calculatedPrice = _getPrice(
+                _spotPrice,
+                _strikePrice,
+                calculatedSigma,
+                _timeToMaturity,
+                _riskFree,
+                _optionType
             );
 
             while (_equalEnough(_targetPrice, calculatedPrice, ACCEPTABLE_ERROR) == false) {
@@ -80,20 +125,23 @@ contract Sigma {
                     boundaries.priceHigher = calculatedPrice;
                     boundaries.sigmaHigher = calculatedSigma;
                 }
-                calculatedSigma = getCloserSigma(boundaries, _targetPrice);
+                calculatedSigma = _getCloserSigma(boundaries, _targetPrice);
 
-                calculatedPrice = uint256(
-                    blackScholes.getPutPrice(
-                        int256(_spotPrice),
-                        int256(_strikePrice),
-                        calculatedSigma,
-                        _timeToMaturity,
-                        int256(_riskFree)
-                    )
+                calculatedPrice = _getPrice(
+                    _spotPrice,
+                    _strikePrice,
+                    calculatedSigma,
+                    _timeToMaturity,
+                    _riskFree,
+                    _optionType
                 );
             }
             return (calculatedSigma, calculatedPrice);
         }
+    }
+
+    function getCloserSigma(Boundaries memory boundaries, uint256 targetPrice) external pure returns (uint256) {
+        return _getCloserSigma(boundaries, targetPrice);
     }
 
     /**********************************************************************************************
@@ -106,7 +154,7 @@ contract Sigma {
     // p0 = targetPrice                                                                           //
     // sN = sigmaNext                                                                             //
     **********************************************************************************************/
-    function getCloserSigma(Boundaries memory boundaries, uint256 targetPrice) public pure returns (uint256) {
+    function _getCloserSigma(Boundaries memory boundaries, uint256 targetPrice) internal pure returns (uint256) {
         uint256 numerator = targetPrice.sub(boundaries.priceLower).mul(
             boundaries.sigmaHigher.sub(boundaries.sigmaLower)
         );
@@ -115,6 +163,34 @@ contract Sigma {
         uint256 result = numerator.div(denominator);
         uint256 nextSigma = boundaries.sigmaLower.add(result);
         return nextSigma;
+    }
+
+    function _getPrice(
+        uint256 _spotPrice,
+        uint256 _strikePrice,
+        uint256 calculatedSigma,
+        uint256 _timeToMaturity,
+        uint256 _riskFree,
+        OptionType _optionType
+    ) internal view returns (uint256 price) {
+        if (_optionType == OptionType.PUT) {
+            price = blackScholes.getPutPrice(
+                int256(_spotPrice),
+                int256(_strikePrice),
+                calculatedSigma,
+                _timeToMaturity,
+                int256(_riskFree)
+            );
+        } else {
+            price = blackScholes.getCallPrice(
+                int256(_spotPrice),
+                int256(_strikePrice),
+                calculatedSigma,
+                _timeToMaturity,
+                int256(_riskFree)
+            );
+        }
+        return price;
     }
 
     function _equalEnough(
@@ -139,7 +215,8 @@ contract Sigma {
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
-        uint256 _riskFree
+        uint256 _riskFree,
+        OptionType _optionType
     ) internal view returns (Boundaries memory b) {
         b.sigmaLower = 0;
         b.priceLower = 0;
@@ -151,13 +228,7 @@ contract Sigma {
             b.priceLower = newGuessPrice;
 
             newGuessSigma = newGuessSigma.add(newGuessSigma.div(2));
-            newGuessPrice = blackScholes.getPutPrice(
-                int256(_spotPrice),
-                int256(_strikePrice),
-                newGuessSigma,
-                _timeToMaturity,
-                int256(_riskFree)
-            );
+            newGuessPrice = _getPrice(_spotPrice, _strikePrice, newGuessSigma, _timeToMaturity, _riskFree, _optionType);
         }
         b.sigmaHigher = newGuessSigma;
         b.priceHigher = newGuessPrice;
