@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: APACHE 2.0
-pragma solidity ^0.6.8;
+pragma solidity 0.6.12;
 
 /**
  * @title FixidityLib
