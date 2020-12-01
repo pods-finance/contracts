@@ -114,15 +114,8 @@ contract PodPut is PodOption {
         uint256 amountToTransfer = _strikeToTransfer(amountOfOptions);
 
         if (totalShares > 0) {
-            uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
-            uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
+            uint256 ownerShares = _calculatedShares(amountToTransfer);
 
-            uint256 numerator = amountToTransfer.mul(totalShares);
-            uint256 denominator = strikeReserves.add(
-                underlyingReserves.mul(strikePrice).div((uint256(10)**underlyingAssetDecimals))
-            );
-
-            uint256 ownerShares = numerator.div(denominator);
             totalShares = totalShares.add(ownerShares);
             mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
             shares[owner] = shares[owner].add(ownerShares);
