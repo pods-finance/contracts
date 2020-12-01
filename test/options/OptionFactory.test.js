@@ -59,4 +59,16 @@ describe('OptionFactory', function () {
 
     await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })
+
+  it('Should create a new PodCall Option correctly and emit event', async function () {
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, 1, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
+
+    await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
+  })
+
+  it('Should create a new WPodCall Option correctly and emit event', async function () {
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, 1, ScenarioA.exerciseType, mockWeth.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
+
+    await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
+  })
 })
