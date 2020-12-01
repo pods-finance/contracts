@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: APACHE 2.0
 pragma solidity ^0.6.8;
 
-
 /**
  * @title FixidityLib
  * @author Gadi Guy, Alberto Cuesta Canada
@@ -16,11 +15,10 @@ pragma solidity ^0.6.8;
  * overflow.
  */
 library FixidityLib {
-
     /**
      * @notice Number of positions that the comma is shifted to the right.
      */
-    function digits() public pure returns(uint8) {
+    function digits() public pure returns (uint8) {
         return 24;
     }
 
@@ -29,7 +27,7 @@ library FixidityLib {
      * @dev Test fixed1() equals 10^digits()
      * Hardcoded to 24 digits.
      */
-    function fixed1() public pure returns(int256) {
+    function fixed1() public pure returns (int256) {
         return 1000000000000000000000000;
     }
 
@@ -38,7 +36,7 @@ library FixidityLib {
      * @dev Test mulPrecision() equals sqrt(fixed1)
      * Hardcoded to 24 digits.
      */
-    function mulPrecision() public pure returns(int256) {
+    function mulPrecision() public pure returns (int256) {
         return 1000000000000;
     }
 
@@ -46,7 +44,7 @@ library FixidityLib {
      * @notice Maximum value that can be represented in an int256
      * @dev Test maxInt256() equals 2^255 -1
      */
-    function maxInt256() public pure returns(int256) {
+    function maxInt256() public pure returns (int256) {
         return 57896044618658097711785492504343953926634992332820282019728792003956564819967;
     }
 
@@ -54,7 +52,7 @@ library FixidityLib {
      * @notice Minimum value that can be represented in an int256
      * @dev Test minInt256 equals (2^255) * (-1)
      */
-    function minInt256() public pure returns(int256) {
+    function minInt256() public pure returns (int256) {
         return -57896044618658097711785492504343953926634992332820282019728792003956564819968;
     }
 
@@ -64,7 +62,7 @@ library FixidityLib {
      * Test maxNewFixed() equals maxInt256() / fixed1()
      * Hardcoded to 24 digits.
      */
-    function maxNewFixed() public pure returns(int256) {
+    function maxNewFixed() public pure returns (int256) {
         return 57896044618658097711785492504343953926634992332820282;
     }
 
@@ -74,7 +72,7 @@ library FixidityLib {
      * @dev Test minNewFixed() equals -(maxInt256()) / fixed1()
      * Hardcoded to 24 digits.
      */
-    function minNewFixed() public pure returns(int256) {
+    function minNewFixed() public pure returns (int256) {
         return -57896044618658097711785492504343953926634992332820282;
     }
 
@@ -86,7 +84,7 @@ library FixidityLib {
      * Test add(-maxFixedAdd(),-maxFixedAdd()) equals -maxFixedAdd() - maxFixedAdd()
      * Test add(-maxFixedAdd(),-maxFixedAdd()-1) throws
      */
-    function maxFixedAdd() public pure returns(int256) {
+    function maxFixedAdd() public pure returns (int256) {
         return 28948022309329048855892746252171976963317496166410141009864396001978282409983;
     }
 
@@ -94,7 +92,7 @@ library FixidityLib {
      * @notice Maximum negative value that can be safely in a subtraction.
      * @dev Test maxFixedSub() equals minInt256() / 2
      */
-    function maxFixedSub() public pure returns(int256) {
+    function maxFixedSub() public pure returns (int256) {
         return -28948022309329048855892746252171976963317496166410141009864396001978282409984;
     }
 
@@ -112,7 +110,7 @@ library FixidityLib {
      * Test multiply(-maxFixedMul(),maxFixedMul()+1) throws
      * Hardcoded to 24 digits.
      */
-    function maxFixedMul() public pure returns(int256) {
+    function maxFixedMul() public pure returns (int256) {
         return 240615969168004498257251713877715648331380787511296;
     }
 
@@ -124,7 +122,7 @@ library FixidityLib {
      * Test divide(maxFixedDiv()+1,multiply(mulPrecision(),mulPrecision())) throws
      * Hardcoded to 24 digits.
      */
-    function maxFixedDiv() public pure returns(int256) {
+    function maxFixedDiv() public pure returns (int256) {
         return 57896044618658097711785492504343953926634992332820282;
     }
 
@@ -135,7 +133,7 @@ library FixidityLib {
      * Test divide(10**(digits()*2 + 1),10**(digits()*2 + 1)) = throws
      * Hardcoded to 24 digits.
      */
-    function maxFixedDivisor() public pure returns(int256) {
+    function maxFixedDivisor() public pure returns (int256) {
         return 1000000000000000000000000000000000000000000000000;
     }
 
@@ -147,11 +145,7 @@ library FixidityLib {
      * Test newFixed(maxNewFixed()) returns maxNewFixed() * fixed1()
      * Test newFixed(maxNewFixed()+1) fails
      */
-    function newFixed(int256 x)
-    public
-    pure
-    returns (int256)
-    {
+    function newFixed(int256 x) public pure returns (int256) {
         require(x <= maxNewFixed());
         require(x >= minNewFixed());
         return x * fixed1();
@@ -161,11 +155,7 @@ library FixidityLib {
      * @notice Converts an int256 in the fixed point representation of this
      * library to a non decimal. All decimal digits will be truncated.
      */
-    function fromFixed(int256 x)
-    public
-    pure
-    returns (int256)
-    {
+    function fromFixed(int256 x) public pure returns (int256) {
         return x / fixed1();
     }
 
@@ -195,19 +185,18 @@ library FixidityLib {
      * Test convertFixed(maxInt256,39,0) throws
      * Test convertFixed(1,0,39) throws
      */
-    function convertFixed(int256 x, uint8 _originDigits, uint8 _destinationDigits)
-    public
-    pure
-    returns (int256)
-    {
+    function convertFixed(
+        int256 x,
+        uint8 _originDigits,
+        uint8 _destinationDigits
+    ) public pure returns (int256) {
         require(_originDigits <= 38 && _destinationDigits <= 38);
 
         uint8 decimalDifference;
-        if ( _originDigits > _destinationDigits ){
+        if (_originDigits > _destinationDigits) {
             decimalDifference = _originDigits - _destinationDigits;
-            return x/(uint128(10)**uint128(decimalDifference));
-        }
-        else if ( _originDigits < _destinationDigits ){
+            return x / (uint128(10)**uint128(decimalDifference));
+        } else if (_originDigits < _destinationDigits) {
             decimalDifference = _destinationDigits - _originDigits;
             // Cast uint8 -> uint128 is safe
             // Exponentiation is safe:
@@ -215,9 +204,9 @@ library FixidityLib {
             //     decimalDifference = abs(_destinationDigits - _originDigits)
             //     decimalDifference < 38
             //     10**38 < 2**128-1
-            require(x <= maxInt256()/uint128(10)**uint128(decimalDifference));
-            require(x >= minInt256()/uint128(10)**uint128(decimalDifference));
-            return x*(uint128(10)**uint128(decimalDifference));
+            require(x <= maxInt256() / uint128(10)**uint128(decimalDifference));
+            require(x >= minInt256() / uint128(10)**uint128(decimalDifference));
+            return x * (uint128(10)**uint128(decimalDifference));
         }
         // _originDigits == digits())
         return x;
@@ -229,11 +218,7 @@ library FixidityLib {
      * precision of x. Values with a precision higher than FixidityLib.digits()
      * will be truncated accordingly.
      */
-    function newFixed(int256 x, uint8 _originDigits)
-    public
-    pure
-    returns (int256)
-    {
+    function newFixed(int256 x, uint8 _originDigits) public pure returns (int256) {
         return convertFixed(x, _originDigits, digits());
     }
 
@@ -243,11 +228,7 @@ library FixidityLib {
      * precision of the output x. Values with a precision below than
      * FixidityLib.digits() will be truncated accordingly.
      */
-    function fromFixed(int256 x, uint8 _destinationDigits)
-    public
-    pure
-    returns (int256)
-    {
+    function fromFixed(int256 x, uint8 _destinationDigits) public pure returns (int256) {
         return convertFixed(x, digits(), _destinationDigits);
     }
 
@@ -264,14 +245,7 @@ library FixidityLib {
      * Test newFixedFraction(1,fixed1()) returns 1
      * Test newFixedFraction(1,fixed1()-1) returns 0
      */
-    function newFixedFraction(
-        int256 numerator,
-        int256 denominator
-    )
-    public
-    pure
-    returns (int256)
-    {
+    function newFixedFraction(int256 numerator, int256 denominator) public pure returns (int256) {
         require(numerator <= maxNewFixed());
         require(denominator <= maxNewFixed());
         require(denominator != 0);
@@ -323,7 +297,7 @@ library FixidityLib {
             return x;
         } else {
             int256 result = -x;
-            assert (result > 0);
+            assert(result > 0);
             return result;
         }
     }
@@ -352,7 +326,7 @@ library FixidityLib {
      * @dev Tests covered by add(x,y)
      */
     function subtract(int256 x, int256 y) public pure returns (int256) {
-        return add(x,-y);
+        return add(x, -y);
     }
 
     /**
@@ -422,7 +396,7 @@ library FixidityLib {
      */
     function reciprocal(int256 x) public pure returns (int256) {
         require(x != 0);
-        return (fixed1()*fixed1()) / x; // Can't overflow
+        return (fixed1() * fixed1()) / x; // Can't overflow
     }
 
     /**

@@ -217,13 +217,13 @@ contract PodPut is PodOption {
 
         // Retrieve the underlying asset from caller
         require(
-            ERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountOfOptions),
+            IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountOfOptions),
             "Could not transfer underlying tokens from caller"
         );
 
         // Releases the strike asset to caller, completing the exchange
         require(
-            ERC20(strikeAsset).transfer(msg.sender, amountOfStrikeToTransfer),
+            IERC20(strikeAsset).transfer(msg.sender, amountOfStrikeToTransfer),
             "Could not transfer underlying tokens to caller"
         );
         emit Exercise(msg.sender, amountOfOptions);
