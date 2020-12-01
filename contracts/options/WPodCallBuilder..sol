@@ -4,12 +4,6 @@ pragma solidity ^0.6.8;
 import "./WPodCall.sol";
 
 contract WPodCallBuilder {
-    address public WETH_ADDRESS;
-
-    constructor(address wethAddress) public {
-        WETH_ADDRESS = wethAddress;
-    }
-
     /**
      * @notice creates a new PodPut Contract
      * @param _name The option token name. Eg. "Pods Call WBTC-USDC 5000 2020-02-23"
