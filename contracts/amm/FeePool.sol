@@ -107,39 +107,39 @@ contract FeePool is IFeePool, Ownable {
      * Withdraws collected fees to an address
      *
      * @param to To whom the fees should be transferred
-     * @param amount Shares to burn
+     * @param amountOfShares Amount of Shares to burn
      */
-    function withdraw(address to, uint256 amount) external override onlyOwner {
-        require(_balances[to].shares >= amount, "Burn exceeds balance");
+    function withdraw(address to, uint256 amountOfShares) external override onlyOwner {
+        require(_balances[to].shares >= amountOfShares, "Burn exceeds balance");
 
         uint256 feesCollected = IERC20(_token).balanceOf(address(this));
         uint256 shareValue = feesCollected.add(_totalLiability).div(_shares);
 
-        uint256 amortizedLiability = amount.mul(_balances[to].liability).div(_balances[to].shares);
-        uint256 withdrawAmount = amount.mul(shareValue).sub(amortizedLiability);
+        uint256 amortizedLiability = amountOfShares.mul(_balances[to].liability).div(_balances[to].shares);
+        uint256 withdrawAmount = amountOfShares.mul(shareValue).sub(amortizedLiability);
 
-        _balances[to].shares = _balances[to].shares.sub(amount);
+        _balances[to].shares = _balances[to].shares.sub(amountOfShares);
         _balances[to].liability = _balances[to].liability.sub(amortizedLiability);
-        _shares = _shares.sub(amount);
+        _shares = _shares.sub(amountOfShares);
         _totalLiability = _totalLiability.sub(amortizedLiability);
 
         require(IERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
-        emit FeeWithdrawn(_token, to, withdrawAmount, amount);
+        emit FeeWithdrawn(_token, to, withdrawAmount, amountOfShares);
     }
 
     /**
-     * Creates new tokens that represent a share when withdrawing fees
+     * Creates new shares that represent a fraction when withdrawing fees
      *
      * @param to To whom the tokens should be minted
      * @param amount Amount to mint
      */
     function mint(address to, uint256 amount) external override onlyOwner {
-        uint256 feesCollected = IERC20(_token).balanceOf(address(this));
         // If no share was minted, share value should worth nothing
         uint256 shareValue = 0;
 
         // Otherwise it should divide the total collected by total shares minted
         if (_shares > 0) {
+            uint256 feesCollected = IERC20(_token).balanceOf(address(this));
             shareValue = feesCollected.add(_totalLiability).div(_shares);
         }
 
