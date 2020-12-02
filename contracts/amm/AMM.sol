@@ -456,25 +456,6 @@ abstract contract AMM is RequiredDecimals {
         return (tokenAAvailableForRescue, tokenBAvailableForRescue);
     }
 
-    function _getNewAmortizedBalances(
-        Mult memory m,
-        uint256 amountTokenA,
-        uint256 amountTokenB
-    ) internal pure returns (uint256, uint256) {
-        uint256 qA;
-        uint256 qB;
-
-        if (m.AB == 0) {
-            qB = amountTokenB.div(m.BB);
-            qA = amountTokenA.sub(m.BA.mul(qB)).div(m.AA);
-        } else {
-            qB = amountTokenA.sub(m.AA.mul(amountTokenB.div(m.AB))).div(m.BA.sub(m.AA.mul(m.BB.div(m.AB))));
-            qA = amountTokenB.sub(m.BB.mul(qB)).div(m.AB);
-        }
-
-        return (qA, qB);
-    }
-
     function _getUserBalanceToStore(
         uint256 amountOfA,
         uint256 amountOfB,
