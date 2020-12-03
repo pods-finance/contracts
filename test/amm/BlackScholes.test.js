@@ -20,6 +20,24 @@ const scenarios = [
     riskFree: toBigNumber(0),
     time: toBigNumber(0.03835616438 * 1e18), // 3.5 days
     expectedPrice: toBigNumber(1275.126573 * 1e18)
+  },
+  {
+    type: 'CALL',
+    spotPrice: toBigNumber(601 * 1e18),
+    strikePrice: toBigNumber(580 * 1e18),
+    sigma: toBigNumber(0.824 * 1e18),
+    riskFree: toBigNumber(0),
+    time: toBigNumber(0.02283105023 * 1e18), // 3.5 days
+    expectedPrice: toBigNumber(40.99782 * 1e18)
+  },
+  {
+    type: 'CALL',
+    spotPrice: toBigNumber(601 * 1e18),
+    strikePrice: toBigNumber(660 * 1e18),
+    sigma: toBigNumber(0.824 * 1e18),
+    riskFree: toBigNumber(0),
+    time: toBigNumber(0.0114155251141553 * 1e18), // 3.5 days
+    expectedPrice: toBigNumber(4.0835637054095 * 1e18)
   }
 ]
 
@@ -60,8 +78,18 @@ describe('BlackScholes', () => {
     await normalDistribution.deployed()
   })
 
+  it('should revert if number multiplication overflow', async () => {
+    await expect(bs.getCallPrice(
+      scenarios[0].spotPrice,
+      scenarios[0].strikePrice,
+      toBigNumber(1e40),
+      scenarios[0].time,
+      scenarios[0].riskFree
+    )).to.be.revertedWith('Multiplication overflow')
+  })
+
   scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
-    it('calculated the put price correctly', async () => {
+    it('Calculates the put price correctly', async () => {
       const putPrice = await bs.getPutPrice(
         scenario.spotPrice,
         scenario.strikePrice,
@@ -73,6 +101,22 @@ describe('BlackScholes', () => {
       console.log(`\tPut price: ${putPrice}`)
 
       expect(approximately(scenario.expectedPrice, putPrice)).to.equal(true)
+    })
+  })
+
+  scenarios.filter(scenario => scenario.type === 'CALL').forEach(scenario => {
+    it('Calculates the call price correctly', async () => {
+      const callPrice = await bs.getCallPrice(
+        scenario.spotPrice,
+        scenario.strikePrice,
+        scenario.sigma,
+        scenario.time,
+        scenario.riskFree
+      )
+
+      console.log(`\Call price: ${callPrice}`)
+
+      expect(approximately(scenario.expectedPrice, callPrice)).to.equal(true)
     })
   })
 })

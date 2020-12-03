@@ -32,7 +32,9 @@ describe('PriceProvider', () => {
     it('assigns the decimals on construction correctly', async () => {
       expect(await provider.getAssetDecimals(asset0)).to.equal(decimals)
     })
+  })
 
+  describe('setAssetFeeds', () => {
     it('should set a new feed', async () => {
       const newPriceFeed = await createPriceFeedMock(50e6, 6, startedAt, updatedAt)
       const tx = provider.setAssetFeeds([asset1], [newPriceFeed.address])
@@ -44,6 +46,23 @@ describe('PriceProvider', () => {
       expect(await provider.getPriceFeed(asset1)).to.equal(newPriceFeed.address)
     })
 
+    it('should revert if assets and feeds are with different lengths', async () => {
+      await expect(provider.setAssetFeeds([asset1], [])).to.be.revertedWith('PriceProvider: inconsistent params length')
+    })
+    it('should revert if create with invalid PriceFeed', async () => {
+      await expect(provider.setAssetFeeds([asset1], ['0x'])).to.be.revertedWith('PriceProvider: invalid PriceFeed')
+    })
+    it('should revert if Price Feed not started', async () => {
+      const notStartedPriceFeed = await createPriceFeedMock(50e6, 6, 0, updatedAt)
+      await expect(provider.setAssetFeeds([asset1], [notStartedPriceFeed.address])).to.be.revertedWith('PriceProvider: PriceFeed not started')
+    })
+    it('should revert if stale price feed', async () => {
+      const stalePriceFeed = await createPriceFeedMock(50e6, 6, 100, 0)
+      await expect(provider.setAssetFeeds([asset1], [stalePriceFeed.address])).to.be.revertedWith('PriceProvider: stale PriceFeed')
+    })
+  })
+
+  describe('removeAssetFeeds', () => {
     it('should remove a feed', async () => {
       const newPriceFeed = await createPriceFeedMock(50e6, 6, startedAt, updatedAt)
       await provider.setAssetFeeds([asset1], [newPriceFeed.address])
@@ -55,20 +74,39 @@ describe('PriceProvider', () => {
 
       expect(await provider.getPriceFeed(asset1)).to.equal(ethers.constants.AddressZero)
     })
+
+    it('should revert if try to remove a inexistent feed', async () => {
+      await expect(provider.removeAssetFeeds([asset1]))
+    })
   })
 
-  it('fetches the price', async () => {
-    expect(await provider.getAssetPrice(asset0)).to.be.equal(price)
+  describe('getAssetPrice', () => {
+    it('should fetches the price correctly', async () => {
+      expect(await provider.getAssetPrice(asset0)).to.be.equal(price)
+    })
+
+    it('should revert if fetches the price of inexistent asset', async () => {
+      await expect(provider.getAssetPrice(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
+    })
+
+    it('should revert if fetches the asset decimals of inexistent asset', async () => {
+      await expect(provider.getAssetDecimals(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
+    })
   })
 
-  it('fetches the round data', async () => {
-    expect(await provider.latestRoundData(asset0)).to.be.deep.equal([
-      ethers.BigNumber.from(1),
-      price,
-      ethers.BigNumber.from(startedAt),
-      ethers.BigNumber.from(updatedAt),
-      ethers.BigNumber.from(1)
-    ])
+  describe('latestRoundData', () => {
+    it('fetches the round data', async () => {
+      expect(await provider.latestRoundData(asset0)).to.be.deep.equal([
+        ethers.BigNumber.from(1),
+        price,
+        ethers.BigNumber.from(startedAt),
+        ethers.BigNumber.from(updatedAt),
+        ethers.BigNumber.from(1)
+      ])
+    })
+    it('should revert if fetches unregistered Feed', async () => {
+      await expect(provider.latestRoundData(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
+    })
   })
 })
 

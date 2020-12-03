@@ -219,20 +219,7 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      * BEFORE series expiration.
      */
     modifier beforeExpiration() {
-        if (_hasExpired()) {
-            revert("Option has expired");
-        }
-        _;
-    }
-
-    /**
-     * Maker modifier for functions which are only allowed to be executed
-     * AFTER series expiration.
-     */
-    modifier afterExpiration() {
-        if (!_hasExpired()) {
-            revert("Option has not expired yet");
-        }
+        require(!_hasExpired(), "Option has expired");
         _;
     }
 

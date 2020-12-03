@@ -128,7 +128,7 @@ contract PodPut is PodOption {
         _mint(msg.sender, amountOfOptions);
         require(
             IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
-            "Couldn't transfer strike tokens from caller"
+            "Could not transfer strike tokens from caller"
         );
         emit Mint(owner, amountOfOptions);
     }
@@ -167,14 +167,14 @@ contract PodPut is PodOption {
         // Unlocks the strike token
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Couldn't transfer back strike tokens to caller"
+            "Could not transfer back strike tokens to caller"
         );
 
         if (underlyingReserves > 0) {
             require(underlyingToSend > 0, "Amount too low");
             require(
                 IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
-                "Couldn't transfer back strike tokens to caller"
+                "Could not transfer back strike tokens to caller"
             );
         }
         emit Unmint(msg.sender, amountOfOptions);
@@ -203,7 +203,6 @@ contract PodPut is PodOption {
         require(amountOfOptions > 0, "Null amount");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountOfStrikeToTransfer = _strikeToTransfer(amountOfOptions);
-        require(amountOfStrikeToTransfer > 0, "Amount too low");
 
         // Burn the option tokens equivalent to the underlying requested
         _burn(msg.sender, amountOfOptions);
