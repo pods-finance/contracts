@@ -79,7 +79,7 @@ describe('BlackScholes', () => {
   })
 
   scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
-    it('Calculated the put price correctly', async () => {
+    it('Calculates the put price correctly', async () => {
       const putPrice = await bs.getPutPrice(
         scenario.spotPrice,
         scenario.strikePrice,
@@ -95,7 +95,7 @@ describe('BlackScholes', () => {
   })
 
   scenarios.filter(scenario => scenario.type === 'CALL').forEach(scenario => {
-    it('Calculated the call price correctly', async () => {
+    it('Calculates the call price correctly', async () => {
       const callPrice = await bs.getCallPrice(
         scenario.spotPrice,
         scenario.strikePrice,
