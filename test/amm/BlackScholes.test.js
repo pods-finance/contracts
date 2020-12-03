@@ -95,7 +95,7 @@ describe('BlackScholes', () => {
   })
 
   scenarios.filter(scenario => scenario.type === 'CALL').forEach(scenario => {
-    it('Calculated the call price correctly', async () => {
+    it('Calculates the call price correctly', async () => {
       const callPrice = await bs.getCallPrice(
         scenario.spotPrice,
         scenario.strikePrice,
