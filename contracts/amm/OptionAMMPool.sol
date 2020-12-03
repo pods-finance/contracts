@@ -487,8 +487,13 @@ contract OptionAMMPool is AMM {
     function _onAddLiquidity(UserBalance memory _userBalance, address owner) internal override {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
-        uint256 amountOfQuotesAToAdd = _userBalance.tokenABalance.div(_userBalance.fImp).sub(currentQuotesA);
-        uint256 amountOfQuotesBToAdd = _userBalance.tokenBBalance.div(_userBalance.fImp).sub(currentQuotesB);
+
+        uint256 amountOfQuotesAToAdd = _userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(
+            currentQuotesA
+        );
+        uint256 amountOfQuotesBToAdd = _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(
+            currentQuotesB
+        );
 
         feePoolA.mint(owner, amountOfQuotesAToAdd);
         feePoolB.mint(owner, amountOfQuotesBToAdd);
@@ -497,8 +502,13 @@ contract OptionAMMPool is AMM {
     function _onRemoveLiquidity(UserBalance memory _userBalance, address owner) internal override {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
-        uint256 amountOfQuotesAToRemove = currentQuotesA.sub(_userBalance.tokenABalance.div(_userBalance.fImp));
-        uint256 amountOfQuotesBToRemove = currentQuotesB.sub(_userBalance.tokenBBalance.div(_userBalance.fImp));
+
+        uint256 amountOfQuotesAToRemove = currentQuotesA.sub(
+            _userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp)
+        );
+        uint256 amountOfQuotesBToRemove = currentQuotesB.sub(
+            _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp)
+        );
 
         feePoolA.withdraw(owner, amountOfQuotesAToRemove);
         feePoolB.withdraw(owner, amountOfQuotesBToRemove);
