@@ -263,6 +263,20 @@ scenarios.forEach(scenario => {
         )
         await expect(podPut).to.revertedWith('PodOption/exercise-window-must-be-greater-than-or-equal-86400')
       })
+      it.only('should return right booleans if the option is expired or not', async () => {
+        expect(await podPut.hasExpired()).to.be.false
+        expect(await podPut.isAfterEndOfExerciseWindow()).to.be.false
+
+        await forceExpiration(podPut)
+
+        expect(await podPut.hasExpired()).to.be.true
+        expect(await podPut.isAfterEndOfExerciseWindow()).to.be.false
+
+        await forceEndOfExerciseWindow(podPut)
+
+        expect(await podPut.hasExpired()).to.be.true
+        expect(await podPut.isAfterEndOfExerciseWindow()).to.be.true
+      })
     })
 
     describe('Minting options', () => {
