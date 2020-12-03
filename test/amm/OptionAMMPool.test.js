@@ -34,25 +34,6 @@ const scenarios = [
     initialSigma: toBigNumber(0.661e18),
     expectedNewIV: toBigNumber(0.66615e18)
   }
-  // {
-  //   name: 'WBTC/USDC',
-  //   optionType: OPTION_TYPE_CALL,
-  //   underlyingAssetSymbol: 'WBTC',
-  //   underlyingAssetDecimals: 18,
-  //   expiration: 60 * 60 * 24 * 7, // 7 days
-  //   strikeAssetSymbol: 'USDC',
-  //   strikeAssetDecimals: 6,
-  //   strikePrice: toBigNumber(17000e6),
-  //   strikePriceDecimals: 6,
-  //   amountToMint: ethers.BigNumber.from(1e8.toString()),
-  //   amountToMintTooLow: 1,
-  //   amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
-  //   initialFImp: ethers.BigNumber.from('10').pow(54),
-  //   initialSpotPrice: toBigNumber(18000e8),
-  //   spotPriceDecimals: 8,
-  //   initialSigma: toBigNumber(0.661e18),
-  //   expectedNewIV: toBigNumber(0.66615e18)
-  // }
 ]
 
 scenarios.forEach(scenario => {
