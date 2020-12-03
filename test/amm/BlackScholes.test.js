@@ -78,6 +78,16 @@ describe('BlackScholes', () => {
     await normalDistribution.deployed()
   })
 
+  it('should revert if number multiplication overflow', async () => {
+    await expect(bs.getCallPrice(
+      scenarios[0].spotPrice,
+      scenarios[0].strikePrice,
+      toBigNumber(1e40),
+      scenarios[0].time,
+      scenarios[0].riskFree
+    )).to.be.revertedWith('Multiplication overflow')
+  })
+
   scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
     it('Calculates the put price correctly', async () => {
       const putPrice = await bs.getPutPrice(
