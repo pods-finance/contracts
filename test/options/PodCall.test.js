@@ -125,7 +125,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/underlying-asset-is-not-a-contract')
+        await expect(podCall).to.revertedWith('PodOption: underlying asset is not a contract')
 
         podCall = PodCall.deploy(
           'pod:WBTC:USDC:5000:A',
@@ -137,7 +137,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/strike-asset-is-not-a-contract')
+        await expect(podCall).to.revertedWith('PodOption: strike asset is not a contract')
       })
 
       it('should not allow underlyingAsset/strikeAsset that are not contracts', async () => {
@@ -151,7 +151,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/underlying-asset-is-not-a-contract')
+        await expect(podCall).to.revertedWith('PodOption: underlying asset is not a contract')
         podCall = PodCall.deploy(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
@@ -162,7 +162,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/strike-asset-is-not-a-contract')
+        await expect(podCall).to.revertedWith('PodOption: strike asset is not a contract')
       })
 
       it('should not allow for underlyingAsset and strikeAsset too be the same address', async () => {
@@ -176,7 +176,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/underlying-asset-and-strike-asset-must-differ')
+        await expect(podCall).to.revertedWith('PodOption: underlying asset and strike asset must differ')
       })
 
       it('should only allow expiration in the future', async () => {
@@ -190,7 +190,7 @@ scenarios.forEach(scenario => {
           await getTimestamp(),
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/expiration-should-be-in-a-future-timestamp')
+        await expect(podCall).to.revertedWith('PodOption: expiration should be in a future timestamp')
       })
 
       it('should not allow exerciseWindowSize lesser than or equal 0', async () => {
@@ -204,7 +204,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           0
         )
-        await expect(podCall).to.revertedWith('PodOption/exercise-window-size-must-be-greater-than-zero')
+        await expect(podCall).to.revertedWith('PodOption: exercise window size must be greater than zero')
       })
 
       it('should not allow strikePrice lesser than or equal 0', async () => {
@@ -218,7 +218,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/strike-price-must-be-greater-than-zero')
+        await expect(podCall).to.revertedWith('PodOption: strike price must be greater than zero')
       })
 
       it('should not allow exercise windows shorter than 24 hours', async () => {
@@ -232,7 +232,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           (24 * 60 * 60) - 1 // 24h - 1 second
         )
-        await expect(podCall).to.revertedWith('PodOption/exercise-window-must-be-greater-than-or-equal-86400')
+        await expect(podCall).to.revertedWith('PodOption: exercise window must be greater than or equal 86400')
       })
     })
 
