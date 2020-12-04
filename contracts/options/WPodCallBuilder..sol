@@ -2,7 +2,12 @@
 pragma solidity 0.6.12;
 
 import "./WPodCall.sol";
+import "./PodOption.sol";
 
+/**
+ * @title WPodCallBuilder
+ * @notice Builds WPodCall options
+ */
 contract WPodCallBuilder {
     /**
      * @notice creates a new PodPut Contract
