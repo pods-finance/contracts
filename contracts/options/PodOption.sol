@@ -15,7 +15,7 @@ import "../lib/RequiredDecimals.sol";
  * @dev There are four main actions that can be called in an Option:
  *
  * A) mint => A minter can lock collateral and create new options before expiration.
- * B) unmint => The minter who previously minted can choose for leaving his position any given time
+ * B) unmint => The minter who previously minted can choose for leaving its position any given time
  * until expiration.
  * C) exercise => The option bearer the can exchange its option for the collateral at the strike price.
  * D) withdraw => The minter can retrieve collateral at the end of the series.

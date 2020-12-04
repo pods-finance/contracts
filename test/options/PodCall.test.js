@@ -381,7 +381,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         await expect(podCall.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('Exceed address minted options')
       })
-      it('should unmint, destroy sender option, reduce his balance and send underlying back', async () => {
+      it('should unmint, destroy sender option, reduce its balance and send underlying back', async () => {
         await MintPhase(scenario.amountToMint)
         const initialSellerOptionBalance = await podCall.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -412,7 +412,7 @@ scenarios.forEach(scenario => {
         expect(finalContractOptionSupply).to.equal(0)
         expect(finalContractUnderlyingBalance).to.equal(0)
       })
-      it('should unmint, destroy seller option, reduce his balance and send underlying back counting interests (Ma-Mb-UNa)', async () => {
+      it('should unmint, destroy seller option, reduce its balance and send underlying back counting interests (Ma-Mb-UNa)', async () => {
         await MintPhase(scenario.amountToMint)
         await mockUnderlyingAsset.earnInterest(podCall.address)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
@@ -433,7 +433,7 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeBalance).to.equal(initialContractStrikeBalance)
         expect(finalContractUnderlyingBalance).to.gte(scenario.amountToMint)
       })
-      it('should unmint, destroy seller option, reduce his balance and send underlying back counting interests (Ma-Mb-UNa-UNb)', async () => {
+      it('should unmint, destroy seller option, reduce its balance and send underlying back counting interests (Ma-Mb-UNa-UNb)', async () => {
         await MintPhase(scenario.amountToMint)
         await mockUnderlyingAsset.earnInterest(podCall.address)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)

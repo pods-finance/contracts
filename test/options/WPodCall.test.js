@@ -184,7 +184,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         await expect(wPodCall.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('Exceed address minted options')
       })
-      it('should unmint, destroy sender option, reduce his balance and send underlying back - European', async () => {
+      it('should unmint, destroy sender option, reduce its balance and send underlying back - European', async () => {
         await MintPhase(scenario.amountToMint)
         const initialSellerOptionBalance = await wPodCall.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -216,7 +216,7 @@ scenarios.forEach(scenario => {
         expect(finalContractOptionSupply).to.equal(0)
         expect(finalContractUnderlyingBalance).to.equal(0)
       })
-      it('should unmint, destroy seller option, reduce his balance and send strike back counting interests (Ma-Mb-UNa)', async () => {
+      it('should unmint, destroy seller option, reduce its balance and send strike back counting interests (Ma-Mb-UNa)', async () => {
         await MintPhase(scenario.amountToMint)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
 

@@ -15,12 +15,12 @@ import "./PodOption.sol";
  * Sellers can mint fungible Put option tokens by locking strikePrice * amountOfOptions
  * strike asset units until expiration. Buyers can exercise their Put, meaning
  * selling their underlying asset for strikePrice * amountOfOptions units of strike asset.
- * At the end, seller can retrieve back his collateral, that could be the underlying asset
- * AND/OR strike based on his initial position.
+ * At the end, seller can retrieve back its collateral, that could be the underlying asset
+ * AND/OR strike based on its initial position.
  *
  * There are many option's style, but the most usual are: American and European.
  * The difference between them are the moments that the buyer is allowed to exercise and
- * the moment that seller can retrieve his locked collateral.
+ * the moment that seller can retrieve its locked collateral.
  *
  *  Exercise:
  *  American -> any moment until expiration
@@ -62,7 +62,7 @@ import "./PodOption.sol";
  * USDC holders that minted options initially can call withdraw() after the
  * end of exercise window, which in turn:
  *
- * - Will give back his amount of collateral locked. That could be o mix of
+ * - Will give back its amount of collateral locked. That could be o mix of
  * underlying asset and strike asset based if and how the pool was exercised.
  *
  */
