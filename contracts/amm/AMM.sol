@@ -360,7 +360,7 @@ abstract contract AMM is RequiredDecimals {
 
     /**
      * @notice _tradeExactAInput msg.sender is able to trade exact amount of token A in exchange for minimum
-     * amount of token B
+     * amount of token B sent by the contract to the owner
      * @dev The inheritor contract should implement _getTradeDetailsExactAInput and _onTradeExactAInput functions
      * _getTradeDetailsExactAInput should return tradeDetails struct format
      *
@@ -391,8 +391,9 @@ abstract contract AMM is RequiredDecimals {
     }
 
     /**
-     * @notice _tradeExactAOutput msg.sender is able to receive exact amount of token A in exchange of a max
-     * acceptable amount of token B
+     * @notice _tradeExactAOutput owner is able to receive exact amount of token A in exchange of a max
+     * acceptable amount of token B sent by the msg.sender to the contract
+     *
      * @dev The inheritor contract should implement _getTradeDetailsExactAOutput and _onTradeExactAOutput functions
      * _getTradeDetailsExactAOutput should return tradeDetails struct format
      *
@@ -424,7 +425,8 @@ abstract contract AMM is RequiredDecimals {
 
     /**
      * @notice _tradeExactBInput msg.sender is able to trade exact amount of token B in exchange for minimum
-     * amount of token A
+     * amount of token A sent by the contract to the owner
+     *
      * @dev The inheritor contract should implement _getTradeDetailsExactBInput and _onTradeExactBInput functions
      * _getTradeDetailsExactBInput should return tradeDetails struct format
      *
@@ -455,8 +457,9 @@ abstract contract AMM is RequiredDecimals {
     }
 
     /**
-     * @notice _tradeExactBOutput msg.sender is able to receive exact amount of token B in exchange of a max
-     * acceptable amount of token A
+     * @notice _tradeExactBOutput owner is able to receive exact amount of token B from the contract in exchange of a
+     * max acceptable amount of token A sent by the msg.sender to the contract.
+     *
      * @dev The inheritor contract should implement _getTradeDetailsExactBOutput and _onTradeExactBInput functions
      * _getTradeDetailsExactBOutput should return tradeDetails struct format
      *
