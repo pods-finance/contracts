@@ -125,7 +125,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/underlying-asset-is-not-a-contract')
+        await expect(podCall).to.revertedWith('PodOption: underlying asset is not a contract')
 
         podCall = PodCall.deploy(
           'pod:WBTC:USDC:5000:A',
@@ -137,7 +137,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/strike-asset-is-not-a-contract')
+        await expect(podCall).to.revertedWith('PodOption: strike asset is not a contract')
       })
 
       it('should not allow underlyingAsset/strikeAsset that are not contracts', async () => {
@@ -151,7 +151,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/underlying-asset-is-not-a-contract')
+        await expect(podCall).to.revertedWith('PodOption: underlying asset is not a contract')
         podCall = PodCall.deploy(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
@@ -162,7 +162,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/strike-asset-is-not-a-contract')
+        await expect(podCall).to.revertedWith('PodOption: strike asset is not a contract')
       })
 
       it('should not allow for underlyingAsset and strikeAsset too be the same address', async () => {
@@ -176,7 +176,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/underlying-asset-and-strike-asset-must-differ')
+        await expect(podCall).to.revertedWith('PodOption: underlying asset and strike asset must differ')
       })
 
       it('should only allow expiration in the future', async () => {
@@ -190,7 +190,7 @@ scenarios.forEach(scenario => {
           await getTimestamp(),
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/expiration-should-be-in-a-future-timestamp')
+        await expect(podCall).to.revertedWith('PodOption: expiration should be in a future timestamp')
       })
 
       it('should not allow exerciseWindowSize lesser than or equal 0', async () => {
@@ -204,7 +204,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           0
         )
-        await expect(podCall).to.revertedWith('PodOption/exercise-window-size-must-be-greater-than-zero')
+        await expect(podCall).to.revertedWith('PodOption: exercise window size must be greater than zero')
       })
 
       it('should not allow strikePrice lesser than or equal 0', async () => {
@@ -218,7 +218,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           24 * 60 * 60 // 24h
         )
-        await expect(podCall).to.revertedWith('PodOption/strike-price-must-be-greater-than-zero')
+        await expect(podCall).to.revertedWith('PodOption: strike price must be greater than zero')
       })
 
       it('should not allow exercise windows shorter than 24 hours', async () => {
@@ -232,7 +232,7 @@ scenarios.forEach(scenario => {
           await getTimestamp() + 24 * 60 * 60,
           (24 * 60 * 60) - 1 // 24h - 1 second
         )
-        await expect(podCall).to.revertedWith('PodOption/exercise-window-must-be-greater-than-or-equal-86400')
+        await expect(podCall).to.revertedWith('PodOption: exercise window must be greater than or equal 86400')
       })
     })
 
@@ -290,7 +290,7 @@ scenarios.forEach(scenario => {
 
         expect(await mockUnderlyingAsset.balanceOf(sellerAddress)).to.equal(scenario.amountToMint)
         await forceExpiration(podCall)
-        await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('Option has expired')
+        await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: option has expired')
       })
     })
 
@@ -302,7 +302,7 @@ scenarios.forEach(scenario => {
         // Mint Underlying Asset
         await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice)
         expect(await mockStrikeAsset.balanceOf(buyerAddress)).to.equal(scenario.strikePrice)
-        await expect(podCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('Option has not expired yet')
+        await expect(podCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has not expired yet')
       })
       it('should revert if user have strike approved, but do not have enough options', async () => {
         // Mint underlying
@@ -387,15 +387,15 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('unminting options', () => {
+    describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('You do not have minted options')
+        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodCall: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podCall.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('Exceed address minted options')
+        await expect(podCall.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('PodCall: not enough minted options')
       })
-      it('should unmint, destroy sender option, reduce his balance and send underlying back', async () => {
+      it('should unmint, destroy sender option, reduce its balance and send underlying back', async () => {
         await MintPhase(scenario.amountToMint)
         const initialSellerOptionBalance = await podCall.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -426,7 +426,7 @@ scenarios.forEach(scenario => {
         expect(finalContractOptionSupply).to.equal(0)
         expect(finalContractUnderlyingBalance).to.equal(0)
       })
-      it('should unmint, destroy seller option, reduce his balance and send underlying back counting interests (Ma-Mb-UNa)', async () => {
+      it('should unmint, destroy seller option, reduce its balance and send underlying back counting interests (Ma-Mb-UNa)', async () => {
         await MintPhase(scenario.amountToMint)
         await mockUnderlyingAsset.earnInterest(podCall.address)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
@@ -447,7 +447,7 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeBalance).to.equal(initialContractStrikeBalance)
         expect(finalContractUnderlyingBalance).to.gte(scenario.amountToMint)
       })
-      it('should unmint, destroy seller option, reduce his balance and send underlying back counting interests (Ma-Mb-UNa-UNb)', async () => {
+      it('should unmint, destroy seller option, reduce its balance and send underlying back counting interests (Ma-Mb-UNa-UNb)', async () => {
         await MintPhase(scenario.amountToMint)
         await mockUnderlyingAsset.earnInterest(podCall.address)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
@@ -471,19 +471,19 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to unmint after expiration - European', async () => {
         await forceExpiration(podCall)
-        await expect(podCall.connect(seller).unmint()).to.be.revertedWith('Option has not expired yet')
+        await expect(podCall.connect(seller).unmint()).to.be.revertedWith('PodOption: option has not expired yet')
       })
     })
 
     describe('Withdrawing options', () => {
       it('should revert if user try to withdraw before expiration', async () => {
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('Window of exercise has not ended yet')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: window of exercise has not ended yet')
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         await forceEndOfExerciseWindow(podCall)
 
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
       })
 
       it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset', async () => {
@@ -516,7 +516,7 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeBalance).to.equal(0)
         expect(finalContractUnderlyingBalance).to.equal(0)
         // Cant withdraw two times in a row
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
       })
 
       it('should withdraw Underlying Asset balance plus interest earned proportional (Ma-Mb-Wa-Wb)', async () => {

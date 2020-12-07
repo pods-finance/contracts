@@ -84,7 +84,7 @@ contract Sigma {
         uint256 _riskFree,
         OptionType _optionType
     ) public view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
-        require(_sigmaInitialGuess > 0, "Sigma cant be null");
+        require(_sigmaInitialGuess > 0, "Sigma: initial guess should be greater than zero");
         uint256 calculatedInitialPrice = _getPrice(
             _spotPrice,
             _strikePrice,

@@ -102,30 +102,30 @@ scenarios.forEach(scenario => {
         const MockAMM = await ethers.getContractFactory('MockAMM')
 
         amm = MockAMM.deploy(userAAddress, mockTokenB.address)
-        await expect(amm).to.revertedWith('AMM/token-a-is-not-a-contract')
+        await expect(amm).to.revertedWith('AMM: token a is not a contract')
 
         amm = MockAMM.deploy(mockTokenA.address, userAAddress)
-        await expect(amm).to.revertedWith('AMM/token-b-is-not-a-contract')
+        await expect(amm).to.revertedWith('AMM: token b is not a contract')
       })
 
       it('should not allow tokens that are not contracts', async () => {
         const MockAMM = await ethers.getContractFactory('MockAMM')
 
         amm = MockAMM.deploy(ethers.constants.AddressZero, mockTokenB.address)
-        await expect(amm).to.revertedWith('AMM/token-a-is-not-a-contract')
+        await expect(amm).to.revertedWith('AMM: token a is not a contract')
 
         amm = MockAMM.deploy(mockTokenA.address, ethers.constants.AddressZero)
-        await expect(amm).to.revertedWith('AMM/token-b-is-not-a-contract')
+        await expect(amm).to.revertedWith('AMM: token b is not a contract')
       })
     })
 
     describe('Add Liquidity', () => {
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(amm.addLiquidity(0, 10000, userAAddress)).to.be.revertedWith('You should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(0, 10000, userAAddress)).to.be.revertedWith('AMM: you should add both tokens on the first liquidity')
 
-        await expect(amm.addLiquidity(100000, 0, userAAddress)).to.be.revertedWith('You should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(100000, 0, userAAddress)).to.be.revertedWith('AMM: you should add both tokens on the first liquidity')
 
-        await expect(amm.addLiquidity(0, 0, userAAddress)).to.be.revertedWith('You should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(0, 0, userAAddress)).to.be.revertedWith('AMM: you should add both tokens on the first liquidity')
       })
 
       it('should revert if user ask more assets than the user s balance', async () => {

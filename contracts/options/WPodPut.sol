@@ -6,13 +6,34 @@ import "../interfaces/IWETH.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
- * Represents a tokenized american put option series for ETH.
- * Internally it Wraps ETH to treat it seamlessly.
+ * @title WPodPut
+ * @author Pods Finance
  *
- * It is fungible and it is meant to be freely tradable until its
- * expiration time, when its transfer functions will be blocked
- * and the only available operation will be for the option writers
- * to unlock their collateral.
+ * @notice Represents a tokenized american put option series for ETH. Internally it Wraps
+ * ETH to treat it seamlessly.
+ *
+ * @dev Put options represents the right, not the obligation to sell the underlying asset
+ * for strike price units of the strike asset.
+ *
+ * There are four main actions that can be done with an option:
+ *
+ * Sellers can mint fungible Put option tokens by locking strikePrice * amountOfOptions
+ * strike asset units until expiration. Buyers can exercise their Put, meaning
+ * selling their underlying asset for strikePrice * amountOfOptions units of strike asset.
+ * At the end, seller can retrieve back its collateral, that could be the underlying asset
+ * AND/OR strike based on its initial position.
+ *
+ * There are many option's style, but the most usual are: American and European.
+ * The difference between them are the moments that the buyer is allowed to exercise and
+ * the moment that seller can retrieve its locked collateral.
+ *
+ *  Exercise:
+ *  American -> any moment until expiration
+ *  European -> only after expiration and until the end of the exercise window
+ *
+ *  Withdraw:
+ *  American -> after expiration
+ *  European -> after end of exercise window
  *
  * Let's take an example: there is such a put option series where buyers
  * may sell 1 ETH for 300 USDC until Dec 31, 2019.
@@ -73,19 +94,21 @@ contract WPodPut is PodPut {
     event Received(address sender, uint256 value);
 
     /**
-     * Unlocks some amount of the strike token by burning option tokens.
+     * @notice Unlocks collateral by burning option tokens.
      *
-     * This mechanism ensures that users can only redeem tokens they've
-     * previously lock into this contract.
+     * @dev In case of American options where exercise can happen before the expiration, caller
+     * may receive a mix of underlying asset and strike asset.
      *
      * Options can only be burned while the series is NOT expired.
+     *
+     * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external override beforeExpiration {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have minted options");
+        require(ownerShares > 0, "WPodPut: you do not have minted options");
 
         uint256 userMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= userMintedOptions, "Exceed address minted options");
+        require(amountOfOptions <= userMintedOptions, "WPodPut: not enough minted options");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
@@ -93,7 +116,7 @@ contract WPodPut is PodPut {
         uint256 ownerSharesToReduce = ownerShares.mul(amountOfOptions).div(userMintedOptions);
         uint256 strikeToSend = ownerSharesToReduce.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = ownerSharesToReduce.mul(underlyingReserves).div(totalShares);
-        require(strikeToSend > 0, "Amount too low");
+        require(strikeToSend > 0, "WPodPut: amount of options is too low");
 
         shares[msg.sender] = shares[msg.sender].sub(ownerSharesToReduce);
         mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
@@ -104,11 +127,11 @@ contract WPodPut is PodPut {
         // Unlocks the strike token
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Couldn't transfer back strike tokens to caller"
+            "WPodPut: could not transfer strike tokens back to caller"
         );
 
         if (underlyingReserves > 0) {
-            require(underlyingToSend > 0, "Amount too low");
+            require(underlyingToSend > 0, "WPodPut: amount of options is too low");
             weth.withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }
@@ -116,25 +139,25 @@ contract WPodPut is PodPut {
     }
 
     /**
-     * Allow put token holders to use them to sell some amount of units
+     * @notice Allow Put token holders to use them to sell some amount of units
      * of ETH for the amount * strike price units of the strike token.
      *
-     * It uses the amount of ETH sent to exchange to the strike amount
+     * @dev It uses the amount of ETH sent to exchange to the strike amount
      *
      * During the process:
      *
-     * - The amount of ETH is transferred into this contract as a payment
-     * for the strike tokens
+     * - The amount of ETH is transferred into this contract as a payment for the strike tokens
      * - The ETH is wrapped into WETH
-     * - The amount of ETH * strikePrice of strike tokens are transferred to the
-     * caller
+     * - The amount of ETH * strikePrice of strike tokens are transferred to the caller
      * - The amount of option tokens are burned
      *
-     * Options can only be exchanged while the series is NOT expired.
+     * On American options, this function can only called anytime before expiration.
+     * For European options, this function can only be called during the exerciseWindow.
+     * Meaning, after expiration and before the end of exercise window.
      */
     function exerciseEth() external payable exerciseWindow {
         uint256 amountOfOptions = msg.value;
-        require(amountOfOptions > 0, "Null amount");
+        require(amountOfOptions > 0, "WPodPut: you can not exercise zero options");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 strikeToSend = _strikeToTransfer(amountOfOptions);
 
@@ -146,22 +169,21 @@ contract WPodPut is PodPut {
         // Releases the strike asset to caller, completing the exchange
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Could not transfer underlying tokens to caller"
+            "WPodPut: could not transfer strike tokens to caller"
         );
         emit Exercise(msg.sender, amountOfOptions);
     }
 
     /**
-     * After series expiration, allow addresses who have locked their strike
-     * asset tokens to withdraw them on first-come-first-serve basis.
+     * @notice After series expiration, allow minters who have locked their
+     * strike asset tokens to withdraw them proportionally to their minted options.
      *
-     * If there is not enough of strike asset because the series have been
-     * exercised, the remaining balance is converted into the underlying asset
-     * and given to the caller.
+     * @dev If assets had been exercised during the option series the minter may withdraw
+     * the exercised assets or a combination of exercised and strike asset tokens.
      */
     function withdraw() external override withdrawWindow {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have balance to withdraw");
+        require(ownerShares > 0, "WPodPut: you do not have balance to withdraw");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
@@ -174,7 +196,7 @@ contract WPodPut is PodPut {
 
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Couldn't transfer back strike tokens to caller"
+            "WPodPut: could not transfer strike tokens back to caller"
         );
         if (underlyingReserves > 0) {
             weth.withdraw(underlyingToSend);

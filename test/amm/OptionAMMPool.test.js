@@ -152,12 +152,12 @@ scenarios.forEach(scenario => {
       it('should not allow trade after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
-        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('Option has expired')
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('OptionAMMPool: option has expired')
       })
       it('should not allow add liquidity after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
-        await expect(optionAMMPool.connect(buyer).addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('Option has expired')
+        await expect(optionAMMPool.connect(buyer).addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('OptionAMMPool: option has expired')
       })
     })
 

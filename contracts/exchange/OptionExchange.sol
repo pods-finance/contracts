@@ -9,7 +9,9 @@ import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
 
 /**
- * Represents a Proxy that can mint and sell on the behalf of a Option Seller,
+ * @title PodOption
+ * @author Pods Finance
+ * @notice Represents a Proxy that can mint and sell on the behalf of a Option Seller,
  * alternatively it can buy to a Option Buyer
  */
 contract OptionExchange {
@@ -45,25 +47,25 @@ contract OptionExchange {
     }
 
     modifier withinDeadline(uint256 deadline) {
-        require(deadline > block.timestamp, "OptionExchange/deadline-expired");
+        require(deadline > block.timestamp, "OptionExchange: deadline expired");
         _;
     }
 
     /**
-     * Mints an amount of options and return to caller
      * @notice Mint options
+     * @dev Mints an amount of options and return to caller
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
      */
     function mint(IPodPut option, uint256 optionAmount) external {
         _mint(option, optionAmount);
-        require(option.transfer(msg.sender, optionAmount), "OptionExchange/could-not-transfer-options-back-to-caller");
+        require(option.transfer(msg.sender, optionAmount), "OptionExchange: could not transfer options back to caller");
     }
 
     /**
-     * Mints an amount of options and sell it in pool
      * @notice Mint and sell options
+     * @dev Mints an amount of options and sell it in pool
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
@@ -93,7 +95,8 @@ contract OptionExchange {
     }
 
     /**
-     * Mint options and add them as liquidity providing
+     * @notice Mint and add liquidity
+     * @dev Mint options and add them as liquidity providing
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
@@ -112,7 +115,7 @@ contract OptionExchange {
 
         require(
             IERC20(token).transferFrom(msg.sender, address(this), tokenAmount),
-            "OptionExchange/could-not-transfer-token-from-caller"
+            "OptionExchange: could not transfer token from caller"
         );
 
         // Approving Option transfer to pool
@@ -127,8 +130,8 @@ contract OptionExchange {
     }
 
     /**
-     * Buys an amount of options from pool
      * @notice Buy exact amount of options
+     * @dev Buys an amount of options from pool
      *
      * @param option The option contract to buy
      * @param optionAmount Amount of options to buy
@@ -150,7 +153,7 @@ contract OptionExchange {
         // Take input amount from caller
         require(
             IERC20(token).transferFrom(msg.sender, address(this), maxTokenAmount),
-            "OptionExchange/could-not-transfer-tokens-from-caller"
+            "OptionExchange: could not transfer tokens from caller"
         );
 
         // Approve pool usage
@@ -162,7 +165,7 @@ contract OptionExchange {
         if (tokensSold < maxTokenAmount) {
             require(
                 IERC20(token).transfer(msg.sender, maxTokenAmount.sub(tokensSold)),
-                "OptionExchange/could-not-transfer-tokens-back-to-caller"
+                "OptionExchange: could not transfer tokens back to caller"
             );
         }
 
@@ -170,8 +173,8 @@ contract OptionExchange {
     }
 
     /**
-     * Buys an estimated amount of options from pool
      * @notice Buy estimated amount of options
+     * @dev Buys an estimated amount of options from pool
      *
      * @param option The option contract to buy
      * @param minOptionAmount Min amount of options bought
@@ -192,7 +195,7 @@ contract OptionExchange {
         // Take input amount from caller
         require(
             IERC20(token).transferFrom(msg.sender, address(this), tokenAmount),
-            "OptionExchange/could-not-transfer-tokens-from-caller"
+            "OptionExchange: could not transfer tokens from caller"
         );
 
         // Approve pool usage
@@ -204,7 +207,7 @@ contract OptionExchange {
     }
 
     /**
-     * Mints an amount of tokens collecting the strike tokens from the caller
+     * @dev Mints an amount of tokens collecting the strike tokens from the caller
      *
      * @param option The option contract to mint
      * @param amount The amount of options to mint
@@ -215,7 +218,7 @@ contract OptionExchange {
 
         require(
             strikeAsset.transferFrom(msg.sender, address(this), strikeToTransfer),
-            "OptionExchange/could-not-transfer-strike-from-caller"
+            "OptionExchange: could not transfer strike from caller"
         );
 
         // Approving Strike transfer to Option
@@ -224,14 +227,14 @@ contract OptionExchange {
     }
 
     /**
-     * Returns the AMM Exchange associated with the option
+     * @dev Returns the AMM Exchange associated with the option
      *
      * @param option The option to search for
      * @return IOptionAMMPool
      */
     function _getPool(IPodPut option) internal view returns (IOptionAMMPool) {
         address exchangeOptionAddress = factory.getPool(address(option));
-        require(exchangeOptionAddress != address(0), "OptionExchange/pool-not-found");
+        require(exchangeOptionAddress != address(0), "OptionExchange: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);
     }
 }

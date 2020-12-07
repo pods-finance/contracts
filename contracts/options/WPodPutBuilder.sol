@@ -2,7 +2,13 @@
 pragma solidity 0.6.12;
 
 import "./WPodPut.sol";
+import "./PodOption.sol";
 
+/**
+ * @title WPodPutBuilder
+ * @author Pods Finance
+ * @notice Builds WPodPut options
+ */
 contract WPodPutBuilder {
     /**
      * @notice creates a new PodPut Contract

@@ -4,10 +4,12 @@ pragma solidity 0.6.12;
 import "./PodOption.sol";
 
 /**
- * This contract represents a tokenized Put option series for some
- * long/short token pair.
+ * @title PodPut
+ * @author Pods Finance
  *
- * Put options represents the right, not the obligation to sell the underlying asset
+ * @notice Represents a tokenized Put option series for some long/short token pair.
+ *
+ * @dev Put options represents the right, not the obligation to sell the underlying asset
  * for strike price units of the strike asset.
  *
  * There are four main actions that can be done with an option:
@@ -15,12 +17,12 @@ import "./PodOption.sol";
  * Sellers can mint fungible Put option tokens by locking strikePrice * amountOfOptions
  * strike asset units until expiration. Buyers can exercise their Put, meaning
  * selling their underlying asset for strikePrice * amountOfOptions units of strike asset.
- * At the end, seller can retrieve back his collateral, that could be the underlying asset
- * AND/OR strike based on his initial position.
+ * At the end, seller can retrieve back its collateral, that could be the underlying asset
+ * AND/OR strike based on its initial position.
  *
  * There are many option's style, but the most usual are: American and European.
  * The difference between them are the moments that the buyer is allowed to exercise and
- * the moment that seller can retrieve his locked collateral.
+ * the moment that seller can retrieve its locked collateral.
  *
  *  Exercise:
  *  American -> any moment until expiration
@@ -62,7 +64,7 @@ import "./PodOption.sol";
  * USDC holders that minted options initially can call withdraw() after the
  * end of exercise window, which in turn:
  *
- * - Will give back his amount of collateral locked. That could be o mix of
+ * - Will give back its amount of collateral locked. That could be o mix of
  * underlying asset and strike asset based if and how the pool was exercised.
  *
  */
@@ -92,24 +94,28 @@ contract PodPut is PodOption {
     {}
 
     /**
-     * Locks some amount of the strike token and writes option tokens.
+     * @notice Locks strike asset and write option tokens.
      *
-     * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
+     * @dev The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
      *
      * It presumes the caller has already called IERC20.approve() on the
      * strike token contract to move caller funds.
      *
      * This function is meant to be called by strike token holders wanting
-     * to write option tokens.
+     * to write option tokens. Calling it will lock `amountOfOptions` * `strikePrice`
+     * units of `strikeToken` into this contract
      *
      * Options can only be minted while the series is NOT expired.
      *
-     * @param amountOfOptions The amount option tokens to be issued; this will lock
-     * for instance amount * strikePrice units of strikeToken into this
-     * contract
+     * It is also important to notice that options will be sent back
+     * to `msg.sender` and not the `owner`. This behavior is designed to allow
+     * proxy contracts to mint on others behalf
+     *
+     * @param amountOfOptions The amount option tokens to be issued
+     * @param owner Which address will be the owner of the options
      */
     function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
-        require(amountOfOptions > 0, "Null amount");
+        require(amountOfOptions > 0, "PodPut: you can not mint zero options");
 
         uint256 amountToTransfer = _strikeToTransfer(amountOfOptions);
 
@@ -126,37 +132,39 @@ contract PodPut is PodOption {
         }
 
         _mint(msg.sender, amountOfOptions);
+
         require(
             IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountToTransfer),
-            "Could not transfer strike tokens from caller"
+            "PodPut: could not transfer strike tokens from caller"
         );
         emit Mint(owner, amountOfOptions);
     }
 
     /**
-     * Unlocks some amount of the strike token by burning option tokens.
+     * @notice Unlocks collateral by burning option tokens.
      *
-     * This mechanism ensures that users can only redeem tokens they've
-     * previously lock into this contract.
+     * @dev In case of American options where exercise can happen before the expiration, caller
+     * may receive a mix of underlying asset and strike asset.
      *
      * Options can only be burned while the series is NOT expired.
+     *
+     * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have minted options");
+        require(ownerShares > 0, "PodPut: you do not have minted options");
 
         uint256 userMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= userMintedOptions, "Exceed address minted options");
+        require(amountOfOptions <= userMintedOptions, "PodPut: not enough minted options");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
 
         uint256 ownerSharesToReduce = ownerShares.mul(amountOfOptions).div(userMintedOptions);
-
         uint256 strikeToSend = ownerSharesToReduce.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = ownerSharesToReduce.mul(underlyingReserves).div(totalShares);
 
-        require(strikeToSend > 0, "Amount too low");
+        require(strikeToSend > 0, "PodPut: amount of options is too low");
 
         shares[msg.sender] = shares[msg.sender].sub(ownerSharesToReduce);
         mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
@@ -167,40 +175,42 @@ contract PodPut is PodOption {
         // Unlocks the strike token
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Could not transfer back strike tokens to caller"
+            "PodPut: could not transfer strike tokens back to caller"
         );
 
         if (underlyingReserves > 0) {
             require(underlyingToSend > 0, "Amount too low");
             require(
                 IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
-                "Could not transfer back strike tokens to caller"
+                "PodPut: could not transfer underlying tokens back to caller"
             );
         }
         emit Unmint(msg.sender, amountOfOptions);
     }
 
     /**
-     * Allow put token holders to use them to sell some amount of units
+     * @notice Allow Put token holders to use them to sell some amount of units
      * of the underlying token for the amount * strike price units of the
      * strike token.
      *
-     * It presumes the caller has already called IERC20.approve() on the
+     * @dev It presumes the caller has already called IERC20.approve() on the
      * underlying token contract to move caller funds.
      *
      * During the process:
      *
-     * - The amount * strikePrice of strike tokens are transferred to the
-     * caller
+     * - The amount * strikePrice of strike tokens are transferred to the caller
      * - The amount of option tokens are burned
      * - The amount of underlying tokens are transferred into
      * this contract as a payment for the strike tokens
      *
-     * Options can only be exchanged while the series is NOT expired.
+     * On American options, this function can only called anytime before expiration.
+     * For European options, this function can only be called during the exerciseWindow.
+     * Meaning, after expiration and before the end of exercise window.
+     *
      * @param amountOfOptions The amount option tokens to be exercised
      */
     function exercise(uint256 amountOfOptions) external virtual override exerciseWindow {
-        require(amountOfOptions > 0, "Null amount");
+        require(amountOfOptions > 0, "PodPut: you can not exercise zero options");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountOfStrikeToTransfer = _strikeToTransfer(amountOfOptions);
 
@@ -210,28 +220,27 @@ contract PodPut is PodOption {
         // Retrieve the underlying asset from caller
         require(
             IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountOfOptions),
-            "Could not transfer underlying tokens from caller"
+            "PodPut: could not transfer underlying tokens from caller"
         );
 
         // Releases the strike asset to caller, completing the exchange
         require(
             IERC20(strikeAsset).transfer(msg.sender, amountOfStrikeToTransfer),
-            "Could not transfer underlying tokens to caller"
+            "PodPut: could not transfer strike tokens to caller"
         );
         emit Exercise(msg.sender, amountOfOptions);
     }
 
     /**
-     * After series expiration, allow addresses who have locked their strike
-     * asset tokens to withdraw them on first-come-first-serve basis.
+     * @notice After series expiration, allow minters who have locked their
+     * strike asset tokens to withdraw them proportionally to their minted options.
      *
-     * If there is not enough of strike asset because the series have been
-     * exercised, the remaining balance is converted into the underlying asset
-     * and given to the caller.
+     * @dev If assets had been exercised during the option series the minter may withdraw
+     * the exercised assets or a combination of exercised and strike asset tokens.
      */
     function withdraw() external virtual override withdrawWindow {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have balance to withdraw");
+        require(ownerShares > 0, "PodPut: you do not have balance to withdraw");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
@@ -244,12 +253,12 @@ contract PodPut is PodOption {
 
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Could not transfer back strike tokens to caller"
+            "PodPut: could not transfer strike tokens back to caller"
         );
         if (underlyingReserves > 0) {
             require(
                 IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
-                "Could not transfer back underlying tokens to caller"
+                "PodPut: could not transfer underlying tokens back to caller"
             );
         }
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
