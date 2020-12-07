@@ -102,7 +102,7 @@ scenarios.forEach(scenario => {
       it('should revert if user send 0 value to mint function', async () => {
         const balanceSeller = await ethers.provider.getBalance(sellerAddress)
 
-        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: 0 })).to.be.revertedWith('WPodCall: you can not mint 0 options')
+        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: 0 })).to.be.revertedWith('WPodCall: you can not mint zero options')
       })
 
       it('should mint, increase senders option balance and decrease sender ETH balance', async () => {

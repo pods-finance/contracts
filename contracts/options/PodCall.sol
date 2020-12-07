@@ -117,7 +117,7 @@ contract PodCall is PodOption {
      * @param owner Which address will be the owner of the options
      */
     function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
-        require(amountOfOptions > 0, "PodCall: you can not mint 0 options");
+        require(amountOfOptions > 0, "PodCall: you can not mint zero options");
 
         if (totalShares > 0) {
             uint256 ownerShares = _calculatedShares(amountOfOptions);
@@ -211,7 +211,7 @@ contract PodCall is PodOption {
      * @param amountOfOptions The amount option tokens to be exercised
      */
     function exercise(uint256 amountOfOptions) external virtual override exerciseWindow {
-        require(amountOfOptions > 0, "PodCall: you can not exercise 0 options");
+        require(amountOfOptions > 0, "PodCall: you can not exercise zero options");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToReceive = _strikeToTransfer(amountOfOptions);
 

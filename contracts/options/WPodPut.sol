@@ -157,7 +157,7 @@ contract WPodPut is PodPut {
      */
     function exerciseEth() external payable exerciseWindow {
         uint256 amountOfOptions = msg.value;
-        require(amountOfOptions > 0, "WPodPut: you can not exercise 0 options");
+        require(amountOfOptions > 0, "WPodPut: you can not exercise zero options");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 strikeToSend = _strikeToTransfer(amountOfOptions);
 
