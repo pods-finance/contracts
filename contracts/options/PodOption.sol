@@ -131,7 +131,7 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      * @notice getSellerWithdrawAmounts returns the seller position based on his amount of shares
      * and the current option position
      *
-     * @param user address of the user to check the withdraw amounts
+     * @param owner address of the user to check the withdraw amounts
      *
      * @return strikeToSend current amount of strike the user will receive. It may change until maturity
      * @return underlyingToSend current amount of underlying the user will receive. It may change until maturity
