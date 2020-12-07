@@ -251,7 +251,7 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      * BEFORE series expiration.
      */
     modifier beforeExpiration() {
-        require(!_hasExpired(), "PodOption: Option has expired");
+        require(!_hasExpired(), "PodOption: option has expired");
         _;
     }
 
@@ -261,10 +261,10 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      */
     modifier exerciseWindow() {
         if (exerciseType == ExerciseType.EUROPEAN) {
-            require(_hasExpired(), "PodOption: Option has not expired yet");
-            require(!_isAfterEndOfExerciseWindow(), "PodOption: Window of exercise has closed already");
+            require(_hasExpired(), "PodOption: option has not expired yet");
+            require(!_isAfterEndOfExerciseWindow(), "PodOption: window of exercise has closed already");
         } else {
-            require(!_hasExpired(), "PodOption: Option has expired");
+            require(!_hasExpired(), "PodOption: option has expired");
         }
         _;
     }
@@ -275,9 +275,9 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      */
     modifier withdrawWindow() {
         if (exerciseType == ExerciseType.EUROPEAN) {
-            require(_isAfterEndOfExerciseWindow(), "PodOption: Window of exercise has not ended yet");
+            require(_isAfterEndOfExerciseWindow(), "PodOption: window of exercise has not ended yet");
         } else {
-            require(_hasExpired(), "PodOption: Option has not expired yet");
+            require(_hasExpired(), "PodOption: option has not expired yet");
         }
         _;
     }
@@ -304,7 +304,7 @@ abstract contract PodOption is ERC20, RequiredDecimals {
         uint256 strikeAmount = amountOfOptions.mul(strikePrice).div(
             10**underlyingAssetDecimals.add(strikePriceDecimals).sub(strikeAssetDecimals)
         );
-        require(strikeAmount > 0, "PodOption: Invalid amount of collateral");
+        require(strikeAmount > 0, "PodOption: amount of options is too low");
         return strikeAmount + 1;
     }
 

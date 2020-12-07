@@ -146,7 +146,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(seller).approve(wPodPut.address, ethers.constants.MaxUint256)
         await mockStrikeAsset.connect(seller).mint(scenario.strikePrice.add(1))
 
-        await expect(wPodPut.connect(seller).mint(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('Invalid amount of collateral')
+        await expect(wPodPut.connect(seller).mint(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('PodOption: amount of options is too low')
       })
 
       it('should mint, increase senders option balance and decrease sender strike balance', async () => {
@@ -166,7 +166,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
 
         await forceExpiration(wPodPut)
-        await expect(wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('Option has expired')
+        await expect(wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: option has expired')
       })
     })
 
@@ -175,7 +175,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         // Transfer mint to Buyer address => This will happen through Uniswap
         await wPodPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
-        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('Option has not expired yet')
+        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('PodOption: option has not expired yet')
       })
       it('should revert if user have underlying enough, but dont have enough options', async () => {
         expect(await ethers.provider.getBalance(buyerAddress)).to.gte(scenario.amountToMint)
@@ -221,13 +221,13 @@ scenarios.forEach(scenario => {
         // Transfer mint to Buyer address => This will happen through Uniswap
         await wPodPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         await forceEndOfExerciseWindow(wPodPut)
-        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('Window of exercise has closed already')
+        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('PodOption: window of exercise has closed already')
       })
     })
 
-    describe('unminting options', () => {
+    describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('You do not have minted options')
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('WPodPut: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
@@ -237,7 +237,7 @@ scenarios.forEach(scenario => {
         const minimumAmount = ethers.BigNumber.from(scenario.strikePrice).div((10 ** await mockUnderlyingAsset.decimals()).toString())
         if (minimumAmount.gt(0)) return
         await MintPhase(scenario.amountToMint)
-        await expect(wPodPut.connect(seller).unmint(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('Invalid amount of collateral')
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('PodOption: amount of options is too low')
       })
       it('should unmint, destroy sender option, reduce its balance and send strike back (Without Exercise Scenario)', async () => {
         await MintPhase(scenario.amountToMint)
@@ -317,19 +317,19 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(wPodPut)
-        await expect(wPodPut.connect(seller).unmint()).to.be.revertedWith('Option has not expired yet')
+        await expect(wPodPut.connect(seller).unmint()).to.be.revertedWith('PodOption: option has not expired yet')
       })
     })
 
     describe('Withdrawing options', () => {
       it('should revert if user try to withdraw before expiration', async () => {
-        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('Window of exercise has not ended yet')
+        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: window of exercise has not ended yet')
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         // Set Expiration
         await forceEndOfExerciseWindow(wPodPut)
-        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('WPodPut: you do not have balance to withdraw')
       })
 
       it('should withdraw Strike Asset balance plus interest earned', async () => {
@@ -357,7 +357,7 @@ scenarios.forEach(scenario => {
         expect(finalSellerStrikegBalance).to.equal(scenario.strikePrice.add(earnedInterest).add(1))
         expect(finalContractStrikeBalance).to.equal(0)
         // Cant withdraw two times in a row
-        // await expect(aPodPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        // await expect(aPodPut.connect(seller).withdraw()).to.be.revertedWith('WPodPut: you do not have balance to withdraw')
       })
 
       it('should withdraw Strike Asset balance plus interest earned proportional (Ma-Mb-Wa-Wb)', async () => {
@@ -393,7 +393,7 @@ scenarios.forEach(scenario => {
         expect(finalSellerStrikegBalance).to.gt(scenario.strikePrice)
         expect(finalSellerStrikegBalance).to.lt(scenario.strikePrice.mul(twoTimesAmountToMint).div(optionDecimals))
         // Cant withdraw two times in a row
-        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('WPodPut: you do not have balance to withdraw')
 
         await wPodPut.connect(buyer).withdraw()
 
@@ -402,7 +402,7 @@ scenarios.forEach(scenario => {
 
         expect(finalBuyerStrikeBalance).to.gt(scenario.strikePrice.mul(twoTimesAmountToMint).div(optionDecimals))
         expect(finalContractStrikeBalance).to.equal(0)
-        await expect(wPodPut.connect(buyer).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(wPodPut.connect(buyer).withdraw()).to.be.revertedWith('WPodPut: you do not have balance to withdraw')
       })
 
       it('should withdraw mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {
@@ -426,7 +426,7 @@ scenarios.forEach(scenario => {
         await forceEndOfExerciseWindow(wPodPut)
         const txWithdraw = await wPodPut.connect(seller).withdraw()
         const txCost = await getTxCost(txWithdraw)
-        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('WPodPut: you do not have balance to withdraw')
 
         const finalSellerUnderlyingBalance = await ethers.provider.getBalance(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -445,7 +445,7 @@ scenarios.forEach(scenario => {
 
         const txWithdrawBuyer = await wPodPut.connect(buyer).withdraw()
         const txCostBuyer = await getTxCost(txWithdrawBuyer)
-        await expect(wPodPut.connect(buyer).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(wPodPut.connect(buyer).withdraw()).to.be.revertedWith('WPodPut: you do not have balance to withdraw')
 
         const finalBuyerUnderlyingBalance = await ethers.provider.getBalance(buyerAddress)
         const finalBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)

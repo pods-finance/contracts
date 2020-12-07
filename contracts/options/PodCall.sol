@@ -117,7 +117,7 @@ contract PodCall is PodOption {
      * @param owner Which address will be the owner of the options
      */
     function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
-        require(amountOfOptions > 0, "Null amount");
+        require(amountOfOptions > 0, "PodCall: you can not mint 0 options");
 
         if (totalShares > 0) {
             uint256 ownerShares = _calculatedShares(amountOfOptions);
@@ -135,7 +135,7 @@ contract PodCall is PodOption {
 
         require(
             IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountOfOptions),
-            "Couldn't transfer strike tokens from caller"
+            "PodCall: could not transfer underlying tokens from caller"
         );
         emit Mint(owner, amountOfOptions);
     }
@@ -152,10 +152,10 @@ contract PodCall is PodOption {
      */
     function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have minted options");
+        require(ownerShares > 0, "PodCall: you do not have minted options");
 
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= ownerMintedOptions, "Exceed address minted options");
+        require(amountOfOptions <= ownerMintedOptions, "PodCall: not enough minted options");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
@@ -165,7 +165,7 @@ contract PodCall is PodOption {
         uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
 
-        require(underlyingToSend > 0, "Amount of options should be higher");
+        require(underlyingToSend > 0, "PodCall: amount of options is too low");
 
         shares[msg.sender] = shares[msg.sender].sub(sharesToDeduce);
         mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
@@ -176,14 +176,14 @@ contract PodCall is PodOption {
         // Unlocks the strike token
         require(
             IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
-            "Couldn't transfer back strike tokens to caller"
+            "PodCall: could not transfer underlying tokens back to caller"
         );
 
         if (strikeReserves > 0) {
-            require(strikeToSend > 0, "Amount of options should be higher");
+            require(strikeToSend > 0, "WPodPut: amount of options is too low");
             require(
                 IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-                "Couldn't transfer back strike tokens to caller"
+                "PodCall: could not transfer strike tokens back to caller"
             );
         }
         emit Unmint(msg.sender, amountOfOptions);
@@ -211,7 +211,7 @@ contract PodCall is PodOption {
      * @param amountOfOptions The amount option tokens to be exercised
      */
     function exercise(uint256 amountOfOptions) external virtual override exerciseWindow {
-        require(amountOfOptions > 0, "Null amount");
+        require(amountOfOptions > 0, "PodCall: you can not exercise 0 options");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToReceive = _strikeToTransfer(amountOfOptions);
 
@@ -221,13 +221,13 @@ contract PodCall is PodOption {
         // Retrieve the strike asset from caller
         require(
             IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
-            "Could not transfer underlying tokens from caller"
+            "PodCall: could not transfer strike tokens from caller"
         );
 
         // Releases the underlying asset to caller, completing the exchange
         require(
             IERC20(underlyingAsset).transfer(msg.sender, amountOfOptions),
-            "Could not transfer underlying tokens to caller"
+            "PodCall: could not transfer underlying tokens to caller"
         );
         emit Exercise(msg.sender, amountOfOptions);
     }
@@ -241,7 +241,7 @@ contract PodCall is PodOption {
      */
     function withdraw() external virtual override withdrawWindow {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have balance to withdraw");
+        require(ownerShares > 0, "PodCall: you do not have balance to withdraw");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
@@ -254,12 +254,12 @@ contract PodCall is PodOption {
 
         require(
             IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
-            "Couldn't transfer back strike tokens to caller"
+            "PodCall: could not transfer underlying tokens back to caller"
         );
         if (strikeToSend > 0) {
             require(
                 IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-                "Couldn't transfer back strike tokens to caller"
+                "PodCall: could not transfer strike tokens back to caller"
             );
         }
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);

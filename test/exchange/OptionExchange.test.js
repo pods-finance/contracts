@@ -103,7 +103,7 @@ describe('OptionExchange', () => {
         stableToAdd
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange/pool-not-found')
+      await expect(tx).to.be.revertedWith('OptionExchange: pool not found')
     })
   })
 
@@ -153,7 +153,7 @@ describe('OptionExchange', () => {
         sigma
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange/deadline-expired')
+      await expect(tx).to.be.revertedWith('OptionExchange: deadline expired')
     })
 
     it('fails to sell when the pool do not exist', async () => {
@@ -175,7 +175,7 @@ describe('OptionExchange', () => {
         sigma
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange/pool-not-found')
+      await expect(tx).to.be.revertedWith('OptionExchange: pool not found')
     })
   })
 
@@ -250,7 +250,7 @@ describe('OptionExchange', () => {
         sigma
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange/pool-not-found')
+      await expect(tx).to.be.revertedWith('OptionExchange: pool not found')
     })
 
     it('fails when the deadline has passed', async () => {
@@ -271,7 +271,7 @@ describe('OptionExchange', () => {
         sigma
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange/deadline-expired')
+      await expect(tx).to.be.revertedWith('OptionExchange: deadline expired')
     })
   })
 })

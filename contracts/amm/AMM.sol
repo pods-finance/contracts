@@ -132,8 +132,8 @@ abstract contract AMM is RequiredDecimals {
     event TradeExactBOutput(address indexed caller, address indexed owner, uint256 amountAIn, uint256 exactAmountBOut);
 
     constructor(address _tokenA, address _tokenB) public {
-        require(Address.isContract(_tokenA), "AMM/token-a-is-not-a-contract");
-        require(Address.isContract(_tokenB), "AMM/token-b-is-not-a-contract");
+        require(Address.isContract(_tokenA), "AMM: token a is not a contract");
+        require(Address.isContract(_tokenB), "AMM: token b is not a contract");
         tokenA = _tokenA;
         tokenB = _tokenB;
 
@@ -240,7 +240,7 @@ abstract contract AMM is RequiredDecimals {
 
         if (isInitialLiquidity) {
             // In the first liquidity, is necessary add both tokens
-            require(amountOfA > 0 && amountOfB > 0, "You should add both tokens on the first liquidity");
+            require(amountOfA > 0 && amountOfB > 0, "AMM: you should add both tokens on the first liquidity");
 
             fImpOpening = INITIAL_FIMP;
             deamortizedTokenABalance = amountOfA;
@@ -282,12 +282,12 @@ abstract contract AMM is RequiredDecimals {
 
         require(
             IERC20(tokenA).transferFrom(msg.sender, address(this), amountOfA),
-            "Could not transfer option tokens from caller"
+            "AMM: could not transfer option tokens from caller"
         );
 
         require(
             IERC20(tokenB).transferFrom(msg.sender, address(this), amountOfB),
-            "Could not transfer stable tokens from caller"
+            "AMM: could not transfer stable tokens from caller"
         );
 
         emit AddLiquidity(msg.sender, owner, amountOfA, amountOfB);
@@ -304,7 +304,7 @@ abstract contract AMM is RequiredDecimals {
         (uint256 userTokenABalance, uint256 userTokenBBalance, ) = _getUserBalance(msg.sender);
         require(
             amountOfAOriginal <= userTokenABalance && amountOfBOriginal <= userTokenBBalance,
-            "not enough original balance"
+            "AMM: not enough original balance"
         );
 
         // 1) Get Pool Balances
@@ -351,9 +351,9 @@ abstract contract AMM is RequiredDecimals {
         _onRemoveLiquidity(balances[msg.sender], msg.sender);
 
         // 7) Transfers / Update
-        require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "Could not transfer token A from caller");
+        require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
 
-        require(IERC20(tokenB).transfer(msg.sender, amountToSendB), "Could not transfer token B from caller");
+        require(IERC20(tokenB).transfer(msg.sender, amountToSendB), "AMM: could not transfer token B from caller");
 
         emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
     }
@@ -378,13 +378,13 @@ abstract contract AMM is RequiredDecimals {
 
         _onTradeExactAInput(tradeDetails);
 
-        require(amountBOut >= minAmountBOut, "amount tokens out lower than min asked");
+        require(amountBOut >= minAmountBOut, "AMM: amount tokens out lower than minimum asked");
         require(
             IERC20(tokenA).transferFrom(msg.sender, address(this), exactAmountAIn),
-            "Could not transfer token A from caller"
+            "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenB).transfer(owner, amountBOut), "Could not transfer token B to caller");
+        require(IERC20(tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactAInput(msg.sender, owner, exactAmountAIn, exactAmountAIn);
         return amountBOut;
@@ -411,13 +411,13 @@ abstract contract AMM is RequiredDecimals {
 
         _onTradeExactAOutput(tradeDetails);
 
-        require(amountBIn <= maxAmountBIn, "amount tokens out higher than max asked");
+        require(amountBIn <= maxAmountBIn, "AMM: amount tokens out higher than maximum asked");
         require(
             IERC20(tokenB).transferFrom(msg.sender, address(this), amountBIn),
-            "Could not transfer token A from caller"
+            "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenA).transfer(owner, exactAmountAOut), "Could not transfer token B to caller");
+        require(IERC20(tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactAOutput(msg.sender, owner, exactAmountAOut, amountBIn);
         return amountBIn;
@@ -444,13 +444,13 @@ abstract contract AMM is RequiredDecimals {
 
         _onTradeExactBInput(tradeDetails);
 
-        require(amountAOut >= minAmountAOut, "amount tokens out lower than min asked");
+        require(amountAOut >= minAmountAOut, "AMM: amount tokens out lower than minimum asked");
         require(
             IERC20(tokenB).transferFrom(msg.sender, address(this), exactAmountBIn),
-            "Could not transfer token A from caller"
+            "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenA).transfer(owner, amountAOut), "Could not transfer token B to caller");
+        require(IERC20(tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactBInput(msg.sender, owner, amountAOut, exactAmountBIn);
         return amountAOut;
@@ -477,13 +477,13 @@ abstract contract AMM is RequiredDecimals {
 
         _onTradeExactBInput(tradeDetails);
 
-        require(amountAIn <= maxAmountAIn, "amount tokens out higher than max asked");
+        require(amountAIn <= maxAmountAIn, "AMM: amount tokens out higher than maximum asked");
         require(
             IERC20(tokenA).transferFrom(msg.sender, address(this), amountAIn),
-            "Could not transfer token A from caller"
+            "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenB).transfer(owner, exactAmountBOut), "Could not transfer token B to caller");
+        require(IERC20(tokenB).transfer(owner, exactAmountBOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactBOutput(msg.sender, owner, amountAIn, exactAmountBOut);
         return amountAIn;

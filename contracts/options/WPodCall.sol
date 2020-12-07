@@ -120,7 +120,7 @@ contract WPodCall is PodCall {
      */
     function mintEth(address owner) external payable beforeExpiration {
         uint256 amountOfOptions = msg.value;
-        require(amountOfOptions > 0, "Null amount");
+        require(amountOfOptions > 0, "WPodCall: you can not mint 0 options");
 
         if (totalShares > 0) {
             uint256 ownerShares = _calculatedShares(amountOfOptions);
@@ -152,10 +152,10 @@ contract WPodCall is PodCall {
      */
     function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have minted options");
+        require(ownerShares > 0, "WPodCall: you do not have minted options");
 
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= ownerMintedOptions, "Exceed address minted options");
+        require(amountOfOptions <= ownerMintedOptions, "WPodCall: not enough minted options");
 
         uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
@@ -164,8 +164,7 @@ contract WPodCall is PodCall {
 
         uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
-
-        require(underlyingToSend > 0, "Amount of options should be higher");
+        require(underlyingToSend > 0, "WPodCall: amount of options is too low");
 
         shares[msg.sender] = shares[msg.sender].sub(sharesToDeduce);
         mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
@@ -178,10 +177,10 @@ contract WPodCall is PodCall {
         Address.sendValue(msg.sender, underlyingToSend);
 
         if (strikeReserves > 0) {
-            require(strikeToSend > 0, "Amount of options should be higher");
+            require(strikeToSend > 0, "WPodCall: amount of options is too low");
             require(
                 ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-                "Couldn't transfer back strike tokens to caller"
+                "WPodCall: could not transfer strike tokens back to caller"
             );
         }
         emit Unmint(msg.sender, amountOfOptions);
@@ -208,7 +207,7 @@ contract WPodCall is PodCall {
      * @param amountOfOptions The amount option tokens to be exercised
      */
     function exercise(uint256 amountOfOptions) external override exerciseWindow {
-        require(amountOfOptions > 0, "Null amount");
+        require(amountOfOptions > 0, "WPodCall: you can not exercise 0 options");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 amountStrikeToReceive = _strikeToTransfer(amountOfOptions);
 
@@ -218,7 +217,7 @@ contract WPodCall is PodCall {
         // Retrieve the strike asset from caller
         require(
             ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
-            "Could not transfer underlying tokens from caller"
+            "WPodCall: could not transfer strike tokens from caller"
         );
 
         weth.withdraw(amountOfOptions);
@@ -236,7 +235,7 @@ contract WPodCall is PodCall {
      */
     function withdraw() external virtual override withdrawWindow {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have balance to withdraw");
+        require(ownerShares > 0, "WPodCall: you do not have balance to withdraw");
 
         uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
@@ -253,7 +252,7 @@ contract WPodCall is PodCall {
         if (strikeToSend > 0) {
             require(
                 ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-                "Couldn't transfer back strike tokens to caller"
+                "WPodCall: could not transfer strike tokens back to caller"
             );
         }
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);

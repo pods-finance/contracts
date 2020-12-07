@@ -123,7 +123,7 @@ describe('Sigma', () => {
         initialSigmaNull.strikePrice,
         initialSigmaNull.timeToMaturity,
         initialSigmaNull.riskFree
-      )).to.be.revertedWith('Sigma cant be null')
+      )).to.be.revertedWith('Sigma: initial guess should be greater than zero')
     })
   })
 })

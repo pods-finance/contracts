@@ -102,7 +102,7 @@ scenarios.forEach(scenario => {
       it('should revert if user send 0 value to mint function', async () => {
         const balanceSeller = await ethers.provider.getBalance(sellerAddress)
 
-        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: 0 })).to.be.revertedWith('Null amount')
+        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: 0 })).to.be.revertedWith('WPodCall: you can not mint 0 options')
       })
 
       it('should mint, increase senders option balance and decrease sender ETH balance', async () => {
@@ -118,7 +118,7 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to mint after expiration', async () => {
         await forceExpiration(wPodCall)
-        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('Option has expired')
+        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: option has expired')
       })
     })
 
@@ -130,7 +130,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).approve(wPodCall.address, ethers.constants.MaxUint256)
         await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice.add(1))
 
-        await expect(wPodCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('Option has not expired yet')
+        await expect(wPodCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has not expired yet')
       })
       it('should revert if user have underlying enough (ETH), but do not have enough options', async () => {
         await forceExpiration(wPodCall)
@@ -172,13 +172,13 @@ scenarios.forEach(scenario => {
         await wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint })
         await wPodCall.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         await forceEndOfExerciseWindow(wPodCall)
-        await expect(wPodCall.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('Window of exercise has closed already')
+        await expect(wPodCall.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: window of exercise has closed already')
       })
     })
 
-    describe('unminting options', () => {
+    describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(wPodCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('You do not have minted options')
+        await expect(wPodCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('WPodCall: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
@@ -254,12 +254,12 @@ scenarios.forEach(scenario => {
 
     describe('Withdrawing options', () => {
       it('should revert if user try to withdraw before expiration', async () => {
-        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('Window of exercise has not ended yet')
+        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: window of exercise has not ended yet')
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         await forceEndOfExerciseWindow(wPodCall)
-        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('WPodCall: you do not have balance to withdraw')
       })
 
       it('should seller withdraw Underlying Asset balance', async () => {
@@ -297,7 +297,7 @@ scenarios.forEach(scenario => {
         expect(finalContractOptionSupply).to.equal(scenario.amountToMint)
         expect(finalContractUnderlyingBalance).to.equal(0)
         // Trying to re-withdraw
-        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('WPodCall: you do not have balance to withdraw')
       })
 
       it('should withdraw Strike Asset balance plus interest earned proportional (Ma-Mb-Wa-Wb)', async () => {

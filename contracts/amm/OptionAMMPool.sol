@@ -105,16 +105,16 @@ contract OptionAMMPool is AMM {
 
         address sigmaBSAddress = impliedVolatility.blackScholes();
         // Check if sigma black scholes version is the same as the above
-        require(sigmaBSAddress == _priceMethod, "not same BS contract version");
+        require(sigmaBSAddress == _priceMethod, "OptionAMMPool: not same BS contract version");
     }
 
     /**
-     * Maker modifier for functions which are only allowed to be executed
+     * Modifier for functions which are only allowed to be executed
      * BEFORE series expiration.
      */
     modifier beforeExpiration() {
         if (_hasExpired()) {
-            revert("Option has expired");
+            revert("OptionAMMPool: option has expired");
         }
         _;
     }
@@ -677,12 +677,12 @@ contract OptionAMMPool is AMM {
 
         require(
             IERC20(tokenB).transfer(address(feePoolA), tradeDetails.feesTokenA),
-            "Could not transfer Fees to feePoolA"
+            "OptionAMMPool: could not transfer Fees to feePoolA"
         );
 
         require(
             IERC20(tokenB).transfer(address(feePoolB), tradeDetails.feesTokenB),
-            "Could not transfer Fees to feePoolB"
+            "OptionAMMPool: could not transfer Fees to feePoolB"
         );
     }
 

@@ -105,10 +105,10 @@ contract WPodPut is PodPut {
      */
     function unmint(uint256 amountOfOptions) external override beforeExpiration {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have minted options");
+        require(ownerShares > 0, "WPodPut: you do not have minted options");
 
         uint256 userMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= userMintedOptions, "Exceed address minted options");
+        require(amountOfOptions <= userMintedOptions, "WPodPut: not enough minted options");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
@@ -116,7 +116,7 @@ contract WPodPut is PodPut {
         uint256 ownerSharesToReduce = ownerShares.mul(amountOfOptions).div(userMintedOptions);
         uint256 strikeToSend = ownerSharesToReduce.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = ownerSharesToReduce.mul(underlyingReserves).div(totalShares);
-        require(strikeToSend > 0, "Amount too low");
+        require(strikeToSend > 0, "WPodPut: amount of options is too low");
 
         shares[msg.sender] = shares[msg.sender].sub(ownerSharesToReduce);
         mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
@@ -127,11 +127,11 @@ contract WPodPut is PodPut {
         // Unlocks the strike token
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Couldn't transfer back strike tokens to caller"
+            "WPodPut: could not transfer strike tokens back to caller"
         );
 
         if (underlyingReserves > 0) {
-            require(underlyingToSend > 0, "Amount too low");
+            require(underlyingToSend > 0, "WPodPut: amount of options is too low");
             weth.withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }
@@ -157,7 +157,7 @@ contract WPodPut is PodPut {
      */
     function exerciseEth() external payable exerciseWindow {
         uint256 amountOfOptions = msg.value;
-        require(amountOfOptions > 0, "Null amount");
+        require(amountOfOptions > 0, "WPodPut: you can not exercise 0 options");
         // Calculate the strike amount equivalent to pay for the underlying requested
         uint256 strikeToSend = _strikeToTransfer(amountOfOptions);
 
@@ -169,7 +169,7 @@ contract WPodPut is PodPut {
         // Releases the strike asset to caller, completing the exchange
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Could not transfer underlying tokens to caller"
+            "WPodPut: could not transfer strike tokens to caller"
         );
         emit Exercise(msg.sender, amountOfOptions);
     }
@@ -183,7 +183,7 @@ contract WPodPut is PodPut {
      */
     function withdraw() external override withdrawWindow {
         uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "You do not have balance to withdraw");
+        require(ownerShares > 0, "WPodPut: you do not have balance to withdraw");
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
@@ -196,7 +196,7 @@ contract WPodPut is PodPut {
 
         require(
             IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
-            "Couldn't transfer back strike tokens to caller"
+            "WPodPut: could not transfer strike tokens back to caller"
         );
         if (underlyingReserves > 0) {
             weth.withdraw(underlyingToSend);

@@ -276,7 +276,7 @@ scenarios.forEach(scenario => {
 
         expect(await mockUnderlyingAsset.balanceOf(sellerAddress)).to.equal(scenario.amountToMint)
         await forceExpiration(podCall)
-        await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('Option has expired')
+        await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: option has expired')
       })
     })
 
@@ -288,7 +288,7 @@ scenarios.forEach(scenario => {
         // Mint Underlying Asset
         await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice)
         expect(await mockStrikeAsset.balanceOf(buyerAddress)).to.equal(scenario.strikePrice)
-        await expect(podCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('Option has not expired yet')
+        await expect(podCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has not expired yet')
       })
       it('should revert if user have strike approved, but do not have enough options', async () => {
         // Mint underlying
@@ -373,13 +373,13 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('unminting options', () => {
+    describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('You do not have minted options')
+        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodCall: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podCall.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('Exceed address minted options')
+        await expect(podCall.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('PodCall: not enough minted options')
       })
       it('should unmint, destroy sender option, reduce its balance and send underlying back', async () => {
         await MintPhase(scenario.amountToMint)
@@ -457,19 +457,19 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to unmint after expiration - European', async () => {
         await forceExpiration(podCall)
-        await expect(podCall.connect(seller).unmint()).to.be.revertedWith('Option has not expired yet')
+        await expect(podCall.connect(seller).unmint()).to.be.revertedWith('PodOption: option has not expired yet')
       })
     })
 
     describe('Withdrawing options', () => {
       it('should revert if user try to withdraw before expiration', async () => {
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('Window of exercise has not ended yet')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: window of exercise has not ended yet')
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         await forceEndOfExerciseWindow(podCall)
 
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
       })
 
       it('should withdraw Underlying Asset balance plus interest earned', async () => {
@@ -490,7 +490,7 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeBalance).to.equal(0)
         expect(finalContractUnderlyingBalance).to.equal(0)
         // Cant withdraw two times in a row
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
       })
 
       it('should withdraw Underlying Asset balance plus interest earned proportional (Ma-Mb-Wa-Wb)', async () => {
