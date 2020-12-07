@@ -1,5 +1,5 @@
 const { deployMockContract } = waffle
-const PriceFeedABI = require('../../abi/PriceFeed.json')
+const PriceFeedABI = require('../../abi/ChainlinkPriceFeed.json')
 const getTimestamp = require('./getTimestamp')
 
 module.exports = async function getPriceFeedMock (deployer, refPrice, refDecimals, tokenAddress) {
@@ -10,7 +10,7 @@ module.exports = async function getPriceFeedMock (deployer, refPrice, refDecimal
     answer: refPrice,
     startedAt: await getTimestamp(),
     updatedAt: await getTimestamp() + 1,
-    answeredInRound: 1,
+    answeredInRound: 1
   }
 
   await priceFeed.mock.latestRoundData.returns(
