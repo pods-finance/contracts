@@ -327,8 +327,8 @@ scenarios.forEach(scenario => {
         expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
 
         const funds = await podPut.connect(seller).getSellerWithdrawAmounts(sellerAddress)
-        expect(funds.underlyingToSend).to.be.equal(0)
-        expect(funds.strikeToSend).to.be.equal(scenario.strikePrice.add(1))
+        expect(funds.underlyingAmount).to.be.equal(0)
+        expect(funds.strikeAmount).to.be.gte(scenario.strikePrice)
       })
 
       it('should mint, increase senders option balance and decrease sender strike balance', async () => {
@@ -592,7 +592,7 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('unminting options', () => {
+    describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
         await expect(podPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('You do not have minted options')
       })
@@ -698,6 +698,18 @@ scenarios.forEach(scenario => {
         await forceEndOfExerciseWindow(podPut)
 
         await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
+      })
+
+      it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {
+        await MintPhase(scenario.amountToMint)
+        await MintPhase(scenario.amountToMint, buyer, buyerAddress)
+
+        await forceExpiration(podPut)
+        await ExercisePhase(scenario.amountToMint, seller, another, anotherAddress)
+
+        const funds = await podPut.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingAmount).to.be.equal(scenario.amountToMint.div(2))
+        expect(funds.strikeAmount).to.be.equal(scenario.strikePrice.div(2))
       })
 
       it('should withdraw Strike Asset balance plus interest earned', async () => {

@@ -266,8 +266,8 @@ scenarios.forEach(scenario => {
         expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
 
         const funds = await podCall.connect(seller).getSellerWithdrawAmounts(sellerAddress)
-        expect(funds.underlyingToSend).to.be.equal(scenario.amountToMint)
-        expect(funds.strikeToSend).to.be.equal(0)
+        expect(funds.underlyingAmount).to.be.equal(scenario.amountToMint)
+        expect(funds.strikeAmount).to.be.equal(0)
       })
 
       it('should mint, increase senders option balance and decrease sender underlying balance', async () => {
