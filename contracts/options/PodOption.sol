@@ -136,12 +136,12 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      * @return strikeToSend current amount of strike the user will receive. It may change until maturity
      * @return underlyingToSend current amount of underlying the user will receive. It may change until maturity
      */
-    function getSellerWithdrawAmounts(address user)
+    function getSellerWithdrawAmounts(address owner)
         external
         view
         returns (uint256 strikeToSend, uint256 underlyingToSend)
     {
-        uint256 ownerShares = shares[user];
+        uint256 ownerShares = shares[owner];
 
         uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
         uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
