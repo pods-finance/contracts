@@ -486,6 +486,18 @@ scenarios.forEach(scenario => {
         await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('You do not have balance to withdraw')
       })
 
+      it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset', async () => {
+        await MintPhase(scenario.amountToMint)
+        await MintPhase(scenario.amountToMint, buyer, buyerAddress)
+
+        await forceExpiration(podCall)
+        await ExercisePhase(scenario.amountToMint, seller, another, anotherAddress)
+
+        const funds = await podCall.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingAmount).to.be.equal(scenario.amountToMint.div(2))
+        expect(funds.strikeAmount).to.be.equal(scenario.strikePrice.div(2))
+      })
+
       it('should withdraw Underlying Asset balance plus interest earned', async () => {
         await MintPhase(scenario.amountToMint)
         // Earned 10% interest
