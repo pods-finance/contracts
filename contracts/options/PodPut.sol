@@ -108,7 +108,7 @@ contract PodPut is PodOption {
      * Options can only be minted while the series is NOT expired.
      *
      * It is also important to notice that options will be sent back
-     * to `msg.sender` and not the `owner`. This is designed to allow
+     * to `msg.sender` and not the `owner`. This behavior is designed to allow
      * proxy contracts to mint on others behalf
      *
      * @param amountOfOptions The amount option tokens to be issued
