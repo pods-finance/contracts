@@ -8,6 +8,7 @@ import "../lib/RequiredDecimals.sol";
 
 /**
  * @title PodOption
+ * @author Pods Finance
  *
  * @notice This contract represents the basic structure of the financial instrument
  * known as Option, sharing logic between both a PUT or a CALL types.
@@ -86,11 +87,20 @@ abstract contract PodOption is ERC20, RequiredDecimals {
     uint256 public endOfExerciseWindow;
 
     /**
-     * @notice Tracks how many strike tokens each address has locked
-     * inside this contract
+     * @notice Reserve share balance
+     * @dev Tracks the shares of the total asset reserve by address
      */
     mapping(address => uint256) public shares;
+
+    /**
+     * @notice Minted option balance
+     * @dev Tracks amount of minted options by address
+     */
     mapping(address => uint256) public mintedOptions;
+
+    /**
+     * @notice Total reserve shares
+     */
     uint256 public totalShares = 0;
 
     /** Events */
@@ -145,13 +155,17 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      *
      * @dev The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
      *
+     * The collateral could be underlying or strike asset depending on the option type: Put or Call,
+     * respectively
+     *
      * It presumes the caller has already called IERC20.approve() on the
      * strike token contract to move caller funds.
      *
-     * This function is meant to be called by collateral holders wanting
-     * to write option tokens.
-     *
      * Options can only be minted while the series is NOT expired.
+     *
+     * It is also important to notice that options will be sent back
+     * to `msg.sender` and not the `owner`. This is designed to allow
+     * proxy contracts to mint on others behalf
      *
      * @param amountOfOptions The amount option tokens to be issued
      * @param owner Which address will be the owner of the options
@@ -165,7 +179,9 @@ abstract contract PodOption is ERC20, RequiredDecimals {
      * @dev It presumes the caller has already called IERC20.approve() exercisable asset
      * to move caller funds.
      *
-     * Options can only be exchanged while the series is NOT expired.
+     * On American options, this function can only called anytime before expiration.
+     * For European options, this function can only be called during the exerciseWindow.
+     * Meaning, after expiration and before the end of exercise window.
      *
      * @param amountOfOptions The amount option tokens to be exercised
      */
@@ -181,12 +197,12 @@ abstract contract PodOption is ERC20, RequiredDecimals {
     function withdraw() external virtual;
 
     /**
-     * @notice Unlocks the amount of collateral by burning option tokens.
+     * @notice Unlocks collateral by burning option tokens.
      *
-     * This mechanism ensures that users can only redeem tokens they've
-     * previously lock into this contract.
+     * @dev In case of American options where exercise can happen before the expiration, caller
+     * may receive a mix of underlying asset and strike asset.
      *
-     * @dev Options can only be burned while the series is NOT expired.
+     * Options can only be burned while the series is NOT expired.
      *
      * @param amountOfOptions The amount option tokens to be burned
      */

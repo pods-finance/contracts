@@ -6,10 +6,12 @@ import "../interfaces/IWETH.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
- * This contract represents a tokenized European call option series for some
- * long/short token pair.
+ * @title WPodCall
+ * @author Pods Finance
  *
- * Call options represents the right, not the obligation to buy the underlying asset
+ * @notice Represents a tokenized European call option series for some long/short token pair.
+ *
+ * @dev Call options represents the right, not the obligation to buy the underlying asset
  * for strike price units of the strike asset.
  *
  * There are four main actions that can be done with an option:
@@ -100,18 +102,21 @@ contract WPodCall is PodCall {
     event Received(address sender, uint256 value);
 
     /**
-     * Locks some amount of the underlying asset (ETH) and writes option tokens.
+     * @notice Locks underlying asset (ETH) and write option tokens.
      *
-     * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
+     * @dev The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
      *
-     * This function is meant to be called by ETH token holders wanting
-     * to write option tokens.
+     * This function is meant to be called by underlying token (ETH) holders wanting
+     * to write option tokens. Calling it will lock `amountOfOptions` units of
+     * `underlyingToken` into this contract
      *
      * Options can only be minted while the series is NOT expired.
      *
-     * @param owner The address that will store at shares. owner will
-     * be able to withdraw later on behalf of the sender. It is also important
-     * to notice that the options tokens will not be send to owner, but to the msg.sender
+     * It is also important to notice that options will be sent back
+     * to `msg.sender` and not the `owner`. This is designed to allow
+     * proxy contracts to mint on others behalf
+     *
+     * @param owner Which address will be the owner of the options
      */
     function mintEth(address owner) external payable beforeExpiration {
         uint256 amountOfOptions = msg.value;
@@ -146,17 +151,14 @@ contract WPodCall is PodCall {
     }
 
     /**
-     * Unlocks some amount of the underlying token by burning option tokens.
+     * @notice Unlocks collateral by burning option tokens.
      *
-     * This mechanism ensures that users can only redeem tokens they've
-     * previously lock into this contract.
-     *
-     * Options can only be unminted while the series is NOT expired.
-     * In case of American options where exercise can happen before the expiration, caller
+     * @dev In case of American options where exercise can happen before the expiration, caller
      * may receive a mix of underlying asset and strike asset.
      *
-     * @param amountOfOptions The amount option tokens to be unminted; this will burn
-     * same amount of options, releasing in a 1:1 ratio units of underlying asset.
+     * Options can only be burned while the series is NOT expired.
+     *
+     * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
         uint256 ownerShares = shares[msg.sender];
@@ -196,17 +198,15 @@ contract WPodCall is PodCall {
     }
 
     /**
-     * Allow call token holders to use them to buy some amount of units
-     * of the underlying token for the amountOfOptions * strike price units of the
-     * strike token.
+     * @notice Allow Call token holders to use them to buy some amount of ETH
+     * for the amountOfOptions * strike price units of the strike token.
      *
-     * It presumes the caller has already called IERC20.approve() on the
+     * @dev It presumes the caller has already called IERC20.approve() on the
      * strike token contract to move caller funds.
      *
      * During the process:
      *
-     * - The amountOfOptions units of underlying tokens are transferred to the
-     * caller
+     * - The amountOfOptions units of underlying tokens are transferred to the caller
      * - The amountOfOptions option tokens are burned.
      * - The amountOfOptions * strikePrice units of strike tokens are transferred into
      * this contract as a payment for the underlying tokens.
@@ -238,15 +238,11 @@ contract WPodCall is PodCall {
     }
 
     /**
-     * After series expiration, allow addresses who have locked their strike
-     * asset tokens to withdraw.
+     * @notice After series expiration, allow minters who have locked their
+     * underlying asset tokens to withdraw them proportionally to their minted options.
      *
-     * If the option has been exercised, the caller will receive a mix of
-     * the underlying asset and the strike asset.
-     *
-     * It is NOT on a first=come=first=serve basis. The exercised options,
-     * meaning the strike asset wll be distributed proportionally between sellers.
-     *
+     * @dev If assets had been exercised during the option series the minter may withdraw
+     * the exercised assets or a combination of exercised and underlying asset tokens.
      */
     function withdraw() external virtual override withdrawWindow {
         uint256 ownerShares = shares[msg.sender];

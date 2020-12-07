@@ -6,6 +6,7 @@ import "./PodOption.sol";
 
 /**
  * @title OptionFactory
+ * @author Pods Finance
  * @notice Creates and store new Options Series
  * @dev Uses IOptionBuilder to create the different types of Options
  */

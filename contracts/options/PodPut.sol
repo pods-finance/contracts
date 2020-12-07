@@ -4,10 +4,12 @@ pragma solidity 0.6.12;
 import "./PodOption.sol";
 
 /**
- * This contract represents a tokenized Put option series for some
- * long/short token pair.
+ * @title PodPut
+ * @author Pods Finance
  *
- * Put options represents the right, not the obligation to sell the underlying asset
+ * @notice Represents a tokenized Put option series for some long/short token pair.
+ *
+ * @dev Put options represents the right, not the obligation to sell the underlying asset
  * for strike price units of the strike asset.
  *
  * There are four main actions that can be done with an option:
@@ -92,21 +94,25 @@ contract PodPut is PodOption {
     {}
 
     /**
-     * Locks some amount of the strike token and writes option tokens.
+     * @notice Locks strike asset and write option tokens.
      *
-     * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
+     * @dev The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
      *
      * It presumes the caller has already called IERC20.approve() on the
      * strike token contract to move caller funds.
      *
      * This function is meant to be called by strike token holders wanting
-     * to write option tokens.
+     * to write option tokens. Calling it will lock `amountOfOptions` * `strikePrice`
+     * units of `strikeToken` into this contract
      *
      * Options can only be minted while the series is NOT expired.
      *
-     * @param amountOfOptions The amount option tokens to be issued; this will lock
-     * for instance amount * strikePrice units of strikeToken into this
-     * contract
+     * It is also important to notice that options will be sent back
+     * to `msg.sender` and not the `owner`. This is designed to allow
+     * proxy contracts to mint on others behalf
+     *
+     * @param amountOfOptions The amount option tokens to be issued
+     * @param owner Which address will be the owner of the options
      */
     function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
         require(amountOfOptions > 0, "Null amount");
@@ -134,12 +140,14 @@ contract PodPut is PodOption {
     }
 
     /**
-     * Unlocks some amount of the strike token by burning option tokens.
+     * @notice Unlocks collateral by burning option tokens.
      *
-     * This mechanism ensures that users can only redeem tokens they've
-     * previously lock into this contract.
+     * @dev In case of American options where exercise can happen before the expiration, caller
+     * may receive a mix of underlying asset and strike asset.
      *
      * Options can only be burned while the series is NOT expired.
+     *
+     * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
         uint256 ownerShares = shares[msg.sender];
@@ -181,22 +189,24 @@ contract PodPut is PodOption {
     }
 
     /**
-     * Allow put token holders to use them to sell some amount of units
+     * @notice Allow Put token holders to use them to sell some amount of units
      * of the underlying token for the amount * strike price units of the
      * strike token.
      *
-     * It presumes the caller has already called IERC20.approve() on the
+     * @dev It presumes the caller has already called IERC20.approve() on the
      * underlying token contract to move caller funds.
      *
      * During the process:
      *
-     * - The amount * strikePrice of strike tokens are transferred to the
-     * caller
+     * - The amount * strikePrice of strike tokens are transferred to the caller
      * - The amount of option tokens are burned
      * - The amount of underlying tokens are transferred into
      * this contract as a payment for the strike tokens
      *
-     * Options can only be exchanged while the series is NOT expired.
+     * On American options, this function can only called anytime before expiration.
+     * For European options, this function can only be called during the exerciseWindow.
+     * Meaning, after expiration and before the end of exercise window.
+     *
      * @param amountOfOptions The amount option tokens to be exercised
      */
     function exercise(uint256 amountOfOptions) external virtual override exerciseWindow {
@@ -222,12 +232,11 @@ contract PodPut is PodOption {
     }
 
     /**
-     * After series expiration, allow addresses who have locked their strike
-     * asset tokens to withdraw them on first-come-first-serve basis.
+     * @notice After series expiration, allow minters who have locked their
+     * strike asset tokens to withdraw them proportionally to their minted options.
      *
-     * If there is not enough of strike asset because the series have been
-     * exercised, the remaining balance is converted into the underlying asset
-     * and given to the caller.
+     * @dev If assets had been exercised during the option series the minter may withdraw
+     * the exercised assets or a combination of exercised and strike asset tokens.
      */
     function withdraw() external virtual override withdrawWindow {
         uint256 ownerShares = shares[msg.sender];

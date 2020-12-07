@@ -6,6 +6,7 @@ import "./PodOption.sol";
 
 /**
  * @title WPodPutBuilder
+ * @author Pods Finance
  * @notice Builds WPodPut options
  */
 contract WPodPutBuilder {
