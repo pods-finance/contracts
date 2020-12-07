@@ -119,35 +119,22 @@ contract PodCall is PodOption {
     function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
         require(amountOfOptions > 0, "Null amount");
 
-        // 1) Calculate strikeToTransfer
-        uint256 amountToReceive = amountOfOptions;
-        // amountToTransfer = 300
-        require(amountToReceive > 0, "Amount of options should be higher");
-        uint256 ownerShares;
-
         if (totalShares > 0) {
-            // 2) Check current balances
-            ownerShares = _calculatedShares(amountOfOptions);
-            // 4.1) update totalShares
-            totalShares = totalShares.add(ownerShares);
-            // 4.2) update userMintedOptions
-            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
-            // 4.3) update userWeightBalance
-            shares[owner] = shares[owner].add(ownerShares);
-        } else {
-            ownerShares = amountOfOptions;
+            uint256 ownerShares = _calculatedShares(amountOfOptions);
 
-            shares[owner] = ownerShares;
+            shares[owner] = shares[owner].add(ownerShares);
+            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
+            totalShares = totalShares.add(ownerShares);
+        } else {
+            shares[owner] = amountOfOptions;
             mintedOptions[owner] = amountOfOptions;
-            // totalShares = totalShares
-            totalShares = ownerShares;
+            totalShares = amountOfOptions;
         }
 
         _mint(msg.sender, amountOfOptions);
 
-        // 5) Update Total Strike Asset Pool
         require(
-            IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountToReceive),
+            IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountOfOptions),
             "Couldn't transfer strike tokens from caller"
         );
         emit Mint(owner, amountOfOptions);
