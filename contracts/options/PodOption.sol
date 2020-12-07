@@ -128,6 +128,31 @@ abstract contract PodOption is ERC20, RequiredDecimals {
     }
 
     /**
+     * @notice getSellerWithdrawAmounts returns the seller position based on his amount of shares
+     * and the current option position
+     *
+     * @param owner address of the user to check the withdraw amounts
+     *
+     * @return strikeAmount current amount of strike the user will receive. It may change until maturity
+     * @return underlyingAmount current amount of underlying the user will receive. It may change until maturity
+     */
+    function getSellerWithdrawAmounts(address owner)
+        external
+        view
+        returns (uint256 strikeAmount, uint256 underlyingAmount)
+    {
+        uint256 ownerShares = shares[owner];
+
+        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
+
+        strikeAmount = ownerShares.mul(strikeReserves).div(totalShares);
+        underlyingAmount = ownerShares.mul(underlyingReserves).div(totalShares);
+
+        return (strikeAmount, underlyingAmount);
+    }
+
+    /**
      * Locks some amount of collateral and writes option tokens.
      *
      * The issued amount ratio is 1:1, i.e., 1 option token for 1 underlying token.
