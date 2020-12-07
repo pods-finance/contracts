@@ -75,7 +75,7 @@ describe('PriceProvider', () => {
       expect(await provider.getPriceFeed(asset1)).to.equal(ethers.constants.AddressZero)
     })
 
-    it('should revert if try to remove a inexistent feed', async () => {
+    it('should revert if try to remove a nonexistent feed', async () => {
       await expect(provider.removeAssetFeeds([asset1]))
     })
   })
@@ -85,11 +85,11 @@ describe('PriceProvider', () => {
       expect(await provider.getAssetPrice(asset0)).to.be.equal(price)
     })
 
-    it('should revert if fetches the price of inexistent asset', async () => {
+    it('should revert if fetches the price of nonexistent asset', async () => {
       await expect(provider.getAssetPrice(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
     })
 
-    it('should revert if fetches the asset decimals of inexistent asset', async () => {
+    it('should revert if fetches the asset decimals of nonexistent asset', async () => {
       await expect(provider.getAssetDecimals(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
     })
   })

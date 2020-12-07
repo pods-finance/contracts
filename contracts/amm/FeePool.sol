@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IFeePool.sol";
 
 /**
- * FeePool
- *
- * Represents a pool that manages fee collection.
+ * @title FeePool
+ * @author Pods Finance
+ * @notice Represents a pool that manages fee collection.
  * Shares can be created to redeem the collected fees between participants proportionally.
  */
 contract FeePool is IFeePool, Ownable {
@@ -44,21 +44,21 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * Return the current fee value
+     * @notice Return the current fee value
      */
     function feeValue() external override view returns (uint256) {
         return _feeValue;
     }
 
     /**
-     * Returns the number of decimals used to represent fees
+     * @notice Returns the number of decimals used to represent fees
      */
     function feeDecimals() external override view returns (uint8) {
         return _feeDecimals;
     }
 
     /**
-     * Utility function to calculate fee charges to a given amount
+     * @notice Utility function to calculate fee charges to a given amount
      *
      * @param amount Total transaction amount
      */
@@ -67,7 +67,7 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * Return balance of an address
+     * @notice Return balance of an address
      *
      * @param owner Balance owner
      */
@@ -76,7 +76,7 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * Return shares of an address
+     * @notice Return shares of an address
      *
      * @param owner Balance owner
      */
@@ -85,14 +85,14 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * Total count of shares created
+     * @notice Total count of shares created
      */
     function totalShares() external view returns (uint256) {
         return _shares;
     }
 
     /**
-     * Sets fee and the decimals
+     * @notice Sets fee and the decimals
      *
      * @param value Fee value
      * @param decimals Fee decimals
@@ -104,7 +104,7 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * Withdraws collected fees to an address
+     * @notice Withdraws collected fees to an address
      *
      * @param to To whom the fees should be transferred
      * @param amountOfShares Amount of Shares to burn
@@ -128,7 +128,7 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * Creates new shares that represent a fraction when withdrawing fees
+     * @notice Creates new shares that represent a fraction when withdrawing fees
      *
      * @param to To whom the tokens should be minted
      * @param amount Amount to mint

@@ -31,10 +31,29 @@ contract OptionAMMPool is AMM {
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
 
     // External Contracts
+    /**
+     * @notice responsible for the the spot price of the option's underlying asset.
+     */
     IPriceProvider public priceProvider;
+
+    /**
+     * @notice responsible for the current price of the option itself.
+     */
     IBlackScholes public priceMethod;
+
+    /**
+     * @notice responsible for one of the priceMethod inputs: implied Volatility (also known as sigma)
+     */
     ISigma public impliedVolatility;
+
+    /**
+     * @notice responsible for handling Liquidity providers fees of the token A
+     */
     IFeePool public feePoolA;
+
+    /**
+     * @notice responsible for handling Liquidity providers fees of the token B
+     */
     IFeePool public feePoolB;
 
     // Option Info
@@ -48,6 +67,10 @@ contract OptionAMMPool is AMM {
         uint256 sigmaInitialGuess;
     }
 
+    /**
+     * @notice priceProperties are all information needed to handle the price discovery method
+     * most of the properties will be used by getABPrice
+     */
     PriceProperties public priceProperties;
 
     constructor(
@@ -82,20 +105,29 @@ contract OptionAMMPool is AMM {
 
         address sigmaBSAddress = impliedVolatility.blackScholes();
         // Check if sigma black scholes version is the same as the above
-        require(sigmaBSAddress == _priceMethod, "not same BS contract version");
+        require(sigmaBSAddress == _priceMethod, "OptionAMMPool: not same BS contract version");
     }
 
     /**
-     * Maker modifier for functions which are only allowed to be executed
+     * Modifier for functions which are only allowed to be executed
      * BEFORE series expiration.
      */
     modifier beforeExpiration() {
         if (_hasExpired()) {
-            revert("Option has expired");
+            revert("OptionAMMPool: option has expired");
         }
         _;
     }
 
+    /**
+     * @notice addLiquidity in any proportion of tokenA or tokenB
+     *
+     * @dev This function can only be called before option expiration
+     *
+     * @param amountOfA amount of TokenA to add
+     * @param amountOfB amount of TokenB to add
+     * @param owner address of the account that will have ownership of the liquidity
+     */
     function addLiquidity(
         uint256 amountOfA,
         uint256 amountOfB,
@@ -104,10 +136,29 @@ contract OptionAMMPool is AMM {
         return _addLiquidity(amountOfA, amountOfB, owner);
     }
 
+    /**
+     * @notice removeLiquidity in any proportion of tokenA or tokenB
+     *
+     * @param amountOfA amount of TokenA to add
+     * @param amountOfB amount of TokenB to add
+     */
     function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external {
         return _removeLiquidity(amountOfA, amountOfB);
     }
 
+    /**
+     * @notice tradeExactAInput msg.sender is able to trade exact amount of token A in exchange for minimum
+     * amount of token B and send the tokens B to the owner. After that, this function also updates the priceProperties.* currentSigma
+     *
+     * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
+     * out of thin ar, caller can help the Numeric Method achieve the result in less iterations with this parameter.
+     * In order to know which guess the caller should use, call the getOptionTradeDetailsExactAInput first.
+     *
+     * @param exactAmountAIn exact amount of A token that will be transfer from msg.sender
+     * @param minAmountBOut minimum acceptable amount of token B to transfer to owner
+     * @param owner the destination address that will receive the token B
+     * @param sigmaInitialGuess The first guess that the Numeric Method (getPutSigma / getCallSigma) should use
+     */
     function tradeExactAInput(
         uint256 exactAmountAIn,
         uint256 minAmountBOut,
@@ -118,6 +169,19 @@ contract OptionAMMPool is AMM {
         return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
     }
 
+    /**
+     * @notice _tradeExactAOutput owner is able to receive exact amount of token A in exchange of a max
+     * acceptable amount of token B transfer from the msg.sender. After that, this function also updates the priceProperties.* currentSigma
+     *
+     * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
+     * out of thin ar, caller can help the Numeric Method achieve the result in less iterations with this parameter.
+     * In order to know which guess the caller should use, call the getOptionTradeDetailsExactAOutput first.
+     *
+     * @param exactAmountAOut exact amount of token A that will be transfer to owner
+     * @param maxAmountBIn maximum acceptable amount of token B to transfer from msg.sender
+     * @param owner the destination address that will receive the token A
+     * @param sigmaInitialGuess The first guess that the Numeric Method (getPutSigma / getCallSigma) should use
+     */
     function tradeExactAOutput(
         uint256 exactAmountAOut,
         uint256 maxAmountBIn,
@@ -128,6 +192,19 @@ contract OptionAMMPool is AMM {
         return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
     }
 
+    /**
+     * @notice _tradeExactBInput msg.sender is able to trade exact amount of token B in exchange for minimum
+     * amount of token A sent to the owner. After that, this function also updates the priceProperties.currentSigma
+     *
+     * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
+     * out of thin ar, caller can help the Numeric Method achieve the result ini less iterations with this parameter.
+     * In order to know which guess the caller should use, call the getOptionTradeDetailsExactBInput first.
+     *
+     * @param exactAmountBIn exact amount of token B that will be transfer from msg.sender
+     * @param minAmountAOut minimum acceptable amount of token A to transfer to owner
+     * @param owner the destination address that will receive the token A
+     * @param sigmaInitialGuess The first guess that the Numeric Method (getPutSigma / getCallSigma) should use
+     */
     function tradeExactBInput(
         uint256 exactAmountBIn,
         uint256 minAmountAOut,
@@ -138,6 +215,20 @@ contract OptionAMMPool is AMM {
         return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
     }
 
+    /**
+     * @notice _tradeExactBOutput owner is able to receive exact amount of token B in exchange of a max
+     * acceptable amount of token A transfer from msg.sender. After that, this function also updates the
+     * priceProperties.currentSigma
+     *
+     * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
+     * out of thin ar, caller can help the Numeric Method achieve the result ini less iterations with this parameter.
+     * In order to know which guess the caller should use, call the getOptionTradeDetailsExactBOutput first.
+     *
+     * @param exactAmountBOut exact amount of token B that will be transfer to owner
+     * @param maxAmountAIn maximum acceptable amount of token A to transfer from msg.sender
+     * @param owner the destination address that will receive the token B
+     * @param sigmaInitialGuess The first guess that the Numeric Method (getPutSigma / getCallSigma) should use
+     */
     function tradeExactBOutput(
         uint256 exactAmountBOut,
         uint256 maxAmountAIn,
@@ -148,68 +239,132 @@ contract OptionAMMPool is AMM {
         return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
     }
 
-    function getABPrice() external view returns (uint256) {
+    /**
+     * @notice getABPrice This function wll call internal function _getABPrice that will calculate the
+     * calculate the ABPrice based on current market conditions. It calculates only the unit price AB, not taking in
+     * consideration the slippage.
+     *
+     * @return ABPrice ABPrice is the unit price AB. Meaning how many units of B, buys 1 unit of A
+     */
+    function getABPrice() external view returns (uint256 ABPrice) {
         return _getABPrice();
     }
 
+    /**
+     * @notice getOptionTradeDetailsExactAInput view function that simulates a trade, in order the preview
+     * the amountBOut, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
+     *
+     * @param exactAmountAIn amount of token A that will by transfer from msg.sender to the pool
+     *
+     * @return amountBOut amount of B in exchange of the exactAmountAIn
+     * @return newIV the new sigma that this trade will result
+     * @return feesTokenA amount of fees of collected by token A
+     * @return feesTokenB amount of fees of collected by token B
+     */
     function getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
         external
         view
         returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
+            uint256 amountBOut,
+            uint256 newIV,
+            uint256 feesTokenA,
+            uint256 feesTokenB
         )
     {
         return _getOptionTradeDetailsExactAInput(exactAmountAIn);
     }
 
+    /**
+     * @notice getOptionTradeDetailsExactAOutput view function that simulates a trade, in order the preview
+     * the amountBIn, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
+     *
+     * @param exactAmountAOut amount of token A that will by transfer from pool to the msg.sender/owner
+     *
+     * @return amountBIn amount of B that will be transfer from msg.sender to the pool
+     * @return newIV the new sigma that this trade will result
+     * @return feesTokenA amount of fees of collected by token A
+     * @return feesTokenB amount of fees of collected by token B
+     */
     function getOptionTradeDetailsExactAOutput(uint256 exactAmountAOut)
         external
         view
         returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
+            uint256 amountBIn,
+            uint256 newIV,
+            uint256 feesTokenA,
+            uint256 feesTokenB
         )
     {
         return _getOptionTradeDetailsExactAOutput(exactAmountAOut);
     }
 
+    /**
+     * @notice getOptionTradeDetailsExactBInput view function that simulates a trade, in order the preview
+     * the amountBIn, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
+     *
+     * @param exactAmountBIn amount of token B that will by transfer from msg.sender to the pool
+     *
+     * @return amountAOut amount of A that will be transfer from contract to owner
+     * @return newIV the new sigma that this trade will result
+     * @return feesTokenA amount of fees of collected by token A
+     * @return feesTokenB amount of fees of collected by token B
+     */
     function getOptionTradeDetailsExactBInput(uint256 exactAmountBIn)
         external
         view
         returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
+            uint256 amountAOut,
+            uint256 newIV,
+            uint256 feesTokenA,
+            uint256 feesTokenB
         )
     {
         return _getOptionTradeDetailsExactBInput(exactAmountBIn);
     }
 
+    /**
+     * @notice getOptionTradeDetailsExactBOutput view function that simulates a trade, in order the preview
+     * the amountAIn, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
+     *
+     * @param exactAmountBOut amount of token B that will by transfer from pool to the msg.sender/owner
+     *
+     * @return amountAIn amount of A that will be transfer from msg.sender to the pool
+     * @return newIV the new sigma that this trade will result
+     * @return feesTokenA amount of fees of collected by token A
+     * @return feesTokenB amount of fees of collected by token B
+     */
     function getOptionTradeDetailsExactBOutput(uint256 exactAmountBOut)
         external
         view
         returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
+            uint256 amountAIn,
+            uint256 newIV,
+            uint256 feesTokenA,
+            uint256 feesTokenB
         )
     {
         return _getOptionTradeDetailsExactBOutput(exactAmountBOut);
     }
 
-    function getSpotPrice(address asset, uint256 decimalsOutput) external view returns (uint256) {
+    /**
+     * @notice getSpotPrice Check the spot price of given asset with a certain precision controlled by decimalsOutput
+     *
+     * @param asset address to check the spot price
+     * @param decimalsOutput number of decimals of the response
+     *
+     * @return spotPrice amount of A that will be transfer from msg.sender to the pool
+     */
+
+    function getSpotPrice(address asset, uint256 decimalsOutput) external view returns (uint256 spotPrice) {
         return _getSpotPrice(asset, decimalsOutput);
     }
 
     /**
-     * Internal function to check expiration
+     * @dev Internal function to check expiration
      */
     function _hasExpired() internal view returns (bool) {
         return block.timestamp >= priceProperties.expiration;
@@ -239,7 +394,9 @@ contract OptionAMMPool is AMM {
         return newABPriceWithDecimals;
     }
 
-    // returns maturity in years with 18 decimals
+    /**
+     * @dev returns maturity in years with 18 decimals
+     */
     function _getTimeToMaturityInYears() internal view returns (uint256) {
         return ((priceProperties.expiration - block.timestamp) * (10**BS_RES_DECIMALS)) / (_SECONDS_IN_A_YEAR);
     }
@@ -520,12 +677,12 @@ contract OptionAMMPool is AMM {
 
         require(
             IERC20(tokenB).transfer(address(feePoolA), tradeDetails.feesTokenA),
-            "Could not transfer Fees to feePoolA"
+            "OptionAMMPool: could not transfer Fees to feePoolA"
         );
 
         require(
             IERC20(tokenB).transfer(address(feePoolB), tradeDetails.feesTokenB),
-            "Could not transfer Fees to feePoolB"
+            "OptionAMMPool: could not transfer Fees to feePoolB"
         );
     }
 

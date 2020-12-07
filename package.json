@@ -5,6 +5,7 @@
   "main": "networks.js",
   "scripts": {
     "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
+    "prettier": "./node_modules/.bin/prettier contracts/**/*.sol",
     "prettier:fix": "./node_modules/.bin/prettier --write contracts/**/*.sol",
     "test": "buidler test",
     "compile": "buidler compile",
@@ -53,7 +54,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run lint && npm run prettier:fix && npm run compile",
+      "pre-commit": "yarn lint && yarn prettier:fix && yarn compile",
       "pre-push": "./pre-push-check.sh"
     }
   },

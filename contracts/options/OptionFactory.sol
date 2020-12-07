@@ -4,6 +4,12 @@ pragma solidity 0.6.12;
 import "../interfaces/IOptionBuilder.sol";
 import "./PodOption.sol";
 
+/**
+ * @title OptionFactory
+ * @author Pods Finance
+ * @notice Creates and store new Options Series
+ * @dev Uses IOptionBuilder to create the different types of Options
+ */
 contract OptionFactory {
     address[] public options;
     IOptionBuilder public podPutBuilder;
@@ -39,7 +45,7 @@ contract OptionFactory {
     }
 
     /**
-     * @notice creates a new PodPut Contract
+     * @notice Creates a new Option Series
      * @param _name The option token name. Eg. "Pods Put WBTC-USDC 5000 2020-02-23"
      * @param _symbol The option token symbol. Eg. "podWBTC:20AA"
      * @param _optionType The option type. Eg. "0 for Put / 1 for Calls"
@@ -49,6 +55,7 @@ contract OptionFactory {
      * @param _strikePrice The option strike price including decimals (strikePriceDecimals == strikeAssetDecimals), Eg, 5000000000
      * @param _expiration The Expiration Option date in UNIX timestamp. E.g 1600178324
      * @param _exerciseWindowSize The Expiration Window Size duration in UNIX timestamp. E.g 24*60*60 (24h)
+     * @return option The address for the newly created option
      */
     function createOption(
         string memory _name,

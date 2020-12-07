@@ -6,7 +6,9 @@ import "./OptionAMMPool.sol";
 import "./FeePool.sol";
 
 /**
- * OptionAMMFactory
+ * @title OptionAMMFactory
+ * @author Pods Finance
+ * @notice Creates and store new OptionAMMPool
  */
 contract OptionAMMFactory is IOptionAMMFactory {
     mapping(address => OptionAMMPool) private pools;
@@ -14,7 +16,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
     event PoolCreated(address indexed deployer, OptionAMMPool pool);
 
     /**
-     * Returns the address of a previously created pool
+     * @notice Returns the address of a previously created pool
      *
      * @dev If the pool has not been created it will return address(0)
      *
@@ -26,7 +28,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
     }
 
     /**
-     * Creates an option pool
+     * @notice Creates an option pool
      *
      * @param _optionAddress The address of option token
      * @param _stableAsset A stablecoin asset address
@@ -44,7 +46,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
         address _sigma,
         uint256 _initialSigma
     ) external override returns (address) {
-        require(address(pools[_optionAddress]) == address(0), "Pool already exists");
+        require(address(pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
 
         FeePool feePoolTokenA = new FeePool(_stableAsset, 15, 6);
         FeePool feePoolTokenB = new FeePool(_stableAsset, 15, 6);

@@ -4,7 +4,10 @@ pragma solidity 0.6.12;
 import "../interfaces/INormalDistribution.sol";
 
 /**
- * Normal distribution
+ * @title NormalDistribution
+ * @author Pods Finance
+ * @notice Calculates the Cumulative Distribution Function of
+ * the standard normal distribution
  */
 contract NormalDistribution is INormalDistribution {
     mapping(int256 => int256) private _probabilities;
@@ -320,7 +323,7 @@ contract NormalDistribution is INormalDistribution {
     }
 
     /**
-     * Returns the probability of Z in a normal distribution curve
+     * @notice Returns the probability of Z in a normal distribution curve
      * @dev For performance numbers are truncated to 2 decimals. Ex: 1134500000000000000(1.13) gets truncated to 113
      * @dev For Z > ±0.307 the curve response gets more concentrated
      * @param z A point in the normal distribution
