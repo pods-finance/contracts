@@ -5,10 +5,20 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IPriceFeed.sol";
 
 /**
- * Storage of prices feeds by asset
+ * @title PriceProvider
+ * @author Pods Finance
+ * @notice Storage of prices feeds by asset
  */
 contract PriceProvider is Ownable {
-    uint256 public constant MIN_UPDATE_INTERVAL = 11100; // 3 hours and 10 minutes
+    /**
+     * @dev Minimum price interval to accept a price feed
+     * Defaulted to 3 hours and 10 minutes
+     */
+    uint256 public constant MIN_UPDATE_INTERVAL = 11100;
+
+    /**
+     * @dev Stores PriceFeed by asset address
+     */
     mapping(address => IPriceFeed) private _assetPriceFeeds;
 
     event AssetFeedUpdated(address indexed asset, address indexed feed);
@@ -19,7 +29,7 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Register price feeds
+     * @notice Register price feeds
      * @param _assets Array of assets
      * @param _feeds Array of price feeds
      */
@@ -28,7 +38,8 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Unregister price feeds
+     * @notice Unregister price feeds
+     * @dev Will not remove unregistered assets
      * @param _assets Array of assets
      */
     function removeAssetFeeds(address[] memory _assets) external onlyOwner {
@@ -43,7 +54,7 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Gets the current price of an asset
+     * @notice Gets the current price of an asset
      * @param _asset Address of an asset
      * @return Current price
      */
@@ -55,7 +66,7 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Get the data from the latest round.
+     * @notice Get the data from the latest round.
      * @param _asset Address of an asset
      * @return roundId is the round ID from the aggregator for which the data was
      * retrieved combined with an phase to ensure that round IDs get larger as
@@ -86,9 +97,9 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Gets the number of decimals of a PriceFeed
+     * @notice Gets the number of decimals of a PriceFeed
      * @param _asset Address of an asset
-     * @return Price decimals
+     * @return Asset price decimals
      */
     function getAssetDecimals(address _asset) external view returns (uint8) {
         IPriceFeed feed = _assetPriceFeeds[_asset];
@@ -98,7 +109,7 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Get the address of a registered price feed
+     * @notice Get the address of a registered price feed
      * @param _asset Address of an asset
      * @return Price feed address
      */
@@ -107,7 +118,7 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Internal function to set price feeds for different assets
+     * @dev Internal function to set price feeds for different assets
      * @param _assets Array of assets
      * @param _feeds Array of price feeds
      */
@@ -128,7 +139,7 @@ contract PriceProvider is Ownable {
     }
 
     /**
-     * Internal function to check if a given timestamp is obsolete
+     * @dev Internal function to check if a given timestamp is obsolete
      * @param _timestamp The timestamp to check
      */
     function _isObsolete(uint256 _timestamp) internal view returns (bool) {
