@@ -317,6 +317,20 @@ scenarios.forEach(scenario => {
         await expect(podPut.connect(seller).mint(0, sellerAddress)).to.be.revertedWith('PodPut: you can not mint zero options')
       })
 
+      it('should mint, and have right number when checking for users balances', async () => {
+        expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
+
+        await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice.add(1))
+
+        await podPut.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
+
+        const funds = await podPut.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingAmount).to.be.equal(0)
+        expect(funds.strikeAmount).to.be.gte(scenario.strikePrice)
+      })
+
       it('should mint, increase senders option balance and decrease sender strike balance', async () => {
         expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
@@ -684,6 +698,18 @@ scenarios.forEach(scenario => {
         await forceEndOfExerciseWindow(podPut)
 
         await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+      })
+
+      it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {
+        await MintPhase(scenario.amountToMint)
+        await MintPhase(scenario.amountToMint, buyer, buyerAddress)
+
+        await forceExpiration(podPut)
+        await ExercisePhase(scenario.amountToMint, seller, another, anotherAddress)
+
+        const funds = await podPut.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingAmount).to.be.equal(scenario.amountToMint.div(2))
+        expect(funds.strikeAmount).to.be.equal(scenario.strikePrice.div(2))
       })
 
       it('should withdraw Strike Asset balance plus interest earned', async () => {

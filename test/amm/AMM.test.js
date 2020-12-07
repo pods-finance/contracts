@@ -260,7 +260,7 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('Scenario group APR - Add Liquidity / Price changes / Remove Liquidity', () => {
+    describe('Scenario group APR - Add Liquidity / Price change / Remove Liquidity', () => {
       it('should match balances accordingly - 3 adds / 1 price change / 3 remove un order', async () => {
         const amountOfTokenAUser00 = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenADecimals))
         const amountOfTokenBUser00 = await toBigNumber(3000).mul(toBigNumber(10 ** scenario.tokenBDecimals))
@@ -1044,7 +1044,7 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('Scenario group ATPR - Add Liquidity / Trade / Price / Remove Liquidity', () => {
+    describe('Scenario group ATPR - Add Liquidity / Trade / Price change / Remove Liquidity', () => {
       it('Impermanent Loss should be equal between participants - 3 adds / 1 trade(buy) / 1 price(up) / 3 removed un-order', async () => {
         const amountOfTokenAUser00 = toBigNumber(500).mul(toBigNumber(10 ** scenario.tokenADecimals))
         const amountOfTokenBUser00 = toBigNumber(3000).mul(toBigNumber(10 ** scenario.tokenBDecimals))

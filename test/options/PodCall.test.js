@@ -256,6 +256,20 @@ scenarios.forEach(scenario => {
         await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
 
+      it('should mint, and have right number when checking for users balances', async () => {
+        expect(await podCall.balanceOf(sellerAddress)).to.equal(0)
+
+        await mockUnderlyingAsset.connect(seller).approve(podCall.address, ethers.constants.MaxUint256)
+        await mockUnderlyingAsset.connect(seller).mint(scenario.amountToMint)
+
+        await podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
+
+        const funds = await podCall.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingAmount).to.be.equal(scenario.amountToMint)
+        expect(funds.strikeAmount).to.be.equal(0)
+      })
+
       it('should mint, increase senders option balance and decrease sender underlying balance', async () => {
         expect(await podCall.balanceOf(sellerAddress)).to.equal(0)
 
@@ -470,6 +484,18 @@ scenarios.forEach(scenario => {
         await forceEndOfExerciseWindow(podCall)
 
         await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
+      })
+
+      it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset', async () => {
+        await MintPhase(scenario.amountToMint)
+        await MintPhase(scenario.amountToMint, buyer, buyerAddress)
+
+        await forceExpiration(podCall)
+        await ExercisePhase(scenario.amountToMint, seller, another, anotherAddress)
+
+        const funds = await podCall.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingAmount).to.be.equal(scenario.amountToMint.div(2))
+        expect(funds.strikeAmount).to.be.equal(scenario.strikePrice.div(2))
       })
 
       it('should withdraw Underlying Asset balance plus interest earned', async () => {
