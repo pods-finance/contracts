@@ -9,7 +9,9 @@ import "../lib/LogarithmLib.sol";
 import "../lib/ExponentLib.sol";
 
 /**
- * Black-Scholes calculus
+ * @title BlackScholes
+ * @author Pods Finance
+ * @notice Black-Scholes calculus
  */
 contract BlackScholes {
     using FixidityLib for int256;
@@ -31,7 +33,7 @@ contract BlackScholes {
     }
 
     /**
-     * Calculate call option price
+     * @notice Calculate call option price
      *
      * @param spotPrice Asset spot price
      * @param strikePrice Option strike price
@@ -59,7 +61,7 @@ contract BlackScholes {
     }
 
     /**
-     * Calculate put option price
+     * @notice Calculate put option price
      *
      * @param spotPrice Asset spot price
      * @param strikePrice Option strike price
@@ -87,7 +89,7 @@ contract BlackScholes {
     }
 
     /**
-     * Get probabilities d1 and d2
+     * @dev Get probabilities d1 and d2
      *
      ***********************************************************************************************
      * So = spotPrice                                                                             //
@@ -128,7 +130,7 @@ contract BlackScholes {
     }
 
     /**
-     * Square root
+     * @dev Square root
      *
      * @param x The value
      * @return y The square root of x
@@ -143,7 +145,7 @@ contract BlackScholes {
     }
 
     /**
-     * Same as natural logarithm but hard-coded for known x values
+     * @dev Same as natural logarithm but hard-coded for known x values
      * @param x The value to be ln
      * @return ln of x
      */

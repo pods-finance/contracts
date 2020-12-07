@@ -9,7 +9,9 @@ import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
 
 /**
- * Represents a Proxy that can mint and sell on the behalf of a Option Seller,
+ * @title PodOption
+ * @author Pods Finance
+ * @notice Represents a Proxy that can mint and sell on the behalf of a Option Seller,
  * alternatively it can buy to a Option Buyer
  */
 contract OptionExchange {
@@ -50,8 +52,8 @@ contract OptionExchange {
     }
 
     /**
-     * Mints an amount of options and return to caller
      * @notice Mint options
+     * @dev Mints an amount of options and return to caller
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
@@ -62,8 +64,8 @@ contract OptionExchange {
     }
 
     /**
-     * Mints an amount of options and sell it in pool
      * @notice Mint and sell options
+     * @dev Mints an amount of options and sell it in pool
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
@@ -93,7 +95,8 @@ contract OptionExchange {
     }
 
     /**
-     * Mint options and add them as liquidity providing
+     * @notice Mint and add liquidity
+     * @dev Mint options and add them as liquidity providing
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
@@ -127,8 +130,8 @@ contract OptionExchange {
     }
 
     /**
-     * Buys an amount of options from pool
      * @notice Buy exact amount of options
+     * @dev Buys an amount of options from pool
      *
      * @param option The option contract to buy
      * @param optionAmount Amount of options to buy
@@ -170,8 +173,8 @@ contract OptionExchange {
     }
 
     /**
-     * Buys an estimated amount of options from pool
      * @notice Buy estimated amount of options
+     * @dev Buys an estimated amount of options from pool
      *
      * @param option The option contract to buy
      * @param minOptionAmount Min amount of options bought
@@ -204,7 +207,7 @@ contract OptionExchange {
     }
 
     /**
-     * Mints an amount of tokens collecting the strike tokens from the caller
+     * @dev Mints an amount of tokens collecting the strike tokens from the caller
      *
      * @param option The option contract to mint
      * @param amount The amount of options to mint
@@ -224,7 +227,7 @@ contract OptionExchange {
     }
 
     /**
-     * Returns the AMM Exchange associated with the option
+     * @dev Returns the AMM Exchange associated with the option
      *
      * @param option The option to search for
      * @return IOptionAMMPool
