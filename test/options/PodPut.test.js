@@ -317,6 +317,20 @@ scenarios.forEach(scenario => {
         await expect(podPut.connect(seller).mint(0, sellerAddress)).to.be.revertedWith('Null amount')
       })
 
+      it('should mint, and have right number when checking for users balances', async () => {
+        expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
+
+        await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice.add(1))
+
+        await podPut.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
+
+        const funds = await podPut.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingToSend).to.be.equal(0)
+        expect(funds.strikeToSend).to.be.equal(scenario.strikePrice.add(1))
+      })
+
       it('should mint, increase senders option balance and decrease sender strike balance', async () => {
         expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 

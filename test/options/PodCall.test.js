@@ -256,6 +256,20 @@ scenarios.forEach(scenario => {
         await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
 
+      it('should mint, and have right number when checking for users balances', async () => {
+        expect(await podCall.balanceOf(sellerAddress)).to.equal(0)
+
+        await mockUnderlyingAsset.connect(seller).approve(podCall.address, ethers.constants.MaxUint256)
+        await mockUnderlyingAsset.connect(seller).mint(scenario.amountToMint)
+
+        await podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
+
+        const funds = await podCall.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingToSend).to.be.equal(scenario.amountToMint)
+        expect(funds.strikeToSend).to.be.equal(0)
+      })
+
       it('should mint, increase senders option balance and decrease sender underlying balance', async () => {
         expect(await podCall.balanceOf(sellerAddress)).to.equal(0)
 
