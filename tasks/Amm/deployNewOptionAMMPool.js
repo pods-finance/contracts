@@ -1,9 +1,12 @@
 
+const saveJSON = require('../utils/saveJSON')
+
 task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
   .addParam('initialsigma', 'Initial Sigma to start the pool')
   .setAction(async ({ option, tokenb, initialsigma }, bre) => {
+    const path = `../../deployments/${bre.network.name}.json`
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()
 
@@ -24,6 +27,21 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       console.log('blockNumber: ', eventDetails[0].blockNumber)
       console.log('deployer: ', deployer)
       console.log('pool: ', poolAddress)
+
+      const poolObj = {
+        option,
+        tokenb,
+        priceProvider,
+        blackScholes,
+        sigma,
+        initialsigma
+      }
+
+      const currentPools = require(`../../deployments/${bre.network.name}.json`).pools
+      const newPoolObj = Object.assign({}, currentPools, { [poolAddress]: poolObj })
+
+      await saveJSON(path, { pools: newPoolObj })
+
       return poolAddress
     } else {
       console.log('Something went wrong: No events found')
