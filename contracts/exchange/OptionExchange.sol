@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../interfaces/IPodPut.sol";
+import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
 
@@ -58,7 +58,7 @@ contract OptionExchange {
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
      */
-    function mint(IPodPut option, uint256 optionAmount) external {
+    function mint(IPodOption option, uint256 optionAmount) external {
         _mint(option, optionAmount);
         require(option.transfer(msg.sender, optionAmount), "OptionExchange: could not transfer options back to caller");
     }
@@ -75,7 +75,7 @@ contract OptionExchange {
      * @param sigma The initial volatility guess
      */
     function mintAndSellOptions(
-        IPodPut option,
+        IPodOption option,
         uint256 optionAmount,
         address token,
         uint256 minTokenAmount,
@@ -104,7 +104,7 @@ contract OptionExchange {
      * @param tokenAmount Amount of output tokens accepted
      */
     function mintAndAddLiquidity(
-        IPodPut option,
+        IPodOption option,
         uint256 optionAmount,
         address token,
         uint256 tokenAmount
@@ -141,7 +141,7 @@ contract OptionExchange {
      * @param sigma The initial volatility guess
      */
     function buyExactOptions(
-        IPodPut option,
+        IPodOption option,
         uint256 optionAmount,
         address token,
         uint256 maxTokenAmount,
@@ -183,7 +183,7 @@ contract OptionExchange {
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
      */
     function buyOptionsWithExactTokens(
-        IPodPut option,
+        IPodOption option,
         uint256 minOptionAmount,
         address token,
         uint256 tokenAmount,
@@ -212,7 +212,7 @@ contract OptionExchange {
      * @param option The option contract to mint
      * @param amount The amount of options to mint
      */
-    function _mint(IPodPut option, uint256 amount) internal {
+    function _mint(IPodOption option, uint256 amount) internal {
         IERC20 strikeAsset = IERC20(option.strikeAsset());
         uint256 strikeToTransfer = option.strikeToTransfer(amount);
 
@@ -232,7 +232,7 @@ contract OptionExchange {
      * @param option The option to search for
      * @return IOptionAMMPool
      */
-    function _getPool(IPodPut option) internal view returns (IOptionAMMPool) {
+    function _getPool(IPodOption option) internal view returns (IOptionAMMPool) {
         address exchangeOptionAddress = factory.getPool(address(option));
         require(exchangeOptionAddress != address(0), "OptionExchange: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);

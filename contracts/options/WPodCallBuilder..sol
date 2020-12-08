@@ -3,13 +3,14 @@ pragma solidity 0.6.12;
 
 import "./WPodCall.sol";
 import "./PodOption.sol";
+import "../interfaces/IOptionBuilder.sol";
 
 /**
  * @title WPodCallBuilder
  * @author Pods Finance
  * @notice Builds WPodCall options
  */
-contract WPodCallBuilder {
+contract WPodCallBuilder is IOptionBuilder {
     /**
      * @notice creates a new PodPut Contract
      * @param _name The option token name. Eg. "Pods Call WBTC-USDC 5000 2020-02-23"
@@ -30,7 +31,7 @@ contract WPodCallBuilder {
         uint256 _strikePrice,
         uint256 _expiration,
         uint256 _exerciseWindowSize
-    ) public returns (WPodCall) {
+    ) public override returns (PodOption) {
         WPodCall option = new WPodCall(
             _name,
             _symbol,

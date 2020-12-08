@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../lib/RequiredDecimals.sol";
+import "../interfaces/IAMM.sol";
 
 /**
  * Represents a generalized contract for a single-sided AMM pair.
@@ -54,7 +55,7 @@ import "../lib/RequiredDecimals.sol";
  *
  */
 
-abstract contract AMM is RequiredDecimals {
+abstract contract AMM is IAMM, RequiredDecimals {
     using SafeMath for uint256;
 
     /**
@@ -537,7 +538,7 @@ abstract contract AMM is RequiredDecimals {
 
     /**
      * @notice _getUserBalance internal function that User original balance of token A,
-     * token B and the Openin Value * * Factor (Fimp) at the moment of the liquidity added
+     * token B and the Opening Value * * Factor (Fimp) at the moment of the liquidity added
      *
      * @param user address of the user that want to check the balance
      *

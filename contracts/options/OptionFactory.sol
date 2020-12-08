@@ -84,15 +84,17 @@ contract OptionFactory {
             }
         }
 
-        option = builder.buildOption(
-            _name,
-            _symbol,
-            _exerciseType,
-            _underlyingAsset,
-            _strikeAsset,
-            _strikePrice,
-            _expiration,
-            _exerciseWindowSize
+        option = address(
+            builder.buildOption(
+                _name,
+                _symbol,
+                _exerciseType,
+                _underlyingAsset,
+                _strikeAsset,
+                _strikePrice,
+                _expiration,
+                _exerciseWindowSize
+            )
         );
 
         options.push(option);

@@ -16,11 +16,11 @@ contract MockAMM is AMM {
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external {
+    ) external override {
         return _addLiquidity(amountOfA, amountOfB, owner);
     }
 
-    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external {
+    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
         return _removeLiquidity(amountOfA, amountOfB);
     }
 

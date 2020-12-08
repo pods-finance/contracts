@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-// TODO: add call other methods
 interface ISigma {
-    function blackScholes() external returns (address);
+    function blackScholes() external view returns (address);
 
     function getPutSigma(
         uint256 _targetPrice,

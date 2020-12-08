@@ -7,13 +7,14 @@ import "../interfaces/INormalDistribution.sol";
 import "../lib/FixidityLib.sol";
 import "../lib/LogarithmLib.sol";
 import "../lib/ExponentLib.sol";
+import "../interfaces/IBlackScholes.sol";
 
 /**
  * @title BlackScholes
  * @author Pods Finance
  * @notice Black-Scholes calculus
  */
-contract BlackScholes {
+contract BlackScholes is IBlackScholes {
     using FixidityLib for int256;
     using ExponentLib for int256;
     using LogarithmLib for int256;
@@ -48,7 +49,7 @@ contract BlackScholes {
         uint256 sigma,
         uint256 time,
         int256 riskFree
-    ) public view returns (uint256) {
+    ) public override view returns (uint256) {
         (int256 d1, int256 d2) = _getProbabilities(spotPrice, strikePrice, sigma, time, riskFree);
 
         int256 Nd1 = normalDistribution.getProbability(d1, precisionDecimals);
@@ -76,7 +77,7 @@ contract BlackScholes {
         uint256 sigma,
         uint256 time,
         int256 riskFree
-    ) public view returns (uint256) {
+    ) public override view returns (uint256) {
         (int256 d1, int256 d2) = _getProbabilities(spotPrice, strikePrice, sigma, time, riskFree);
 
         int256 Nd1 = normalDistribution.getProbability(-d1, precisionDecimals);
