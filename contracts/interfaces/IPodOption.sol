@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-interface IPodOption {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IPodOption is IERC20 {
     function mint(uint256 amountOfOptions, address owner) external;
-
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function approve(address spender, uint256 amount) external returns (bool);
 
     function underlyingAsset() external view returns (address);
 
@@ -33,8 +31,6 @@ interface IPodOption {
     function symbol() external view returns (string memory);
 
     function decimals() external view returns (uint8);
-
-    function balanceOf(address) external view returns (uint256);
 
     function hasExpired() external view returns (bool);
 
