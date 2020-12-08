@@ -7,4 +7,7 @@ interface IWETH is IERC20 {
     function deposit() external payable;
 
     function withdraw(uint256 wad) external;
+
+    event Deposit(address indexed depositor, uint256 amount);
+    event Withdrawal(address indexed recipient, uint256 amount);
 }
