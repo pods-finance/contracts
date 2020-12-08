@@ -113,9 +113,7 @@ contract OptionAMMPool is AMM {
      * BEFORE series expiration.
      */
     modifier beforeExpiration() {
-        if (_hasExpired()) {
-            revert("OptionAMMPool: option has expired");
-        }
+        require(!_hasExpired(), "OptionAMMPool: option has expired");
         _;
     }
 
