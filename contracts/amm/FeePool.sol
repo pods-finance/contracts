@@ -44,54 +44,6 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * @notice Return the current fee value
-     */
-    function feeValue() external override view returns (uint256) {
-        return _feeValue;
-    }
-
-    /**
-     * @notice Returns the number of decimals used to represent fees
-     */
-    function feeDecimals() external override view returns (uint8) {
-        return _feeDecimals;
-    }
-
-    /**
-     * @notice Utility function to calculate fee charges to a given amount
-     *
-     * @param amount Total transaction amount
-     */
-    function getCollectable(uint256 amount) external override view returns (uint256) {
-        return amount.mul(_feeValue).div(10**uint256(_feeDecimals));
-    }
-
-    /**
-     * @notice Return balance of an address
-     *
-     * @param owner Balance owner
-     */
-    function balanceOf(address owner) external view returns (Balance memory) {
-        return _balances[owner];
-    }
-
-    /**
-     * @notice Return shares of an address
-     *
-     * @param owner Balance owner
-     */
-    function sharesOf(address owner) external override view returns (uint256) {
-        return _balances[owner].shares;
-    }
-
-    /**
-     * @notice Total count of shares created
-     */
-    function totalShares() external view returns (uint256) {
-        return _shares;
-    }
-
-    /**
      * @notice Sets fee and the decimals
      *
      * @param value Fee value
@@ -151,5 +103,53 @@ contract FeePool is IFeePool, Ownable {
         _totalLiability = _totalLiability.add(newLiability);
 
         emit ShareMinted(_token, to, amount);
+    }
+
+    /**
+     * @notice Return the current fee value
+     */
+    function feeValue() external override view returns (uint256) {
+        return _feeValue;
+    }
+
+    /**
+     * @notice Returns the number of decimals used to represent fees
+     */
+    function feeDecimals() external override view returns (uint8) {
+        return _feeDecimals;
+    }
+
+    /**
+     * @notice Utility function to calculate fee charges to a given amount
+     *
+     * @param amount Total transaction amount
+     */
+    function getCollectable(uint256 amount) external override view returns (uint256) {
+        return amount.mul(_feeValue).div(10**uint256(_feeDecimals));
+    }
+
+    /**
+     * @notice Return balance of an address
+     *
+     * @param owner Balance owner
+     */
+    function balanceOf(address owner) external view returns (Balance memory) {
+        return _balances[owner];
+    }
+
+    /**
+     * @notice Return shares of an address
+     *
+     * @param owner Balance owner
+     */
+    function sharesOf(address owner) external override view returns (uint256) {
+        return _balances[owner].shares;
+    }
+
+    /**
+     * @notice Total count of shares created
+     */
+    function totalShares() external view returns (uint256) {
+        return _shares;
     }
 }

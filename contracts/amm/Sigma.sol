@@ -67,6 +67,10 @@ contract Sigma is ISigma {
         return (calculatedSigma, calculatedPrice);
     }
 
+    function getCloserSigma(Boundaries memory boundaries, uint256 targetPrice) external pure returns (uint256) {
+        return _getCloserSigma(boundaries, targetPrice);
+    }
+
     /**
      * Get an approximation of sigma given a target price inside an error range
      *
@@ -143,10 +147,6 @@ contract Sigma is ISigma {
             }
             return (calculatedSigma, calculatedPrice);
         }
-    }
-
-    function getCloserSigma(Boundaries memory boundaries, uint256 targetPrice) external pure returns (uint256) {
-        return _getCloserSigma(boundaries, targetPrice);
     }
 
     /**********************************************************************************************

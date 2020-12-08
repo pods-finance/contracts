@@ -16,18 +16,6 @@ contract OptionAMMFactory is IOptionAMMFactory {
     event PoolCreated(address indexed deployer, OptionAMMPool pool);
 
     /**
-     * @notice Returns the address of a previously created pool
-     *
-     * @dev If the pool has not been created it will return address(0)
-     *
-     * @param _optionAddress The address of option token
-     * @return The address of the pool
-     */
-    function getPool(address _optionAddress) external override view returns (address) {
-        return address(_pools[_optionAddress]);
-    }
-
-    /**
      * @notice Creates an option pool
      *
      * @param _optionAddress The address of option token
@@ -69,5 +57,17 @@ contract OptionAMMFactory is IOptionAMMFactory {
         emit PoolCreated(msg.sender, pool);
 
         return address(pool);
+    }
+
+    /**
+     * @notice Returns the address of a previously created pool
+     *
+     * @dev If the pool has not been created it will return address(0)
+     *
+     * @param _optionAddress The address of option token
+     * @return The address of the pool
+     */
+    function getPool(address _optionAddress) external override view returns (address) {
+        return address(_pools[_optionAddress]);
     }
 }
