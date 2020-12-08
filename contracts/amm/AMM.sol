@@ -60,7 +60,7 @@ abstract contract AMM is RequiredDecimals {
     /**
      * @dev The initial value for deposit factor (Fimp)
      */
-    uint256 constant INITIAL_FIMP = 10**27;
+    uint256 public constant INITIAL_FIMP = 10**27;
 
     /**
      * @notice The Fimp's precision (aka number of decimals)
