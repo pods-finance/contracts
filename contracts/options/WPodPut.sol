@@ -66,6 +66,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract WPodPut is PodPut {
     IWETH public weth;
 
+    event Received(address indexed sender, uint256 value);
+
     constructor(
         string memory _name,
         string memory _symbol,
@@ -90,8 +92,6 @@ contract WPodPut is PodPut {
     {
         weth = IWETH(_underlyingAsset);
     }
-
-    event Received(address sender, uint256 value);
 
     /**
      * @notice Unlocks collateral by burning option tokens.

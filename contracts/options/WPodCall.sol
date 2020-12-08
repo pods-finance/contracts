@@ -16,7 +16,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  * There are four main actions that can be done with an option:
  *
- *
  * Sellers can mint fungible call option tokens by locking 1:1 units
  * of underlying asset until expiration. Buyers can exercise their call, meaning
  * buying the locked underlying asset for strike price units of strike asset.
@@ -71,8 +70,9 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  */
 contract WPodCall is PodCall {
-    using SafeMath for uint8;
     IWETH public weth;
+
+    event Received(address indexed sender, uint256 value);
 
     constructor(
         string memory _name,
@@ -98,8 +98,6 @@ contract WPodCall is PodCall {
     {
         weth = IWETH(_underlyingAsset);
     }
-
-    event Received(address sender, uint256 value);
 
     /**
      * @notice Locks underlying asset (ETH) and write option tokens.
