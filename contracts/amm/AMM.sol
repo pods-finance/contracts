@@ -80,12 +80,12 @@ abstract contract AMM is RequiredDecimals {
     /**
      * @notice Token A number of decimals
      */
-    uint32 public tokenADecimals;
+    uint8 public tokenADecimals;
 
     /**
      * @notice Token B number of decimals
      */
-    uint32 public tokenBDecimals;
+    uint8 public tokenBDecimals;
 
     /**
      * @notice The total balance of token A in the pool not counting the amortization
