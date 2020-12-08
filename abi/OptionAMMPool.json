@@ -239,6 +239,19 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "FIMP_PRECISION",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "uint256",
@@ -348,7 +361,7 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "ABPrice",
           "type": "uint256"
         }
       ],
@@ -363,16 +376,16 @@
           "type": "address"
         }
       ],
-      "name": "getMaxWithdrawBalances",
+      "name": "getMaxRemoveLiquidityAmounts",
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "maxWithdrawAmountA",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "maxWithdrawAmountB",
           "type": "uint256"
         }
       ],
@@ -391,22 +404,22 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "amountBOut",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "newIV",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "feesTokenA",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "feesTokenB",
           "type": "uint256"
         }
       ],
@@ -425,22 +438,22 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "amountBIn",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "newIV",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "feesTokenA",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "feesTokenB",
           "type": "uint256"
         }
       ],
@@ -459,22 +472,22 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "amountAOut",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "newIV",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "feesTokenA",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "feesTokenB",
           "type": "uint256"
         }
       ],
@@ -493,22 +506,22 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "amountAIn",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "newIV",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "feesTokenA",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "feesTokenB",
           "type": "uint256"
         }
       ],
@@ -521,12 +534,46 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "totalTokenA",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "totalTokenB",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "balanceTokenA",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "balanceTokenB",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "fImpOriginal",
+          "type": "uint256"
+        }
+      ],
+      "name": "getRemoveLiquidityAmounts",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "withdrawAmountA",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "withdrawAmountB",
           "type": "uint256"
         }
       ],
@@ -550,7 +597,7 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "spotPrice",
           "type": "uint256"
         }
       ],
@@ -565,16 +612,21 @@
           "type": "address"
         }
       ],
-      "name": "getWorthUserBalances",
+      "name": "getUserBalance",
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "tokenABalance",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "tokenBBalance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "fImpUser",
           "type": "uint256"
         }
       ],
