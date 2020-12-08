@@ -2,26 +2,21 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./MintableERC20.sol";
 
 /**
  * @title ERC20Mintable
  * @dev ERC20 with mint function
  */
-contract MintableInterestBearing is ERC20 {
+contract MintableInterestBearing is MintableERC20 {
     uint256 lastUpdate;
 
     constructor(
         string memory name,
         string memory symbol,
         uint8 decimals
-    ) public ERC20(name, symbol) {
-        _setupDecimals(decimals);
+    ) public MintableERC20(name, symbol, decimals) {
         lastUpdate = block.number;
-    }
-
-    function mint(uint256 value) public returns (bool) {
-        _mint(msg.sender, value);
-        return true;
     }
 
     function earnInterest(address owner) public {
