@@ -12,8 +12,8 @@
           "type": "string"
         },
         {
-          "internalType": "enum OptionCore.OptionType",
-          "name": "_optionType",
+          "internalType": "enum PodOption.ExerciseType",
+          "name": "_exerciseType",
           "type": "uint8"
         },
         {
@@ -33,13 +33,13 @@
         },
         {
           "internalType": "uint256",
-          "name": "_expirationBlockNumber",
+          "name": "_expiration",
           "type": "uint256"
         },
         {
-          "internalType": "address",
-          "name": "_uniswapFactory",
-          "type": "address"
+          "internalType": "uint256",
+          "name": "_exerciseWindowSize",
+          "type": "uint256"
         }
       ],
       "stateMutability": "nonpayable",
@@ -76,25 +76,6 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "seller",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "Burn",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
           "name": "buyer",
           "type": "address"
         },
@@ -105,7 +86,7 @@
           "type": "uint256"
         }
       ],
-      "name": "Exchange",
+      "name": "Exercise",
       "type": "event"
     },
     {
@@ -131,19 +112,19 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
+          "indexed": false,
           "internalType": "address",
-          "name": "seller",
+          "name": "sender",
           "type": "address"
         },
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "amount",
+          "name": "value",
           "type": "uint256"
         }
       ],
-      "name": "SellUniswap",
+      "name": "Received",
       "type": "event"
     },
     {
@@ -187,8 +168,40 @@
           "type": "uint256"
         }
       ],
+      "name": "Unmint",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "seller",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
       "name": "Withdraw",
       "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "MIN_EXERCISE_WINDOW_SIZE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
       "inputs": [
@@ -208,25 +221,6 @@
         {
           "internalType": "uint256",
           "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "strikeAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "amountOfMintedOptions",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "optionsAmount",
           "type": "uint256"
         }
       ],
@@ -277,19 +271,6 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "burn",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
       "inputs": [],
       "name": "decimals",
       "outputs": [
@@ -327,21 +308,8 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "exchange",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
       "inputs": [],
-      "name": "expirationBlockNumber",
+      "name": "endOfExerciseWindow",
       "outputs": [
         {
           "internalType": "uint256",
@@ -353,10 +321,66 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "forceExpiration",
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountOfOptions",
+          "type": "uint256"
+        }
+      ],
+      "name": "exercise",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "exerciseType",
+      "outputs": [
+        {
+          "internalType": "enum PodOption.ExerciseType",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "expiration",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "getSellerWithdrawAmounts",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "strikeAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "underlyingAmount",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -398,7 +422,7 @@
     },
     {
       "inputs": [],
-      "name": "isTestingDeployment",
+      "name": "isAfterEndOfExerciseWindow",
       "outputs": [
         {
           "internalType": "bool",
@@ -412,28 +436,14 @@
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "amountOfOptions",
+          "type": "uint256"
+        },
+        {
           "internalType": "address",
-          "name": "",
+          "name": "owner",
           "type": "address"
-        }
-      ],
-      "name": "lockedBalance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
         }
       ],
       "name": "mint",
@@ -444,22 +454,25 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minTokensBought",
-          "type": "uint256"
-        },
-        {
           "internalType": "address",
-          "name": "tokenOutput",
+          "name": "owner",
           "type": "address"
         }
       ],
-      "name": "mintAndSell",
+      "name": "mintEth",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "mintedOptions",
       "outputs": [
         {
           "internalType": "uint256",
@@ -467,7 +480,7 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "nonpayable",
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -488,9 +501,28 @@
       "name": "optionType",
       "outputs": [
         {
-          "internalType": "enum OptionCore.OptionType",
+          "internalType": "enum PodOption.OptionType",
           "name": "",
           "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "shares",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -565,7 +597,7 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "amount",
+          "name": "amountOfOptions",
           "type": "uint256"
         }
       ],
@@ -573,7 +605,7 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "strikeAmount",
+          "name": "",
           "type": "uint256"
         }
       ],
@@ -588,6 +620,19 @@
           "internalType": "string",
           "name": "",
           "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalShares",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -699,11 +744,24 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountOfOptions",
+          "type": "uint256"
+        }
+      ],
+      "name": "unmint",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
-      "name": "uniswapFactoryAddress",
+      "name": "weth",
       "outputs": [
         {
-          "internalType": "address",
+          "internalType": "contract IWETH",
           "name": "",
           "type": "address"
         }
@@ -717,5 +775,9 @@
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
     }
   ]

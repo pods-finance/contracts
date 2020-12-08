@@ -55,7 +55,7 @@
   "husky": {
     "hooks": {
       "pre-commit": "yarn lint && yarn prettier:fix && yarn compile",
-      "pre-push": "./scripts/pre-push-check.sh"
+      "pre-push": "./pre-push-check.sh"
     }
   },
   "standard": {

@@ -1,6 +1,5 @@
 require('dotenv').config()
 require('./tasks/utils/balance')
-require('./tasks/deployNewSerie')
 require('./tasks/option/deployOptionFactory')
 require('./tasks/deployOptionExchange')
 require('./tasks/Amm/index')

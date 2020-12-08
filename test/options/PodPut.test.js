@@ -4,7 +4,7 @@ const forceExpiration = require('../util/forceExpiration')
 const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
 const createOptionFactory = require('../util/createOptionFactory')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
-const MockERC20ABI = require('../../abi/erc20.json')
+const MockERC20ABI = require('../../abi/ERC20.json')
 
 const { deployMockContract } = waffle
 

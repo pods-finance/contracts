@@ -1,5 +1,3 @@
-const erc20ABI = require('../../abi/erc20.json')
-
 task('deployNewOption', 'Deploy New Option')
   .addParam('underlying', 'symbol of underlying asset. (E.G: wbtc)')
   .addParam('strike', 'symbol of strike asset. (E.G: usdc)')
@@ -21,7 +19,7 @@ task('deployNewOption', 'Deploy New Option')
     let txIdNewOption
 
     // TODO: function to build option name and symbol based on underyingAsset,strikeAsset,strikePrice and Date
-    const strikeAssetContract = new ethers.Contract(strikeAssetAddress, erc20ABI, owner)
+    const strikeAssetContract = await ethers.getContractAt('MockERC20', strikeAssetAddress)
     const strikeDecimals = await strikeAssetContract.decimals()
     const strikePrice = ethers.BigNumber.from(price).mul(ethers.BigNumber.from(10).pow(strikeDecimals))
 
