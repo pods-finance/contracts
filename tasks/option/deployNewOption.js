@@ -19,7 +19,7 @@ task('deployNewOption', 'Deploy New Option')
     let txIdNewOption
 
     // TODO: function to build option name and symbol based on underyingAsset,strikeAsset,strikePrice and Date
-    const strikeAssetContract = await ethers.getContractAt('MockERC20', strikeAssetAddress)
+    const strikeAssetContract = await ethers.getContractAt('MintableERC20', strikeAssetAddress)
     const strikeDecimals = await strikeAssetContract.decimals()
     const strikePrice = ethers.BigNumber.from(price).mul(ethers.BigNumber.from(10).pow(strikeDecimals))
 

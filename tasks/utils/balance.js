@@ -11,7 +11,7 @@ task('balance', "Prints an account's balance")
       const erc20Address = require(`../deployments/${bre.network.name}.json`)[erc20.toUpperCase()]
       //   ethers.Contract
 
-      const ERC20Contract = await ethers.getContractAt('MockERC20', erc20Address)
+      const ERC20Contract = await ethers.getContractAt('MintableERC20', erc20Address)
       balance = await ERC20Contract.balanceOf(_account)
       const decimals = await ERC20Contract.decimals()
       console.log('decimals', decimals)

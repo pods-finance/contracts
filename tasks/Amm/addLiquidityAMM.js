@@ -14,8 +14,8 @@ internalTask('addLiquidityAMM', 'addLiquidityAMM')
     }
 
     const pool = await ethers.getContractAt('OptionAMMPool', pooladdress)
-    const tokenA = await ethers.getContractAt('MockERC20', await pool.tokenA())
-    const tokenB = await ethers.getContractAt('MockERC20', await pool.tokenB())
+    const tokenA = await ethers.getContractAt('MintableERC20', await pool.tokenA())
+    const tokenB = await ethers.getContractAt('MintableERC20', await pool.tokenB())
 
     const amountA = ethers.BigNumber.from(amounta).mul(ethers.BigNumber.from(10).pow(await tokenA.decimals()))
     const amountB = ethers.BigNumber.from(amountb).mul(ethers.BigNumber.from(10).pow(await tokenB.decimals()))
