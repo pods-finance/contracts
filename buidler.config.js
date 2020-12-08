@@ -3,6 +3,7 @@ require('./tasks/utils/balance')
 require('./tasks/option/deployOptionFactory')
 require('./tasks/deployOptionExchange')
 require('./tasks/Amm/index')
+require('./tasks/option/index')
 
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')
