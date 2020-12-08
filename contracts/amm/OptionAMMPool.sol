@@ -405,8 +405,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
 
     function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256, uint256) {
         (uint256 totalAmountA, uint256 totalAmountB) = _getPoolBalances();
-        uint256 poolAmountA = min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
-        uint256 poolAmountB = min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
+        uint256 poolAmountA = _min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
+        uint256 poolAmountB = _min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
         return (poolAmountA, poolAmountB);
     }
 

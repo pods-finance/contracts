@@ -588,13 +588,13 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 mBA = 0;
 
         if (deamortizedTokenABalance > 0) {
-            mAA = (min(deamortizedTokenABalance.mul(fImpOpening), totalTokenAWithPrecision)).div(
+            mAA = (_min(deamortizedTokenABalance.mul(fImpOpening), totalTokenAWithPrecision)).div(
                 deamortizedTokenABalance
             );
         }
 
         if (deamortizedTokenBBalance > 0) {
-            mBB = (min(deamortizedTokenBBalance.mul(fImpOpening), totalTokenBWithPrecision)).div(
+            mBB = (_min(deamortizedTokenBBalance.mul(fImpOpening), totalTokenBWithPrecision)).div(
                 deamortizedTokenBBalance
             );
         }
@@ -704,7 +704,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     /**
      * @dev Returns the smallest of two numbers.
      */
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+    function _min(uint256 a, uint256 b) internal pure returns (uint256) {
         return a < b ? a : b;
     }
 

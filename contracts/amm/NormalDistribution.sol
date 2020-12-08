@@ -332,28 +332,28 @@ contract NormalDistribution is INormalDistribution {
      */
     function getProbability(int256 z, uint256 decimals) external override view returns (int256) {
         require(decimals >= 2, "NormalDistribution: z too small");
-        int256 truncatedZ = mod((z / int256(10**(decimals - 2))) * 100);
+        int256 truncatedZ = _mod((z / int256(10**(decimals - 2))) * 100);
         int256 responseDecimals = int256(10**(decimals - 4));
 
         // Handle negative z
         if (z < 0) {
-            return (10000 - nearest(truncatedZ)) * responseDecimals;
+            return (10000 - _nearest(truncatedZ)) * responseDecimals;
         }
 
-        return nearest(truncatedZ) * responseDecimals;
+        return _nearest(truncatedZ) * responseDecimals;
     }
 
     /**
      * @dev Returns the module of a number.
      */
-    function mod(int256 a) internal pure returns (int256) {
+    function _mod(int256 a) internal pure returns (int256) {
         return a < 0 ? -a : a;
     }
 
     /**
      * @dev Returns the nearest z value on the table
      */
-    function nearest(int256 z) internal view returns (int256) {
+    function _nearest(int256 z) internal view returns (int256) {
         if (z >= 36300) {
             return 9999;
         } else if (z >= 34900) {
