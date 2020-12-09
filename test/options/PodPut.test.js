@@ -381,7 +381,7 @@ scenarios.forEach(scenario => {
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
 
-        const contractBalanceOfStrike = await podPut.strikeBalance()
+        const contractBalanceOfStrike = await podPut.strikeReserves()
         const totalSupply = await podPut.totalSupply()
         // Check Option Balance
         // Check Contract Strike
@@ -391,7 +391,7 @@ scenarios.forEach(scenario => {
         await expect(podPut.connect(seller).withdraw()).to.not.be.reverted
 
         const balanceSellerOfStrikeAfter = await mockStrikeAsset.balanceOf(sellerAddress)
-        const balanceOfStrikeAfter = await podPut.strikeBalance()
+        const balanceOfStrikeAfter = await podPut.strikeReserves()
         expect(balanceSellerOfStrikeAfter).to.equal('1000000000000000')
       })
       it('should mint rounding up the value to receive, and round down the value sent, in order to avoid locked funds', async () => {
@@ -437,7 +437,7 @@ scenarios.forEach(scenario => {
         await podPut.connect(buyer).mint(amountToMint, buyerAddress)
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
 
-        const contractBalanceOfStrike = await podPut.strikeBalance()
+        const contractBalanceOfStrike = await podPut.strikeReserves()
         const totalSupply = await podPut.totalSupply()
         // Check Option Balance
         // Check Contract Strike
@@ -449,7 +449,7 @@ scenarios.forEach(scenario => {
 
         const balanceSellerOfStrikeAfter = await mockStrikeAsset.balanceOf(sellerAddress)
         const balanceBuyerOfStrikeAfter = await mockStrikeAsset.balanceOf(buyerAddress)
-        const balanceContractOfStrikeAfter = await podPut.strikeBalance()
+        const balanceContractOfStrikeAfter = await podPut.strikeReserves()
         expect(balanceSellerOfStrikeAfter).to.equal('1000000000000000')
         expect(balanceBuyerOfStrikeAfter).to.equal('1000000000000000')
         expect(balanceContractOfStrikeAfter).to.equal(0)
@@ -571,14 +571,14 @@ scenarios.forEach(scenario => {
 
         const finalBuyerOptionBalance = await podPut.balanceOf(buyerAddress)
         const finalBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
-        const finalContractUnderlyingBalance = await podPut.underlyingBalance()
-        const finalContractStrikeBalance = await podPut.strikeBalance()
+        const finalContractUnderlyingReserves = await podPut.underlyingReserves()
+        const finalContractStrikeReserves = await podPut.strikeReserves()
         const finalContractOptionSupply = await podPut.totalSupply()
 
         expect(finalBuyerOptionBalance).to.equal(0)
         expect(finalBuyerUnderlyingBalance).to.equal(0)
-        expect(finalContractUnderlyingBalance).to.equal(scenario.amountToMint)
-        expect(finalContractStrikeBalance).to.equal(0)
+        expect(finalContractUnderlyingReserves).to.equal(scenario.amountToMint)
+        expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(0)
       })
       it('should revert if user try to exercise after exercise window', async () => {
@@ -610,28 +610,28 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
-        const initialContractUnderlyingBalance = await podPut.underlyingBalance()
-        const initialContractStrikeBalance = await podPut.strikeBalance()
+        const initialContractUnderlyingReserves = await podPut.underlyingReserves()
+        const initialContractStrikeReserves = await podPut.strikeReserves()
         const initialContractOptionSupply = await podPut.totalSupply()
 
         expect(initialSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(initialSellerStrikeBalance).to.equal(0)
-        expect(initialContractUnderlyingBalance).to.equal(0)
-        expect(initialContractStrikeBalance).to.equal(scenario.strikePrice.add(1))
+        expect(initialContractUnderlyingReserves).to.equal(0)
+        expect(initialContractStrikeReserves).to.equal(scenario.strikePrice.add(1))
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
         await expect(podPut.connect(seller).unmint(scenario.amountToMint))
 
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
-        const finalContractUnderlyingBalance = await podPut.underlyingBalance()
-        const finalContractStrikeBalance = await podPut.strikeBalance()
+        const finalContractUnderlyingReserves = await podPut.underlyingReserves()
+        const finalContractStrikeReserves = await podPut.strikeReserves()
         const finalContractOptionSupply = await podPut.totalSupply()
 
         expect(finalSellerOptionBalance).to.equal(0)
         expect(finalSellerStrikeBalance).to.equal(scenario.strikePrice.add(1))
-        expect(finalContractStrikeBalance).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(0)
-        expect(finalContractUnderlyingBalance).to.equal(0)
+        expect(finalContractUnderlyingReserves).to.equal(0)
       })
       it('should unmint, destroy seller option, reduce its balance and send strike back counting interests (Ma-Mb-UNa)', async () => {
         await MintPhase(scenario.amountToMint)
@@ -641,23 +641,23 @@ scenarios.forEach(scenario => {
 
         const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
-        const initialContractUnderlyingBalance = await podPut.underlyingBalance()
-        const initialContractStrikeBalance = await podPut.strikeBalance()
+        const initialContractUnderlyingReserves = await podPut.underlyingReserves()
+        const initialContractStrikeReserves = await podPut.strikeReserves()
         const initialContractOptionSupply = await podPut.totalSupply()
 
         await expect(podPut.connect(seller).unmint(scenario.amountToMint))
 
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
-        const finalContractUnderlyingBalance = await podPut.underlyingBalance()
-        const finalContractStrikeBalance = await podPut.strikeBalance()
+        const finalContractUnderlyingReserves = await podPut.underlyingReserves()
+        const finalContractStrikeReserves = await podPut.strikeReserves()
         const finalContractOptionSupply = await podPut.totalSupply()
 
         expect(finalSellerOptionBalance).to.equal(initialSellerOptionBalance.sub(scenario.amountToMint))
         expect(finalSellerStrikeBalance).to.gte(initialSellerStrikeBalance.add(scenario.strikePrice))
-        expect(finalContractStrikeBalance).to.gte(scenario.strikePrice)
+        expect(finalContractStrikeReserves).to.gte(scenario.strikePrice)
         expect(finalContractOptionSupply).to.equal(initialContractOptionSupply.sub(scenario.amountToMint))
-        expect(finalContractUnderlyingBalance).to.equal(initialContractUnderlyingBalance)
+        expect(finalContractUnderlyingReserves).to.equal(initialContractUnderlyingReserves)
       })
       it('should unmint, destroy seller option, reduce its balance and send strike back counting interests (Ma-Mb-UNa-UNb)', async () => {
         await MintPhase(scenario.amountToMint)
@@ -666,21 +666,21 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.earnInterest(podPut.address)
         await expect(podPut.connect(seller).unmint(scenario.amountToMint))
 
-        const initialContractUnderlyingBalance = await podPut.underlyingBalance()
+        const initialContractUnderlyingReserves = await podPut.underlyingReserves()
 
         await expect(podPut.connect(buyer).unmint(scenario.amountToMint))
 
         const finalBuyerOptionBalance = await podPut.balanceOf(sellerAddress)
         const finalBuyerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
-        const finalContractStrikeBalance = await podPut.strikeBalance()
+        const finalContractStrikeReserves = await podPut.strikeReserves()
         const finalContractOptionSupply = await podPut.totalSupply()
-        const finalContractUnderlyingBalance = await podPut.underlyingBalance()
+        const finalContractUnderlyingReserves = await podPut.underlyingReserves()
 
         expect(finalBuyerOptionBalance).to.equal(0)
         expect(finalBuyerStrikeBalance).to.gte(scenario.strikePrice) // earned interests
-        expect(finalContractStrikeBalance).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(0)
-        expect(finalContractUnderlyingBalance).to.equal(initialContractUnderlyingBalance)
+        expect(finalContractUnderlyingReserves).to.equal(initialContractUnderlyingReserves)
       })
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(podPut)
@@ -720,22 +720,22 @@ scenarios.forEach(scenario => {
         // Set Expiration
         const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
-        const initialContractStrikeBalance = await podPut.strikeBalance()
+        const initialContractStrikeReserves = await podPut.strikeReserves()
 
         expect(initialSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(initialSellerStrikeBalance).to.equal(0)
-        expect(initialContractStrikeBalance).to.equal(scenario.strikePrice.add(earnedInterest).add(1))
+        expect(initialContractStrikeReserves).to.equal(scenario.strikePrice.add(earnedInterest).add(1))
 
         await forceEndOfExerciseWindow(podPut)
         await podPut.connect(seller).withdraw()
 
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
-        const finalContractStrikeBalance = await podPut.strikeBalance()
+        const finalContractStrikeReserves = await podPut.strikeReserves()
 
         expect(finalSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(finalSellerStrikeBalance).to.equal(scenario.strikePrice.add(earnedInterest).add(1))
-        expect(finalContractStrikeBalance).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(0)
         // Cant withdraw two times in a row
         // await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
       })
@@ -756,11 +756,11 @@ scenarios.forEach(scenario => {
         // Set Expiration
         const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
-        const initialContractStrikeBalance = await podPut.strikeBalance()
+        const initialContractStrikeReserves = await podPut.strikeReserves()
 
         expect(initialSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(initialSellerStrikeBalance).to.equal(0)
-        expect(initialContractStrikeBalance).to.gt(scenario.strikePrice.add(twoTimesAmountToMint))
+        expect(initialContractStrikeReserves).to.gt(scenario.strikePrice.add(twoTimesAmountToMint))
 
         await forceEndOfExerciseWindow(podPut)
         await podPut.connect(seller).withdraw()
@@ -777,10 +777,10 @@ scenarios.forEach(scenario => {
         await podPut.connect(buyer).withdraw()
 
         const finalBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
-        const finalContractStrikeBalance = await podPut.strikeBalance()
+        const finalContractStrikeReserves = await podPut.strikeReserves()
 
         expect(finalBuyerStrikeBalance).to.gt(scenario.strikePrice.mul(twoTimesAmountToMint).div(10 ** optionDecimals))
-        expect(finalContractStrikeBalance).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(0)
 
         await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
       })

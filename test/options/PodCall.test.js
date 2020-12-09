@@ -347,15 +347,15 @@ scenarios.forEach(scenario => {
         const initialBuyerOptionBalance = await podCall.balanceOf(buyerAddress)
         const initialBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
         const initialBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
-        const initialContractUnderlyingBalance = await podCall.underlyingBalance()
-        const initialContractStrikeBalance = await podCall.strikeBalance()
+        const initialContractUnderlyingReserves = await podCall.underlyingReserves()
+        const initialContractStrikeReserves = await podCall.strikeReserves()
         const initialContractOptionSupply = await podCall.totalSupply()
 
         expect(initialBuyerOptionBalance).to.equal(scenario.amountToMint)
         expect(initialBuyerUnderlyingBalance).to.equal(0)
         expect(initialBuyerStrikeBalance).to.equal(scenario.strikePrice.add(1))
-        expect(initialContractUnderlyingBalance).to.equal(scenario.amountToMint)
-        expect(initialContractStrikeBalance).to.equal(0)
+        expect(initialContractUnderlyingReserves).to.equal(scenario.amountToMint)
+        expect(initialContractStrikeReserves).to.equal(0)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
 
         await forceExpiration(podCall)
@@ -364,15 +364,15 @@ scenarios.forEach(scenario => {
         const finalBuyerOptionBalance = await podCall.balanceOf(buyerAddress)
         const finalBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
         const finalBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
-        const finalContractUnderlyingBalance = await podCall.underlyingBalance()
-        const finalContractStrikeBalance = await podCall.strikeBalance()
+        const finalContractUnderlyingReserves = await podCall.underlyingReserves()
+        const finalContractStrikeReserves = await podCall.strikeReserves()
         const finalContractOptionSupply = await podCall.totalSupply()
 
         expect(finalBuyerOptionBalance).to.equal(0)
         expect(finalBuyerUnderlyingBalance).to.equal(scenario.amountToMint)
         expect(finalBuyerStrikeBalance).to.equal(0)
-        expect(finalContractUnderlyingBalance).to.equal(0)
-        expect(finalContractStrikeBalance).to.equal(scenario.strikePrice.add(1))
+        expect(finalContractUnderlyingReserves).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(scenario.strikePrice.add(1))
         expect(finalContractOptionSupply).to.equal(0)
       })
       it('should revert if user try to exercise after exercise window - European', async () => {
@@ -400,31 +400,31 @@ scenarios.forEach(scenario => {
         const initialSellerOptionBalance = await podCall.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
         const initialSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
-        const initialContractUnderlyingBalance = await podCall.underlyingBalance()
-        const initialContractStrikeBalance = await podCall.strikeBalance()
+        const initialContractUnderlyingReserves = await podCall.underlyingReserves()
+        const initialContractStrikeReserves = await podCall.strikeReserves()
         const initialContractOptionSupply = await podCall.totalSupply()
 
         expect(initialSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialSellerUnderlyingBalance).to.equal(0)
-        expect(initialContractStrikeBalance).to.equal(0)
-        expect(initialContractUnderlyingBalance).to.equal(scenario.amountToMint)
+        expect(initialContractStrikeReserves).to.equal(0)
+        expect(initialContractUnderlyingReserves).to.equal(scenario.amountToMint)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
         await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.not.be.reverted
 
         const finalSellerOptionBalance = await podCall.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
         const finalSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
-        const finalContractUnderlyingBalance = await podCall.underlyingBalance()
-        const finalContractStrikeBalance = await podCall.strikeBalance()
+        const finalContractUnderlyingReserves = await podCall.underlyingReserves()
+        const finalContractStrikeReserves = await podCall.strikeReserves()
         const finalContractOptionSupply = await podCall.totalSupply()
 
         expect(finalSellerOptionBalance).to.equal(0)
         expect(finalSellerStrikeBalance).to.equal(0)
         expect(finalSellerUnderlyingBalance).to.equal(scenario.amountToMint)
-        expect(finalContractStrikeBalance).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(0)
-        expect(finalContractUnderlyingBalance).to.equal(0)
+        expect(finalContractUnderlyingReserves).to.equal(0)
       })
       it('should unmint, destroy seller option, reduce its balance and send underlying back counting interests (Ma-Mb-UNa)', async () => {
         await MintPhase(scenario.amountToMint)
@@ -432,20 +432,20 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
         await mockUnderlyingAsset.earnInterest(podCall.address)
 
-        const initialContractStrikeBalance = await podCall.strikeBalance()
+        const initialContractStrikeReserves = await podCall.strikeReserves()
         const initialContractOptionSupply = await podCall.totalSupply()
 
         await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.not.be.reverted
 
         const finalSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
-        const finalContractUnderlyingBalance = await podCall.underlyingBalance()
-        const finalContractStrikeBalance = await podCall.strikeBalance()
+        const finalContractUnderlyingReserves = await podCall.underlyingReserves()
+        const finalContractStrikeReserves = await podCall.strikeReserves()
         const finalContractOptionSupply = await podCall.totalSupply()
 
         expect(finalSellerUnderlyingBalance).to.gte(scenario.amountToMint)
         expect(finalContractOptionSupply).to.equal(initialContractOptionSupply.sub(scenario.amountToMint))
-        expect(finalContractStrikeBalance).to.equal(initialContractStrikeBalance)
-        expect(finalContractUnderlyingBalance).to.gte(scenario.amountToMint)
+        expect(finalContractStrikeReserves).to.equal(initialContractStrikeReserves)
+        expect(finalContractUnderlyingReserves).to.gte(scenario.amountToMint)
       })
       it('should unmint, destroy seller option, reduce its balance and send underlying back counting interests (Ma-Mb-UNa-UNb)', async () => {
         await MintPhase(scenario.amountToMint)
@@ -459,15 +459,15 @@ scenarios.forEach(scenario => {
 
         const finalBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
         const finalSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
-        const finalContractStrikeBalance = await podCall.strikeBalance()
+        const finalContractStrikeReserves = await podCall.strikeReserves()
         const finalContractOptionSupply = await podCall.totalSupply()
-        const finalContractUnderlyingBalance = await podCall.underlyingBalance()
+        const finalContractUnderlyingReserves = await podCall.underlyingReserves()
 
         expect(finalBuyerUnderlyingBalance).to.gte(scenario.amountToMint)
         expect(finalSellerUnderlyingBalance).to.gte(scenario.amountToMint) // earned interests
-        expect(finalContractStrikeBalance).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(0)
-        expect(finalContractUnderlyingBalance).to.equal(0)
+        expect(finalContractUnderlyingReserves).to.equal(0)
       })
       it('should revert if user try to unmint after expiration - European', async () => {
         await forceExpiration(podCall)
@@ -508,13 +508,13 @@ scenarios.forEach(scenario => {
 
         const finalSellerOptionBalance = await podCall.balanceOf(sellerAddress)
         const finalSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
-        const finalContractStrikeBalance = await podCall.strikeBalance()
-        const finalContractUnderlyingBalance = await podCall.underlyingBalance()
+        const finalContractStrikeReserves = await podCall.strikeReserves()
+        const finalContractUnderlyingReserves = await podCall.underlyingReserves()
 
         expect(finalSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(finalSellerUnderlyingBalance).to.gte(scenario.amountToMint)
-        expect(finalContractStrikeBalance).to.equal(0)
-        expect(finalContractUnderlyingBalance).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(0)
+        expect(finalContractUnderlyingReserves).to.equal(0)
         // Cant withdraw two times in a row
         await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
       })
@@ -531,13 +531,13 @@ scenarios.forEach(scenario => {
 
         const finalBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
         const finalSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
-        const finalContractStrikeBalance = await podCall.strikeBalance()
-        const finalContractUnderlyingBalance = await podCall.underlyingBalance()
+        const finalContractStrikeReserves = await podCall.strikeReserves()
+        const finalContractUnderlyingReserves = await podCall.underlyingReserves()
 
         expect(finalBuyerUnderlyingBalance).to.gte(scenario.amountToMint)
         expect(finalSellerUnderlyingBalance).to.gte(scenario.amountToMint) // earned interests
-        expect(finalContractStrikeBalance).to.equal(0)
-        expect(finalContractUnderlyingBalance).to.equal(0)
+        expect(finalContractStrikeReserves).to.equal(0)
+        expect(finalContractUnderlyingReserves).to.equal(0)
       })
 
       it('should withdraw mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {

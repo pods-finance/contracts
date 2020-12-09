@@ -105,7 +105,7 @@ interface IPodOption is IERC20 {
         view
         returns (uint256 strikeAmount, uint256 underlyingAmount);
 
-    function underlyingBalance() external view returns (uint256);
+    function underlyingReserves() external view returns (uint256);
 
-    function strikeBalance() external view returns (uint256);
+    function strikeReserves() external view returns (uint256);
 }
