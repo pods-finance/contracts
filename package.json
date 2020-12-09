@@ -31,6 +31,7 @@
   "devDependencies": {
     "@nomiclabs/buidler": "1.3.8",
     "@nomiclabs/buidler-ethers": "2.0.0",
+    "@nomiclabs/buidler-solhint": "1.3.3",
     "@nomiclabs/buidler-waffle": "2.0.0",
     "@nomiclabs/buidler-web3": "1.3.4",
     "buidler-gas-reporter": "0.1.3",
