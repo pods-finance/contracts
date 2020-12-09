@@ -2,6 +2,11 @@
 pragma solidity 0.6.12;
 
 interface IFeePool {
+    struct Balance {
+        uint256 shares;
+        uint256 liability;
+    }
+
     function setFee(uint256 value, uint8 decimals) external;
 
     function withdraw(address to, uint256 amount) external;

@@ -16,11 +16,6 @@ import "../interfaces/IFeePool.sol";
 contract FeePool is IFeePool, Ownable {
     using SafeMath for uint256;
 
-    struct Balance {
-        uint256 shares;
-        uint256 liability;
-    }
-
     mapping(address => Balance) private _balances;
     uint256 private _shares;
     uint256 private _totalLiability;
