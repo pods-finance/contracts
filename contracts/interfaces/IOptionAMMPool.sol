@@ -1,15 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-interface IOptionAMMPool {
-    function addLiquidity(
-        uint256 amountOfA,
-        uint256 amountOfB,
-        address owner
-    ) external;
+import "./IAMM.sol";
 
-    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external;
-
+interface IOptionAMMPool is IAMM {
     function tradeExactAInput(
         uint256 exactAmountAIn,
         uint256 minAmountBOut,

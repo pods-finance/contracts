@@ -25,12 +25,15 @@ describe('OptionFactory', function () {
     const WPodPutBuilder = await ethers.getContractFactory('WPodPutBuilder')
     const PodCallBuilder = await ethers.getContractFactory('PodCallBuilder')
     const WPodCallBuilder = await ethers.getContractFactory('WPodCallBuilder')
-    const MockERC20 = await ethers.getContractFactory('MockERC20')
+    const MockERC20 = await ethers.getContractFactory('MintableERC20')
     const MockWETH = await ethers.getContractFactory('WETH')
 
     mockWeth = await MockWETH.deploy()
-    underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8, 1000e8)
-    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6, 1000e8)
+    underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8)
+    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6)
+
+    await underlyingAsset.mint(1000e8);
+    await strikeAsset.mint(1000e8);
 
     const podPutFactory = await PodPutBuilder.deploy()
     await podPutFactory.deployed()

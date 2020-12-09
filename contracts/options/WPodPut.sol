@@ -66,10 +66,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract WPodPut is PodPut {
     IWETH public weth;
 
+    event Received(address indexed sender, uint256 value);
+
     constructor(
         string memory _name,
         string memory _symbol,
-        PodOption.ExerciseType _exerciseType,
+        IPodOption.ExerciseType _exerciseType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -88,10 +90,8 @@ contract WPodPut is PodPut {
             _exerciseWindowSize
         )
     {
-        weth = IWETH(_underlyingAsset);
+        weth = IWETH(underlyingAsset());
     }
-
-    event Received(address sender, uint256 value);
 
     /**
      * @notice Unlocks collateral by burning option tokens.
@@ -110,8 +110,8 @@ contract WPodPut is PodPut {
         uint256 userMintedOptions = mintedOptions[msg.sender];
         require(amountOfOptions <= userMintedOptions, "WPodPut: not enough minted options");
 
-        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
 
         uint256 ownerSharesToReduce = ownerShares.mul(amountOfOptions).div(userMintedOptions);
         uint256 strikeToSend = ownerSharesToReduce.mul(strikeReserves).div(totalShares);
@@ -126,7 +126,7 @@ contract WPodPut is PodPut {
 
         // Unlocks the strike token
         require(
-            IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+            IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens back to caller"
         );
 
@@ -168,7 +168,7 @@ contract WPodPut is PodPut {
         weth.deposit{ value: msg.value }();
         // Releases the strike asset to caller, completing the exchange
         require(
-            IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+            IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens to caller"
         );
         emit Exercise(msg.sender, amountOfOptions);
@@ -185,8 +185,8 @@ contract WPodPut is PodPut {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "WPodPut: you do not have balance to withdraw");
 
-        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
 
         uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
@@ -195,7 +195,7 @@ contract WPodPut is PodPut {
         totalShares = totalShares.sub(ownerShares);
 
         require(
-            IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+            IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens back to caller"
         );
         if (underlyingReserves > 0) {

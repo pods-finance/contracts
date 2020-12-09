@@ -7,6 +7,7 @@ require('./tasks/option/index')
 
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')
+usePlugin('@nomiclabs/buidler-solhint')
 usePlugin('buidler-gas-reporter')
 usePlugin('solidity-coverage')
 

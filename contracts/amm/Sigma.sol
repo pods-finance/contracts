@@ -4,12 +4,13 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBlackScholes.sol";
+import "../interfaces/ISigma.sol";
 
-contract Sigma {
+contract Sigma is ISigma {
     using SafeMath for uint256;
-    IBlackScholes public blackScholes;
+    IBlackScholes private _blackScholes;
     enum OptionType { PUT, CALL }
-    uint256 constant ACCEPTABLE_ERROR = 10; // < 3%
+    uint256 public constant ACCEPTABLE_ERROR = 10; // < 3%
 
     struct Boundaries {
         uint256 sigmaLower; // [wad]
@@ -18,8 +19,12 @@ contract Sigma {
         uint256 priceHigher; // [wad]
     }
 
-    constructor(address _blackScholes) public {
-        blackScholes = IBlackScholes(_blackScholes);
+    constructor(address blackScholes) public {
+        _blackScholes = IBlackScholes(blackScholes);
+    }
+
+    function blackScholes() external override view returns (address) {
+        return address(_blackScholes);
     }
 
     function getPutSigma(
@@ -29,7 +34,7 @@ contract Sigma {
         uint256 _strikePrice,
         uint256 _timeToMaturity,
         uint256 _riskFree
-    ) external view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
+    ) external override view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
         (calculatedSigma, calculatedPrice) = getSigma(
             _targetPrice,
             _sigmaInitialGuess,
@@ -49,7 +54,7 @@ contract Sigma {
         uint256 _strikePrice,
         uint256 _timeToMaturity,
         uint256 _riskFree
-    ) external view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
+    ) external override view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
         (calculatedSigma, calculatedPrice) = getSigma(
             _targetPrice,
             _sigmaInitialGuess,
@@ -60,6 +65,10 @@ contract Sigma {
             OptionType.CALL
         );
         return (calculatedSigma, calculatedPrice);
+    }
+
+    function getCloserSigma(Boundaries memory boundaries, uint256 targetPrice) external pure returns (uint256) {
+        return _getCloserSigma(boundaries, targetPrice);
     }
 
     /**
@@ -73,7 +82,8 @@ contract Sigma {
      * @param _riskFree The risk-free rate
      * @param _optionType the option type (0 for PUt, 1 for Call)
      * @return calculatedSigma The new sigma found given _targetPrice and inside ACCEPTABLE_ERROR
-     * @return calculatedPrice That is the real price found, in the best scenario, calculated price should be equal to _targetPrice
+     * @return calculatedPrice That is the real price found, in the best scenario, calculated price should
+     * be equal to _targetPrice
      */
     function getSigma(
         uint256 _targetPrice,
@@ -140,10 +150,6 @@ contract Sigma {
         }
     }
 
-    function getCloserSigma(Boundaries memory boundaries, uint256 targetPrice) external pure returns (uint256) {
-        return _getCloserSigma(boundaries, targetPrice);
-    }
-
     /**********************************************************************************************
     // Each time you run this function, returns you a closer sigma value to the target price p0   //
     // getCloserSigma                                                                             //
@@ -174,7 +180,7 @@ contract Sigma {
         OptionType _optionType
     ) internal view returns (uint256 price) {
         if (_optionType == OptionType.PUT) {
-            price = blackScholes.getPutPrice(
+            price = _blackScholes.getPutPrice(
                 int256(_spotPrice),
                 int256(_strikePrice),
                 calculatedSigma,
@@ -182,7 +188,7 @@ contract Sigma {
                 int256(_riskFree)
             );
         } else {
-            price = blackScholes.getCallPrice(
+            price = _blackScholes.getCallPrice(
                 int256(_spotPrice),
                 int256(_strikePrice),
                 calculatedSigma,

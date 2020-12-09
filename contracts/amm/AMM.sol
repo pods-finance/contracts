@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../lib/RequiredDecimals.sol";
+import "../interfaces/IAMM.sol";
 
 /**
  * Represents a generalized contract for a single-sided AMM pair.
@@ -54,13 +55,13 @@ import "../lib/RequiredDecimals.sol";
  *
  */
 
-abstract contract AMM is RequiredDecimals {
+abstract contract AMM is IAMM, RequiredDecimals {
     using SafeMath for uint256;
 
     /**
      * @dev The initial value for deposit factor (Fimp)
      */
-    uint256 constant INITIAL_FIMP = 10**27;
+    uint256 public constant INITIAL_FIMP = 10**27;
 
     /**
      * @notice The Fimp's precision (aka number of decimals)
@@ -80,12 +81,12 @@ abstract contract AMM is RequiredDecimals {
     /**
      * @notice Token A number of decimals
      */
-    uint32 public tokenADecimals;
+    uint8 public tokenADecimals;
 
     /**
      * @notice Token B number of decimals
      */
-    uint32 public tokenBDecimals;
+    uint8 public tokenBDecimals;
 
     /**
      * @notice The total balance of token A in the pool not counting the amortization
@@ -537,7 +538,7 @@ abstract contract AMM is RequiredDecimals {
 
     /**
      * @notice _getUserBalance internal function that User original balance of token A,
-     * token B and the Openin Value * * Factor (Fimp) at the moment of the liquidity added
+     * token B and the Opening Value * * Factor (Fimp) at the moment of the liquidity added
      *
      * @param user address of the user that want to check the balance
      *
@@ -587,13 +588,13 @@ abstract contract AMM is RequiredDecimals {
         uint256 mBA = 0;
 
         if (deamortizedTokenABalance > 0) {
-            mAA = (min(deamortizedTokenABalance.mul(fImpOpening), totalTokenAWithPrecision)).div(
+            mAA = (_min(deamortizedTokenABalance.mul(fImpOpening), totalTokenAWithPrecision)).div(
                 deamortizedTokenABalance
             );
         }
 
         if (deamortizedTokenBBalance > 0) {
-            mBB = (min(deamortizedTokenBBalance.mul(fImpOpening), totalTokenBWithPrecision)).div(
+            mBB = (_min(deamortizedTokenBBalance.mul(fImpOpening), totalTokenBWithPrecision)).div(
                 deamortizedTokenBBalance
             );
         }
@@ -703,7 +704,7 @@ abstract contract AMM is RequiredDecimals {
     /**
      * @dev Returns the smallest of two numbers.
      */
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+    function _min(uint256 a, uint256 b) internal pure returns (uint256) {
         return a < b ? a : b;
     }
 

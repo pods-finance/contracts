@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// solhint-disable no-unused-vars
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -16,11 +17,11 @@ contract MockAMM is AMM {
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external {
+    ) external override {
         return _addLiquidity(amountOfA, amountOfB, owner);
     }
 
-    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external {
+    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
         return _removeLiquidity(amountOfA, amountOfB);
     }
 

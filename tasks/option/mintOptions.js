@@ -16,7 +16,7 @@ internalTask('mintOptions', 'Mint options')
     const optionContract = await ethers.getContractAt(contract, option)
     const amountBN = ethers.BigNumber.from(amount).mul(ethers.BigNumber.from(10).pow(await optionContract.decimals()))
 
-    const strikeAssetContract = await ethers.getContractAt('MockERC20', await optionContract.strikeAsset())
+    const strikeAssetContract = await ethers.getContractAt('MintableERC20', await optionContract.strikeAsset())
     const strikeToTransfer = await optionContract.strikeToTransfer(amountBN)
 
     // 1) Approve StrikeAsset between me and option Contract

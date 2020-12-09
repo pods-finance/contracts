@@ -5,13 +5,13 @@ import "../options/PodOption.sol";
 
 interface IOptionBuilder {
     function buildOption(
-        string calldata name,
-        string calldata symbol,
-        PodOption.ExerciseType exerciseType,
-        address underlyingAsset,
-        address strikeAsset,
-        uint256 strikePrice,
-        uint256 expirationDate,
-        uint256 exerciseWindowSize
-    ) external returns (address);
+        string memory _name,
+        string memory _symbol,
+        IPodOption.ExerciseType _exerciseType,
+        address _underlyingAsset,
+        address _strikeAsset,
+        uint256 _strikePrice,
+        uint256 _expiration,
+        uint256 _exerciseWindowSize
+    ) external returns (PodOption);
 }

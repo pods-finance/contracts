@@ -3,13 +3,14 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IPriceFeed.sol";
+import "../interfaces/IPriceProvider.sol";
 
 /**
  * @title PriceProvider
  * @author Pods Finance
  * @notice Storage of prices feeds by asset
  */
-contract PriceProvider is Ownable {
+contract PriceProvider is IPriceProvider, Ownable {
     /**
      * @dev Minimum price interval to accept a price feed
      * Defaulted to 3 hours and 10 minutes
@@ -33,7 +34,7 @@ contract PriceProvider is Ownable {
      * @param _assets Array of assets
      * @param _feeds Array of price feeds
      */
-    function setAssetFeeds(address[] memory _assets, address[] memory _feeds) external onlyOwner {
+    function setAssetFeeds(address[] memory _assets, address[] memory _feeds) external override onlyOwner {
         _setAssetFeeds(_assets, _feeds);
     }
 
@@ -42,7 +43,7 @@ contract PriceProvider is Ownable {
      * @dev Will not remove unregistered assets
      * @param _assets Array of assets
      */
-    function removeAssetFeeds(address[] memory _assets) external onlyOwner {
+    function removeAssetFeeds(address[] memory _assets) external override onlyOwner {
         for (uint256 i = 0; i < _assets.length; i++) {
             address removedFeed = address(_assetPriceFeeds[_assets[i]]);
 
@@ -58,11 +59,13 @@ contract PriceProvider is Ownable {
      * @param _asset Address of an asset
      * @return Current price
      */
-    function getAssetPrice(address _asset) external view returns (int256) {
+    function getAssetPrice(address _asset) external override view returns (uint256) {
         IPriceFeed feed = _assetPriceFeeds[_asset];
         require(address(feed) != address(0), "PriceProvider: Feed not registered");
+        int256 price = feed.getLatestPrice();
+        require(price > 0, "PriceProvider: Negative price");
 
-        return feed.getLatestPrice();
+        return uint256(price);
     }
 
     /**
@@ -81,6 +84,7 @@ contract PriceProvider is Ownable {
      */
     function latestRoundData(address _asset)
         external
+        override
         view
         returns (
             uint80 roundId,
@@ -101,7 +105,7 @@ contract PriceProvider is Ownable {
      * @param _asset Address of an asset
      * @return Asset price decimals
      */
-    function getAssetDecimals(address _asset) external view returns (uint8) {
+    function getAssetDecimals(address _asset) external override view returns (uint8) {
         IPriceFeed feed = _assetPriceFeeds[_asset];
         require(address(feed) != address(0), "PriceProvider: Feed not registered");
 
@@ -113,7 +117,7 @@ contract PriceProvider is Ownable {
      * @param _asset Address of an asset
      * @return Price feed address
      */
-    function getPriceFeed(address _asset) external view returns (address) {
+    function getPriceFeed(address _asset) external override view returns (address) {
         return address(_assetPriceFeeds[_asset]);
     }
 

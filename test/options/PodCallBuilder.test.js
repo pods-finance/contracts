@@ -20,13 +20,14 @@ const ScenarioA = {
 describe('PodCallBuilder', function () {
   before(async function () {
     const OptionBuilder = await ethers.getContractFactory('PodCallBuilder')
-    const MockERC20 = await ethers.getContractFactory('MockERC20')
-    const MockWETH = await ethers.getContractFactory('WETH')
+    const MockERC20 = await ethers.getContractFactory('MintableERC20')
 
-    const mockWeth = await MockWETH.deploy()
-    underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8, 1000e8)
-    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6, 1000e8)
+    underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8)
+    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6)
     podCallBuilder = await OptionBuilder.deploy()
+
+    await underlyingAsset.mint(1000e8);
+    await strikeAsset.mint(1000e8);
 
     await podCallBuilder.deployed()
     await underlyingAsset.deployed()

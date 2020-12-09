@@ -11,21 +11,9 @@ import "./FeePool.sol";
  * @notice Creates and store new OptionAMMPool
  */
 contract OptionAMMFactory is IOptionAMMFactory {
-    mapping(address => OptionAMMPool) private pools;
+    mapping(address => OptionAMMPool) private _pools;
 
     event PoolCreated(address indexed deployer, OptionAMMPool pool);
-
-    /**
-     * @notice Returns the address of a previously created pool
-     *
-     * @dev If the pool has not been created it will return address(0)
-     *
-     * @param _optionAddress The address of option token
-     * @return The address of the pool
-     */
-    function getPool(address _optionAddress) external override view returns (address) {
-        return address(pools[_optionAddress]);
-    }
 
     /**
      * @notice Creates an option pool
@@ -46,7 +34,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
         address _sigma,
         uint256 _initialSigma
     ) external override returns (address) {
-        require(address(pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
+        require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
 
         FeePool feePoolTokenA = new FeePool(_stableAsset, 15, 6);
         FeePool feePoolTokenB = new FeePool(_stableAsset, 15, 6);
@@ -65,9 +53,21 @@ contract OptionAMMFactory is IOptionAMMFactory {
         feePoolTokenA.transferOwnership(address(pool));
         feePoolTokenB.transferOwnership(address(pool));
 
-        pools[_optionAddress] = pool;
+        _pools[_optionAddress] = pool;
         emit PoolCreated(msg.sender, pool);
 
         return address(pool);
+    }
+
+    /**
+     * @notice Returns the address of a previously created pool
+     *
+     * @dev If the pool has not been created it will return address(0)
+     *
+     * @param _optionAddress The address of option token
+     * @return The address of the pool
+     */
+    function getPool(address _optionAddress) external override view returns (address) {
+        return address(_pools[_optionAddress]);
     }
 }

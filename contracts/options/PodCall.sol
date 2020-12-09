@@ -74,7 +74,7 @@ contract PodCall is PodOption {
     constructor(
         string memory _name,
         string memory _symbol,
-        PodOption.ExerciseType _exerciseType,
+        IPodOption.ExerciseType _exerciseType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -85,7 +85,7 @@ contract PodCall is PodOption {
         PodOption(
             _name,
             _symbol,
-            PodOption.OptionType.CALL,
+            IPodOption.OptionType.CALL,
             _exerciseType,
             _underlyingAsset,
             _strikeAsset,
@@ -93,7 +93,7 @@ contract PodCall is PodOption {
             _expiration,
             _exerciseWindowSize
         )
-    {}
+    {} // solhint-disable-line no-empty-blocks
 
     /**
      * @notice Locks underlying asset and write option tokens.
@@ -134,7 +134,7 @@ contract PodCall is PodOption {
         _mint(msg.sender, amountOfOptions);
 
         require(
-            IERC20(underlyingAsset).transferFrom(msg.sender, address(this), amountOfOptions),
+            IERC20(underlyingAsset()).transferFrom(msg.sender, address(this), amountOfOptions),
             "PodCall: could not transfer underlying tokens from caller"
         );
         emit Mint(owner, amountOfOptions);
@@ -157,8 +157,8 @@ contract PodCall is PodOption {
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
         require(amountOfOptions <= ownerMintedOptions, "PodCall: not enough minted options");
 
-        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
 
         uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
 
@@ -175,14 +175,14 @@ contract PodCall is PodOption {
 
         // Unlocks the strike token
         require(
-            IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
+            IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),
             "PodCall: could not transfer underlying tokens back to caller"
         );
 
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "WPodPut: amount of options is too low");
             require(
-                IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+                IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "PodCall: could not transfer strike tokens back to caller"
             );
         }
@@ -220,13 +220,13 @@ contract PodCall is PodOption {
 
         // Retrieve the strike asset from caller
         require(
-            IERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
+            IERC20(strikeAsset()).transferFrom(msg.sender, address(this), amountStrikeToReceive),
             "PodCall: could not transfer strike tokens from caller"
         );
 
         // Releases the underlying asset to caller, completing the exchange
         require(
-            IERC20(underlyingAsset).transfer(msg.sender, amountOfOptions),
+            IERC20(underlyingAsset()).transfer(msg.sender, amountOfOptions),
             "PodCall: could not transfer underlying tokens to caller"
         );
         emit Exercise(msg.sender, amountOfOptions);
@@ -243,8 +243,8 @@ contract PodCall is PodOption {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "PodCall: you do not have balance to withdraw");
 
-        uint256 strikeReserves = IERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
 
         uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
@@ -253,12 +253,12 @@ contract PodCall is PodOption {
         shares[msg.sender] = 0;
 
         require(
-            IERC20(underlyingAsset).transfer(msg.sender, underlyingToSend),
+            IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),
             "PodCall: could not transfer underlying tokens back to caller"
         );
         if (strikeToSend > 0) {
             require(
-                IERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+                IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "PodCall: could not transfer strike tokens back to caller"
             );
         }

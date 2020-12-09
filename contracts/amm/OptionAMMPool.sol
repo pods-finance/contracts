@@ -25,7 +25,7 @@ import "../interfaces/IFeePool.sol";
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
-contract OptionAMMPool is AMM {
+contract OptionAMMPool is AMM, IOptionAMMPool {
     using SafeMath for uint256;
     uint256 public constant BS_RES_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
@@ -61,7 +61,7 @@ contract OptionAMMPool is AMM {
         uint256 expiration;
         uint256 strikePrice;
         address underlyingAsset;
-        uint256 optionType;
+        IPodOption.OptionType optionType;
         uint256 currentSigma;
         uint256 riskFree;
         uint256 sigmaInitialGuess;
@@ -113,9 +113,7 @@ contract OptionAMMPool is AMM {
      * BEFORE series expiration.
      */
     modifier beforeExpiration() {
-        if (_hasExpired()) {
-            revert("OptionAMMPool: option has expired");
-        }
+        require(!_hasExpired(), "OptionAMMPool: option has expired");
         _;
     }
 
@@ -132,7 +130,7 @@ contract OptionAMMPool is AMM {
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external beforeExpiration {
+    ) external override beforeExpiration {
         return _addLiquidity(amountOfA, amountOfB, owner);
     }
 
@@ -142,13 +140,14 @@ contract OptionAMMPool is AMM {
      * @param amountOfA amount of TokenA to add
      * @param amountOfB amount of TokenB to add
      */
-    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external {
+    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
         return _removeLiquidity(amountOfA, amountOfB);
     }
 
     /**
      * @notice tradeExactAInput msg.sender is able to trade exact amount of token A in exchange for minimum
-     * amount of token B and send the tokens B to the owner. After that, this function also updates the priceProperties.* currentSigma
+     * amount of token B and send the tokens B to the owner. After that, this function also updates the
+     * priceProperties.* currentSigma
      *
      * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
      * out of thin ar, caller can help the Numeric Method achieve the result in less iterations with this parameter.
@@ -164,14 +163,15 @@ contract OptionAMMPool is AMM {
         uint256 minAmountBOut,
         address owner,
         uint256 sigmaInitialGuess
-    ) external beforeExpiration returns (uint256) {
+    ) external override beforeExpiration returns (uint256) {
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
     }
 
     /**
      * @notice _tradeExactAOutput owner is able to receive exact amount of token A in exchange of a max
-     * acceptable amount of token B transfer from the msg.sender. After that, this function also updates the priceProperties.* currentSigma
+     * acceptable amount of token B transfer from the msg.sender. After that, this function also updates
+     * the priceProperties.* currentSigma
      *
      * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
      * out of thin ar, caller can help the Numeric Method achieve the result in less iterations with this parameter.
@@ -187,7 +187,7 @@ contract OptionAMMPool is AMM {
         uint256 maxAmountBIn,
         address owner,
         uint256 sigmaInitialGuess
-    ) external beforeExpiration returns (uint256) {
+    ) external override beforeExpiration returns (uint256) {
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
     }
@@ -210,7 +210,7 @@ contract OptionAMMPool is AMM {
         uint256 minAmountAOut,
         address owner,
         uint256 sigmaInitialGuess
-    ) external beforeExpiration returns (uint256) {
+    ) external override beforeExpiration returns (uint256) {
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
     }
@@ -234,7 +234,7 @@ contract OptionAMMPool is AMM {
         uint256 maxAmountAIn,
         address owner,
         uint256 sigmaInitialGuess
-    ) external beforeExpiration returns (uint256) {
+    ) external override beforeExpiration returns (uint256) {
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
     }
@@ -246,7 +246,7 @@ contract OptionAMMPool is AMM {
      *
      * @return ABPrice ABPrice is the unit price AB. Meaning how many units of B, buys 1 unit of A
      */
-    function getABPrice() external view returns (uint256 ABPrice) {
+    function getABPrice() external override view returns (uint256 ABPrice) {
         return _getABPrice();
     }
 
@@ -264,6 +264,7 @@ contract OptionAMMPool is AMM {
      */
     function getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
         external
+        override
         view
         returns (
             uint256 amountBOut,
@@ -289,6 +290,7 @@ contract OptionAMMPool is AMM {
      */
     function getOptionTradeDetailsExactAOutput(uint256 exactAmountAOut)
         external
+        override
         view
         returns (
             uint256 amountBIn,
@@ -314,6 +316,7 @@ contract OptionAMMPool is AMM {
      */
     function getOptionTradeDetailsExactBInput(uint256 exactAmountBIn)
         external
+        override
         view
         returns (
             uint256 amountAOut,
@@ -339,6 +342,7 @@ contract OptionAMMPool is AMM {
      */
     function getOptionTradeDetailsExactBOutput(uint256 exactAmountBOut)
         external
+        override
         view
         returns (
             uint256 amountAIn,
@@ -359,7 +363,7 @@ contract OptionAMMPool is AMM {
      * @return spotPrice amount of A that will be transfer from msg.sender to the pool
      */
 
-    function getSpotPrice(address asset, uint256 decimalsOutput) external view returns (uint256 spotPrice) {
+    function getSpotPrice(address asset, uint256 decimalsOutput) external override view returns (uint256 spotPrice) {
         return _getSpotPrice(asset, decimalsOutput);
     }
 
@@ -373,7 +377,7 @@ contract OptionAMMPool is AMM {
     function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
         uint256 newABPrice;
 
-        if (priceProperties.optionType == 0) {
+        if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             newABPrice = priceMethod.getPutPrice(
                 int256(spotPrice),
                 int256(priceProperties.strikePrice),
@@ -403,8 +407,8 @@ contract OptionAMMPool is AMM {
 
     function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256, uint256) {
         (uint256 totalAmountA, uint256 totalAmountB) = _getPoolBalances();
-        uint256 poolAmountA = min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
-        uint256 poolAmountB = min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
+        uint256 poolAmountA = _min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
+        uint256 poolAmountB = _min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
         return (poolAmountA, poolAmountB);
     }
 
@@ -441,7 +445,7 @@ contract OptionAMMPool is AMM {
     ) internal view returns (uint256) {
         uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
         uint256 newIV;
-        if (priceProperties.optionType == 0) {
+        if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             (newIV, ) = impliedVolatility.getPutSigma(
                 newTargetABPriceWithDecimals,
                 properties.sigmaInitialGuess,
