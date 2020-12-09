@@ -91,7 +91,7 @@ contract PodPut is PodOption {
             _expiration,
             _exerciseWindowSize
         )
-    {}
+    {} // solhint-disable-line no-empty-blocks
 
     /**
      * @notice Locks strike asset and write option tokens.

@@ -93,7 +93,7 @@ contract PodCall is PodOption {
             _expiration,
             _exerciseWindowSize
         )
-    {}
+    {} // solhint-disable-line no-empty-blocks
 
     /**
      * @notice Locks underlying asset and write option tokens.
