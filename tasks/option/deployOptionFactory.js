@@ -1,14 +1,33 @@
+const saveJSON = require('../utils/saveJSON')
 
-task('deployFactory', 'Deploy OptionFactory or aOptionFactory')
-  .addFlag('aave', 'is it a interest bearing option')
-  .setAction(async ({ aave }, bre) => {
+task('deployOptionFactory', 'Deploy OptionFactory')
+  .addFlag('builders', 'true if want to deploy all builders combined')
+  .addOptionalParam('podputbuilder', 'podputbuilder contract address')
+  .addOptionalParam('wpodputbuilder', 'wpodputbuilder contract address')
+  .addOptionalParam('podcallbuilder', 'podcallbuilder contract address')
+  .addOptionalParam('wpodcallbuilder', 'wpodcallbuilder contract address')
+  .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, builders }, bre) => {
+    const path = `../../deployments/${bre.network.name}.json`
     const wethAddress = require(`../../deployments/${bre.network.name}.json`).WETH
 
-    const contractName = aave ? 'aOptionFactory' : 'OptionFactory'
-    const OptionFactory = await ethers.getContractFactory(contractName)
-    const factory = await OptionFactory.deploy(wethAddress)
+    if (builders) {
+      podputbuilder = await run('deployBuilder', { optiontype: 'PodPut' })
+      wpodputbuilder = await run('deployBuilder', { optiontype: 'WPodPut' })
+      podcallbuilder = await run('deployBuilder', { optiontype: 'PodCall' })
+      wpodcallbuilder = await run('deployBuilder', { optiontype: 'WPodCall' })
+    }
+
+    const OptionFactory = await ethers.getContractFactory('OptionFactory')
+    const factory = await OptionFactory.deploy(
+      wethAddress,
+      podputbuilder,
+      wpodputbuilder,
+      podcallbuilder,
+      wpodcallbuilder)
 
     await factory.deployed()
 
-    console.log(`${contractName} deployed to:`, factory.address)
+    await saveJSON(path, { OptionFactory: factory.address })
+
+    console.log('OptionFactory deployed to: ', factory.address)
   })
