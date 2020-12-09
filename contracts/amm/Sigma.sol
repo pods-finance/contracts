@@ -82,7 +82,8 @@ contract Sigma is ISigma {
      * @param _riskFree The risk-free rate
      * @param _optionType the option type (0 for PUt, 1 for Call)
      * @return calculatedSigma The new sigma found given _targetPrice and inside ACCEPTABLE_ERROR
-     * @return calculatedPrice That is the real price found, in the best scenario, calculated price should be equal to _targetPrice
+     * @return calculatedPrice That is the real price found, in the best scenario, calculated price should
+     * be equal to _targetPrice
      */
     function getSigma(
         uint256 _targetPrice,
