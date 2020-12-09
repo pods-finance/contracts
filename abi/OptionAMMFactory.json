@@ -1,0 +1,84 @@
+[
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "deployer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "contract OptionAMMPool",
+          "name": "pool",
+          "type": "address"
+        }
+      ],
+      "name": "PoolCreated",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_optionAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_stableAsset",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_priceProvider",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_priceMethod",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_sigma",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_initialSigma",
+          "type": "uint256"
+        }
+      ],
+      "name": "createPool",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_optionAddress",
+          "type": "address"
+        }
+      ],
+      "name": "getPool",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
