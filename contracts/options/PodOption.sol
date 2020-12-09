@@ -107,6 +107,54 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
     }
 
     /**
+     * @notice getSellerWithdrawAmounts returns the seller position based on his amount of shares
+     * and the current option position
+     *
+     * @param owner address of the user to check the withdraw amounts
+     *
+     * @return strikeAmount current amount of strike the user will receive. It may change until maturity
+     * @return underlyingAmount current amount of underlying the user will receive. It may change until maturity
+     */
+    function getSellerWithdrawAmounts(address owner)
+        external
+        override
+        view
+        returns (uint256 strikeAmount, uint256 underlyingAmount)
+    {
+        uint256 ownerShares = shares[owner];
+
+        uint256 strikeReserves = IERC20(_strikeAsset).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(_underlyingAsset).balanceOf(address(this));
+
+        strikeAmount = ownerShares.mul(strikeReserves).div(totalShares);
+        underlyingAmount = ownerShares.mul(underlyingReserves).div(totalShares);
+
+        return (strikeAmount, underlyingAmount);
+    }
+
+    /**
+     * @notice Checks if the options series has already expired.
+     */
+    function hasExpired() external override view returns (bool) {
+        return _hasExpired();
+    }
+
+    /**
+     * @notice Checks if the options exercise window has closed.
+     */
+    function isAfterEndOfExerciseWindow() external override view returns (bool) {
+        return _isAfterEndOfExerciseWindow();
+    }
+
+    /**
+     * @notice External function to calculate the amount of strike asset
+     * needed given the option amount
+     */
+    function strikeToTransfer(uint256 amountOfOptions) external override view returns (uint256) {
+        return _strikeToTransfer(amountOfOptions);
+    }
+
+    /**
      * @notice The option type. eg: CALL, PUT
      */
     function optionType() public override view returns (OptionType) {
@@ -178,36 +226,10 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
     }
 
     /**
-     * @notice getSellerWithdrawAmounts returns the seller position based on his amount of shares
-     * and the current option position
-     *
-     * @param owner address of the user to check the withdraw amounts
-     *
-     * @return strikeAmount current amount of strike the user will receive. It may change until maturity
-     * @return underlyingAmount current amount of underlying the user will receive. It may change until maturity
-     */
-    function getSellerWithdrawAmounts(address owner)
-        external
-        override
-        view
-        returns (uint256 strikeAmount, uint256 underlyingAmount)
-    {
-        uint256 ownerShares = shares[owner];
-
-        uint256 strikeReserves = IERC20(_strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(_underlyingAsset).balanceOf(address(this));
-
-        strikeAmount = ownerShares.mul(strikeReserves).div(totalShares);
-        underlyingAmount = ownerShares.mul(underlyingReserves).div(totalShares);
-
-        return (strikeAmount, underlyingAmount);
-    }
-
-    /**
      * @notice Utility function to check the amount of the underlying tokens
      * locked inside this contract
      */
-    function underlyingBalance() external override view returns (uint256) {
+    function underlyingBalance() public override view returns (uint256) {
         return IERC20(_underlyingAsset).balanceOf(address(this));
     }
 
@@ -215,30 +237,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
      * @notice Utility function to check the amount of the strike tokens locked
      * inside this contract
      */
-    function strikeBalance() external override view returns (uint256) {
+    function strikeBalance() public override view returns (uint256) {
         return IERC20(_strikeAsset).balanceOf(address(this));
-    }
-
-    /**
-     * @notice Checks if the options series has already expired.
-     */
-    function hasExpired() external override view returns (bool) {
-        return _hasExpired();
-    }
-
-    /**
-     * @notice Checks if the options exercise window has closed.
-     */
-    function isAfterEndOfExerciseWindow() external override view returns (bool) {
-        return _isAfterEndOfExerciseWindow();
-    }
-
-    /**
-     * @notice External function to calculate the amount of strike asset
-     * needed given the option amount
-     */
-    function strikeToTransfer(uint256 amountOfOptions) external override view returns (uint256) {
-        return _strikeToTransfer(amountOfOptions);
     }
 
     /**
