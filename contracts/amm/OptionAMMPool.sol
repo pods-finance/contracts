@@ -61,7 +61,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 expiration;
         uint256 strikePrice;
         address underlyingAsset;
-        uint256 optionType;
+        IPodOption.OptionType optionType;
         uint256 currentSigma;
         uint256 riskFree;
         uint256 sigmaInitialGuess;
@@ -375,7 +375,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
         uint256 newABPrice;
 
-        if (priceProperties.optionType == 0) {
+        if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             newABPrice = priceMethod.getPutPrice(
                 int256(spotPrice),
                 int256(priceProperties.strikePrice),
@@ -443,7 +443,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     ) internal view returns (uint256) {
         uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
         uint256 newIV;
-        if (priceProperties.optionType == 0) {
+        if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             (newIV, ) = impliedVolatility.getPutSigma(
                 newTargetABPriceWithDecimals,
                 properties.sigmaInitialGuess,

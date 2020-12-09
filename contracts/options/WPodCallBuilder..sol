@@ -25,7 +25,7 @@ contract WPodCallBuilder is IOptionBuilder {
     function buildOption(
         string memory _name,
         string memory _symbol,
-        PodOption.ExerciseType _exerciseType,
+        IPodOption.ExerciseType _exerciseType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,

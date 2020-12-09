@@ -2,7 +2,7 @@
 pragma solidity 0.6.12;
 
 import "../interfaces/IOptionBuilder.sol";
-import "./PodOption.sol";
+import "../interfaces/IPodOption.sol";
 
 /**
  * @title OptionFactory
@@ -21,8 +21,8 @@ contract OptionFactory {
     event OptionCreated(
         address indexed deployer,
         address option,
-        PodOption.OptionType _optionType,
-        PodOption.ExerciseType _exerciseType,
+        IPodOption.OptionType _optionType,
+        IPodOption.ExerciseType _exerciseType,
         address underlyingAsset,
         address strikeAsset,
         uint256 strikePrice,
@@ -60,8 +60,8 @@ contract OptionFactory {
     function createOption(
         string memory _name,
         string memory _symbol,
-        PodOption.OptionType _optionType,
-        PodOption.ExerciseType _exerciseType,
+        IPodOption.OptionType _optionType,
+        IPodOption.ExerciseType _exerciseType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -70,7 +70,7 @@ contract OptionFactory {
     ) public returns (address option) {
         IOptionBuilder builder;
 
-        if (_optionType == PodOption.OptionType.PUT) {
+        if (_optionType == IPodOption.OptionType.PUT) {
             if (_underlyingAsset == WETH_ADDRESS) {
                 builder = wPodPutBuilder;
             } else {

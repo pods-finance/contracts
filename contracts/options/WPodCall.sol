@@ -77,7 +77,7 @@ contract WPodCall is PodCall {
     constructor(
         string memory _name,
         string memory _symbol,
-        PodOption.ExerciseType _exerciseType,
+        IPodOption.ExerciseType _exerciseType,
         address _underlyingAsset,
         address _strikeAsset,
         uint256 _strikePrice,
@@ -96,7 +96,7 @@ contract WPodCall is PodCall {
             _exerciseWindowSize
         )
     {
-        weth = IWETH(_underlyingAsset);
+        weth = IWETH(underlyingAsset());
     }
 
     /**
@@ -155,8 +155,8 @@ contract WPodCall is PodCall {
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
         require(amountOfOptions <= ownerMintedOptions, "WPodCall: not enough minted options");
 
-        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = ERC20(strikeAsset()).balanceOf(address(this));
+        uint256 underlyingReserves = ERC20(underlyingAsset()).balanceOf(address(this));
 
         uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
 
@@ -177,7 +177,7 @@ contract WPodCall is PodCall {
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "WPodCall: amount of options is too low");
             require(
-                ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+                ERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
@@ -214,7 +214,7 @@ contract WPodCall is PodCall {
 
         // Retrieve the strike asset from caller
         require(
-            ERC20(strikeAsset).transferFrom(msg.sender, address(this), amountStrikeToReceive),
+            ERC20(strikeAsset()).transferFrom(msg.sender, address(this), amountStrikeToReceive),
             "WPodCall: could not transfer strike tokens from caller"
         );
 
@@ -235,8 +235,8 @@ contract WPodCall is PodCall {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "WPodCall: you do not have balance to withdraw");
 
-        uint256 strikeReserves = ERC20(strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset).balanceOf(address(this));
+        uint256 strikeReserves = ERC20(strikeAsset()).balanceOf(address(this));
+        uint256 underlyingReserves = ERC20(underlyingAsset()).balanceOf(address(this));
 
         uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
@@ -249,7 +249,7 @@ contract WPodCall is PodCall {
 
         if (strikeToSend > 0) {
             require(
-                ERC20(strikeAsset).transfer(msg.sender, strikeToSend),
+                ERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
