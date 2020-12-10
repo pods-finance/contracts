@@ -352,9 +352,13 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _onRemoveLiquidity(balances[msg.sender], msg.sender);
 
         // 7) Transfers / Update
-        require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
+        if (amountToSendA > 0) {
+            require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
+        }
 
-        require(IERC20(tokenB).transfer(msg.sender, amountToSendB), "AMM: could not transfer token B from caller");
+        if (amountToSendB > 0) {
+            require(IERC20(tokenB).transfer(msg.sender, amountToSendB), "AMM: could not transfer token B from caller");
+        }
 
         emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
     }
@@ -385,7 +389,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
             "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
+        if (amountBOut > 0) {
+            require(IERC20(tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
+        }
 
         emit TradeExactAInput(msg.sender, owner, exactAmountAIn, exactAmountAIn);
         return amountBOut;
@@ -418,7 +424,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
             "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
+        if (exactAmountAOut > 0) {
+            require(IERC20(tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
+        }
 
         emit TradeExactAOutput(msg.sender, owner, exactAmountAOut, amountBIn);
         return amountBIn;
@@ -451,7 +459,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
             "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
+        if (amountAOut > 0) {
+            require(IERC20(tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
+        }
 
         emit TradeExactBInput(msg.sender, owner, amountAOut, exactAmountBIn);
         return amountAOut;
@@ -484,7 +494,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
             "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenB).transfer(owner, exactAmountBOut), "AMM: could not transfer token B to caller");
+        if (exactAmountBOut > 0) {
+            require(IERC20(tokenB).transfer(owner, exactAmountBOut), "AMM: could not transfer token B to caller");
+        }
 
         emit TradeExactBOutput(msg.sender, owner, amountAIn, exactAmountBOut);
         return amountAIn;
