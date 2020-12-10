@@ -177,7 +177,7 @@ contract WPodCall is PodCall {
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "WPodCall: amount of options is too low");
             require(
-                ERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
+                IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
@@ -214,7 +214,7 @@ contract WPodCall is PodCall {
 
         // Retrieve the strike asset from caller
         require(
-            ERC20(strikeAsset()).transferFrom(msg.sender, address(this), amountStrikeToReceive),
+            IERC20(strikeAsset()).transferFrom(msg.sender, address(this), amountStrikeToReceive),
             "WPodCall: could not transfer strike tokens from caller"
         );
 
@@ -249,7 +249,7 @@ contract WPodCall is PodCall {
 
         if (strikeToSend > 0) {
             require(
-                ERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
+                IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
