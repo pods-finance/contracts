@@ -352,9 +352,13 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _onRemoveLiquidity(balances[msg.sender], msg.sender);
 
         // 7) Transfers / Update
-        require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
+        if (amountToSendA > 0) {
+            require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
+        }
 
-        require(IERC20(tokenB).transfer(msg.sender, amountToSendB), "AMM: could not transfer token B from caller");
+        if (amountToSendB > 0) {
+            require(IERC20(tokenB).transfer(msg.sender, amountToSendB), "AMM: could not transfer token B from caller");
+        }
 
         emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
     }
@@ -519,6 +523,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
                 _deamortizedTokenBBalance
             );
         }
+
         fImpOpening = numerator.div(denominator);
         return fImpOpening;
     }
@@ -626,6 +631,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 fImpOriginal
     ) internal view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
+        bool hasNoLiquidity = totalTokenA == 0 || totalTokenB == 0;
+        if (hasNoLiquidity) {
+            return (0, 0);
+        }
+
         uint256 ABPrice = _getABPrice();
         uint256 fImpOpening = _getFImpOpening(
             totalTokenA,
@@ -662,13 +672,15 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 _fImpOriginal,
         Mult memory m
     ) internal pure returns (uint256 tokenAAvailableForRescue, uint256 tokenBAvailableForRescue) {
-        uint256 userMAB = _balanceTokenB.mul(m.AB).div(_fImpOriginal);
-        uint256 userMBB = _balanceTokenB.mul(m.BB).div(_fImpOriginal);
-        uint256 userMAA = _balanceTokenA.mul(m.AA).div(_fImpOriginal);
-        uint256 userMBA = _balanceTokenA.mul(m.BA).div(_fImpOriginal);
+        if (_fImpOriginal > 0) {
+            uint256 userMAB = _balanceTokenB.mul(m.AB).div(_fImpOriginal);
+            uint256 userMBB = _balanceTokenB.mul(m.BB).div(_fImpOriginal);
+            uint256 userMAA = _balanceTokenA.mul(m.AA).div(_fImpOriginal);
+            uint256 userMBA = _balanceTokenA.mul(m.BA).div(_fImpOriginal);
 
-        tokenAAvailableForRescue = userMAA.add(userMBA);
-        tokenBAvailableForRescue = userMBB.add(userMAB);
+            tokenAAvailableForRescue = userMAA.add(userMBA);
+            tokenBAvailableForRescue = userMBB.add(userMAB);
+        }
         return (tokenAAvailableForRescue, tokenBAvailableForRescue);
     }
 
