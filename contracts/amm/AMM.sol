@@ -389,9 +389,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
             "AMM: could not transfer token A from caller"
         );
 
-        if (amountBOut > 0) {
-            require(IERC20(tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
-        }
+        require(IERC20(tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactAInput(msg.sender, owner, exactAmountAIn, exactAmountAIn);
         return amountBOut;
@@ -424,9 +422,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
             "AMM: could not transfer token A from caller"
         );
 
-        if (exactAmountAOut > 0) {
-            require(IERC20(tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
-        }
+        require(IERC20(tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactAOutput(msg.sender, owner, exactAmountAOut, amountBIn);
         return amountBIn;
@@ -459,9 +455,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
             "AMM: could not transfer token A from caller"
         );
 
-        if (amountAOut > 0) {
-            require(IERC20(tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
-        }
+        require(IERC20(tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactBInput(msg.sender, owner, amountAOut, exactAmountBIn);
         return amountAOut;
@@ -494,9 +488,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
             "AMM: could not transfer token A from caller"
         );
 
-        if (exactAmountBOut > 0) {
-            require(IERC20(tokenB).transfer(owner, exactAmountBOut), "AMM: could not transfer token B to caller");
-        }
+        require(IERC20(tokenB).transfer(owner, exactAmountBOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactBOutput(msg.sender, owner, amountAIn, exactAmountBOut);
         return amountAIn;
