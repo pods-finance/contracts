@@ -258,6 +258,26 @@ scenarios.forEach(scenario => {
         expect(balanceAfterUserATokenA).to.equal(amountTokenAToMint)
         expect(balanceAfterUserATokenB).to.equal(amountTokenBToMint)
       })
+
+      it('should show the position of users that did not add liquidity', async () => {
+        let maxWithdrawAmountA, maxWithdrawAmountB
+        // User A asking before there is any liquidity
+        ;[ maxWithdrawAmountA, maxWithdrawAmountB ] = await amm.getMaxRemoveLiquidityAmounts(userAAddress)
+        expect(maxWithdrawAmountA).to.equal(0)
+        expect(maxWithdrawAmountB).to.equal(0)
+
+        // Adding liquidity
+        await mockTokenA.connect(userB).mint(1e8)
+        await mockTokenB.connect(userB).mint(1e8)
+        await mockTokenA.connect(userB).approve(amm.address, 1e8)
+        await mockTokenB.connect(userB).approve(amm.address, 1e8)
+        await amm.connect(userB).addLiquidity(1e8, 1e8, userBAddress)
+
+        // User A asking after liquidity was added
+        ;[ maxWithdrawAmountA, maxWithdrawAmountB ] = await amm.getMaxRemoveLiquidityAmounts(userAAddress)
+        expect(maxWithdrawAmountA).to.equal(0)
+        expect(maxWithdrawAmountB).to.equal(0)
+      })
     })
 
     describe('Scenario group APR - Add Liquidity / Price change / Remove Liquidity', () => {
@@ -1387,6 +1407,7 @@ scenarios.forEach(scenario => {
       it('Impermanent Loss should be equal between participants - 3 adds / 1 trade(sell) / 1 price(down) / 3 removed un-order', async () => {})
       it('Impermanent Loss should be equal between participants - 3 adds / 1 trade(sell) / 1 price(up) / 3 removed un-order', async () => {})
     })
+
     describe('Re-Add Liquidity - The sum of withdraws in value for a combined deposit should be equal to a two separate ones', async () => {
       it('APR', async () => {
         const amountOfTokenAUser00 = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenADecimals))
