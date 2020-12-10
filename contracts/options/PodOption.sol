@@ -229,7 +229,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
      * @notice Utility function to check the amount of the underlying tokens
      * locked inside this contract
      */
-    function underlyingBalance() public override view returns (uint256) {
+    function underlyingReserves() public override view returns (uint256) {
         return IERC20(_underlyingAsset).balanceOf(address(this));
     }
 
@@ -237,7 +237,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
      * @notice Utility function to check the amount of the strike tokens locked
      * inside this contract
      */
-    function strikeBalance() public override view returns (uint256) {
+    function strikeReserves() public override view returns (uint256) {
         return IERC20(_strikeAsset).balanceOf(address(this));
     }
 
@@ -307,19 +307,19 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
      * @dev Calculate number of reserve shares based on the amount of collateral locked by the minter
      */
     function _calculatedShares(uint256 amountOfCollateral) internal view returns (uint256 ownerShares) {
-        uint256 strikeReserves = IERC20(_strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(_underlyingAsset).balanceOf(address(this));
+        uint256 _strikeReserves = strikeReserves();
+        uint256 _underlyingReserves = underlyingReserves();
 
         uint256 numerator = amountOfCollateral.mul(totalShares);
         uint256 denominator;
 
         if (_optionType == OptionType.PUT) {
-            denominator = strikeReserves.add(
-                underlyingReserves.mul(_strikePrice).div((uint256(10)**_underlyingAssetDecimals))
+            denominator = _strikeReserves.add(
+                _underlyingReserves.mul(_strikePrice).div((uint256(10)**_underlyingAssetDecimals))
             );
         } else {
-            denominator = underlyingReserves.add(
-                strikeReserves.mul((uint256(10)**_underlyingAssetDecimals).div(_strikePrice))
+            denominator = _underlyingReserves.add(
+                _strikeReserves.mul((uint256(10)**_underlyingAssetDecimals).div(_strikePrice))
             );
         }
         ownerShares = numerator.div(denominator);
