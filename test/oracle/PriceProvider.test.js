@@ -17,16 +17,24 @@ describe('PriceProvider', () => {
     startedAt = await getTimestamp()
     updatedAt = startedAt + 1
 
-    defaultPriceFeed = await createPriceFeedMock(price, decimals, startedAt, updatedAt)
+    defaultPriceFeed = await createPriceFeedMock()
   })
 
   beforeEach(async () => {
-    provider = await PriceProvider.deploy([asset0], [defaultPriceFeed.address])
+    await defaultPriceFeed.setDecimals(decimals)
+    await defaultPriceFeed.setRoundData({
+      roundId: 1,
+      answer: price,
+      startedAt,
+      updatedAt,
+      answeredInRound: 1
+    })
+    provider = await PriceProvider.deploy([asset0], [defaultPriceFeed.contract.address])
   })
 
   describe('PriceFeed management', () => {
     it('assigns the asset on construction correctly', async () => {
-      expect(await provider.getPriceFeed(asset0)).to.equal(defaultPriceFeed.address)
+      expect(await provider.getPriceFeed(asset0)).to.equal(defaultPriceFeed.contract.address)
     })
 
     it('assigns the decimals on construction correctly', async () => {
@@ -36,41 +44,60 @@ describe('PriceProvider', () => {
 
   describe('setAssetFeeds', () => {
     it('should set a new feed', async () => {
-      const newPriceFeed = await createPriceFeedMock(50e6, 6, startedAt, updatedAt)
-      const tx = provider.setAssetFeeds([asset1], [newPriceFeed.address])
+      const newPriceFeed = await createPriceFeedMock()
+      await newPriceFeed.setDecimals(6)
+      await newPriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt,
+        answeredInRound: 1
+      })
+      const tx = provider.setAssetFeeds([asset1], [newPriceFeed.contract.address])
 
       await expect(tx)
         .to.emit(provider, 'AssetFeedUpdated')
-        .withArgs(asset1, newPriceFeed.address)
+        .withArgs(asset1, newPriceFeed.contract.address)
 
-      expect(await provider.getPriceFeed(asset1)).to.equal(newPriceFeed.address)
+      expect(await provider.getPriceFeed(asset1)).to.equal(newPriceFeed.contract.address)
     })
 
     it('should revert if assets and feeds are with different lengths', async () => {
       await expect(provider.setAssetFeeds([asset1], [])).to.be.revertedWith('PriceProvider: inconsistent params length')
     })
+
     it('should revert if create with invalid PriceFeed', async () => {
       await expect(provider.setAssetFeeds([asset1], ['0x'])).to.be.revertedWith('PriceProvider: invalid PriceFeed')
     })
+
     it('should revert if Price Feed not started', async () => {
-      const notStartedPriceFeed = await createPriceFeedMock(50e6, 6, 0, updatedAt)
+      const notStartedPriceFeed = await createPriceFeedMock()
       await expect(provider.setAssetFeeds([asset1], [notStartedPriceFeed.address])).to.be.revertedWith('PriceProvider: PriceFeed not started')
     })
+
     it('should revert if stale price feed', async () => {
-      const stalePriceFeed = await createPriceFeedMock(50e6, 6, 100, 0)
+      const stalePriceFeed = await createPriceFeedMock()
       await expect(provider.setAssetFeeds([asset1], [stalePriceFeed.address])).to.be.revertedWith('PriceProvider: stale PriceFeed')
     })
   })
 
   describe('removeAssetFeeds', () => {
     it('should remove a feed', async () => {
-      const newPriceFeed = await createPriceFeedMock(50e6, 6, startedAt, updatedAt)
-      await provider.setAssetFeeds([asset1], [newPriceFeed.address])
+      const newPriceFeed = await createPriceFeedMock()
+      await newPriceFeed.setDecimals(6)
+      await newPriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt,
+        answeredInRound: 1
+      })
+      await provider.setAssetFeeds([asset1], [newPriceFeed.contract.address])
       const tx = provider.removeAssetFeeds([asset1])
 
       await expect(tx)
         .to.emit(provider, 'AssetFeedRemoved')
-        .withArgs(asset1, newPriceFeed.address)
+        .withArgs(asset1, newPriceFeed.contract.address)
 
       expect(await provider.getPriceFeed(asset1)).to.equal(ethers.constants.AddressZero)
     })
@@ -92,6 +119,11 @@ describe('PriceProvider', () => {
     it('should revert if fetches the asset decimals of nonexistent asset', async () => {
       await expect(provider.getAssetDecimals(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
     })
+
+    it('should revert when the price is negative', async () => {
+      defaultPriceFeed.setPrice(ethers.BigNumber.from(-450e6))
+      await expect(provider.getAssetPrice(asset0)).to.be.revertedWith('PriceProvider: Negative price')
+    })
   })
 
   describe('latestRoundData', () => {
@@ -110,26 +142,35 @@ describe('PriceProvider', () => {
   })
 })
 
-async function createPriceFeedMock (price, decimals, startedAt, updatedAt) {
-  const roundData = {
-    roundId: 1,
-    answer: price,
-    startedAt,
-    updatedAt,
-    answeredInRound: 1
-  }
+async function createPriceFeedMock () {
+  let _roundData
 
   const [deployer] = await ethers.getSigners()
   const mockChainlink = await deployMockContract(deployer, PriceFeed)
-  await mockChainlink.mock.decimals.returns(decimals)
-  await mockChainlink.mock.getLatestPrice.returns(roundData.answer)
-  await mockChainlink.mock.latestRoundData.returns(
-    roundData.roundId,
-    roundData.answer,
-    roundData.startedAt,
-    roundData.updatedAt,
-    roundData.answeredInRound
-  )
 
-  return mockChainlink
+  const setRoundData = async roundData => {
+    _roundData = roundData
+    await mockChainlink.mock.getLatestPrice.returns(roundData.answer)
+    await mockChainlink.mock.latestRoundData.returns(
+      roundData.roundId,
+      roundData.answer,
+      roundData.startedAt,
+      roundData.updatedAt,
+      roundData.answeredInRound
+    )
+  }
+
+  const setPrice = price => {
+    _roundData.answer = price
+    return setRoundData(_roundData)
+  }
+
+  return {
+    contract: mockChainlink,
+    setDecimals: decimals => {
+      return mockChainlink.mock.decimals.returns(decimals)
+    },
+    setRoundData,
+    setPrice,
+  }
 }
