@@ -4,6 +4,7 @@ require('./tasks/option/deployOptionFactory')
 require('./tasks/deployOptionExchange')
 require('./tasks/Amm/index')
 require('./tasks/option/index')
+require('./tasks/local/index')
 
 usePlugin('@nomiclabs/buidler-waffle')
 usePlugin('@nomiclabs/buidler-web3')
@@ -14,8 +15,6 @@ usePlugin('solidity-coverage')
 module.exports = {
   networks: {
     buidlerevm: {
-      gas: 119500000,
-      blockGasLimit: 119500000,
       gasMultiplier: 2,
       loggingEnabled: !!(process.env.BUIDLER_LOGGING_ENABLED) || false
     },
@@ -23,7 +22,6 @@ module.exports = {
       protocol: 'http',
       host: 'localhost',
       port: 8545,
-      gas: 800,
       loggingEnabled: true,
       network_id: '*',
       url: 'http://127.0.0.1:8545'
@@ -61,7 +59,6 @@ module.exports = {
   },
   gasReporter: {
     currency: 'USD',
-    enabled: !!(process.env.REPORT_GAS),
-    coinmarketcap: process.env.ETHERSCAN_APIKEY
+    enabled: !!(process.env.REPORT_GAS)
   }
 }
