@@ -30,4 +30,5 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     await saveJSON(path, { OptionFactory: factory.address })
 
     console.log('OptionFactory deployed to: ', factory.address)
+    return factory
   })
