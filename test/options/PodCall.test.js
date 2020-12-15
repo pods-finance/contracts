@@ -106,6 +106,10 @@ scenarios.forEach(scenario => {
         expect(await podCall.underlyingAssetDecimals()).to.equal(scenario.underlyingAssetDecimals)
       })
 
+      it('should have correct exercise type', async () => {
+        expect(await podCall.exerciseType()).to.equal(EXERCISE_TYPE_EUROPEAN)
+      })
+
       it('should have equal number of decimals podPut and underlyingAsset', async () => {
         expect(await podCall.decimals()).to.equal(scenario.underlyingAssetDecimals)
       })
