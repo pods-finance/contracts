@@ -134,6 +134,10 @@ scenarios.forEach(scenario => {
         expect(await podPut.underlyingAssetDecimals()).to.equal(scenario.underlyingAssetDecimals)
       })
 
+      it('should have correct exercise type', async () => {
+        expect(await podPut.exerciseType()).to.equal(EXERCISE_TYPE_EUROPEAN)
+      })
+
       it('should have equal number of decimals podPut and underlyingAsset', async () => {
         expect(await podPut.decimals()).to.equal(scenario.underlyingAssetDecimals)
       })
@@ -467,7 +471,9 @@ scenarios.forEach(scenario => {
 
     describe('Exercising options', () => {
       it('should revert if amount of options asked is zero', async () => {
-        await expect(podPut.connect(seller).exercise(0, sellerAddress)).to.be.revertedWith('PodPut: you can not mint zero options')
+        await forceExpiration(podPut)
+        await expect(podPut.connect(seller).exercise(ethers.BigNumber.from(0)))
+          .to.be.revertedWith('PodPut: you can not exercise zero options')
       })
 
       it('should revert if transfer fail from ERC20', async () => {

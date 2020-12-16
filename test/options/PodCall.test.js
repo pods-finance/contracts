@@ -106,6 +106,10 @@ scenarios.forEach(scenario => {
         expect(await podCall.underlyingAssetDecimals()).to.equal(scenario.underlyingAssetDecimals)
       })
 
+      it('should have correct exercise type', async () => {
+        expect(await podCall.exerciseType()).to.equal(EXERCISE_TYPE_EUROPEAN)
+      })
+
       it('should have equal number of decimals podPut and underlyingAsset', async () => {
         expect(await podCall.decimals()).to.equal(scenario.underlyingAssetDecimals)
       })
@@ -295,6 +299,11 @@ scenarios.forEach(scenario => {
     })
 
     describe('Exercising options', () => {
+      it('should revert if amount of options asked is zero', async () => {
+        await forceExpiration(podCall)
+        await expect(podCall.connect(seller).exercise(ethers.BigNumber.from(0)))
+          .to.be.revertedWith('PodCall: you can not exercise zero options')
+      })
       it('should revert if user try to exercise before expiration', async () => {
         await MintPhase(scenario.amountToMint)
         // Transfer mint to Buyer address => This will happen through Uniswap

@@ -223,6 +223,11 @@ scenarios.forEach(scenario => {
         await forceEndOfExerciseWindow(wPodPut)
         await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('PodOption: window of exercise has closed already')
       })
+      it('should not be able to exercise zero options', async () => {
+        await forceExpiration(wPodPut)
+        await expect(wPodPut.connect(buyer).exerciseEth({ value: 0 }))
+          .to.be.revertedWith('WPodPut: you can not exercise zero options')
+      })
     })
 
     describe('Unminting options', () => {
@@ -314,6 +319,11 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(0)
         expect(finalContractUnderlyingReserves).to.equal(initialContractUnderlyingReserves)
+      })
+      it('should not unmint if there is not enough options', async () => {
+        await MintPhase(scenario.amountToMint)
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint.add(1)))
+          .to.be.revertedWith('WPodPut: not enough minted options')
       })
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(wPodPut)
