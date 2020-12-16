@@ -299,6 +299,11 @@ scenarios.forEach(scenario => {
     })
 
     describe('Exercising options', () => {
+      it('should revert if amount of options asked is zero', async () => {
+        await forceExpiration(podCall)
+        await expect(podCall.connect(seller).exercise(ethers.BigNumber.from(0)))
+          .to.be.revertedWith('PodCall: you can not exercise zero options')
+      })
       it('should revert if user try to exercise before expiration', async () => {
         await MintPhase(scenario.amountToMint)
         // Transfer mint to Buyer address => This will happen through Uniswap
