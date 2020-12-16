@@ -1,11 +1,14 @@
 const saveJSON = require('../utils/saveJSON')
 const getTimestamp = require('../../test/util/getTimestamp')
+const fs = require('fs')
+const pathJoin = require('path')
+const fsPromises = fs.promises
 
 task('setupLocal', 'Deploy a whole local test environment')
   .setAction(async ({}, bre) => {
     const path = `../../deployments/${bre.network.name}.json`
-    const [owner] = await ethers.getSigners()
-    const deployerAddress = await owner.getAddress()
+    // Erasing local.json file
+    await saveJSON(path, '', true)
 
     // 1) Setup mock assets
     const mockWETH = await run('deployToken', { name: 'weth', symbol: 'weth', decimals: '18', weth: true })
@@ -29,7 +32,7 @@ task('setupLocal', 'Deploy a whole local test environment')
     await saveJSON(path, tokensObj)
 
     // 2) Deploy Option Builders + Option Factory
-    const optionFactory = await run('deployOptionFactory', { builders: true })
+    await run('deployOptionFactory', { builders: true })
 
     // 3) Start deploying all Option Pool contracts
     // 3.1) Chainlink Mock
@@ -42,13 +45,20 @@ task('setupLocal', 'Deploy a whole local test environment')
     // 3.2) Deploy BS + Sigma + AMMPoolFactory + Oracles
     await run('setEnvironment', { asset: mockWBTC.address, source: chainlinkWBTCFeed.address })
 
+    // 3.3) Deploy Option Exchange
+    const _filePath = pathJoin.join(__dirname, path)
+    const content = await fsPromises.readFile(_filePath)
+    const optionAMMFactory = JSON.parse(content).optionAMMFactory
+
+    await run('deployOptionExchange', { factory: optionAMMFactory })
+
     // 4) Deploy Test Option
-    const currentBlocktimestamp = await getTimestamp()
+    const currentBlockTimestamp = await getTimestamp()
     const optionWBTCAddress = await run('deployNewOption', {
       strike: 'USDC',
       underlying: 'WBTC',
       price: '18000',
-      expiration: (currentBlocktimestamp + 48 * 60 * 60).toString()
+      expiration: (currentBlockTimestamp + 48 * 60 * 60).toString()
     })
 
     // 5) Create AMMPool test with this asset
