@@ -1,4 +1,7 @@
 const saveJSON = require('../utils/saveJSON')
+const fs = require('fs')
+const path = require('path')
+const fsPromises = fs.promises
 
 task('deployNewOption', 'Deploy New Option')
   .addParam('underlying', 'symbol of underlying asset. (E.G: wbtc)')
@@ -8,14 +11,19 @@ task('deployNewOption', 'Deploy New Option')
   .addFlag('call', 'Add this flag if the option is a Call')
   .addFlag('american', 'Add this flag if the option is american')
   .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, call, american }, bre) => {
-    const path = `../../deployments/${bre.network.name}.json`
+    console.log('----Start Deploy New Option----')
+    const pathFile = `../../deployments/${bre.network.name}.json`
 
     const strikeAsset = strike.toUpperCase()
     const underlyingAsset = underlying.toUpperCase()
 
-    const strikeAssetAddress = require(`../../deployments/${bre.network.name}.json`)[strikeAsset]
-    const underlyingAssetAddress = require(`../../deployments/${bre.network.name}.json`)[underlyingAsset]
-    const optionFactoryAddress = require(`../../deployments/${bre.network.name}.json`).OptionFactory
+    const _filePath = path.join(__dirname, pathFile)
+    const content = await fsPromises.readFile(_filePath)
+    const contentJSON = JSON.parse(content)
+
+    const strikeAssetAddress = contentJSON[strikeAsset]
+    const underlyingAssetAddress = contentJSON[underlyingAsset]
+    const optionFactoryAddress = contentJSON.optionFactory
 
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()
@@ -68,8 +76,9 @@ task('deployNewOption', 'Deploy New Option')
       const currentOptions = require(`../../deployments/${bre.network.name}.json`).options
       const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
 
-      await saveJSON(path, { options: newOptionObj })
+      await saveJSON(pathFile, { options: newOptionObj })
 
+      console.log('----Finish Deploy New Option----')
       return option
     } else {
       console.log('Something went wrong: No events found')

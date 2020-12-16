@@ -6,24 +6,16 @@ internalTask('setEnvironment', 'Deploy deployOptionAMMFactory Contract')
   .addParam('source', 'address of the asset priceFeed (e.g: Chainlink 0x9326BFA02ADD2366b30bacB125260Af641031331')
   .setAction(async ({ asset, source }, bre) => {
     const path = `../../deployments/${bre.network.name}.json`
+
+    await run('deployOptionAMMFactory')
+
     const normalDistAddress = await run('deployNormalDistribution')
 
     const bsAddress = await run('deployBS', { normaldist: normalDistAddress, deploylibs: true })
 
-    const sigmaAddress = await run('deploySigma', { bs: bsAddress })
+    await run('deploySigma', { bs: bsAddress })
 
-    const priceProviderAddress = await run('deployOracle', { asset: asset, source: source })
-
-    const ammFactoryAddress = await run('deployOptionAMMFactory')
-
-    const objToSave = {
-      blackScholes: bsAddress,
-      sigma: sigmaAddress,
-      priceProvider: priceProviderAddress,
-      optionAMMFactory: ammFactoryAddress
-
-    }
-    await saveJSON(path, objToSave)
+    await run('deployOracle', { asset: asset, source: source })
 
     console.log('---Finish Set New Environment----')
   })

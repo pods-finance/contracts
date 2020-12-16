@@ -1,0 +1,2 @@
+require('./setupLocal')
+require('./deployToken')
