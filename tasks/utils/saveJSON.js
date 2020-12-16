@@ -1,9 +1,5 @@
 const fs = require('fs')
 const path = require('path')
-const util = require('util')
-
-const writeFile = util.promisify(fs.writeFile)
-const readFile = util.promisify(fs.readFile)
 const fsPromises = fs.promises
 
 module.exports = async function saveJSON (filePath, values, erase = false) {
