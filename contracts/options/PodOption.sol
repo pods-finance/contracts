@@ -323,4 +323,30 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
         ownerShares = numerator.div(denominator);
         return ownerShares;
     }
+
+    /**
+     * @dev Mint options, creating the shares accordingly to the amount of collateral provided
+     * @param amountOfOptions The amount option tokens to be issued
+     * @param amountOfCollateral The amount of collateral provided to mint options
+     * @param owner Which address will be the owner of the options
+     */
+    function _mintOptions(
+        uint256 amountOfOptions,
+        uint256 amountOfCollateral,
+        address owner
+    ) internal {
+        if (totalShares > 0) {
+            uint256 ownerShares = _calculatedShares(amountOfCollateral);
+
+            shares[owner] = shares[owner].add(ownerShares);
+            totalShares = totalShares.add(ownerShares);
+        } else {
+            shares[owner] = amountOfCollateral;
+            totalShares = amountOfCollateral;
+        }
+
+        mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
+
+        _mint(msg.sender, amountOfOptions);
+    }
 }

@@ -118,20 +118,7 @@ contract PodPut is PodOption {
         require(amountOfOptions > 0, "PodPut: you can not mint zero options");
 
         uint256 amountToTransfer = _strikeToTransfer(amountOfOptions);
-
-        if (totalShares > 0) {
-            uint256 ownerShares = _calculatedShares(amountToTransfer);
-
-            totalShares = totalShares.add(ownerShares);
-            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
-            shares[owner] = shares[owner].add(ownerShares);
-        } else {
-            shares[owner] = amountToTransfer;
-            mintedOptions[owner] = amountOfOptions;
-            totalShares = amountToTransfer;
-        }
-
-        _mint(msg.sender, amountOfOptions);
+        _mintOptions(amountOfOptions, amountToTransfer, owner);
 
         require(
             IERC20(strikeAsset()).transferFrom(msg.sender, address(this), amountToTransfer),

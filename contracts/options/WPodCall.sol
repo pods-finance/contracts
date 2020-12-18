@@ -119,22 +119,10 @@ contract WPodCall is PodCall {
     function mintEth(address owner) external payable beforeExpiration {
         uint256 amountOfOptions = msg.value;
         require(amountOfOptions > 0, "WPodCall: you can not mint zero options");
+        _mintOptions(amountOfOptions, amountOfOptions, owner);
 
-        if (totalShares > 0) {
-            uint256 ownerShares = _calculatedShares(amountOfOptions);
+        weth.deposit{ value: amountOfOptions }();
 
-            shares[owner] = shares[owner].add(ownerShares);
-            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
-            totalShares = totalShares.add(ownerShares);
-        } else {
-            shares[owner] = amountOfOptions;
-            mintedOptions[owner] = amountOfOptions;
-            totalShares = amountOfOptions;
-        }
-
-        weth.deposit{ value: msg.value }();
-
-        _mint(msg.sender, amountOfOptions);
         emit Mint(owner, amountOfOptions);
     }
 
