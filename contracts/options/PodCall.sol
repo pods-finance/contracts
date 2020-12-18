@@ -180,7 +180,7 @@ contract PodCall is PodOption {
         );
 
         if (strikeReserves > 0) {
-            require(strikeToSend > 0, "WPodPut: amount of options is too low");
+            require(strikeToSend > 0, "PodCall: amount of options is too low");
             require(
                 IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "PodCall: could not transfer strike tokens back to caller"

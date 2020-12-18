@@ -179,7 +179,7 @@ contract PodPut is PodOption {
         );
 
         if (underlyingReserves > 0) {
-            require(underlyingToSend > 0, "Amount too low");
+            require(underlyingToSend > 0, "PodPut: amount of options is too low");
             require(
                 IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),
                 "PodPut: could not transfer underlying tokens back to caller"
