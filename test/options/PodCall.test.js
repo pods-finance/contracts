@@ -286,6 +286,19 @@ scenarios.forEach(scenario => {
         expect(await mockUnderlyingAsset.balanceOf(sellerAddress)).to.equal(0)
       })
 
+      it('should not be able to mint more than the cap', async () => {
+        expect(await podCall.balanceOf(sellerAddress)).to.equal(0)
+
+        const cap = await podCall.capSize()
+        const capExceeded = cap.add(1)
+
+        await mockStrikeAsset.connect(seller).approve(podCall.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(await podCall.strikeToTransfer(capExceeded))
+
+        await expect(podCall.connect(seller).mint(capExceeded, sellerAddress))
+          .to.be.revertedWith('CappedOption: amount exceed cap')
+      })
+
       it('should revert if user try to mint after expiration - European', async () => {
         expect(await podCall.balanceOf(sellerAddress)).to.equal(0)
 

@@ -116,6 +116,17 @@ scenarios.forEach(scenario => {
         expect(await wPodCall.balanceOf(sellerAddress)).to.equal(scenario.amountToMint)
         expect(finalSellerBalanceUnderlying.add(txMintCost).add(scenario.amountToMint)).to.equal(initialSellerBalanceUnderlying)
       })
+
+      it('should not be able to mint more than the cap', async () => {
+        expect(await wPodCall.balanceOf(sellerAddress)).to.equal(0)
+
+        const cap = await wPodCall.capSize()
+        const capExceeded = cap.add(1)
+
+        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: capExceeded }))
+          .to.be.revertedWith('CappedOption: amount exceed cap')
+      })
+
       it('should revert if user try to mint after expiration', async () => {
         await forceExpiration(wPodCall)
         await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: option has expired')

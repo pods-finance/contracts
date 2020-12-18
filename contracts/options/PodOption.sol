@@ -4,8 +4,9 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "../lib/RequiredDecimals.sol";
 import "../interfaces/IPodOption.sol";
+import "../lib/CappedOption.sol";
+import "../lib/RequiredDecimals.sol";
 
 /**
  * @title PodOption
@@ -25,7 +26,7 @@ import "../interfaces/IPodOption.sol";
  * Depending on the type (PUT / CALL) or the exercise (AMERICAN / EUROPEAN), those functions have
  * different behave and should be override accordingly.
  */
-abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
+abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption {
     using SafeMath for uint8;
 
     /**
@@ -75,7 +76,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
         uint256 strikePrice,
         uint256 expiration,
         uint256 exerciseWindowSize
-    ) public ERC20(name, symbol) {
+    ) public ERC20(name, symbol) CappedOption(20 ether) {
         require(Address.isContract(underlyingAsset), "PodOption: underlying asset is not a contract");
         require(Address.isContract(strikeAsset), "PodOption: strike asset is not a contract");
         require(underlyingAsset != strikeAsset, "PodOption: underlying asset and strike asset must differ");
@@ -334,7 +335,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
         uint256 amountOfOptions,
         uint256 amountOfCollateral,
         address owner
-    ) internal {
+    ) internal capped(amountOfOptions) {
         if (totalShares > 0) {
             uint256 ownerShares = _calculatedShares(amountOfCollateral);
 

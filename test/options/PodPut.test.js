@@ -335,6 +335,19 @@ scenarios.forEach(scenario => {
         expect(funds.strikeAmount).to.be.gte(scenario.strikePrice)
       })
 
+      it('should not be able to mint more than the cap', async () => {
+        expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
+
+        const cap = await podPut.capSize()
+        const capExceeded = cap.add(1)
+
+        await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(await podPut.strikeToTransfer(capExceeded))
+
+        await expect(podPut.connect(seller).mint(capExceeded, sellerAddress))
+          .to.be.revertedWith('CappedOption: amount exceed cap')
+      })
+
       it('should mint, increase senders option balance and decrease sender strike balance', async () => {
         expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
