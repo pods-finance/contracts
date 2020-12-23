@@ -66,7 +66,8 @@ contract OptionFactory {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize
+        uint256 _exerciseWindowSize,
+        uint256 _capSize
     ) public returns (address option) {
         IOptionBuilder builder;
 
@@ -93,7 +94,8 @@ contract OptionFactory {
                 _strikeAsset,
                 _strikePrice,
                 _expiration,
-                _exerciseWindowSize
+                _exerciseWindowSize,
+                _capSize
             )
         );
 

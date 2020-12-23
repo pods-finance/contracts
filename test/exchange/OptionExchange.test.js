@@ -19,18 +19,21 @@ describe('OptionExchange', () => {
     deployerAddress = await deployer.getAddress()
     callerAddress = await caller.getAddress()
 
-    ;[OptionExchange, OptionAMMFactory, option] = await Promise.all([
+    ;[OptionExchange, OptionAMMFactory] = await Promise.all([
       ethers.getContractFactory('OptionExchange'),
-      ethers.getContractFactory('OptionAMMFactory'),
-      createMockOption()
+      ethers.getContractFactory('OptionAMMFactory')
     ])
-
-    strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
-    stableAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
   })
 
   beforeEach(async () => {
-    optionAMMFactory = await OptionAMMFactory.deploy()
+    option = await createMockOption()
+
+    ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
+      ethers.getContractAt('MintableERC20', await option.strikeAsset()),
+      ethers.getContractAt('MintableERC20', await option.strikeAsset()),
+      OptionAMMFactory.deploy()
+    ])
+
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
     await addLiquidity(pool, deployer)
 
@@ -41,9 +44,9 @@ describe('OptionExchange', () => {
   })
 
   afterEach(async () => {
+    await option.connect(caller).transfer(BURN_ADDRESS, await option.balanceOf(callerAddress))
     await stableAsset.connect(caller).burn(await stableAsset.balanceOf(callerAddress))
     await strikeAsset.connect(caller).burn(await strikeAsset.balanceOf(callerAddress))
-    await option.connect(caller).transfer(BURN_ADDRESS, await option.balanceOf(callerAddress))
   })
 
   it('assigns the factory address correctly', async () => {
@@ -205,7 +208,7 @@ describe('OptionExchange', () => {
         .withArgs(callerAddress, option.address, amountToBuy, stableAsset.address, spentAmount)
     })
 
-    it('buys options with a exact amount of tokens', async () => {
+    it('buy options with an exact amount of tokens', async () => {
       const inputAmount = ethers.BigNumber.from(200e6.toString())
       const minAcceptedOptions = ethers.BigNumber.from(1e7.toString())
       const deadline = await getTimestamp() + 60

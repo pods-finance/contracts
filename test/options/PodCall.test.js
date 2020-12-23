@@ -15,7 +15,8 @@ const scenarios = [
     strikeAssetDecimals: 6,
     strikePrice: ethers.BigNumber.from(7000e6.toString()),
     amountToMint: ethers.BigNumber.from(1e18.toString()),
-    amountToMintTooLow: 1
+    amountToMintTooLow: 1,
+    cap: ethers.BigNumber.from(20e18.toString())
   },
   {
     name: 'WBTC/aDAI',
@@ -26,7 +27,8 @@ const scenarios = [
     strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
     strikePriceDecimals: 18,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
-    amountToMintTooLow: 1
+    amountToMintTooLow: 1,
+    cap: ethers.BigNumber.from(20e8.toString())
   }
 ]
 
@@ -73,7 +75,8 @@ scenarios.forEach(scenario => {
         mockStrikeAsset.address,
         scenario.strikePrice,
         await getTimestamp() + 24 * 60 * 60 * 7,
-        24 * 60 * 60 // 24h
+        24 * 60 * 60, // 24h
+        scenario.cap
       )
 
       await podCall.deployed()

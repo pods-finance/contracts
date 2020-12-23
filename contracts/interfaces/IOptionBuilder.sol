@@ -12,6 +12,7 @@ interface IOptionBuilder {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize
+        uint256 _exerciseWindowSize,
+        uint256 _capSize
     ) external returns (PodOption);
 }

@@ -77,7 +77,8 @@ contract PodPut is PodOption {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize
+        uint256 _exerciseWindowSize,
+        uint256 _capSize
     )
         public
         PodOption(
@@ -89,7 +90,8 @@ contract PodPut is PodOption {
             _strikeAsset,
             _strikePrice,
             _expiration,
-            _exerciseWindowSize
+            _exerciseWindowSize,
+            _capSize
         )
     {} // solhint-disable-line no-empty-blocks
 

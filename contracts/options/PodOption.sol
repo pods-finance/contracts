@@ -75,8 +75,9 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         address strikeAsset,
         uint256 strikePrice,
         uint256 expiration,
-        uint256 exerciseWindowSize
-    ) public ERC20(name, symbol) CappedOption(20 ether) {
+        uint256 exerciseWindowSize,
+        uint256 capSize
+    ) public ERC20(name, symbol) CappedOption(capSize) {
         require(Address.isContract(underlyingAsset), "PodOption: underlying asset is not a contract");
         require(Address.isContract(strikeAsset), "PodOption: strike asset is not a contract");
         require(underlyingAsset != strikeAsset, "PodOption: underlying asset and strike asset must differ");

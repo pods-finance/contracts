@@ -82,7 +82,8 @@ contract WPodCall is PodCall {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize
+        uint256 _exerciseWindowSize,
+        uint256 _capSize
     )
         public
         PodCall(
@@ -93,7 +94,8 @@ contract WPodCall is PodCall {
             _strikeAsset,
             _strikePrice,
             _expiration,
-            _exerciseWindowSize
+            _exerciseWindowSize,
+            _capSize
         )
     {
         weth = IWETH(underlyingAsset());

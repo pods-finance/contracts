@@ -14,7 +14,8 @@ const ScenarioA = {
   exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
   expiration: new Date().getTime() + 5 * 60 * 60 * 1000,
-  exerciseWindowSize: 24 * 60 * 60 // 24h
+  exerciseWindowSize: 24 * 60 * 60, // 24h
+  cap: ethers.BigNumber.from(20e8.toString())
 }
 
 describe('PodCallBuilder', function () {
@@ -35,7 +36,7 @@ describe('PodCallBuilder', function () {
   })
 
   it('Should create a new PodPut Option correctly and not revert', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize, ScenarioA.cap]
 
     await expect(podCallBuilder.buildOption(...funcParameters)).to.not.be.reverted
   })

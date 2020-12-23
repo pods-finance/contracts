@@ -30,7 +30,8 @@ contract WPodPutBuilder is IOptionBuilder {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize
+        uint256 _exerciseWindowSize,
+        uint256 _capSize
     ) public override returns (PodOption) {
         WPodPut option = new WPodPut(
             _name,
@@ -40,7 +41,8 @@ contract WPodPutBuilder is IOptionBuilder {
             _strikeAsset,
             _strikePrice,
             _expiration,
-            _exerciseWindowSize
+            _exerciseWindowSize,
+            _capSize
         );
 
         return option;

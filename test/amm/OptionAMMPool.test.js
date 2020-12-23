@@ -6,6 +6,7 @@ const getTimestamp = require('../util/getTimestamp')
 const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createNewOption = require('../util/createNewOption')
+const createMockOption = require('../util/createMockOption')
 const createNewPool = require('../util/createNewPool')
 const createOptionFactory = require('../util/createOptionFactory')
 const { toBigNumber, approximately } = require('../../utils/utils')
@@ -113,18 +114,15 @@ scenarios.forEach(scenario => {
       ])
       // Deploy option
       const currentBlocktimestamp = await getTimestamp()
-      podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
-        'pod:WBTC:USDC:5000:A',
-        scenario.optionType,
-        EXERCISE_TYPE_EUROPEAN,
-        mockUnderlyingAsset.address,
-        mockStrikeAsset.address,
-        scenario.strikePrice,
-        currentBlocktimestamp + scenario.expiration,
-        24 * 60 * 60)
+      podPut = await createMockOption({
+        underlyingAsset: mockUnderlyingAsset.address,
+        strikeAsset: mockStrikeAsset.address,
+        cap: ethers.BigNumber.from((200 * 10 ** await mockUnderlyingAsset.decimals()).toString())
+      })
 
       const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
       priceProviderMock = mock.priceProvider
+
       // 1) Deploy optionAMMPool
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address, scenario.initialSigma)
     })
@@ -181,7 +179,8 @@ scenarios.forEach(scenario => {
         await MintPhase(1)
         await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity.add(1))
         const optionBalance = await podPut.balanceOf(deployerAddress)
-        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString()))
+          .to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
     })
 
@@ -581,7 +580,7 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountAfterRemove, poolStrikeAmountAfterRemove] = await optionAMMPool.getPoolBalances()
 
-        expect(poolOptionAmountAfterRemove).to.eq(0)
+        expect(poolOptionAmountAfterRemove).to.eq(1)
         expect(poolStrikeAmountAfterRemove).to.eq(1)
       })
     })

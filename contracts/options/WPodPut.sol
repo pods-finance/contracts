@@ -76,7 +76,8 @@ contract WPodPut is PodPut {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize
+        uint256 _exerciseWindowSize,
+        uint256 _capSize
     )
         public
         PodPut(
@@ -87,7 +88,8 @@ contract WPodPut is PodPut {
             _strikeAsset,
             _strikePrice,
             _expiration,
-            _exerciseWindowSize
+            _exerciseWindowSize,
+            _capSize
         )
     {
         weth = IWETH(underlyingAsset());
