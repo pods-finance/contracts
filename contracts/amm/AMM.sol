@@ -234,12 +234,12 @@ abstract contract AMM is IAMM, RequiredDecimals {
         // 1) Get Pool Balances
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
-        bool isInitialLiquidity = totalTokenA == 0 || totalTokenB == 0;
+        bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
         uint256 fImpOpening;
         uint256 userAmountToStoreTokenA = amountOfA;
         uint256 userAmountToStoreTokenB = amountOfB;
 
-        if (isInitialLiquidity) {
+        if (hasNoLiquidity) {
             // In the first liquidity, is necessary add both tokens
             require(amountOfA > 0 && amountOfB > 0, "AMM: you should add both tokens on the first liquidity");
 
@@ -318,13 +318,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         // 2) Calculate Fimp
         // FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
         // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
-        uint256 fImpOpening = _getFImpOpening(
-            totalTokenA,
-            totalTokenB,
-            ABPrice,
-            deamortizedTokenABalance,
-            deamortizedTokenBBalance
-        );
+        uint256 fImpOpening =
+            _getFImpOpening(totalTokenA, totalTokenB, ABPrice, deamortizedTokenABalance, deamortizedTokenBBalance);
 
         // 3) Calculate Multipliers
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
@@ -342,12 +337,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         );
 
         // 6) Calculate amount to send
-        uint256 amountToSendA = amountOfAOriginal.mul(multipliers.AA).add(amountOfBOriginal.mul(multipliers.BA)).div(
-            balances[msg.sender].fImp
-        );
-        uint256 amountToSendB = amountOfBOriginal.mul(multipliers.BB).add(amountOfAOriginal.mul(multipliers.AB)).div(
-            balances[msg.sender].fImp
-        );
+        uint256 amountToSendA =
+            amountOfAOriginal.mul(multipliers.AA).add(amountOfBOriginal.mul(multipliers.BA)).div(
+                balances[msg.sender].fImp
+            );
+        uint256 amountToSendB =
+            amountOfBOriginal.mul(multipliers.BB).add(amountOfAOriginal.mul(multipliers.AB)).div(
+                balances[msg.sender].fImp
+            );
 
         _onRemoveLiquidity(balances[msg.sender], msg.sender);
 
@@ -631,19 +628,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 fImpOriginal
     ) internal view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
-        bool hasNoLiquidity = totalTokenA == 0 || totalTokenB == 0;
+        bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
         if (hasNoLiquidity) {
             return (0, 0);
         }
 
         uint256 ABPrice = _getABPrice();
-        uint256 fImpOpening = _getFImpOpening(
-            totalTokenA,
-            totalTokenB,
-            ABPrice,
-            deamortizedTokenABalance,
-            deamortizedTokenBBalance
-        );
+        uint256 fImpOpening =
+            _getFImpOpening(totalTokenA, totalTokenB, ABPrice, deamortizedTokenABalance, deamortizedTokenBBalance);
 
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
 
@@ -720,7 +712,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         return a < b ? a : b;
     }
 
-    function _getABPrice() internal virtual view returns (uint256 ABPrice);
+    function _getABPrice() internal view virtual returns (uint256 ABPrice);
 
     function _getTradeDetailsExactAInput(uint256 amountAIn) internal virtual returns (TradeDetails memory);
 
