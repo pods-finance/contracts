@@ -249,6 +249,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         } else {
             // 2) Get spot price
             uint256 ABPrice = _getABPrice();
+            require(ABPrice > 0, "AMM: can not add liquidity when option price is zero");
 
             // 3) Calculate Fimp
             //FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
