@@ -300,7 +300,8 @@ async function createOptionAMMPool (option, optionAMMFactory, caller) {
     priceProviderMock.address,
     blackScholes.address,
     sigma.address,
-    initialSigma
+    initialSigma,
+    5000e6
   )
 
   const filterFrom = await optionAMMFactory.filters.PoolCreated(callerAddress)

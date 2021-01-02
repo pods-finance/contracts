@@ -3,6 +3,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./AMM.sol";
+import "../lib/CappedPool.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/ISigma.sol";
@@ -25,7 +26,7 @@ import "../interfaces/IFeePool.sol";
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
-contract OptionAMMPool is AMM, IOptionAMMPool {
+contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     using SafeMath for uint256;
     uint256 public constant BS_RES_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
@@ -81,8 +82,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address _sigma,
         uint256 _initialSigma,
         address _feePoolA,
-        address _feePoolB
-    ) public AMM(_optionAddress, _stableAsset) {
+        address _feePoolB,
+        uint256 _stableCapSize
+    ) public AMM(_optionAddress, _stableAsset) CappedPool(_stableCapSize) {
         priceProperties.currentSigma = _initialSigma;
         priceProperties.sigmaInitialGuess = _initialSigma;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
@@ -130,7 +132,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external override beforeExpiration {
+    ) external override beforeExpiration capped(tokenB, amountOfB) {
         return _addLiquidity(amountOfA, amountOfB, owner);
     }
 

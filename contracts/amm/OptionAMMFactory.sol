@@ -32,7 +32,8 @@ contract OptionAMMFactory is IOptionAMMFactory {
         address _priceProvider,
         address _priceMethod,
         address _sigma,
-        uint256 _initialSigma
+        uint256 _initialSigma,
+        uint256 _stableCapSize
     ) external override returns (address) {
         require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
 
@@ -47,7 +48,8 @@ contract OptionAMMFactory is IOptionAMMFactory {
             _sigma,
             _initialSigma,
             address(feePoolTokenA),
-            address(feePoolTokenB)
+            address(feePoolTokenB),
+            _stableCapSize
         );
 
         feePoolTokenA.transferOwnership(address(pool));

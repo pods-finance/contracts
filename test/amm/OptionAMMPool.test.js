@@ -182,6 +182,15 @@ scenarios.forEach(scenario => {
         await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString()))
           .to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
+
+      it('should not be able to add more liquidity than the cap', async () => {
+        const cap = await optionAMMPool.capSize()
+        const capExceeded = cap.add(1)
+
+        await mockStrikeAsset.mint(capExceeded)
+        await expect(optionAMMPool.addLiquidity(0, capExceeded))
+          .to.be.revertedWith('CappedPool: amount exceed cap')
+      })
     })
 
     describe('Remove Liquidity', () => {

@@ -43,7 +43,8 @@ describe('OptionAMMFactory', () => {
       priceProviderMock.address,
       blackScholes.address,
       sigma.address,
-      initialSigma
+      initialSigma,
+      5000e6
     )
     const pool = await getPoolCreated(factory, tx, caller)
 
@@ -59,7 +60,8 @@ describe('OptionAMMFactory', () => {
       priceProviderMock.address,
       blackScholes.address,
       sigma.address,
-      initialSigma
+      initialSigma,
+      5000e6
     )
 
     const tx = factory.createPool(
@@ -68,7 +70,8 @@ describe('OptionAMMFactory', () => {
       priceProviderMock.address,
       blackScholes.address,
       sigma.address,
-      initialSigma
+      initialSigma,
+      5000e6
     )
 
     await expect(tx).to.be.revertedWith('Pool already exists')
@@ -81,7 +84,8 @@ describe('OptionAMMFactory', () => {
       priceProviderMock.address,
       blackScholes.address,
       sigma.address,
-      initialSigma
+      initialSigma,
+      5000e6
     )
 
     const pool = await getPoolCreated(factory, tx, caller)
