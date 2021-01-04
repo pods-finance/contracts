@@ -596,6 +596,87 @@ scenarios.forEach(scenario => {
       })
     })
 
+    describe('Price too low', async () => {
+      it('should revert transactions if the option price is too low', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          },
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: buyer,
+            params: [initialBuyerBalanceStrikeAsset]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: buyer,
+            params: [optionAMMPool.address, initialBuyerBalanceStrikeAsset]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const expiration = await podPut.expiration()
+        await forceExpiration(podPut, parseInt((expiration - 60 * 1).toString()))
+
+        await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+
+        await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+
+        await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+      })
+    })
+
     describe('tradeExactAOutput', () => {
       it('should match values accordingly', async () => {
         const feeAddressA = await optionAMMPool.feePoolA()
