@@ -2,6 +2,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IEmergencyStop.sol";
 
 /**
  * @title EmergencyStop
@@ -9,7 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @notice Keeps the addresses of stopped contracts, so contracts can be aware
  * of which functions to interrupt temporarily
  */
-contract EmergencyStop is Ownable {
+contract EmergencyStop is IEmergencyStop, Ownable {
     mapping(address => bool) private _addresses;
 
     event Stopped(address indexed target);
@@ -19,7 +20,7 @@ contract EmergencyStop is Ownable {
      * @dev Checks if a contract should be considered as stopped
      * @param target The contract address
      */
-    function isStopped(address target) public view returns (bool) {
+    function isStopped(address target) public override view returns (bool) {
         return _addresses[target];
     }
 
@@ -27,7 +28,7 @@ contract EmergencyStop is Ownable {
      * @dev Signals that the target should now be considered as stopped
      * @param target The contract address
      */
-    function stop(address target) public onlyOwner {
+    function stop(address target) public override onlyOwner {
         _addresses[target] = true;
         emit Stopped(target);
     }
@@ -36,7 +37,7 @@ contract EmergencyStop is Ownable {
      * @dev Signals that the target should now be considered as fully functional
      * @param target The contract address
      */
-    function resume(address target) public onlyOwner {
+    function resume(address target) public override onlyOwner {
         require(_addresses[target], "EmergencyStop: target is not stopped");
         _addresses[target] = false;
         emit Resumed(target);
