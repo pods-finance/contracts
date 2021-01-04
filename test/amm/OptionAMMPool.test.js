@@ -269,6 +269,266 @@ scenarios.forEach(scenario => {
         expect(feePoolABalancefterStrike).to.eq(0)
         expect(feePoolBBalanceAfterStrike).to.eq(0)
       })
+      it('should remove liquidity when option price is rounded to zero', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const feeAddressA = await optionAMMPool.feePoolA()
+        const feeAddressB = await optionAMMPool.feePoolB()
+
+        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
+        const lpOptionBeforeTrade = await podPut.balanceOf(lpAddress)
+
+        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+
+        // fast forward until very close to the maturity
+        const expiration = await podPut.expiration()
+        console.log('expiration', expiration.toString())
+
+        const nearExpiration = expiration - 60 * 60 * 2 // 2 hours before expiration
+        await ethers.provider.send('evm_mine', [nearExpiration])
+
+        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed)
+
+        const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
+        const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
+
+        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
+
+        expect(poolOptionAmountAfterTrade).to.eq(0)
+        expect(poolStrikeAmountAfterTrade).to.eq(0)
+        expect(lpStrikeAfterBuyer).to.eq(lpStrikeAfterBuyer)
+
+        const feePoolABalancefterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolBBalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        expect(feePoolABalancefterStrike).to.eq(0)
+        expect(feePoolBBalanceAfterStrike).to.eq(0)
+      })
+      it('should remove liquidity after expiration', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const feeAddressA = await optionAMMPool.feePoolA()
+        const feeAddressB = await optionAMMPool.feePoolB()
+
+        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
+        const lpOptionBeforeTrade = await podPut.balanceOf(lpAddress)
+
+        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+
+        await forceExpiration(podPut)
+
+        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed)
+
+        const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
+        const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
+
+        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
+
+        expect(poolOptionAmountAfterTrade).to.eq(0)
+        expect(poolStrikeAmountAfterTrade).to.eq(0)
+        expect(lpStrikeAfterBuyer).to.eq(lpStrikeAfterBuyer)
+
+        const feePoolABalancefterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolBBalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        expect(feePoolABalancefterStrike).to.eq(0)
+        expect(feePoolBBalanceAfterStrike).to.eq(0)
+      })
+      it('should remove liquidity single-sided', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const feeAddressA = await optionAMMPool.feePoolA()
+        const feeAddressB = await optionAMMPool.feePoolB()
+
+        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
+        const lpOptionBeforeTrade = await podPut.balanceOf(lpAddress)
+
+        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+
+        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, 0)
+
+        await optionAMMPool.connect(lp).removeLiquidity(0, amountOfStrikeLpNeed)
+
+        const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
+        const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
+
+        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
+
+        expect(poolOptionAmountAfterTrade).to.eq(0)
+        expect(poolStrikeAmountAfterTrade).to.eq(0)
+        expect(lpStrikeAfterBuyer).to.eq(lpStrikeAfterBuyer)
+
+        const feePoolABalancefterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolBBalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        expect(feePoolABalancefterStrike).to.eq(0)
+        expect(feePoolBBalanceAfterStrike).to.eq(0)
+      })
     })
 
     describe('tradeExactAOutput', () => {

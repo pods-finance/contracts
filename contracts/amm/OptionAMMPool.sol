@@ -394,6 +394,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
                 int256(priceProperties.riskFree)
             );
         }
+        if (newABPrice == 0) {
+            return 0;
+        }
         uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
         return newABPriceWithDecimals;
     }
@@ -402,23 +405,31 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      * @dev returns maturity in years with 18 decimals
      */
     function _getTimeToMaturityInYears() internal view returns (uint256) {
+        if (block.timestamp >= priceProperties.expiration) {
+            return 0;
+        }
         return ((priceProperties.expiration - block.timestamp) * (10**BS_RES_DECIMALS)) / (_SECONDS_IN_A_YEAR);
     }
 
-    function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256, uint256) {
+    function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256 poolAmountA, uint256 poolAmountB) {
         (uint256 totalAmountA, uint256 totalAmountB) = _getPoolBalances();
-        uint256 poolAmountA = _min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
-        uint256 poolAmountB = _min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
+        if (newABPrice != 0) {
+            poolAmountA = _min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
+            poolAmountB = _min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
+        }
         return (poolAmountA, poolAmountB);
     }
 
     function _getABPrice() internal override view returns (uint256) {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
-
-        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
-        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
-        return newABPriceWithDecimals;
+        if (timeToMaturity == 0) {
+            return 0;
+        } else {
+            uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+            uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+            return newABPriceWithDecimals;
+        }
     }
 
     function _getSpotPrice(address asset, uint256 decimalsOutput) internal view returns (uint256) {
@@ -671,8 +682,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
             _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp)
         );
 
-        feePoolA.withdraw(owner, amountOfQuotesAToRemove);
-        feePoolB.withdraw(owner, amountOfQuotesBToRemove);
+        if (amountOfQuotesAToRemove > 0) {
+            feePoolA.withdraw(owner, amountOfQuotesAToRemove);
+        }
+        if (amountOfQuotesBToRemove > 0) {
+            feePoolB.withdraw(owner, amountOfQuotesBToRemove);
+        }
     }
 
     function _onTrade(TradeDetails memory tradeDetails) internal {

@@ -86,6 +86,11 @@ contract BlackScholes is IBlackScholes {
         int256 get = strikePrice.multiply(Nd2);
         int256 pay = spotPrice.multiply(Nd1);
 
+        if (pay > get) {
+            // Negative numbers not allowed
+            return 0;
+        }
+
         return uint256(get.subtract(pay));
     }
 
