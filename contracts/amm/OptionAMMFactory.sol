@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
+import "@openzeppelin/contracts/utils/Address.sol";
+import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "./OptionAMMPool.sol";
 import "./FeePool.sol";
@@ -11,9 +13,19 @@ import "./FeePool.sol";
  * @notice Creates and store new OptionAMMPool
  */
 contract OptionAMMFactory is IOptionAMMFactory {
-    mapping(address => OptionAMMPool) private _pools;
+    mapping(address => address) private _pools;
 
-    event PoolCreated(address indexed deployer, OptionAMMPool pool);
+    /**
+     * @dev store globally accessed configurations
+     */
+    IConfigurationManager private _configurationManager;
+
+    event PoolCreated(address indexed deployer, address pool);
+
+    constructor(address configurationManager) public {
+        require(Address.isContract(configurationManager), "OptionAMMFactory: Configuration Manager is not a contract");
+        _configurationManager = IConfigurationManager(configurationManager);
+    }
 
     /**
      * @notice Creates an option pool
@@ -47,16 +59,19 @@ contract OptionAMMFactory is IOptionAMMFactory {
             _sigma,
             _initialSigma,
             address(feePoolTokenA),
-            address(feePoolTokenB)
+            address(feePoolTokenB),
+            _configurationManager
         );
 
-        feePoolTokenA.transferOwnership(address(pool));
-        feePoolTokenB.transferOwnership(address(pool));
+        address poolAddress = address(pool);
 
-        _pools[_optionAddress] = pool;
-        emit PoolCreated(msg.sender, pool);
+        feePoolTokenA.transferOwnership(poolAddress);
+        feePoolTokenB.transferOwnership(poolAddress);
 
-        return address(pool);
+        _pools[_optionAddress] = poolAddress;
+        emit PoolCreated(msg.sender, poolAddress);
+
+        return poolAddress;
     }
 
     /**
@@ -68,6 +83,6 @@ contract OptionAMMFactory is IOptionAMMFactory {
      * @return The address of the pool
      */
     function getPool(address _optionAddress) external override view returns (address) {
-        return address(_pools[_optionAddress]);
+        return _pools[_optionAddress];
     }
 }

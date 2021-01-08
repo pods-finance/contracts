@@ -9,6 +9,8 @@ import "../interfaces/ISigma.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMPool.sol";
 import "../interfaces/IFeePool.sol";
+import "../interfaces/IConfigurationManager.sol";
+import "../interfaces/IEmergencyStop.sol";
 
 /**
  * Represents an Option specific single-sided AMM.
@@ -32,7 +34,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
 
     // External Contracts
     /**
-     * @notice responsible for the the spot price of the option's underlying asset.
+     * @notice store globally accessed configurations
+     */
+    IConfigurationManager public configurationManager;
+
+    /**
+     * @notice responsible for the spot price of the option's underlying asset.
      */
     IPriceProvider public priceProvider;
 
@@ -81,7 +88,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address _sigma,
         uint256 _initialSigma,
         address _feePoolA,
-        address _feePoolB
+        address _feePoolB,
+        IConfigurationManager _configurationManager
     ) public AMM(_optionAddress, _stableAsset) {
         priceProperties.currentSigma = _initialSigma;
         priceProperties.sigmaInitialGuess = _initialSigma;
@@ -100,8 +108,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         priceProvider = IPriceProvider(_priceProvider);
         priceMethod = IBlackScholes(_priceMethod);
         impliedVolatility = ISigma(_sigma);
+
         feePoolA = IFeePool(_feePoolA);
         feePoolB = IFeePool(_feePoolB);
+        configurationManager = IConfigurationManager(_configurationManager);
 
         address sigmaBSAddress = impliedVolatility.blackScholes();
         // Check if sigma black scholes version is the same as the above
@@ -131,6 +141,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 amountOfB,
         address owner
     ) external override beforeExpiration {
+        emergencyStopCheck();
         return _addLiquidity(amountOfA, amountOfB, owner);
     }
 
@@ -141,6 +152,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      * @param amountOfB amount of TokenB to add
      */
     function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
+        emergencyStopCheck();
         return _removeLiquidity(amountOfA, amountOfB);
     }
 
@@ -164,6 +176,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address owner,
         uint256 sigmaInitialGuess
     ) external override beforeExpiration returns (uint256) {
+        emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
     }
@@ -188,6 +201,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address owner,
         uint256 sigmaInitialGuess
     ) external override beforeExpiration returns (uint256) {
+        emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
     }
@@ -211,6 +225,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address owner,
         uint256 sigmaInitialGuess
     ) external override beforeExpiration returns (uint256) {
+        emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
     }
@@ -235,6 +250,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address owner,
         uint256 sigmaInitialGuess
     ) external override beforeExpiration returns (uint256) {
+        emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
     }
@@ -704,5 +720,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
 
     function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal override {
         _onTrade(tradeDetails);
+    }
+
+    function emergencyStopCheck() private view {
+        IEmergencyStop emergencyStop = IEmergencyStop(configurationManager.getEmergencyStop());
+        require(
+            !emergencyStop.isStopped(address(priceProvider)) ||
+                !emergencyStop.isStopped(address(priceMethod)) ||
+                !emergencyStop.isStopped(address(impliedVolatility)),
+            "OptionAMMPool: Pool is stopped"
+        );
     }
 }

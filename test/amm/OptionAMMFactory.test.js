@@ -2,21 +2,23 @@ const { expect } = require('chai')
 const createMockOption = require('../util/createMockOption')
 const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
+const createConfigurationManager = require('../util/createConfigurationManager')
 
 describe('OptionAMMFactory', () => {
   let caller
   let OptionAMMFactory, factory
-  let blackScholes, priceProviderMock, sigma, mockUnderlyingAsset
+  let configurationManager, blackScholes, priceProviderMock, sigma, mockUnderlyingAsset
   let option
   const initialSigma = '10000000000000000000000'
 
   before(async () => {
     ;[caller] = await ethers.getSigners()
 
-    ;[OptionAMMFactory, MockERC20, Sigma] = await Promise.all([
+    ;[OptionAMMFactory, MockERC20, Sigma, configurationManager] = await Promise.all([
       ethers.getContractFactory('OptionAMMFactory'),
       ethers.getContractFactory('MintableERC20'),
-      ethers.getContractFactory('Sigma')
+      ethers.getContractFactory('Sigma'),
+      createConfigurationManager()
     ])
 
     mockUnderlyingAsset = await MockERC20.deploy('USDC', 'USDC', 6)
@@ -30,7 +32,7 @@ describe('OptionAMMFactory', () => {
   })
 
   beforeEach(async () => {
-    factory = await OptionAMMFactory.deploy()
+    factory = await OptionAMMFactory.deploy(configurationManager.address)
     await factory.deployed()
 
     option = await createMockOption()
@@ -74,7 +76,7 @@ describe('OptionAMMFactory', () => {
     await expect(tx).to.be.revertedWith('Pool already exists')
   })
 
-  it('return a existent pool', async () => {
+  it('return an existent pool', async () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,

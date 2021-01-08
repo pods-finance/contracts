@@ -3,12 +3,13 @@ const getTimestamp = require('../util/getTimestamp')
 const createMockOption = require('../util/createMockOption')
 const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
+const createConfigurationManager = require('../util/createConfigurationManager')
 
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
 describe('OptionExchange', () => {
   let OptionExchange, OptionAMMFactory
-  let exchange
+  let exchange, configurationManager
   let stableAsset, strikeAsset
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
@@ -25,12 +26,14 @@ describe('OptionExchange', () => {
       createMockOption()
     ])
 
+    configurationManager = await createConfigurationManager()
+
     strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
     stableAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
   })
 
   beforeEach(async () => {
-    optionAMMFactory = await OptionAMMFactory.deploy()
+    optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
     await addLiquidity(pool, deployer)
 
