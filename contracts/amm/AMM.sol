@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../lib/RequiredDecimals.sol";
 import "../interfaces/IAMM.sol";
-import "@nomiclabs/buidler/console.sol";
 
 /**
  * Represents a generalized contract for a single-sided AMM pair.
@@ -68,6 +67,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @notice The Fimp's precision (aka number of decimals)
      */
     uint256 public constant FIMP_PRECISION = 27;
+
+    /**
+     * @notice The percent's precision
+     */
+    uint256 public constant PERCENT_PRECISION = 100;
 
     /**
      * @notice Address of the token A
@@ -163,25 +167,25 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @return tokenBOriginalBalance balance of token B by the moment of deposit
      * @return fImpUser value of the Opening Value Factor by the moment of the deposit
      */
-    function getOwnerBalance(address owner)
+    function getUserBalance(address user)
         external
         view
         returns (
             uint256 tokenAOriginalBalance,
             uint256 tokenBOriginalBalance,
-            uint256 fImpOwner
+            uint256 fImpUser
         )
     {
-        return _getOwnerBalance(user);
+        return _getUserBalance(user);
     }
 
     /**
      * @notice getRemoveLiquidityAmounts external function that returns the available for rescue
      * amounts of token A, and token B based on the original position
      *
-     * @param balanceTokenA amount of original deposit of the token A
-     * @param balanceTokenB amount of original deposit of the token B
-     * @param fImpOriginal Opening Value Factor by the moment of the deposit
+     * @param percentA percent of exposition of Token A to be removed
+     * @param percentB percent of exposition of Token B to be removed
+     * @param user Opening Value Factor by the moment of the deposit
      *
      * @return withdrawAmountA amount of token A that will be rescued
      * @return withdrawAmountB amount of token B that will be rescued
@@ -189,9 +193,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
     function getRemoveLiquidityAmounts(
         uint256 percentA,
         uint256 percentB,
-        address owner
+        address user
     ) external view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
-        return _getRemoveLiquidityAmounts(percentA, percentB, owner);
+        return _getRemoveLiquidityAmounts(percentA, percentB, user);
     }
 
     /**
@@ -208,13 +212,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         view
         returns (uint256 maxWithdrawAmountA, uint256 maxWithdrawAmountB)
     {
-        (uint256 userTokenABalance, uint256 userTokenBBalance, uint256 userFImp) = _getUserBalance(user);
-
-        (maxWithdrawAmountA, maxWithdrawAmountB) = _getRemoveLiquidityAmounts(
-            userTokenABalance,
-            userTokenBBalance,
-            userFImp
-        );
+        (maxWithdrawAmountA, maxWithdrawAmountB) = _getRemoveLiquidityAmounts(100, 100, user);
         return (maxWithdrawAmountA, maxWithdrawAmountB);
     }
 
@@ -232,7 +230,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 amountOfB,
         address owner
     ) internal {
-        console.log("AMM: addLiquidity");
         // 1) Get Pool Balances
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
@@ -241,10 +238,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 userAmountToStoreTokenA = amountOfA;
         uint256 userAmountToStoreTokenB = amountOfB;
 
-        console.log("totalTokenA", totalTokenA);
-        console.log("totalTokenB", totalTokenB);
         if (hasNoLiquidity) {
-            console.log("caiu dentro do if");
             // In the first liquidity, is necessary add both tokens
             require(amountOfA > 0 && amountOfB > 0, "AMM: you should add both tokens on the first liquidity");
 
@@ -252,10 +246,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
             deamortizedTokenABalance = amountOfA;
             deamortizedTokenBBalance = amountOfB;
         } else {
-            console.log("caiu dentro do else");
             // 2) Get spot price
             uint256 ABPrice = _getABPrice();
-            console.log("ABPrice", ABPrice);
             require(ABPrice > 0, "AMM: can not add liquidity when option price is zero");
 
             // 3) Calculate Fimp
@@ -306,15 +298,15 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @notice _removeLiquidity in any proportion of tokenA or tokenB
      * @dev The inheritor contract should implement _getABPrice and _onRemoveLiquidity functions
      *
-     * @param amountOfAOriginal proportion of the original tokenA that want to be removed
-     * @param amountOfBOriginal proportion of the original tokenB that want to be removed
+     * @param percentA proportion of the exposition of the original tokenA that want to be removed
+     * @param percentB proportion of the exposition of the original tokenB that want to be removed
      */
     function _removeLiquidity(uint256 percentA, uint256 percentB) internal {
         (uint256 userTokenABalance, uint256 userTokenBBalance, ) = _getUserBalance(msg.sender);
         require(percentA <= 100 && percentB <= 100, "AMM: forbidden removal percent");
 
-        uint256 originalBalanceAToReduce = percentA.mul(userTokenABalance).div(100);
-        uint256 originalBalanceBToReduce = percentB.mul(userTokenBBalance).div(100);
+        uint256 originalBalanceAToReduce = percentA.mul(userTokenABalance).div(PERCENT_PRECISION);
+        uint256 originalBalanceBToReduce = percentB.mul(userTokenBBalance).div(PERCENT_PRECISION);
 
         // 1) Get Pool Balances
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
@@ -557,9 +549,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
      *
      * @param user address of the user that want to check the balance
      *
-     * @return tokenABalance balance of token A by the moment of deposit
-     * @return tokenBBalance balance of token B by the moment of deposit
-     * @return fImpUser value of the Opening Value Factor by the moment of the deposit
+     * @return tokenAOriginalBalance balance of token A by the moment of deposit
+     * @return tokenBOriginalBalance balance of token B by the moment of deposit
+     * @return fImpOriginal value of the Opening Value Factor by the moment of the deposit
      */
     function _getUserBalance(address user)
         internal
@@ -567,14 +559,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         returns (
             uint256 tokenAOriginalBalance,
             uint256 tokenBOriginalBalance,
-            uint256 fImpUser
+            uint256 fImpOriginal
         )
     {
         tokenAOriginalBalance = balances[user].tokenABalance;
         tokenBOriginalBalance = balances[user].tokenBBalance;
-        fImpUser = balances[user].fImp;
+        fImpOriginal = balances[user].fImp;
 
-        return (tokenAOriginalBalance, tokenBOriginalBalance, fImpUser);
+        return (tokenAOriginalBalance, tokenBOriginalBalance, fImpOriginal);
     }
 
     /**
@@ -630,7 +622,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
      *
      * @param percentA percent of exposition A to be removed
      * @param percentB percent of exposition B to be removed
-     * @param owner owner of the 
+     * @param user address of the account that will be removed
      *
      * @return withdrawAmountA amount of token A that will be rescued
      * @return withdrawAmountB amount of token B that will be rescued
@@ -638,9 +630,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
     function _getRemoveLiquidityAmounts(
         uint256 percentA,
         uint256 percentB,
-        address owner
+        address user
     ) internal view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
+        (uint256 originalBalanceTokenA, uint256 originalBalanceTokenB, uint256 fImpOriginal) = _getUserBalance(user);
+
+        uint256 balanceTokenA = percentA.mul(originalBalanceTokenA).div(PERCENT_PRECISION);
+        uint256 balanceTokenB = percentB.mul(originalBalanceTokenB).div(PERCENT_PRECISION);
+
         bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
         if (hasNoLiquidity) {
             return (0, 0);
