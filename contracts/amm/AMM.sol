@@ -249,6 +249,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         } else {
             // 2) Get spot price
             uint256 ABPrice = _getABPrice();
+            require(ABPrice > 0, "AMM: can not add liquidity when option price is zero");
 
             // 3) Calculate Fimp
             //FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
@@ -318,13 +319,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         // 2) Calculate Fimp
         // FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
         // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
-        uint256 fImpOpening = _getFImpOpening(
-            totalTokenA,
-            totalTokenB,
-            ABPrice,
-            deamortizedTokenABalance,
-            deamortizedTokenBBalance
-        );
+        uint256 fImpOpening =
+            _getFImpOpening(totalTokenA, totalTokenB, ABPrice, deamortizedTokenABalance, deamortizedTokenBBalance);
 
         // 3) Calculate Multipliers
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
@@ -342,12 +338,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         );
 
         // 6) Calculate amount to send
-        uint256 amountToSendA = amountOfAOriginal.mul(multipliers.AA).add(amountOfBOriginal.mul(multipliers.BA)).div(
-            balances[msg.sender].fImp
-        );
-        uint256 amountToSendB = amountOfBOriginal.mul(multipliers.BB).add(amountOfAOriginal.mul(multipliers.AB)).div(
-            balances[msg.sender].fImp
-        );
+        uint256 amountToSendA =
+            amountOfAOriginal.mul(multipliers.AA).add(amountOfBOriginal.mul(multipliers.BA)).div(
+                balances[msg.sender].fImp
+            );
+        uint256 amountToSendB =
+            amountOfBOriginal.mul(multipliers.BB).add(amountOfAOriginal.mul(multipliers.AB)).div(
+                balances[msg.sender].fImp
+            );
 
         _onRemoveLiquidity(balances[msg.sender], msg.sender);
 
@@ -380,6 +378,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     ) internal returns (uint256) {
         TradeDetails memory tradeDetails = _getTradeDetailsExactAInput(exactAmountAIn);
         uint256 amountBOut = tradeDetails.amount;
+        require(amountBOut > 0, "AMM: can not trade when option price is zero");
 
         _onTradeExactAInput(tradeDetails);
 
@@ -413,6 +412,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     ) internal returns (uint256) {
         TradeDetails memory tradeDetails = _getTradeDetailsExactAOutput(exactAmountAOut);
         uint256 amountBIn = tradeDetails.amount;
+        require(amountBIn > 0, "AMM: can not trade when option price is zero");
 
         _onTradeExactAOutput(tradeDetails);
 
@@ -446,6 +446,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     ) internal returns (uint256) {
         TradeDetails memory tradeDetails = _getTradeDetailsExactBInput(exactAmountBIn);
         uint256 amountAOut = tradeDetails.amount;
+        require(amountAOut > 0, "AMM: can not trade when option price is zero");
 
         _onTradeExactBInput(tradeDetails);
 
@@ -479,6 +480,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     ) internal returns (uint256) {
         TradeDetails memory tradeDetails = _getTradeDetailsExactBOutput(exactAmountBOut);
         uint256 amountAIn = tradeDetails.amount;
+        require(amountAIn > 0, "AMM: can not trade when option price is zero");
 
         _onTradeExactBInput(tradeDetails);
 
@@ -637,13 +639,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         }
 
         uint256 ABPrice = _getABPrice();
-        uint256 fImpOpening = _getFImpOpening(
-            totalTokenA,
-            totalTokenB,
-            ABPrice,
-            deamortizedTokenABalance,
-            deamortizedTokenBBalance
-        );
+        uint256 fImpOpening =
+            _getFImpOpening(totalTokenA, totalTokenB, ABPrice, deamortizedTokenABalance, deamortizedTokenBBalance);
 
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
 
@@ -720,7 +717,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         return a < b ? a : b;
     }
 
-    function _getABPrice() internal virtual view returns (uint256 ABPrice);
+    function _getABPrice() internal view virtual returns (uint256 ABPrice);
 
     function _getTradeDetailsExactAInput(uint256 amountAIn) internal virtual returns (TradeDetails memory);
 

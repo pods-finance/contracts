@@ -246,7 +246,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      *
      * @return ABPrice ABPrice is the unit price AB. Meaning how many units of B, buys 1 unit of A
      */
-    function getABPrice() external override view returns (uint256 ABPrice) {
+    function getABPrice() external view override returns (uint256 ABPrice) {
         return _getABPrice();
     }
 
@@ -264,8 +264,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      */
     function getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
         external
-        override
         view
+        override
         returns (
             uint256 amountBOut,
             uint256 newIV,
@@ -290,8 +290,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      */
     function getOptionTradeDetailsExactAOutput(uint256 exactAmountAOut)
         external
-        override
         view
+        override
         returns (
             uint256 amountBIn,
             uint256 newIV,
@@ -316,8 +316,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      */
     function getOptionTradeDetailsExactBInput(uint256 exactAmountBIn)
         external
-        override
         view
+        override
         returns (
             uint256 amountAOut,
             uint256 newIV,
@@ -342,8 +342,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      */
     function getOptionTradeDetailsExactBOutput(uint256 exactAmountBOut)
         external
-        override
         view
+        override
         returns (
             uint256 amountAIn,
             uint256 newIV,
@@ -363,7 +363,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      * @return spotPrice amount of A that will be transfer from msg.sender to the pool
      */
 
-    function getSpotPrice(address asset, uint256 decimalsOutput) external override view returns (uint256 spotPrice) {
+    function getSpotPrice(address asset, uint256 decimalsOutput) external view override returns (uint256 spotPrice) {
         return _getSpotPrice(asset, decimalsOutput);
     }
 
@@ -375,6 +375,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     }
 
     function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
+        if (timeToMaturity == 0) {
+            return 0;
+        }
         uint256 newABPrice;
 
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
@@ -420,16 +423,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         return (poolAmountA, poolAmountB);
     }
 
-    function _getABPrice() internal override view returns (uint256) {
+    function _getABPrice() internal view override returns (uint256) {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
-        if (timeToMaturity == 0) {
-            return 0;
-        } else {
-            uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
-            uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
-            return newABPriceWithDecimals;
-        }
+
+        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        return newABPrice;
     }
 
     function _getSpotPrice(address asset, uint256 decimalsOutput) internal view returns (uint256) {
@@ -490,8 +489,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
-
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 amountBOutPool = _getAmountBOutPool(newABPrice, exactAmountAIn);
 
@@ -527,6 +528,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 amountBInPool = _getAmountBInPool(exactAmountAOut, newABPrice);
 
@@ -562,6 +566,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 feesTokenA = feePoolA.getCollectable(exactAmountBIn);
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBIn);
@@ -596,6 +603,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 feesTokenA = feePoolA.getCollectable(exactAmountBOut);
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut);
@@ -621,36 +631,32 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     }
 
     function _getTradeDetailsExactAInput(uint256 exactAmountAIn) internal override returns (TradeDetails memory) {
-        (uint256 amountBOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactAInput(
-            exactAmountAIn
-        );
+        (uint256 amountBOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) =
+            _getOptionTradeDetailsExactAInput(exactAmountAIn);
 
         TradeDetails memory tradeDetails = TradeDetails(amountBOut, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactAOutput(uint256 exactAmountAOut) internal override returns (TradeDetails memory) {
-        (uint256 amountBIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactAOutput(
-            exactAmountAOut
-        );
+        (uint256 amountBIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) =
+            _getOptionTradeDetailsExactAOutput(exactAmountAOut);
 
         TradeDetails memory tradeDetails = TradeDetails(amountBIn, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactBInput(uint256 exactAmountBIn) internal override returns (TradeDetails memory) {
-        (uint256 amountAOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactBInput(
-            exactAmountBIn
-        );
+        (uint256 amountAOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) =
+            _getOptionTradeDetailsExactBInput(exactAmountBIn);
 
         TradeDetails memory tradeDetails = TradeDetails(amountAOut, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactBOutput(uint256 exactAmountBOut) internal override returns (TradeDetails memory) {
-        (uint256 amountAIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactBOutput(
-            exactAmountBOut
-        );
+        (uint256 amountAIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) =
+            _getOptionTradeDetailsExactBOutput(exactAmountBOut);
 
         TradeDetails memory tradeDetails = TradeDetails(amountAIn, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
@@ -660,12 +666,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
-        uint256 amountOfQuotesAToAdd = _userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(
-            currentQuotesA
-        );
-        uint256 amountOfQuotesBToAdd = _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(
-            currentQuotesB
-        );
+        uint256 amountOfQuotesAToAdd =
+            _userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(currentQuotesA);
+        uint256 amountOfQuotesBToAdd =
+            _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(currentQuotesB);
 
         feePoolA.mint(owner, amountOfQuotesAToAdd);
         feePoolB.mint(owner, amountOfQuotesBToAdd);
@@ -675,12 +679,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
-        uint256 amountOfQuotesAToRemove = currentQuotesA.sub(
-            _userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp)
-        );
-        uint256 amountOfQuotesBToRemove = currentQuotesB.sub(
-            _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp)
-        );
+        uint256 amountOfQuotesAToRemove =
+            currentQuotesA.sub(_userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp));
+        uint256 amountOfQuotesBToRemove =
+            currentQuotesB.sub(_userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp));
 
         if (amountOfQuotesAToRemove > 0) {
             feePoolA.withdraw(owner, amountOfQuotesAToRemove);

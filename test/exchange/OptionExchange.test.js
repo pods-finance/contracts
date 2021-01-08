@@ -18,7 +18,9 @@ describe('OptionExchange', () => {
     ;[deployer, caller] = await ethers.getSigners()
     deployerAddress = await deployer.getAddress()
     callerAddress = await caller.getAddress()
+  })
 
+  beforeEach(async () => {
     ;[OptionExchange, OptionAMMFactory, option] = await Promise.all([
       ethers.getContractFactory('OptionExchange'),
       ethers.getContractFactory('OptionAMMFactory'),
@@ -27,9 +29,6 @@ describe('OptionExchange', () => {
 
     strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
     stableAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
-  })
-
-  beforeEach(async () => {
     optionAMMFactory = await OptionAMMFactory.deploy()
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
     await addLiquidity(pool, deployer)
@@ -109,7 +108,6 @@ describe('OptionExchange', () => {
 
   describe('Mint and Sell', () => {
     it('mints and sells the exact amount of options', async () => {
-      const minOutputAmount = ethers.BigNumber.from(100e6.toString())
       const amountToMint = ethers.BigNumber.from(1e7.toString())
       const collateralAmount = await option.strikeToTransfer(amountToMint)
       const deadline = await getTimestamp() + 60
@@ -122,7 +120,7 @@ describe('OptionExchange', () => {
         option.address,
         amountToMint,
         stableAsset.address,
-        minOutputAmount,
+        0,
         deadline,
         sigma
       )
@@ -277,7 +275,7 @@ describe('OptionExchange', () => {
 })
 
 async function createOptionAMMPool (option, optionAMMFactory, caller) {
-  const initialSigma = '660000000000000000'
+  const initialSigma = '960000000000000000'
 
   const [Sigma, blackScholes, strikeAssetAddress, underlyingAssetAddress, callerAddress] = await Promise.all([
     ethers.getContractFactory('Sigma'),
@@ -288,7 +286,7 @@ async function createOptionAMMPool (option, optionAMMFactory, caller) {
   ])
 
   const sigma = await Sigma.deploy(blackScholes.address)
-  const mock = await getPriceProviderMock(caller, '9000000000', 6, underlyingAssetAddress)
+  const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAssetAddress)
   const priceProviderMock = mock.priceProvider
 
   const tx = await optionAMMFactory.createPool(
