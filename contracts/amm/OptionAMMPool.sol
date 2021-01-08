@@ -375,6 +375,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     }
 
     function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
+        if (timeToMaturity == 0) {
+            return 0;
+        }
         uint256 newABPrice;
 
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
@@ -423,13 +426,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     function _getABPrice() internal view override returns (uint256) {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
-        if (timeToMaturity == 0) {
-            return 0;
-        } else {
-            uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
-            uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
-            return newABPriceWithDecimals;
-        }
+
+        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        return newABPrice;
     }
 
     function _getSpotPrice(address asset, uint256 decimalsOutput) internal view returns (uint256) {
