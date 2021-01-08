@@ -28,7 +28,7 @@ module.exports = async function createMockOption () {
     underlyingAsset.address,
     strikeAsset.address,
     strikePrice,
-    await getTimestamp() + 5 * 60 * 60 * 1000,
+    await getTimestamp() + 16 * 24 * 60 * 60,
     24 * 60 * 60
   )
 
