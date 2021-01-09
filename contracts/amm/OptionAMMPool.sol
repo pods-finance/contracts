@@ -662,27 +662,35 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         return tradeDetails;
     }
 
-    function _onAddLiquidity(UserBalance memory _userBalance, address owner) internal override {
+    function _onAddLiquidity(UserDepositSnapshot memory _userDepositSnapshot, address owner) internal override {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
         uint256 amountOfQuotesAToAdd =
-            _userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(currentQuotesA);
+            _userDepositSnapshot.tokenABalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp).sub(
+                currentQuotesA
+            );
         uint256 amountOfQuotesBToAdd =
-            _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(currentQuotesB);
+            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp).sub(
+                currentQuotesB
+            );
 
         feePoolA.mint(owner, amountOfQuotesAToAdd);
         feePoolB.mint(owner, amountOfQuotesBToAdd);
     }
 
-    function _onRemoveLiquidity(UserBalance memory _userBalance, address owner) internal override {
+    function _onRemoveLiquidity(UserDepositSnapshot memory _userDepositSnapshot, address owner) internal override {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
         uint256 amountOfQuotesAToRemove =
-            currentQuotesA.sub(_userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp));
+            currentQuotesA.sub(
+                _userDepositSnapshot.tokenABalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
+            );
         uint256 amountOfQuotesBToRemove =
-            currentQuotesB.sub(_userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp));
+            currentQuotesB.sub(
+                _userDepositSnapshot.tokenBBalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
+            );
 
         if (amountOfQuotesAToRemove > 0) {
             feePoolA.withdraw(owner, amountOfQuotesAToRemove);

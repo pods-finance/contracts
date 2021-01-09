@@ -232,7 +232,7 @@ scenarios.forEach(scenario => {
             name: 'removeLiquidity',
             contract: amm,
             user: userA,
-            params: [amountTokenAToMint, amountTokenBToMint]
+            params: [100, 100]
           }
 
         ]
@@ -262,7 +262,7 @@ scenarios.forEach(scenario => {
       it('should show the position of users that did not add liquidity', async () => {
         let maxWithdrawAmountA, maxWithdrawAmountB
         // User A asking before there is any liquidity
-        ;[ maxWithdrawAmountA, maxWithdrawAmountB ] = await amm.getMaxRemoveLiquidityAmounts(userAAddress)
+        ;[maxWithdrawAmountA, maxWithdrawAmountB] = await amm.getMaxRemoveLiquidityAmounts(userAAddress)
         expect(maxWithdrawAmountA).to.equal(0)
         expect(maxWithdrawAmountB).to.equal(0)
 
@@ -274,7 +274,7 @@ scenarios.forEach(scenario => {
         await amm.connect(userB).addLiquidity(1e8, 1e8, userBAddress)
 
         // User A asking after liquidity was added
-        ;[ maxWithdrawAmountA, maxWithdrawAmountB ] = await amm.getMaxRemoveLiquidityAmounts(userAAddress)
+        ;[maxWithdrawAmountA, maxWithdrawAmountB] = await amm.getMaxRemoveLiquidityAmounts(userAAddress)
         expect(maxWithdrawAmountA).to.equal(0)
         expect(maxWithdrawAmountB).to.equal(0)
       })
@@ -370,19 +370,19 @@ scenarios.forEach(scenario => {
             name: 'removeLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [100, 0]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [100, 100]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, 100]
           }
         ]
 
@@ -517,19 +517,19 @@ scenarios.forEach(scenario => {
             name: 'removeLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [100, 0]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [100, 100]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, 100]
           }
         ]
 
@@ -664,19 +664,19 @@ scenarios.forEach(scenario => {
             name: 'removeLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [100, 0]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [100, 100]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, 100]
           }
         ]
 
@@ -827,19 +827,19 @@ scenarios.forEach(scenario => {
             name: 'removeLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [100, 0]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [100, 100]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, 100]
           }
         ]
 
@@ -1183,19 +1183,19 @@ scenarios.forEach(scenario => {
             name: 'removeLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [100, 0]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [100, 100]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, 100]
           }
         ]
 
@@ -1353,19 +1353,19 @@ scenarios.forEach(scenario => {
             name: 'removeLiquidity',
             contract: amm,
             user: user01,
-            params: [amountOfTokenAUser01, 0]
+            params: [100, 0]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user00,
-            params: [amountOfTokenAUser00, amountOfTokenBUser00]
+            params: [100, 100]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02]
+            params: [0, 100]
           }
         ]
 
@@ -1528,13 +1528,13 @@ scenarios.forEach(scenario => {
             name: 'removeLiquidity',
             contract: amm,
             user: user01,
-            params: [0, amountOfTokenBUser01Withdraw]
+            params: [0, 100]
           },
           {
             name: 'removeLiquidity',
             contract: amm,
             user: user02,
-            params: [0, amountOfTokenBUser02Withdraw]
+            params: [0, 100]
           }
         ]
 
@@ -1661,14 +1661,12 @@ scenarios.forEach(scenario => {
           await fn()
         }
 
-        const currentBalance = await ammB.balances(user01Address)
-        const currentBalanceTokenB = currentBalance.tokenBBalance
-        await ammB.connect(user01).removeLiquidity(0, currentBalanceTokenB.div(toBigNumber(2)))
+        await ammB.connect(user01).removeLiquidity(0, 100)
 
         const balanceAfterUser01TokenC = await mockTokenC.balanceOf(user01Address)
         const balanceAfterUser01TokenD = await mockTokenD.balanceOf(user01Address)
 
-        expect(balanceAfterUser01TokenA.add(balanceAfterUser02TokenA).add(toBigNumber(1))).to.equal(balanceAfterUser01TokenC)
+        expect(balanceAfterUser01TokenA.add(balanceAfterUser02TokenA)).to.equal(balanceAfterUser01TokenC)
         expect(balanceAfterUser01TokenB.add(balanceAfterUser02TokenB)).to.equal(balanceAfterUser01TokenD)
       })
     })

@@ -318,7 +318,7 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
-        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed)
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
         const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
@@ -407,7 +407,7 @@ scenarios.forEach(scenario => {
         const nearExpiration = expiration - 60 * 60 * 2 // 2 hours before expiration
         await ethers.provider.send('evm_mine', [nearExpiration])
 
-        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed)
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
         const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
@@ -492,7 +492,7 @@ scenarios.forEach(scenario => {
 
         await forceExpiration(podPut)
 
-        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed)
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
         const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
@@ -575,9 +575,9 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
-        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, 0)
+        await optionAMMPool.connect(lp).removeLiquidity(100, 0)
 
-        await optionAMMPool.connect(lp).removeLiquidity(0, amountOfStrikeLpNeed)
+        await optionAMMPool.connect(lp).removeLiquidity(0, 100)
 
         const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
@@ -983,7 +983,7 @@ scenarios.forEach(scenario => {
         expect(buyerStrikeBeforeTrade).to.eq(buyerStrikeAfterBuyer.sub(numberOfTokensToReceive))
 
         // Testing Remove Liquidity
-        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed)
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
         const [poolOptionAmountAfterRemove, poolStrikeAmountAfterRemove] = await optionAMMPool.getPoolBalances()
 
