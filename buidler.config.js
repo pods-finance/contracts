@@ -16,7 +16,7 @@ module.exports = {
   networks: {
     buidlerevm: {
       gasMultiplier: 2,
-      loggingEnabled: !!(process.env.BUIDLER_LOGGING_ENABLED) || false,
+      loggingEnabled: true,
       chainId: 1337
     },
     local: {

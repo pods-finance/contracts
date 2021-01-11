@@ -38,7 +38,7 @@ task('setupLocal', 'Deploy a whole local test environment')
     // 3.1) Chainlink Mock
     const ChainlinkWBTCFeed = await ethers.getContractFactory('MockChainlinkFeed')
 
-    const chainlinkWBTCFeed = await ChainlinkWBTCFeed.deploy(mockWBTC.address, '8', '1900000000000')
+    const chainlinkWBTCFeed = await ChainlinkWBTCFeed.deploy(mockWBTC.address, '8', '1810000000000')
 
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
@@ -58,14 +58,14 @@ task('setupLocal', 'Deploy a whole local test environment')
       strike: 'USDC',
       underlying: 'WBTC',
       price: '18000',
-      expiration: (currentBlockTimestamp + 48 * 60 * 60).toString()
+      expiration: (currentBlockTimestamp + 10 * 60).toString()
     })
 
     // 5) Create AMMPool test with this asset
     const optionAMMPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWBTCAddress,
       tokenb: mockUSDC.address,
-      initialsigma: '770000000000000000' // 0.77%
+      initialsigma: '1770000000000000000' // 0.77%
     })
 
     // 6) Mint Strike Asset

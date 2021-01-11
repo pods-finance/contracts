@@ -31,7 +31,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
     /**
      * @dev Minimum allowed exercise window: 24 hours
      */
-    uint256 public constant MIN_EXERCISE_WINDOW_SIZE = 86400;
+    uint256 public constant MIN_EXERCISE_WINDOW_SIZE = 60;
 
     OptionType private _optionType;
     ExerciseType private _exerciseType;
