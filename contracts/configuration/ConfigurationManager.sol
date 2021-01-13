@@ -5,6 +5,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ModuleStorage.sol";
 import "../interfaces/IConfigurationManager.sol";
 
+/**
+ * @title ConfigurationManager
+ * @author Pods Finance
+ * @notice Allows contracts to read protocol-wide configuration modules
+ */
 contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     bytes32 private constant EMERGENCY_STOP = "EMERGENCY_STOP";
 
