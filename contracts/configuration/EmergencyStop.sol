@@ -17,14 +17,6 @@ contract EmergencyStop is IEmergencyStop, Ownable {
     event Resumed(address indexed target);
 
     /**
-     * @dev Checks if a contract should be considered as stopped
-     * @param target The contract address
-     */
-    function isStopped(address target) external override view returns (bool) {
-        return _addresses[target];
-    }
-
-    /**
      * @dev Signals that the target should now be considered as stopped
      * @param target The contract address
      */
@@ -41,5 +33,13 @@ contract EmergencyStop is IEmergencyStop, Ownable {
         require(_addresses[target], "EmergencyStop: target is not stopped");
         _addresses[target] = false;
         emit Resumed(target);
+    }
+
+    /**
+     * @dev Checks if a contract should be considered as stopped
+     * @param target The contract address
+     */
+    function isStopped(address target) external override view returns (bool) {
+        return _addresses[target];
     }
 }

@@ -7,7 +7,7 @@ pragma solidity 0.6.12;
  * @notice Stores addresses from configuration modules
  */
 contract ModuleStorage {
-    mapping(bytes32 => address) private addresses;
+    mapping(bytes32 => address) private _addresses;
 
     event ModuleSet(bytes32 indexed name, address indexed newAddress);
 
@@ -16,7 +16,7 @@ contract ModuleStorage {
      * @param name The name of a module
      */
     function getModule(bytes32 name) public view returns (address) {
-        return addresses[name];
+        return _addresses[name];
     }
 
     /**
@@ -25,7 +25,7 @@ contract ModuleStorage {
      * @param module The module address
      */
     function _setModule(bytes32 name, address module) internal {
-        addresses[name] = module;
+        _addresses[name] = module;
         emit ModuleSet(name, module);
     }
 }
