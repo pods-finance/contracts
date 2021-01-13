@@ -250,13 +250,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
             deamortizedTokenABalance = amountOfA;
             deamortizedTokenBBalance = amountOfB;
         } else {
-            // 2) Get spot price
+            // Get ABPrice
             uint256 ABPrice = _getABPrice();
             require(ABPrice > 0, "AMM: can not add liquidity when option price is zero");
 
-            // 3) Calculate Fimp
-            //FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
-            // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
+            // Calculate the Pool's Value Factor (Fimp)
             fImpOpening = _getFImpOpening(
                 totalTokenA,
                 totalTokenB,
@@ -265,7 +263,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
                 deamortizedTokenBBalance
             );
 
-            // 4) Update amount of user to store in case of re-add liquidity;
             (userAmountToStoreTokenA, userAmountToStoreTokenB) = _getUserBalanceToStore(
                 amountOfA,
                 amountOfB,
@@ -273,19 +270,19 @@ abstract contract AMM is IAMM, RequiredDecimals {
                 usersSnapshot[owner]
             );
 
-            // 5) Update deamortizedBalances;
-            // deamortizedBalance = deamortizedBalance + amount/fImpOpening
+            // Update Deamortized Balance of the pool for each token;
             deamortizedTokenABalance = deamortizedTokenABalance.add(amountOfA.mul(10**FIMP_PRECISION).div(fImpOpening));
             deamortizedTokenBBalance = deamortizedTokenBBalance.add(amountOfB.mul(10**FIMP_PRECISION).div(fImpOpening));
         }
 
-        // 6) Update User properties (tokenABalance, tokenBBalance, fImp)
+        // Update the User Balances for each token and with the Pool Factor previously calculated
         UserDepositSnapshot memory userDepositSnapshot =
             UserDepositSnapshot(userAmountToStoreTokenA, userAmountToStoreTokenB, fImpOpening);
         usersSnapshot[owner] = userDepositSnapshot;
 
         _onAddLiquidity(usersSnapshot[owner], owner);
 
+        // Update Total Balance of the pool for each token
         require(
             IERC20(tokenA).transferFrom(msg.sender, address(this), amountOfA),
             "AMM: could not transfer option tokens from caller"
@@ -313,28 +310,24 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 originalBalanceAToReduce = percentA.mul(userTokenABalance).div(PERCENT_PRECISION);
         uint256 originalBalanceBToReduce = percentB.mul(userTokenBBalance).div(PERCENT_PRECISION);
 
-        // 1) Get Pool Balances
+        // Get Pool Balances
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
-        // 2) Spot Price
-        // How many B you need in order to exchange for 1 unit of A
+        // Get ABPrice
         uint256 ABPrice = _getABPrice();
 
-        // 2) Calculate Fimp
-        // FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
-        // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
+        // Calculate the Pool's Value Factor (Fimp)
         uint256 fImpOpening =
             _getFImpOpening(totalTokenA, totalTokenB, ABPrice, deamortizedTokenABalance, deamortizedTokenBBalance);
 
-        // 3) Calculate Multipliers
+        // Calculate Multipliers
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
 
-        // 4) Update user balance
-
+        // Update User balance
         usersSnapshot[msg.sender].tokenABalance = userTokenABalance.sub(originalBalanceAToReduce);
         usersSnapshot[msg.sender].tokenBBalance = userTokenBBalance.sub(originalBalanceBToReduce);
 
-        // 5) Update deamortized balance
+        // Update deamortized balance
         deamortizedTokenABalance = deamortizedTokenABalance.sub(
             originalBalanceAToReduce.mul(10**FIMP_PRECISION).div(usersSnapshot[msg.sender].fImp)
         );
@@ -342,7 +335,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
             originalBalanceBToReduce.mul(10**FIMP_PRECISION).div(usersSnapshot[msg.sender].fImp)
         );
 
-        // 6) Calculate amount to send
+        // Calculate amount to send
         uint256 amountToSendA =
             originalBalanceAToReduce.mul(multipliers.AA).add(originalBalanceBToReduce.mul(multipliers.BA)).div(
                 usersSnapshot[msg.sender].fImp
@@ -354,7 +347,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         _onRemoveLiquidity(usersSnapshot[msg.sender], msg.sender);
 
-        // 7) Transfers / Update
+        // Transfers / Update
         if (amountToSendA > 0) {
             require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
         }
