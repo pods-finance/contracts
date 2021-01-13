@@ -298,7 +298,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
     function _strikeToTransfer(uint256 amountOfOptions) internal view returns (uint256) {
         uint256 strikeAmount = amountOfOptions.mul(_strikePrice).div(10**uint256(_underlyingAssetDecimals));
         require(strikeAmount > 0, "PodOption: amount of options is too low");
-        return strikeAmount + 1;
+        return strikeAmount;
     }
 
     /**

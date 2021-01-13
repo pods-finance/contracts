@@ -391,6 +391,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     }
 
     function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
+        if (timeToMaturity == 0) {
+            return 0;
+        }
         uint256 newABPrice;
 
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
@@ -439,13 +442,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     function _getABPrice() internal override view returns (uint256) {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
-        if (timeToMaturity == 0) {
-            return 0;
-        } else {
-            uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
-            uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
-            return newABPriceWithDecimals;
-        }
+
+        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        return newABPrice;
     }
 
     function _getSpotPrice(address asset, uint256 decimalsOutput) internal view returns (uint256) {
@@ -506,8 +505,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
-
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 amountBOutPool = _getAmountBOutPool(newABPrice, exactAmountAIn);
 
@@ -543,6 +544,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 amountBInPool = _getAmountBInPool(exactAmountAOut, newABPrice);
 
@@ -578,6 +582,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 feesTokenA = feePoolA.getCollectable(exactAmountBIn);
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBIn);
@@ -612,6 +619,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 feesTokenA = feePoolA.getCollectable(exactAmountBOut);
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut);
@@ -672,30 +682,34 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         return tradeDetails;
     }
 
-    function _onAddLiquidity(UserBalance memory _userBalance, address owner) internal override {
+    function _onAddLiquidity(UserDepositSnapshot memory _userDepositSnapshot, address owner) internal override {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
-        uint256 amountOfQuotesAToAdd = _userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(
-            currentQuotesA
-        );
-        uint256 amountOfQuotesBToAdd = _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp).sub(
-            currentQuotesB
-        );
+        uint256 amountOfQuotesAToAdd = _userDepositSnapshot
+            .tokenABalance
+            .mul(10**FIMP_PRECISION)
+            .div(_userDepositSnapshot.fImp)
+            .sub(currentQuotesA);
+        uint256 amountOfQuotesBToAdd = _userDepositSnapshot
+            .tokenBBalance
+            .mul(10**FIMP_PRECISION)
+            .div(_userDepositSnapshot.fImp)
+            .sub(currentQuotesB);
 
         feePoolA.mint(owner, amountOfQuotesAToAdd);
         feePoolB.mint(owner, amountOfQuotesBToAdd);
     }
 
-    function _onRemoveLiquidity(UserBalance memory _userBalance, address owner) internal override {
+    function _onRemoveLiquidity(UserDepositSnapshot memory _userDepositSnapshot, address owner) internal override {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
         uint256 amountOfQuotesAToRemove = currentQuotesA.sub(
-            _userBalance.tokenABalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp)
+            _userDepositSnapshot.tokenABalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
         );
         uint256 amountOfQuotesBToRemove = currentQuotesB.sub(
-            _userBalance.tokenBBalance.mul(10**FIMP_PRECISION).div(_userBalance.fImp)
+            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
         );
 
         if (amountOfQuotesAToRemove > 0) {

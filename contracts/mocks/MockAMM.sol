@@ -117,11 +117,11 @@ contract MockAMM is AMM {
         _onTrade(tradeDetails);
     }
 
-    function _onRemoveLiquidity(UserBalance memory userBalance, address owner) internal override {
+    function _onRemoveLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal override {
         return;
     }
 
-    function _onAddLiquidity(UserBalance memory userBalance, address owner) internal override {
+    function _onAddLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal override {
         return;
     }
 }
