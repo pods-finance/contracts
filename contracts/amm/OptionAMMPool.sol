@@ -725,8 +725,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     function emergencyStopCheck() private view {
         IEmergencyStop emergencyStop = IEmergencyStop(configurationManager.getEmergencyStop());
         require(
-            !emergencyStop.isStopped(address(priceProvider)) ||
-                !emergencyStop.isStopped(address(priceMethod)) ||
+            !emergencyStop.isStopped(address(priceProvider)) &&
+                !emergencyStop.isStopped(address(priceMethod)) &&
                 !emergencyStop.isStopped(address(impliedVolatility)),
             "OptionAMMPool: Pool is stopped"
         );
