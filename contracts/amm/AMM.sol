@@ -234,12 +234,12 @@ abstract contract AMM is IAMM, RequiredDecimals {
         // 1) Get Pool Balances
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
-        bool isInitialLiquidity = totalTokenA == 0 || totalTokenB == 0;
+        bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
         uint256 fImpOpening;
         uint256 userAmountToStoreTokenA = amountOfA;
         uint256 userAmountToStoreTokenB = amountOfB;
 
-        if (isInitialLiquidity) {
+        if (hasNoLiquidity) {
             // In the first liquidity, is necessary add both tokens
             require(amountOfA > 0 && amountOfB > 0, "AMM: you should add both tokens on the first liquidity");
 
@@ -631,7 +631,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 fImpOriginal
     ) internal view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
-        bool hasNoLiquidity = totalTokenA == 0 || totalTokenB == 0;
+        bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
         if (hasNoLiquidity) {
             return (0, 0);
         }
