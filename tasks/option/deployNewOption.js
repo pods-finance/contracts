@@ -46,6 +46,8 @@ task('deployNewOption', 'Deploy New Option')
     console.log('Option Parameters')
     console.log(optionParams)
 
+    console.log('optionFactoryAddress', optionFactoryAddress)
+
     const funcParameters = [
       optionParams.name,
       optionParams.symbol,
