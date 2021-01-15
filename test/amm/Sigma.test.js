@@ -86,6 +86,11 @@ describe('Sigma', () => {
     sigma = await SigmaContract.deploy(blackScholes.address)
     await sigma.deployed()
   })
+
+  it('should return the assigned sigma', async () => {
+    expect(await sigma.blackScholes()).to.be.equal(blackScholes.address)
+  })
+
   describe('FindNextSigma', () => {
     it('Should return the next sigma value correctly', async () => {
       const nextSigma = await sigma.getCloserSigma([
