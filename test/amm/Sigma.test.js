@@ -1,5 +1,5 @@
 const { expect } = require('chai')
-const deployBlackScholes = require('../util/deployBlackScholes')
+const createBlackScholes = require('../util/createBlackScholes')
 const { toBigNumber, approximately } = require('../../utils/utils')
 
 const scenarioNextSigma = {
@@ -78,7 +78,7 @@ describe('Sigma', () => {
   let sigma, blackScholes
 
   before(async () => {
-    blackScholes = await deployBlackScholes()
+    blackScholes = await createBlackScholes()
   })
 
   beforeEach(async () => {

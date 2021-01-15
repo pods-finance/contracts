@@ -39,7 +39,8 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('OptionAMMPool.sol - ' + scenario.name, () => {
-    const TEN = ethers.BigNumber.from('10')
+    let MockERC20, MockWETH, OptionAMMFactory
+    let mockWETH
     let configurationManager
     let mockUnderlyingAsset
     let mockStrikeAsset
@@ -69,18 +70,21 @@ scenarios.forEach(scenario => {
       await podPut.connect(signer).mint(amountToMintBN.mul(toBigNumber(10).pow(optionsDecimals)), owner)
     }
 
-    async function mintAndAddLiquidity (optionsAmount, stableAmount, signer = deployer, owner = deployerAddress) {
-      const optionWithDecimals = ethers.BigNumber.from(optionsAmount).mul(TEN.pow(scenario.underlyingAssetDecimals))
-      await MintPhase(optionsAmount, signer, owner)
-      await mockStrikeAsset.connect(signer).mint(stableAmount)
-      // Approve both Option and Stable Token
-      await mockStrikeAsset.connect(signer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
-      await podPut.connect(signer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+    before(async () => {
+      ;[MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
+        ethers.getContractFactory('MintableERC20'),
+        ethers.getContractFactory('WETH'),
+        ethers.getContractFactory('OptionAMMFactory')
+      ])
 
-      const optionsDecimals = await podPut.decimals()
-      const stableDecimals = await mockStrikeAsset.decimals()
-      await optionAMMPool.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
-    }
+      mockWETH = await MockWETH.deploy()
+
+      ;[mockUnderlyingAsset, mockStrikeAsset, factoryContract] = await Promise.all([
+        MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
+        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
+        createOptionFactory(mockWETH.address)
+      ])
+    })
 
     beforeEach(async function () {
       [deployer, second, buyer, delegator, lp] = await ethers.getSigners()
@@ -89,20 +93,6 @@ scenarios.forEach(scenario => {
       buyerAddress = await buyer.getAddress()
       delegatorAddress = await delegator.getAddress()
       lpAddress = await lp.getAddress()
-
-      const [MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
-        ethers.getContractFactory('MintableERC20'),
-        ethers.getContractFactory('WETH'),
-        ethers.getContractFactory('OptionAMMFactory')
-      ])
-
-      const mockWeth = await MockWETH.deploy()
-
-      ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
-        createOptionFactory(mockWeth.address),
-        MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
-        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
-      ])
 
       // Deploy option
       const currentBlocktimestamp = await getTimestamp()

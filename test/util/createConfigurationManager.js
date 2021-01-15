@@ -1,12 +1,12 @@
 const { ethers } = require('@nomiclabs/buidler')
-const deployBlackScholes = require('./deployBlackScholes')
+const createBlackScholes = require('./createBlackScholes')
 
 module.exports = async function createConfigurationManager (priceProvider) {
   const [ConfigurationManager, EmergencyStop, Sigma, blackScholes] = await Promise.all([
     ethers.getContractFactory('ConfigurationManager'),
     ethers.getContractFactory('EmergencyStop'),
     ethers.getContractFactory('Sigma'),
-    deployBlackScholes()
+    createBlackScholes()
   ])
 
   const [configurationManager, emergencyStop, sigma] = await Promise.all([

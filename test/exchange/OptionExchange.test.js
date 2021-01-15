@@ -3,6 +3,7 @@ const getTimestamp = require('../util/getTimestamp')
 const createMockOption = require('../util/createMockOption')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
+const addLiquidity = require('../util/addLiquidity')
 
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
@@ -39,7 +40,10 @@ describe('OptionExchange', () => {
   beforeEach(async () => {
     optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
-    await addLiquidity(pool, deployer)
+    const optionsLiquidity = ethers.BigNumber.from(10e8)
+    const stableLiquidity = ethers.BigNumber.from(1000e6)
+
+    await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
 
     exchange = await OptionExchange.deploy(optionAMMFactory.address)
 
@@ -303,26 +307,4 @@ async function createOptionAMMPool (option, optionAMMFactory, caller) {
   const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
 
   return pool
-}
-
-async function addLiquidity (pool, owner) {
-  const ownerAddress = await owner.getAddress()
-  const option = await ethers.getContractAt('PodPut', await pool.tokenA())
-  const stableAsset = await ethers.getContractAt('MintableERC20', await pool.tokenB())
-  const strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
-
-  const optionsLiquidity = ethers.BigNumber.from(10e8)
-  const stableLiquidity = ethers.BigNumber.from(1000e6)
-
-  // Mint Options
-  await strikeAsset.connect(owner).mint((await option.strikeToTransfer(optionsLiquidity)).add(1))
-  await strikeAsset.connect(owner).approve(option.address, ethers.constants.MaxUint256)
-  await option.connect(owner).mint(optionsLiquidity, ownerAddress)
-
-  // Mint stable
-  await stableAsset.connect(owner).mint(stableLiquidity)
-
-  await option.connect(owner).approve(pool.address, ethers.constants.MaxUint256)
-  await stableAsset.connect(owner).approve(pool.address, ethers.constants.MaxUint256)
-  await pool.connect(owner).addLiquidity(optionsLiquidity, stableLiquidity, ownerAddress)
 }
