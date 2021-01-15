@@ -43,7 +43,6 @@ describe('OptionAMMFactory', () => {
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
-      blackScholes.address,
       sigma.address,
       initialSigma
     )
@@ -59,7 +58,6 @@ describe('OptionAMMFactory', () => {
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
-      blackScholes.address,
       sigma.address,
       initialSigma
     )
@@ -68,7 +66,6 @@ describe('OptionAMMFactory', () => {
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
-      blackScholes.address,
       sigma.address,
       initialSigma
     )
@@ -81,7 +78,6 @@ describe('OptionAMMFactory', () => {
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
-      blackScholes.address,
       sigma.address,
       initialSigma
     )

@@ -134,7 +134,7 @@ scenarios.forEach(scenario => {
       const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
       priceProviderMock = mock.priceProvider
       // 1) Deploy optionAMMPool
-      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address, scenario.initialSigma)
+      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, priceProviderMock.address, sigma.address, scenario.initialSigma)
     })
 
     describe('Constructor/Initialization checks', () => {

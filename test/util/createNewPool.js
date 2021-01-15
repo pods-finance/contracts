@@ -1,10 +1,9 @@
-module.exports = async function createNewPool (deployerAddress, factoryContract, _optionAddress, _stableAsset, _priceProvider, _priceMethod, _sigma, _initialSigma) {
+module.exports = async function createNewPool (deployerAddress, factoryContract, _optionAddress, _stableAsset, _priceProvider, _sigma, _initialSigma) {
   let optionPool
   const txIdNewOption = await factoryContract.createPool(
     _optionAddress,
     _stableAsset,
     _priceProvider,
-    _priceMethod,
     _sigma,
     _initialSigma
   )

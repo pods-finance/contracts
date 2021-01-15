@@ -299,7 +299,6 @@ async function createOptionAMMPool (option, optionAMMFactory, caller) {
     option.address,
     strikeAssetAddress,
     priceProviderMock.address,
-    blackScholes.address,
     sigma.address,
     initialSigma
   )

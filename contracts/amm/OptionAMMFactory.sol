@@ -33,7 +33,6 @@ contract OptionAMMFactory is IOptionAMMFactory {
      * @param _optionAddress The address of option token
      * @param _stableAsset A stablecoin asset address
      * @param _priceProvider contract address of the PriceProvider contract for spotPrice
-     * @param _priceMethod contract address of the PriceMethod contract (E.g: BlackScholes)
      * @param _sigma contract address of the sigma (implied Volatility) contract
      * @param _initialSigma Initial number of sigma (implied volatility)
      * @return The address of the newly created pool
@@ -42,7 +41,6 @@ contract OptionAMMFactory is IOptionAMMFactory {
         address _optionAddress,
         address _stableAsset,
         address _priceProvider,
-        address _priceMethod,
         address _sigma,
         uint256 _initialSigma
     ) external override returns (address) {
@@ -55,7 +53,6 @@ contract OptionAMMFactory is IOptionAMMFactory {
             _optionAddress,
             _stableAsset,
             _priceProvider,
-            _priceMethod,
             _sigma,
             _initialSigma,
             address(feePoolTokenA),

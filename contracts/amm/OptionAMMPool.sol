@@ -44,11 +44,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     IPriceProvider public priceProvider;
 
     /**
-     * @notice responsible for the current price of the option itself.
-     */
-    IBlackScholes public priceMethod;
-
-    /**
      * @notice responsible for one of the priceMethod inputs: implied Volatility (also known as sigma)
      */
     ISigma public impliedVolatility;
@@ -84,7 +79,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address _optionAddress,
         address _stableAsset,
         address _priceProvider,
-        address _priceMethod,
         address _sigma,
         uint256 _initialSigma,
         address _feePoolA,
@@ -106,16 +100,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         priceProperties.strikePrice = strikePriceWithRightDecimals;
 
         priceProvider = IPriceProvider(_priceProvider);
-        priceMethod = IBlackScholes(_priceMethod);
         impliedVolatility = ISigma(_sigma);
 
         feePoolA = IFeePool(_feePoolA);
         feePoolB = IFeePool(_feePoolB);
         configurationManager = IConfigurationManager(_configurationManager);
-
-        address sigmaBSAddress = impliedVolatility.blackScholes();
-        // Check if sigma black scholes version is the same as the above
-        require(sigmaBSAddress == _priceMethod, "OptionAMMPool: not same BS contract version");
     }
 
     /**
@@ -394,10 +383,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         if (timeToMaturity == 0) {
             return 0;
         }
+        IBlackScholes pricingMethod = IBlackScholes(configurationManager.getPricingMethod());
         uint256 newABPrice;
 
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
-            newABPrice = priceMethod.getPutPrice(
+            newABPrice = pricingMethod.getPutPrice(
                 int256(spotPrice),
                 int256(priceProperties.strikePrice),
                 priceProperties.currentSigma,
@@ -405,7 +395,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
                 int256(priceProperties.riskFree)
             );
         } else {
-            newABPrice = priceMethod.getCallPrice(
+            newABPrice = pricingMethod.getCallPrice(
                 int256(spotPrice),
                 int256(priceProperties.strikePrice),
                 priceProperties.currentSigma,
@@ -755,7 +745,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         IEmergencyStop emergencyStop = IEmergencyStop(configurationManager.getEmergencyStop());
         require(
             !emergencyStop.isStopped(address(priceProvider)) &&
-                !emergencyStop.isStopped(address(priceMethod)) &&
+                !emergencyStop.isStopped(configurationManager.getPricingMethod()) &&
                 !emergencyStop.isStopped(address(impliedVolatility)),
             "OptionAMMPool: Pool is stopped"
         );
