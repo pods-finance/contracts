@@ -6,7 +6,6 @@ interface IOptionAMMFactory {
         address _optionAddress,
         address _stableAsset,
         address _priceProvider,
-        address _sigma,
         uint256 _initialSigma
     ) external returns (address);
 

@@ -1,7 +1,6 @@
 const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const createMockOption = require('../util/createMockOption')
-const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
 
@@ -283,15 +282,12 @@ describe('OptionExchange', () => {
 async function createOptionAMMPool (option, optionAMMFactory, caller) {
   const initialSigma = '960000000000000000'
 
-  const [Sigma, blackScholes, strikeAssetAddress, underlyingAssetAddress, callerAddress] = await Promise.all([
-    ethers.getContractFactory('Sigma'),
-    deployBlackScholes(),
+  const [strikeAssetAddress, underlyingAssetAddress, callerAddress] = await Promise.all([
     option.strikeAsset(),
     option.underlyingAsset(),
     caller.getAddress()
   ])
 
-  const sigma = await Sigma.deploy(blackScholes.address)
   const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAssetAddress)
   const priceProviderMock = mock.priceProvider
 
@@ -299,7 +295,6 @@ async function createOptionAMMPool (option, optionAMMFactory, caller) {
     option.address,
     strikeAssetAddress,
     priceProviderMock.address,
-    sigma.address,
     initialSigma
   )
 

@@ -1,10 +1,9 @@
-module.exports = async function createNewPool (deployerAddress, factoryContract, _optionAddress, _stableAsset, _priceProvider, _sigma, _initialSigma) {
+module.exports = async function createNewPool (deployerAddress, factoryContract, _optionAddress, _stableAsset, _priceProvider, _initialSigma) {
   let optionPool
   const txIdNewOption = await factoryContract.createPool(
     _optionAddress,
     _stableAsset,
     _priceProvider,
-    _sigma,
     _initialSigma
   )
   const filterFrom = await factoryContract.filters.PoolCreated(deployerAddress)

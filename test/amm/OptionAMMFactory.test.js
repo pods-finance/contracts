@@ -1,34 +1,29 @@
 const { expect } = require('chai')
 const createMockOption = require('../util/createMockOption')
-const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
 
 describe('OptionAMMFactory', () => {
   let caller
   let OptionAMMFactory, factory
-  let configurationManager, blackScholes, priceProviderMock, sigma, mockUnderlyingAsset
+  let configurationManager, priceProviderMock, mockUnderlyingAsset
   let option
   const initialSigma = '10000000000000000000000'
 
   before(async () => {
     ;[caller] = await ethers.getSigners()
 
-    ;[OptionAMMFactory, MockERC20, Sigma, configurationManager] = await Promise.all([
+    ;[OptionAMMFactory, MockERC20, configurationManager] = await Promise.all([
       ethers.getContractFactory('OptionAMMFactory'),
       ethers.getContractFactory('MintableERC20'),
-      ethers.getContractFactory('Sigma'),
       createConfigurationManager()
     ])
 
     mockUnderlyingAsset = await MockERC20.deploy('USDC', 'USDC', 6)
     await mockUnderlyingAsset.deployed()
 
-    blackScholes = await deployBlackScholes()
     const mock = await getPriceProviderMock(caller, '900000000000', 8, mockUnderlyingAsset.address)
     priceProviderMock = mock.priceProvider
-
-    sigma = await Sigma.deploy(blackScholes.address)
   })
 
   beforeEach(async () => {
@@ -43,7 +38,6 @@ describe('OptionAMMFactory', () => {
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
-      sigma.address,
       initialSigma
     )
     const pool = await getPoolCreated(factory, tx, caller)
@@ -58,7 +52,6 @@ describe('OptionAMMFactory', () => {
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
-      sigma.address,
       initialSigma
     )
 
@@ -66,7 +59,6 @@ describe('OptionAMMFactory', () => {
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
-      sigma.address,
       initialSigma
     )
 
@@ -78,7 +70,6 @@ describe('OptionAMMFactory', () => {
       option.address,
       mockUnderlyingAsset.address,
       priceProviderMock.address,
-      sigma.address,
       initialSigma
     )
 

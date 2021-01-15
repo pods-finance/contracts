@@ -44,11 +44,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     IPriceProvider public priceProvider;
 
     /**
-     * @notice responsible for one of the priceMethod inputs: implied Volatility (also known as sigma)
-     */
-    ISigma public impliedVolatility;
-
-    /**
      * @notice responsible for handling Liquidity providers fees of the token A
      */
     IFeePool public feePoolA;
@@ -79,7 +74,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address _optionAddress,
         address _stableAsset,
         address _priceProvider,
-        address _sigma,
         uint256 _initialSigma,
         address _feePoolA,
         address _feePoolB,
@@ -100,7 +94,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         priceProperties.strikePrice = strikePriceWithRightDecimals;
 
         priceProvider = IPriceProvider(_priceProvider);
-        impliedVolatility = ISigma(_sigma);
 
         feePoolA = IFeePool(_feePoolA);
         feePoolB = IFeePool(_feePoolB);
@@ -461,6 +454,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     ) internal view returns (uint256) {
         uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
         uint256 newIV;
+        ISigma impliedVolatility = ISigma(configurationManager.getImpliedVolatility());
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             (newIV, ) = impliedVolatility.getPutSigma(
                 newTargetABPriceWithDecimals,
@@ -746,7 +740,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         require(
             !emergencyStop.isStopped(address(priceProvider)) &&
                 !emergencyStop.isStopped(configurationManager.getPricingMethod()) &&
-                !emergencyStop.isStopped(address(impliedVolatility)),
+                !emergencyStop.isStopped(configurationManager.getImpliedVolatility()),
             "OptionAMMPool: Pool is stopped"
         );
     }

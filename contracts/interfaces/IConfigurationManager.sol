@@ -6,7 +6,11 @@ interface IConfigurationManager {
 
     function setPricingMethod(address pricingMethod) external;
 
+    function setImpliedVolatility(address impliedVolatility) external;
+
     function getEmergencyStop() external view returns (address);
 
     function getPricingMethod() external view returns (address);
+
+    function getImpliedVolatility() external view returns (address);
 }

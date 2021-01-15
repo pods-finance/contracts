@@ -1,9 +1,7 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
 const forceExpiration = require('../util/forceExpiration')
-const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
 const getTimestamp = require('../util/getTimestamp')
-const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createNewOption = require('../util/createNewOption')
 const createNewPool = require('../util/createNewPool')
@@ -48,10 +46,7 @@ scenarios.forEach(scenario => {
     let factoryContract
     let optionAMMFactory
     let priceProviderMock
-    let blackScholes
-    let sigma
     let podPut
-    let podPutAddress
     let optionAMMPool
     let deployer
     let deployerAddress
@@ -92,7 +87,7 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
-      let MockERC20, MockWETH, Sigma, OptionAMMFactory
+      let MockERC20, MockWETH, OptionAMMFactory
       [deployer, second, buyer, delegator, lp] = await ethers.getSigners()
       deployerAddress = await deployer.getAddress()
       secondAddress = await second.getAddress()
@@ -102,16 +97,13 @@ scenarios.forEach(scenario => {
 
       // 1) Deploy Option
       // 2) Use same strike Asset
-      ;[MockERC20, MockWETH, blackScholes, Sigma, OptionAMMFactory] = await Promise.all([
+      ;[MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
-        deployBlackScholes(),
-        ethers.getContractFactory('Sigma'),
         ethers.getContractFactory('OptionAMMFactory')
       ])
 
       const mockWeth = await MockWETH.deploy()
-      sigma = await Sigma.deploy(blackScholes.address)
 
       ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset, optionAMMFactory] = await Promise.all([
         createOptionFactory(mockWeth.address),
@@ -134,7 +126,7 @@ scenarios.forEach(scenario => {
       const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
       priceProviderMock = mock.priceProvider
       // 1) Deploy optionAMMPool
-      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, priceProviderMock.address, sigma.address, scenario.initialSigma)
+      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, priceProviderMock.address, scenario.initialSigma)
     })
 
     describe('Constructor/Initialization checks', () => {
