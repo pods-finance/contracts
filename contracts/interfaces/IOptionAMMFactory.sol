@@ -5,7 +5,6 @@ interface IOptionAMMFactory {
     function createPool(
         address _optionAddress,
         address _stableAsset,
-        address _priceProvider,
         uint256 _initialSigma
     ) external returns (address);
 

@@ -82,12 +82,7 @@ scenarios.forEach(scenario => {
       await optionAMMPool.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
     }
 
-    before(async () => {
-      configurationManager = await createConfigurationManager()
-    })
-
     beforeEach(async function () {
-      let MockERC20, MockWETH, OptionAMMFactory
       [deployer, second, buyer, delegator, lp] = await ethers.getSigners()
       deployerAddress = await deployer.getAddress()
       secondAddress = await second.getAddress()
@@ -95,9 +90,7 @@ scenarios.forEach(scenario => {
       delegatorAddress = await delegator.getAddress()
       lpAddress = await lp.getAddress()
 
-      // 1) Deploy Option
-      // 2) Use same strike Asset
-      ;[MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
+      const [MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory')
@@ -105,12 +98,12 @@ scenarios.forEach(scenario => {
 
       const mockWeth = await MockWETH.deploy()
 
-      ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset, optionAMMFactory] = await Promise.all([
+      ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
         createOptionFactory(mockWeth.address),
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
-        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
-        OptionAMMFactory.deploy(configurationManager.address)
+        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
       ])
+
       // Deploy option
       const currentBlocktimestamp = await getTimestamp()
       podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
@@ -123,17 +116,18 @@ scenarios.forEach(scenario => {
         currentBlocktimestamp + scenario.expiration,
         24 * 60 * 60)
 
-      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
+      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, 8, await podPut.underlyingAsset())
       priceProviderMock = mock.priceProvider
-      // 1) Deploy optionAMMPool
-      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, priceProviderMock.address, scenario.initialSigma)
+
+      configurationManager = await createConfigurationManager(priceProviderMock)
+      optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
+      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, scenario.initialSigma)
     })
 
     describe('Constructor/Initialization checks', () => {
       it('should have correct option data (strikePrice, expiration, strikeAsset)', async () => {
         expect(await optionAMMPool.tokenB()).to.equal(mockStrikeAsset.address)
         expect(await optionAMMPool.tokenA()).to.equal(podPut.address)
-        expect(await optionAMMPool.priceProvider()).to.equal(priceProviderMock.address)
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
@@ -193,7 +187,7 @@ scenarios.forEach(scenario => {
           await configurationManager.getEmergencyStop()
         )
 
-        await emergencyStop.stop(await optionAMMPool.priceProvider())
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
 
         await mintOptions(podPut, scenario.amountToMint, deployer)
 
@@ -372,7 +366,7 @@ scenarios.forEach(scenario => {
 
         await optionAMMPool.addLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity, deployerAddress)
 
-        await emergencyStop.stop(await optionAMMPool.priceProvider())
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
 
         await expect(
           optionAMMPool.removeLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity)
@@ -834,7 +828,7 @@ scenarios.forEach(scenario => {
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
-        await emergencyStop.stop(await optionAMMPool.priceProvider())
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
 
         await expect(
           optionAMMPool.connect(buyer)
@@ -964,7 +958,7 @@ scenarios.forEach(scenario => {
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
-        await emergencyStop.stop(await optionAMMPool.priceProvider())
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
 
         await expect(
           optionAMMPool.connect(buyer)
@@ -1102,7 +1096,7 @@ scenarios.forEach(scenario => {
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
-        await emergencyStop.stop(await optionAMMPool.priceProvider())
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
 
         await expect(
           optionAMMPool.connect(buyer)
@@ -1213,7 +1207,7 @@ scenarios.forEach(scenario => {
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
-        await emergencyStop.stop(await optionAMMPool.priceProvider())
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
 
         await expect(
           optionAMMPool.connect(buyer)

@@ -14,6 +14,7 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     bytes32 private constant EMERGENCY_STOP = "EMERGENCY_STOP";
     bytes32 private constant PRICING_METHOD = "PRICING_METHOD";
     bytes32 private constant IMPLIED_VOLATILITY = "IMPLIED_VOLATILITY";
+    bytes32 private constant PRICE_PROVIDER = "PRICE_PROVIDER";
 
     function setEmergencyStop(address emergencyStop) external override onlyOwner {
         _setModule(EMERGENCY_STOP, emergencyStop);
@@ -27,6 +28,10 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
         _setModule(IMPLIED_VOLATILITY, impliedVolatility);
     }
 
+    function setPriceProvider(address priceProvider) external override onlyOwner {
+        _setModule(PRICE_PROVIDER, priceProvider);
+    }
+
     function getEmergencyStop() external override view returns (address) {
         return getModule(EMERGENCY_STOP);
     }
@@ -37,5 +42,9 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
 
     function getImpliedVolatility() external override view returns (address) {
         return getModule(IMPLIED_VOLATILITY);
+    }
+
+    function getPriceProvider() external override view returns (address) {
+        return getModule(PRICE_PROVIDER);
     }
 }

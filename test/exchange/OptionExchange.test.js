@@ -27,7 +27,10 @@ describe('OptionExchange', () => {
       createMockOption()
     ])
 
-    configurationManager = await createConfigurationManager()
+    const mock = await getPriceProviderMock(caller, '8200000000', 6, await option.underlyingAsset())
+    const priceProviderMock = mock.priceProvider
+
+    configurationManager = await createConfigurationManager(priceProviderMock)
 
     strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
     stableAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
@@ -282,19 +285,14 @@ describe('OptionExchange', () => {
 async function createOptionAMMPool (option, optionAMMFactory, caller) {
   const initialSigma = '960000000000000000'
 
-  const [strikeAssetAddress, underlyingAssetAddress, callerAddress] = await Promise.all([
+  const [strikeAssetAddress, callerAddress] = await Promise.all([
     option.strikeAsset(),
-    option.underlyingAsset(),
     caller.getAddress()
   ])
-
-  const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAssetAddress)
-  const priceProviderMock = mock.priceProvider
 
   const tx = await optionAMMFactory.createPool(
     option.address,
     strikeAssetAddress,
-    priceProviderMock.address,
     initialSigma
   )
 

@@ -13,10 +13,9 @@ describe('OptionAMMFactory', () => {
   before(async () => {
     ;[caller] = await ethers.getSigners()
 
-    ;[OptionAMMFactory, MockERC20, configurationManager] = await Promise.all([
+    ;[OptionAMMFactory, MockERC20] = await Promise.all([
       ethers.getContractFactory('OptionAMMFactory'),
-      ethers.getContractFactory('MintableERC20'),
-      createConfigurationManager()
+      ethers.getContractFactory('MintableERC20')
     ])
 
     mockUnderlyingAsset = await MockERC20.deploy('USDC', 'USDC', 6)
@@ -24,6 +23,8 @@ describe('OptionAMMFactory', () => {
 
     const mock = await getPriceProviderMock(caller, '900000000000', 8, mockUnderlyingAsset.address)
     priceProviderMock = mock.priceProvider
+
+    configurationManager = await createConfigurationManager(priceProviderMock)
   })
 
   beforeEach(async () => {
@@ -37,7 +38,6 @@ describe('OptionAMMFactory', () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      priceProviderMock.address,
       initialSigma
     )
     const pool = await getPoolCreated(factory, tx, caller)
@@ -51,14 +51,12 @@ describe('OptionAMMFactory', () => {
     await factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      priceProviderMock.address,
       initialSigma
     )
 
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      priceProviderMock.address,
       initialSigma
     )
 
@@ -69,7 +67,6 @@ describe('OptionAMMFactory', () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      priceProviderMock.address,
       initialSigma
     )
 

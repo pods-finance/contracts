@@ -39,11 +39,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     IConfigurationManager public configurationManager;
 
     /**
-     * @notice responsible for the spot price of the option's underlying asset.
-     */
-    IPriceProvider public priceProvider;
-
-    /**
      * @notice responsible for handling Liquidity providers fees of the token A
      */
     IFeePool public feePoolA;
@@ -73,7 +68,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     constructor(
         address _optionAddress,
         address _stableAsset,
-        address _priceProvider,
         uint256 _initialSigma,
         address _feePoolA,
         address _feePoolB,
@@ -92,8 +86,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
-
-        priceProvider = IPriceProvider(_priceProvider);
 
         feePoolA = IFeePool(_feePoolA);
         feePoolB = IFeePool(_feePoolB);
@@ -431,6 +423,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     }
 
     function _getSpotPrice(address asset, uint256 decimalsOutput) internal view returns (uint256) {
+        IPriceProvider priceProvider = IPriceProvider(configurationManager.getPriceProvider());
         uint256 spotPrice = priceProvider.getAssetPrice(asset);
         uint256 spotPriceDecimals = priceProvider.getAssetDecimals(asset);
         uint256 diffDecimals;
@@ -738,7 +731,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     function _emergencyStopCheck() private view {
         IEmergencyStop emergencyStop = IEmergencyStop(configurationManager.getEmergencyStop());
         require(
-            !emergencyStop.isStopped(address(priceProvider)) &&
+            !emergencyStop.isStopped(configurationManager.getPriceProvider()) &&
                 !emergencyStop.isStopped(configurationManager.getPricingMethod()) &&
                 !emergencyStop.isStopped(configurationManager.getImpliedVolatility()),
             "OptionAMMPool: Pool is stopped"
