@@ -23,13 +23,14 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
     const OptionAMMFactory = await ethers.getContractAt('OptionAMMFactory', optionAMMFactory)
 
-    const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, priceProvider, blackScholes, sigma, initialsigma)
-    await txIdNewPool.wait()
+    const txIdNewPoolHold = await OptionAMMFactory.createPool(option, tokenb, priceProvider, blackScholes, sigma, initialsigma)
 
-    console.log('txId: ', txIdNewPool.hash)
+    const txIdNewPool = await ethers.provider.waitForTransaction(txIdNewPoolHold.hash)
+
+    console.log('txId: ', txIdNewPoolHold.hash)
 
     const filterFrom = await OptionAMMFactory.filters.PoolCreated(deployerAddress)
-    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txIdNewPool.blockNumber, txIdNewPool.blockNumber)
+    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txIdNewPool.blockNumber, 'latest')
     if (eventDetails.length) {
       const { deployer, pool: poolAddress } = eventDetails[0].args
       console.log('blockNumber: ', eventDetails[0].blockNumber)
@@ -45,7 +46,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
         initialsigma
       }
 
-      const currentPools = require(`../../deployments/${bre.network.name}.json`).pools
+      const currentPools = contentJSON.pools
       const newPoolObj = Object.assign({}, currentPools, { [poolAddress]: poolObj })
 
       await saveJSON(pathFile, { pools: newPoolObj })
