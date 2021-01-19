@@ -9,7 +9,7 @@ internalTask('mintOptions', 'Mint options')
     const [caller] = await ethers.getSigners()
     const callerAddress = await caller.getAddress()
 
-    if(!owner) {
+    if (!owner) {
       owner = callerAddress
     }
 
@@ -26,7 +26,7 @@ internalTask('mintOptions', 'Mint options')
 
     // 2) Call option Mint
     const txIdMint = await optionContract.mint(amountBN, owner)
-    await txIdMint.wait()
+    await txIdMint.wait(1)
 
     const optionsAfter = await optionContract.balanceOf(owner)
     console.log(`Minted ${optionsAfter.sub(optionsBefore)} ${await optionContract.symbol()} to address: ${owner}`)

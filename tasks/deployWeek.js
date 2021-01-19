@@ -4,7 +4,8 @@ const path = require('path')
 const fsPromises = fs.promises
 
 internalTask('deployWeek', 'Deploy a whole local test environment')
-  .setAction(async ({}, bre) => {
+  .addFlag('start', 'add this flag if you want to start and mint the initial options and add liquidity')
+  .setAction(async ({ start }, bre) => {
     const pathFile = `../deployments/${bre.network.name}.json`
 
     // 4) Deploy Test Option
@@ -16,18 +17,23 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
 
     const options = [
       {
-        strike: 'USDC',
-        underlying: 'MKR',
-        price: '1000'
+        strike: 'AUSDC',
+        underlying: 'WBTC',
+        price: '36000'
       },
       {
-        strike: 'AUSDC',
-        underlying: 'MKR',
-        price: '1500'
+        strike: 'USDC',
+        underlying: 'WBTC',
+        price: '38000'
+      },
+      {
+        strike: 'USDC',
+        underlying: 'WBTC',
+        price: '40000'
       }
     ]
 
-    const intervals = [1, 2]
+    const intervals = [2]
     const oneDayInSeconds = 24 * 60 * 60
 
     for (const optionObj of options) {
@@ -38,28 +44,28 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
           price: optionObj.price,
           expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString()
         })
-        const tokenbAddress = contentJSON[optionObj.underlying]
+        const tokenbAddress = contentJSON[optionObj.strike]
 
         // 5) Create AMMPool test with this asset
-        await run('deployNewOptionAMMPool', {
+        const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
           initialsigma: '2000000000000000000' // 0.77%
         })
+
+        console.log('start Flag: ', start)
+
+        if (start) {
+          // 7) Mint Options
+          await run('mintOptions', { option: optionAddress, amount: '10' })
+
+          // 8) Add Liquidity
+          await run('addLiquidityAMM', {
+            pooladdress: poolAddress,
+            amounta: '10',
+            amountb: '100000'
+          })
+        }
       }
     }
-
-    // 6) Mint Strike Asset
-    // console.log('Minting USDC strike asset')
-    // await mockUSDC.mint('10000000000000000')
-
-    // // 7) Mint Options
-    // await run('mintOptions', { option: optionWBTCAddress, amount: '10000' })
-
-    // // 8) Add Liquidity
-    // await run('addLiquidityAMM', {
-    //   pooladdress: optionAMMPoolAddress,
-    //   amounta: '1000',
-    //   amountb: '100000'
-    // })
   })
