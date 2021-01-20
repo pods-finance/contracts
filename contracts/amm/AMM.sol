@@ -50,7 +50,7 @@ import "../interfaces/IAMM.sol";
  *   of the other token depending on the trade type. (E.g: ExactAInput => The TradeDetails will return the
  *   amount of B output).
  * _onTrade[$TradeType]:
-*     function that will be executed after balances updates and before
+*     function that will be executed after UserDepositSnapshot updates and before
  *    token transfers. Usually used for handling fees and updating state at the inheritor.
  *
  */
@@ -67,6 +67,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @notice The Fimp's precision (aka number of decimals)
      */
     uint256 public constant FIMP_PRECISION = 27;
+
+    /**
+     * @notice The percent's precision
+     */
+    uint256 public constant PERCENT_PRECISION = 100;
 
     /**
      * @notice Address of the token A
@@ -98,8 +103,12 @@ abstract contract AMM is IAMM, RequiredDecimals {
      */
     uint256 public deamortizedTokenBBalance;
 
-    struct UserBalance {
-        uint256 tokenABalance; //originalBalance
+    /**
+     * @notice It contains the token A original balance, token B original balance,
+     * and the Open Value Factor (Fimp) at the time of the deposit.
+     */
+    struct UserDepositSnapshot {
+        uint256 tokenABalance;
         uint256 tokenBBalance;
         uint256 fImp;
     }
@@ -118,11 +127,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
         bytes params;
     }
     /**
-     * @notice Tracks the UserBalance struct of each user.
+     * @notice Tracks the UserDepositSnapshot struct of each user.
      * It contains the token A original balance, token B original balance,
      * and the Open Value Factor (Fimp) at the time of the deposit.
      */
-    mapping(address => UserBalance) public balances;
+    mapping(address => UserDepositSnapshot) public usersSnapshot;
 
     /** Events */
     event AddLiquidity(address indexed caller, address indexed owner, uint256 amountOfStable, uint256 amountOfOptions);
@@ -153,44 +162,44 @@ abstract contract AMM is IAMM, RequiredDecimals {
     }
 
     /**
-     * @notice _getUserBalance external function that User original balance of token A,
+     * @notice getUserDepositSnapshot external function that User original balance of token A,
      * token B and the Opening Value * * Factor (Fimp) at the moment of the liquidity added
      *
      * @param user address to check the balance info
      *
-     * @return tokenABalance balance of token A by the moment of deposit
-     * @return tokenBBalance balance of token B by the moment of deposit
+     * @return tokenAOriginalBalance balance of token A by the moment of deposit
+     * @return tokenBOriginalBalance balance of token B by the moment of deposit
      * @return fImpUser value of the Opening Value Factor by the moment of the deposit
      */
-    function getUserBalance(address user)
+    function getUserDepositSnapshot(address user)
         external
         view
         returns (
-            uint256 tokenABalance,
-            uint256 tokenBBalance,
+            uint256 tokenAOriginalBalance,
+            uint256 tokenBOriginalBalance,
             uint256 fImpUser
         )
     {
-        return _getUserBalance(user);
+        return _getUserDepositSnapshot(user);
     }
 
     /**
      * @notice getRemoveLiquidityAmounts external function that returns the available for rescue
      * amounts of token A, and token B based on the original position
      *
-     * @param balanceTokenA amount of original deposit of the token A
-     * @param balanceTokenB amount of original deposit of the token B
-     * @param fImpOriginal Opening Value Factor by the moment of the deposit
+     * @param percentA percent of exposition of Token A to be removed
+     * @param percentB percent of exposition of Token B to be removed
+     * @param user Opening Value Factor by the moment of the deposit
      *
      * @return withdrawAmountA amount of token A that will be rescued
      * @return withdrawAmountB amount of token B that will be rescued
      */
     function getRemoveLiquidityAmounts(
-        uint256 balanceTokenA,
-        uint256 balanceTokenB,
-        uint256 fImpOriginal
+        uint256 percentA,
+        uint256 percentB,
+        address user
     ) external view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
-        return _getRemoveLiquidityAmounts(balanceTokenA, balanceTokenB, fImpOriginal);
+        return _getRemoveLiquidityAmounts(percentA, percentB, user);
     }
 
     /**
@@ -207,13 +216,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         view
         returns (uint256 maxWithdrawAmountA, uint256 maxWithdrawAmountB)
     {
-        (uint256 userTokenABalance, uint256 userTokenBBalance, uint256 userFImp) = _getUserBalance(user);
-
-        (maxWithdrawAmountA, maxWithdrawAmountB) = _getRemoveLiquidityAmounts(
-            userTokenABalance,
-            userTokenBBalance,
-            userFImp
-        );
+        (maxWithdrawAmountA, maxWithdrawAmountB) = _getRemoveLiquidityAmounts(100, 100, user);
         return (maxWithdrawAmountA, maxWithdrawAmountB);
     }
 
@@ -231,15 +234,15 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 amountOfB,
         address owner
     ) internal {
-        // 1) Get Pool Balances
+        // 1) Get Pool UserDepositSnapshot
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
-        bool isInitialLiquidity = totalTokenA == 0 || totalTokenB == 0;
+        bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
         uint256 fImpOpening;
         uint256 userAmountToStoreTokenA = amountOfA;
         uint256 userAmountToStoreTokenB = amountOfB;
 
-        if (isInitialLiquidity) {
+        if (hasNoLiquidity) {
             // In the first liquidity, is necessary add both tokens
             require(amountOfA > 0 && amountOfB > 0, "AMM: you should add both tokens on the first liquidity");
 
@@ -249,6 +252,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         } else {
             // 2) Get spot price
             uint256 ABPrice = _getABPrice();
+            require(ABPrice > 0, "AMM: can not add liquidity when option price is zero");
 
             // 3) Calculate Fimp
             //FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
@@ -266,7 +270,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
                 amountOfA,
                 amountOfB,
                 fImpOpening,
-                balances[owner]
+                usersSnapshot[owner]
             );
 
             // 5) Update deamortizedBalances;
@@ -276,10 +280,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         }
 
         // 6) Update User properties (tokenABalance, tokenBBalance, fImp)
-        UserBalance memory userBalance = UserBalance(userAmountToStoreTokenA, userAmountToStoreTokenB, fImpOpening);
-        balances[owner] = userBalance;
+        UserDepositSnapshot memory userDepositSnapshot = UserDepositSnapshot(
+            userAmountToStoreTokenA,
+            userAmountToStoreTokenB,
+            fImpOpening
+        );
+        usersSnapshot[owner] = userDepositSnapshot;
 
-        _onAddLiquidity(balances[owner], owner);
+        _onAddLiquidity(usersSnapshot[owner], owner);
 
         require(
             IERC20(tokenA).transferFrom(msg.sender, address(this), amountOfA),
@@ -298,15 +306,15 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @notice _removeLiquidity in any proportion of tokenA or tokenB
      * @dev The inheritor contract should implement _getABPrice and _onRemoveLiquidity functions
      *
-     * @param amountOfAOriginal proportion of the original tokenA that want to be removed
-     * @param amountOfBOriginal proportion of the original tokenB that want to be removed
+     * @param percentA proportion of the exposition of the original tokenA that want to be removed
+     * @param percentB proportion of the exposition of the original tokenB that want to be removed
      */
-    function _removeLiquidity(uint256 amountOfAOriginal, uint256 amountOfBOriginal) internal {
-        (uint256 userTokenABalance, uint256 userTokenBBalance, ) = _getUserBalance(msg.sender);
-        require(
-            amountOfAOriginal <= userTokenABalance && amountOfBOriginal <= userTokenBBalance,
-            "AMM: not enough original balance"
-        );
+    function _removeLiquidity(uint256 percentA, uint256 percentB) internal {
+        (uint256 userTokenABalance, uint256 userTokenBBalance, ) = _getUserDepositSnapshot(msg.sender);
+        require(percentA <= 100 && percentB <= 100, "AMM: forbidden removal percent");
+
+        uint256 originalBalanceAToReduce = percentA.mul(userTokenABalance).div(PERCENT_PRECISION);
+        uint256 originalBalanceBToReduce = percentB.mul(userTokenBBalance).div(PERCENT_PRECISION);
 
         // 1) Get Pool Balances
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
@@ -330,26 +338,29 @@ abstract contract AMM is IAMM, RequiredDecimals {
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
 
         // 4) Update user balance
-        balances[msg.sender].tokenABalance = userTokenABalance.sub(amountOfAOriginal);
-        balances[msg.sender].tokenBBalance = userTokenBBalance.sub(amountOfBOriginal);
+
+        usersSnapshot[msg.sender].tokenABalance = userTokenABalance.sub(originalBalanceAToReduce);
+        usersSnapshot[msg.sender].tokenBBalance = userTokenBBalance.sub(originalBalanceBToReduce);
 
         // 5) Update deamortized balance
         deamortizedTokenABalance = deamortizedTokenABalance.sub(
-            amountOfAOriginal.mul(10**FIMP_PRECISION).div(balances[msg.sender].fImp)
+            originalBalanceAToReduce.mul(10**FIMP_PRECISION).div(usersSnapshot[msg.sender].fImp)
         );
         deamortizedTokenBBalance = deamortizedTokenBBalance.sub(
-            amountOfBOriginal.mul(10**FIMP_PRECISION).div(balances[msg.sender].fImp)
+            originalBalanceBToReduce.mul(10**FIMP_PRECISION).div(usersSnapshot[msg.sender].fImp)
         );
 
         // 6) Calculate amount to send
-        uint256 amountToSendA = amountOfAOriginal.mul(multipliers.AA).add(amountOfBOriginal.mul(multipliers.BA)).div(
-            balances[msg.sender].fImp
-        );
-        uint256 amountToSendB = amountOfBOriginal.mul(multipliers.BB).add(amountOfAOriginal.mul(multipliers.AB)).div(
-            balances[msg.sender].fImp
-        );
+        uint256 amountToSendA = originalBalanceAToReduce
+            .mul(multipliers.AA)
+            .add(originalBalanceBToReduce.mul(multipliers.BA))
+            .div(usersSnapshot[msg.sender].fImp);
+        uint256 amountToSendB = originalBalanceBToReduce
+            .mul(multipliers.BB)
+            .add(originalBalanceAToReduce.mul(multipliers.AB))
+            .div(usersSnapshot[msg.sender].fImp);
 
-        _onRemoveLiquidity(balances[msg.sender], msg.sender);
+        _onRemoveLiquidity(usersSnapshot[msg.sender], msg.sender);
 
         // 7) Transfers / Update
         if (amountToSendA > 0) {
@@ -380,6 +391,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     ) internal returns (uint256) {
         TradeDetails memory tradeDetails = _getTradeDetailsExactAInput(exactAmountAIn);
         uint256 amountBOut = tradeDetails.amount;
+        require(amountBOut > 0, "AMM: can not trade when option price is zero");
 
         _onTradeExactAInput(tradeDetails);
 
@@ -413,6 +425,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     ) internal returns (uint256) {
         TradeDetails memory tradeDetails = _getTradeDetailsExactAOutput(exactAmountAOut);
         uint256 amountBIn = tradeDetails.amount;
+        require(amountBIn > 0, "AMM: can not trade when option price is zero");
 
         _onTradeExactAOutput(tradeDetails);
 
@@ -446,6 +459,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     ) internal returns (uint256) {
         TradeDetails memory tradeDetails = _getTradeDetailsExactBInput(exactAmountBIn);
         uint256 amountAOut = tradeDetails.amount;
+        require(amountAOut > 0, "AMM: can not trade when option price is zero");
 
         _onTradeExactBInput(tradeDetails);
 
@@ -479,6 +493,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     ) internal returns (uint256) {
         TradeDetails memory tradeDetails = _getTradeDetailsExactBOutput(exactAmountBOut);
         uint256 amountAIn = tradeDetails.amount;
+        require(amountAIn > 0, "AMM: can not trade when option price is zero");
 
         _onTradeExactBInput(tradeDetails);
 
@@ -542,29 +557,29 @@ abstract contract AMM is IAMM, RequiredDecimals {
     }
 
     /**
-     * @notice _getUserBalance internal function that User original balance of token A,
+     * @notice _getUserDepositSnapshot internal function that User original balance of token A,
      * token B and the Opening Value * * Factor (Fimp) at the moment of the liquidity added
      *
      * @param user address of the user that want to check the balance
      *
-     * @return tokenABalance balance of token A by the moment of deposit
-     * @return tokenBBalance balance of token B by the moment of deposit
-     * @return fImpUser value of the Opening Value Factor by the moment of the deposit
+     * @return tokenAOriginalBalance balance of token A by the moment of deposit
+     * @return tokenBOriginalBalance balance of token B by the moment of deposit
+     * @return fImpOriginal value of the Opening Value Factor by the moment of the deposit
      */
-    function _getUserBalance(address user)
+    function _getUserDepositSnapshot(address user)
         internal
         view
         returns (
-            uint256 tokenABalance,
-            uint256 tokenBBalance,
-            uint256 fImpUser
+            uint256 tokenAOriginalBalance,
+            uint256 tokenBOriginalBalance,
+            uint256 fImpOriginal
         )
     {
-        tokenABalance = balances[user].tokenABalance;
-        tokenBBalance = balances[user].tokenBBalance;
-        fImpUser = balances[user].fImp;
+        tokenAOriginalBalance = usersSnapshot[user].tokenABalance;
+        tokenBOriginalBalance = usersSnapshot[user].tokenBBalance;
+        fImpOriginal = usersSnapshot[user].fImp;
 
-        return (tokenABalance, tokenBBalance, fImpUser);
+        return (tokenAOriginalBalance, tokenBOriginalBalance, fImpOriginal);
     }
 
     /**
@@ -618,20 +633,27 @@ abstract contract AMM is IAMM, RequiredDecimals {
     /**
      * @notice _getRemoveLiquidityAmounts internal function of getRemoveLiquidityAmounts
      *
-     * @param balanceTokenA amount of original deposit of the token A
-     * @param balanceTokenB amount of original deposit of the token B
-     * @param fImpOriginal Opening Value Factor by the moment of the deposit
+     * @param percentA percent of exposition A to be removed
+     * @param percentB percent of exposition B to be removed
+     * @param user address of the account that will be removed
      *
      * @return withdrawAmountA amount of token A that will be rescued
      * @return withdrawAmountB amount of token B that will be rescued
      */
     function _getRemoveLiquidityAmounts(
-        uint256 balanceTokenA,
-        uint256 balanceTokenB,
-        uint256 fImpOriginal
+        uint256 percentA,
+        uint256 percentB,
+        address user
     ) internal view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
-        bool hasNoLiquidity = totalTokenA == 0 || totalTokenB == 0;
+        (uint256 originalBalanceTokenA, uint256 originalBalanceTokenB, uint256 fImpOriginal) = _getUserDepositSnapshot(
+            user
+        );
+
+        uint256 balanceTokenA = percentA.mul(originalBalanceTokenA).div(PERCENT_PRECISION);
+        uint256 balanceTokenB = percentB.mul(originalBalanceTokenB).div(PERCENT_PRECISION);
+
+        bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
         if (hasNoLiquidity) {
             return (0, 0);
         }
@@ -686,7 +708,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
     /**
      * @notice _getUserBalanceToStore internal auxiliary function to help calculation the
-     * tokenA and tokenB value that should be store in UserBalance struct
+     * tokenA and tokenB value that should be store in userDepositSnapshot struct
      *
      * @param amountOfA amount of original deposit of the token A
      * @param amountOfB amount of original deposit of the token B
@@ -699,15 +721,19 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 amountOfA,
         uint256 amountOfB,
         uint256 fImpOpening,
-        UserBalance memory userBalance
+        UserDepositSnapshot memory userDepositSnapshot
     ) internal pure returns (uint256 userToStoreTokenA, uint256 userToStoreTokenB) {
         userToStoreTokenA = amountOfA;
         userToStoreTokenB = amountOfB;
 
         //Re-add Liquidity case
-        if (userBalance.fImp != 0) {
-            userToStoreTokenA = userBalance.tokenABalance.mul(fImpOpening).div(userBalance.fImp).add(amountOfA);
-            userToStoreTokenB = userBalance.tokenBBalance.mul(fImpOpening).div(userBalance.fImp).add(amountOfB);
+        if (userDepositSnapshot.fImp != 0) {
+            userToStoreTokenA = userDepositSnapshot.tokenABalance.mul(fImpOpening).div(userDepositSnapshot.fImp).add(
+                amountOfA
+            );
+            userToStoreTokenB = userDepositSnapshot.tokenBBalance.mul(fImpOpening).div(userDepositSnapshot.fImp).add(
+                amountOfB
+            );
         }
 
         return (userToStoreTokenA, userToStoreTokenB);
@@ -738,7 +764,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
     function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal virtual;
 
-    function _onRemoveLiquidity(UserBalance memory userBalance, address owner) internal virtual;
+    function _onRemoveLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
 
-    function _onAddLiquidity(UserBalance memory userBalance, address owner) internal virtual;
+    function _onAddLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
 }

@@ -16,14 +16,15 @@ module.exports = {
   networks: {
     buidlerevm: {
       gasMultiplier: 2,
-      loggingEnabled: !!(process.env.BUIDLER_LOGGING_ENABLED) || false
+      loggingEnabled: !!(process.env.BUIDLER_LOGGING_ENABLED) || false,
+      chainId: 1337
     },
     local: {
       protocol: 'http',
       host: 'localhost',
       port: 8545,
       loggingEnabled: true,
-      network_id: '*',
+      chainId: 1337,
       url: 'http://127.0.0.1:8545'
     },
     ganache: {

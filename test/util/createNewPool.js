@@ -1,13 +1,10 @@
-module.exports = async function createNewPool (deployerAddress, factoryContract, _optionAddress, _stableAsset, _priceProvider, _priceMethod, _sigma, _initialSigma, _stableCapSize = 10000e6) {
+module.exports = async function createNewPool (deployerAddress, factoryContract, _optionAddress, _stableAsset, _initialSigma, _stableCapSize = 10000e6) {
   let optionPool
   const txIdNewOption = await factoryContract.createPool(
     _optionAddress,
     _stableAsset,
-    _priceProvider,
-    _priceMethod,
-    _sigma,
-    _initialSigma,
-    _stableCapSize
+    _stableCapSize,
+    _initialSigma
   )
   const filterFrom = await factoryContract.filters.PoolCreated(deployerAddress)
   const eventDetails = await factoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)

@@ -79,13 +79,16 @@ contract BlackScholes is IBlackScholes {
         int256 riskFree
     ) public override view returns (uint256) {
         (int256 d1, int256 d2) = _getProbabilities(spotPrice, strikePrice, sigma, time, riskFree);
-
         int256 Nd1 = normalDistribution.getProbability(-d1, precisionDecimals);
         int256 Nd2 = normalDistribution.getProbability(-d2, precisionDecimals);
 
         int256 get = strikePrice.multiply(Nd2);
         int256 pay = spotPrice.multiply(Nd1);
 
+        if (pay > get) {
+            // Negative numbers not allowed
+            return 0;
+        }
         return uint256(get.subtract(pay));
     }
 
@@ -113,7 +116,7 @@ contract BlackScholes is IBlackScholes {
         uint256 sigma,
         uint256 time,
         int256 riskFree
-    ) internal pure returns (int256 Nd1, int256 Nd2) {
+    ) internal pure returns (int256 d1, int256 d2) {
         int256 sigma2 = int256(_mul(_normalized(sigma), _normalized(sigma)) / PRECISION_UNIT);
 
         int256 A = _cachedLn(spotPrice.divide(strikePrice));
@@ -124,8 +127,8 @@ contract BlackScholes is IBlackScholes {
         uint256 sqrtTime = _sqrt(_normalized(time));
         uint256 d = _mul(sigma, sqrtTime) / UNIT_TO_PRECISION_FACTOR;
 
-        int256 d1 = n.divide(int256(d));
-        int256 d2 = d1.subtract(int256(d));
+        d1 = n.divide(int256(d));
+        d2 = d1.subtract(int256(d));
 
         return (d1, d2);
     }

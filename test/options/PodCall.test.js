@@ -98,7 +98,7 @@ scenarios.forEach(scenario => {
 
     async function ExercisePhase (amountOfOptionsToExercise, signer = seller, receiver = buyer, receiverAddress = buyerAddress) {
       await podCall.connect(signer).transfer(receiverAddress, amountOfOptionsToExercise)
-      await mockStrikeAsset.connect(receiver).mint(scenario.strikePrice.mul(amountOfOptionsToExercise).add(1))
+      await mockStrikeAsset.connect(receiver).mint(scenario.strikePrice.mul(amountOfOptionsToExercise))
       await mockStrikeAsset.connect(receiver).approve(podCall.address, ethers.constants.MaxUint256)
       await podCall.connect(receiver).exercise(amountOfOptionsToExercise)
     }
@@ -354,7 +354,7 @@ scenarios.forEach(scenario => {
         // Transfer mint to Buyer address => This will happen through Uniswap
         await podCall.connect(seller).transfer(buyerAddress, scenario.amountToMint)
 
-        await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice.add(1))
+        await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice)
         await forceExpiration(podCall)
         await expect(podCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
@@ -365,7 +365,7 @@ scenarios.forEach(scenario => {
         await podCall.connect(seller).transfer(buyerAddress, scenario.amountToMint)
 
         // Mint Underlying Asset
-        await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice.add(1))
+        await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice)
         // Approve Underlying to be spent by contract
         await mockStrikeAsset.connect(buyer).approve(podCall.address, ethers.constants.MaxUint256)
 
@@ -378,7 +378,7 @@ scenarios.forEach(scenario => {
 
         expect(initialBuyerOptionBalance).to.equal(scenario.amountToMint)
         expect(initialBuyerUnderlyingBalance).to.equal(0)
-        expect(initialBuyerStrikeBalance).to.equal(scenario.strikePrice.add(1))
+        expect(initialBuyerStrikeBalance).to.equal(scenario.strikePrice)
         expect(initialContractUnderlyingReserves).to.equal(scenario.amountToMint)
         expect(initialContractStrikeReserves).to.equal(0)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
@@ -397,7 +397,7 @@ scenarios.forEach(scenario => {
         expect(finalBuyerUnderlyingBalance).to.equal(scenario.amountToMint)
         expect(finalBuyerStrikeBalance).to.equal(0)
         expect(finalContractUnderlyingReserves).to.equal(0)
-        expect(finalContractStrikeReserves).to.equal(scenario.strikePrice.add(1))
+        expect(finalContractStrikeReserves).to.equal(scenario.strikePrice)
         expect(finalContractOptionSupply).to.equal(0)
       })
       it('should revert if user try to exercise after exercise window - European', async () => {

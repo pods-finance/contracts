@@ -1,15 +1,16 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
 const forceExpiration = require('../util/forceExpiration')
-const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
 const getTimestamp = require('../util/getTimestamp')
-const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createNewOption = require('../util/createNewOption')
 const createMockOption = require('../util/createMockOption')
 const createNewPool = require('../util/createNewPool')
 const createOptionFactory = require('../util/createOptionFactory')
 const { toBigNumber, approximately } = require('../../utils/utils')
+const createConfigurationManager = require('../util/createConfigurationManager')
+const mintOptions = require('../util/mintOptions')
+const addLiquidity = require('../util/addLiquidity')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
@@ -39,16 +40,15 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('OptionAMMPool.sol - ' + scenario.name, () => {
-    const TEN = ethers.BigNumber.from('10')
+    let MockERC20, MockWETH, OptionAMMFactory
+    let mockWETH
+    let configurationManager
     let mockUnderlyingAsset
     let mockStrikeAsset
     let factoryContract
     let optionAMMFactory
     let priceProviderMock
-    let blackScholes
-    let sigma
     let podPut
-    let podPutAddress
     let optionAMMPool
     let deployer
     let deployerAddress
@@ -71,21 +71,23 @@ scenarios.forEach(scenario => {
       await podPut.connect(signer).mint(amountToMintBN.mul(toBigNumber(10).pow(optionsDecimals)), owner)
     }
 
-    async function mintAndAddLiquidity (optionsAmount, stableAmount, signer = deployer, owner = deployerAddress) {
-      const optionWithDecimals = ethers.BigNumber.from(optionsAmount).mul(TEN.pow(scenario.underlyingAssetDecimals))
-      await MintPhase(optionsAmount, signer, owner)
-      await mockStrikeAsset.connect(signer).mint(stableAmount)
-      // Approve both Option and Stable Token
-      await mockStrikeAsset.connect(signer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
-      await podPut.connect(signer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+    before(async () => {
+      ;[MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
+        ethers.getContractFactory('MintableERC20'),
+        ethers.getContractFactory('WETH'),
+        ethers.getContractFactory('OptionAMMFactory')
+      ])
 
-      const optionsDecimals = await podPut.decimals()
-      const stableDecimals = await mockStrikeAsset.decimals()
-      await optionAMMPool.connect(signer).addLiquidity(scenario.amountOfStableToAddLiquidity, optionWithDecimals)
-    }
+      mockWETH = await MockWETH.deploy()
+
+      ;[mockUnderlyingAsset, mockStrikeAsset, factoryContract] = await Promise.all([
+        MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
+        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
+        createOptionFactory(mockWETH.address)
+      ])
+    })
 
     beforeEach(async function () {
-      let MockERC20, MockWETH, Sigma, OptionAMMFactory
       [deployer, second, buyer, delegator, lp] = await ethers.getSigners()
       deployerAddress = await deployer.getAddress()
       secondAddress = await second.getAddress()
@@ -93,45 +95,27 @@ scenarios.forEach(scenario => {
       delegatorAddress = await delegator.getAddress()
       lpAddress = await lp.getAddress()
 
-      // 1) Deploy Option
-      // 2) Use same strike Asset
-      ;[MockERC20, MockWETH, blackScholes, Sigma, OptionAMMFactory] = await Promise.all([
-        ethers.getContractFactory('MintableERC20'),
-        ethers.getContractFactory('WETH'),
-        deployBlackScholes(),
-        ethers.getContractFactory('Sigma'),
-        ethers.getContractFactory('OptionAMMFactory')
-      ])
-
-      const mockWeth = await MockWETH.deploy()
-      sigma = await Sigma.deploy(blackScholes.address)
-
-      ;[factoryContract, mockUnderlyingAsset, mockStrikeAsset, optionAMMFactory] = await Promise.all([
-        createOptionFactory(mockWeth.address),
-        MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
-        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
-        OptionAMMFactory.deploy()
-      ])
       // Deploy option
       const currentBlocktimestamp = await getTimestamp()
       podPut = await createMockOption({
         underlyingAsset: mockUnderlyingAsset.address,
         strikeAsset: mockStrikeAsset.address,
+        strikePrice: scenario.strikePrice,
         cap: ethers.BigNumber.from((200 * 10 ** await mockUnderlyingAsset.decimals()).toString())
       })
 
-      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, scenario.spotPriceDecimals, mockUnderlyingAsset.address)
+      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, 8, await podPut.underlyingAsset())
       priceProviderMock = mock.priceProvider
 
-      // 1) Deploy optionAMMPool
-      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, priceProviderMock.address, blackScholes.address, sigma.address, scenario.initialSigma)
+      configurationManager = await createConfigurationManager(priceProviderMock)
+      optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
+      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, scenario.initialSigma)
     })
 
     describe('Constructor/Initialization checks', () => {
       it('should have correct option data (strikePrice, expiration, strikeAsset)', async () => {
         expect(await optionAMMPool.tokenB()).to.equal(mockStrikeAsset.address)
         expect(await optionAMMPool.tokenA()).to.equal(podPut.address)
-        expect(await optionAMMPool.priceProvider()).to.equal(priceProviderMock.address)
 
         const optionExpiration = await podPut.expiration()
         const optionStrikePrice = await podPut.strikePrice()
@@ -142,16 +126,19 @@ scenarios.forEach(scenario => {
         expect(priceProperties.expiration).to.equal(optionExpiration)
         expect(priceProperties.strikePrice).to.equal(optionStrikePrice.mul(toBigNumber(10).pow(bsDecimals.sub(optionStrikePriceDecimals))))
       })
+
       it('should return spotPrice accordingly', async () => {
         const spotPrice = await optionAMMPool.getSpotPrice(mockUnderlyingAsset.address, 18)
         const bsDecimals = await optionAMMPool.BS_RES_DECIMALS()
         expect(spotPrice).to.equal(scenario.initialSpotPrice.mul(toBigNumber(10).pow(bsDecimals.sub(scenario.spotPriceDecimals))))
       })
+
       it('should not allow trade after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('OptionAMMPool: option has expired')
       })
+
       it('should not allow add liquidity after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
@@ -190,6 +177,91 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.mint(capExceeded)
         await expect(optionAMMPool.addLiquidity(0, capExceeded))
           .to.be.revertedWith('CappedPool: amount exceed cap')
+      })
+
+      it('should revert if any dependency contract is stopped', async () => {
+        const emergencyStop = await ethers.getContractAt(
+          'EmergencyStop',
+          await configurationManager.getEmergencyStop()
+        )
+
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
+
+        await mintOptions(podPut, scenario.amountToMint, deployer)
+
+        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
+        await mockStrikeAsset.approve(optionAMMPool.address, scenario.amountOfStableToAddLiquidity)
+        await podPut.approve(optionAMMPool.address, scenario.amountToMint)
+
+        await expect(
+          optionAMMPool.addLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity, deployerAddress)
+        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+      })
+
+      it('should revert if add liquidity when the option price is zero', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const expiration = await podPut.expiration()
+
+        const nearExpiration = expiration - 60 * 60 * 2 // 2 hours before expiration
+        await ethers.provider.send('evm_mine', [nearExpiration])
+
+        await expect(optionAMMPool.addLiquidity(1000, 10000, lpAddress)).to.be.revertedWith('AMM: can not add liquidity when option price is zero')
       })
     })
 
@@ -260,7 +332,7 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
-        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed)
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
         const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
@@ -276,6 +348,370 @@ scenarios.forEach(scenario => {
 
         expect(feePoolABalancefterStrike).to.eq(0)
         expect(feePoolBBalanceAfterStrike).to.eq(0)
+      })
+
+      it('should revert if any dependency contract is stopped', async () => {
+        const emergencyStop = await ethers.getContractAt(
+          'EmergencyStop',
+          await configurationManager.getEmergencyStop()
+        )
+
+        await mintOptions(podPut, scenario.amountToMint, deployer)
+
+        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity)
+        await mockStrikeAsset.approve(optionAMMPool.address, scenario.amountOfStableToAddLiquidity)
+        await podPut.approve(optionAMMPool.address, scenario.amountToMint)
+
+        await optionAMMPool.addLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity, deployerAddress)
+
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
+
+        await expect(
+          optionAMMPool.removeLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity)
+        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+      })
+
+      it('should remove liquidity when option price is rounded to zero', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const feeAddressA = await optionAMMPool.feePoolA()
+        const feeAddressB = await optionAMMPool.feePoolB()
+
+        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
+        const lpOptionBeforeTrade = await podPut.balanceOf(lpAddress)
+
+        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+
+        // fast forward until very close to the maturity
+        const expiration = await podPut.expiration()
+
+        const nearExpiration = expiration - 60 * 60 * 2 // 2 hours before expiration
+        await ethers.provider.send('evm_mine', [nearExpiration])
+
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
+
+        const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
+        const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
+
+        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
+
+        expect(poolOptionAmountAfterTrade).to.eq(0)
+        expect(poolStrikeAmountAfterTrade).to.eq(0)
+        expect(lpStrikeAfterBuyer).to.eq(lpStrikeAfterBuyer)
+
+        const feePoolABalancefterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolBBalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        expect(feePoolABalancefterStrike).to.eq(0)
+        expect(feePoolBBalanceAfterStrike).to.eq(0)
+      })
+
+      it('should remove liquidity after expiration', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const feeAddressA = await optionAMMPool.feePoolA()
+        const feeAddressB = await optionAMMPool.feePoolB()
+
+        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
+        const lpOptionBeforeTrade = await podPut.balanceOf(lpAddress)
+
+        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+
+        await forceExpiration(podPut)
+
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
+
+        const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
+        const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
+
+        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
+
+        expect(poolOptionAmountAfterTrade).to.eq(0)
+        expect(poolStrikeAmountAfterTrade).to.eq(0)
+        expect(lpStrikeAfterBuyer).to.eq(lpStrikeAfterBuyer)
+
+        const feePoolABalancefterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolBBalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        expect(feePoolABalancefterStrike).to.eq(0)
+        expect(feePoolBBalanceAfterStrike).to.eq(0)
+      })
+
+      it('should remove liquidity single-sided', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
+        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const feeAddressA = await optionAMMPool.feePoolA()
+        const feeAddressB = await optionAMMPool.feePoolB()
+
+        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
+        const lpOptionBeforeTrade = await podPut.balanceOf(lpAddress)
+
+        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+
+        await optionAMMPool.connect(lp).removeLiquidity(100, 0)
+
+        await optionAMMPool.connect(lp).removeLiquidity(0, 100)
+
+        const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
+        const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
+
+        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
+
+        expect(poolOptionAmountAfterTrade).to.eq(0)
+        expect(poolStrikeAmountAfterTrade).to.eq(0)
+        expect(lpStrikeAfterBuyer).to.eq(lpStrikeAfterBuyer)
+
+        const feePoolABalancefterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolBBalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        expect(feePoolABalancefterStrike).to.eq(0)
+        expect(feePoolBBalanceAfterStrike).to.eq(0)
+      })
+    })
+
+    describe('Price too low', async () => {
+      it('should revert transactions if the option price is too low', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [amountOfStrikeLpNeed.add(amountOfStrikeLpToMintOption)]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [podPut.address, amountOfStrikeLpToMintOption]
+          },
+          {
+            name: 'mint',
+            contract: podPut,
+            user: lp,
+            params: [amountOfOptionsToMint, lpAddress]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: lp,
+            params: [optionAMMPool.address, amountOfStrikeLpNeed]
+          },
+          {
+            name: 'approve',
+            contract: podPut,
+            user: lp,
+            params: [optionAMMPool.address, amountOfOptionsToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: lp,
+            params: [amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress]
+          },
+          {
+            name: 'mint',
+            contract: mockStrikeAsset,
+            user: buyer,
+            params: [initialBuyerBalanceStrikeAsset]
+          },
+          {
+            name: 'approve',
+            contract: mockStrikeAsset,
+            user: buyer,
+            params: [optionAMMPool.address, initialBuyerBalanceStrikeAsset]
+          }
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const expiration = await podPut.expiration()
+        await forceExpiration(podPut, parseInt((expiration - 60 * 1).toString()))
+
+        await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+
+        await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+
+        await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
       })
     })
 
@@ -373,7 +809,32 @@ scenarios.forEach(scenario => {
         expect(balanceAfterStrikeFeePoolA).to.eq(balanceAfterStrikeFeePoolB)
         expect(approximately(fees, balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB), 5)).to.be.true
       })
+
+      it('should revert if any dependency contract is stopped', async () => {
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        const optionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const minStableToSell = ethers.constants.MaxUint256
+        const amountOfBuyerStable = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        await mockStrikeAsset.connect(buyer).mint(amountOfBuyerStable)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, amountOfBuyerStable)
+
+        // Stopping just before trade
+        const emergencyStop = await ethers.getContractAt(
+          'EmergencyStop',
+          await configurationManager.getEmergencyStop()
+        )
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
+
+        await expect(
+          optionAMMPool.connect(buyer)
+            .tradeExactAOutput(optionsToBuy, minStableToSell, buyerAddress, scenario.initialSigma)
+        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+      })
     })
+
     describe('tradeExactAInput', () => {
       it('should match values accordingly', async () => {
         const feeAddressA = await optionAMMPool.feePoolA()
@@ -479,7 +940,31 @@ scenarios.forEach(scenario => {
         expect(buyerOptionAfterBuyer).to.eq(buyerOptionBeforeTrade.sub(numberOfOptionsToSell))
         expect(poolOptionAmountAfterTrade).to.eq(poolOptionAmountBeforeTrade.add(numberOfOptionsToSell))
       })
+
+      it('should revert if any dependency contract is stopped', async () => {
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        const optionsToSell = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const minStableToBuy = 0
+        await mintOptions(podPut, optionsToSell, buyer)
+        await podPut.connect(buyer).approve(optionAMMPool.address, optionsToSell)
+
+        // Stopping just before trade
+        const emergencyStop = await ethers.getContractAt(
+          'EmergencyStop',
+          await configurationManager.getEmergencyStop()
+        )
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
+
+        await expect(
+          optionAMMPool.connect(buyer)
+            .tradeExactAInput(optionsToSell, minStableToBuy, buyerAddress, scenario.initialSigma)
+        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+      })
     })
+
     describe('tradeExactBOutput', () => {
       it('should match values accordingly', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
@@ -585,14 +1070,39 @@ scenarios.forEach(scenario => {
         expect(buyerStrikeBeforeTrade).to.eq(buyerStrikeAfterBuyer.sub(numberOfTokensToReceive))
 
         // Testing Remove Liquidity
-        await optionAMMPool.connect(lp).removeLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed)
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
         const [poolOptionAmountAfterRemove, poolStrikeAmountAfterRemove] = await optionAMMPool.getPoolBalances()
 
         expect(poolOptionAmountAfterRemove).to.eq(1)
         expect(poolStrikeAmountAfterRemove).to.eq(1)
       })
+
+      it('should revert if any dependency contract is stopped', async () => {
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        const stableToBuy = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.strikeAssetDecimals)))
+        const maxOptionsToSell = ethers.constants.MaxUint256
+        const amountOfBuyerOptions = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        await mintOptions(podPut, amountOfBuyerOptions, buyer)
+        await podPut.connect(buyer).approve(optionAMMPool.address, amountOfBuyerOptions)
+
+        // Stopping just before trade
+        const emergencyStop = await ethers.getContractAt(
+          'EmergencyStop',
+          await configurationManager.getEmergencyStop()
+        )
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
+
+        await expect(
+          optionAMMPool.connect(buyer)
+            .tradeExactBOutput(stableToBuy, maxOptionsToSell, buyerAddress, scenario.initialSigma)
+        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+      })
     })
+
     describe('tradeExactBInput', () => {
       it('should match values accordingly', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
@@ -678,6 +1188,29 @@ scenarios.forEach(scenario => {
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
 
         expect(buyerStrikeAfterBuyer).to.eq(buyerStrikeBeforeTrade.sub(numberOfTokensToSend))
+      })
+
+      it('should revert if any dependency contract is stopped', async () => {
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        const stableToSell = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.strikeAssetDecimals)))
+        const minOptionsToBuy = 0
+        await mockStrikeAsset.connect(buyer).mint(stableToSell)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, stableToSell)
+
+        // Stopping just before trade
+        const emergencyStop = await ethers.getContractAt(
+          'EmergencyStop',
+          await configurationManager.getEmergencyStop()
+        )
+        await emergencyStop.stop(await configurationManager.getPriceProvider())
+
+        await expect(
+          optionAMMPool.connect(buyer)
+            .tradeExactBInput(stableToSell, minOptionsToBuy, buyerAddress, scenario.initialSigma)
+        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
       })
     })
   })

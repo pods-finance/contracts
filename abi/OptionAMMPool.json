@@ -1,924 +1,950 @@
 [
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_optionAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_stableAsset",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_priceProvider",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_priceMethod",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_sigma",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_initialSigma",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "_feePoolA",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_feePoolB",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountOfStable",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountOfOptions",
-          "type": "uint256"
-        }
-      ],
-      "name": "AddLiquidity",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountOfStable",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountOfOptions",
-          "type": "uint256"
-        }
-      ],
-      "name": "RemoveLiquidity",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "exactAmountAIn",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountBOut",
-          "type": "uint256"
-        }
-      ],
-      "name": "TradeExactAInput",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountBIn",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "exactAmountAOut",
-          "type": "uint256"
-        }
-      ],
-      "name": "TradeExactAOutput",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "exactAmountBIn",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountAOut",
-          "type": "uint256"
-        }
-      ],
-      "name": "TradeExactBInput",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountAIn",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "exactAmountBOut",
-          "type": "uint256"
-        }
-      ],
-      "name": "TradeExactBOutput",
-      "type": "event"
-    },
-    {
-      "inputs": [],
-      "name": "BS_RES_DECIMALS",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "FIMP_PRECISION",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amountOfA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amountOfB",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        }
-      ],
-      "name": "addLiquidity",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "balances",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokenABalance",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tokenBBalance",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "fImp",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "deamortizedTokenABalance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "deamortizedTokenBBalance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "feePoolA",
-      "outputs": [
-        {
-          "internalType": "contract IFeePool",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "feePoolB",
-      "outputs": [
-        {
-          "internalType": "contract IFeePool",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getABPrice",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "ABPrice",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        }
-      ],
-      "name": "getMaxRemoveLiquidityAmounts",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "maxWithdrawAmountA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "maxWithdrawAmountB",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "exactAmountAIn",
-          "type": "uint256"
-        }
-      ],
-      "name": "getOptionTradeDetailsExactAInput",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "amountBOut",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "newIV",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "feesTokenA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "feesTokenB",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "exactAmountAOut",
-          "type": "uint256"
-        }
-      ],
-      "name": "getOptionTradeDetailsExactAOutput",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "amountBIn",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "newIV",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "feesTokenA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "feesTokenB",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "exactAmountBIn",
-          "type": "uint256"
-        }
-      ],
-      "name": "getOptionTradeDetailsExactBInput",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "amountAOut",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "newIV",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "feesTokenA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "feesTokenB",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "exactAmountBOut",
-          "type": "uint256"
-        }
-      ],
-      "name": "getOptionTradeDetailsExactBOutput",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "amountAIn",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "newIV",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "feesTokenA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "feesTokenB",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getPoolBalances",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "totalTokenA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "totalTokenB",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "balanceTokenA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "balanceTokenB",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "fImpOriginal",
-          "type": "uint256"
-        }
-      ],
-      "name": "getRemoveLiquidityAmounts",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "withdrawAmountA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "withdrawAmountB",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "asset",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "decimalsOutput",
-          "type": "uint256"
-        }
-      ],
-      "name": "getSpotPrice",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "spotPrice",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        }
-      ],
-      "name": "getUserBalance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokenABalance",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tokenBBalance",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "fImpUser",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "impliedVolatility",
-      "outputs": [
-        {
-          "internalType": "contract ISigma",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "priceMethod",
-      "outputs": [
-        {
-          "internalType": "contract IBlackScholes",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "priceProperties",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "expiration",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "strikePrice",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "underlyingAsset",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "optionType",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "currentSigma",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "riskFree",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "sigmaInitialGuess",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "priceProvider",
-      "outputs": [
-        {
-          "internalType": "contract IPriceProvider",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amountOfA",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amountOfB",
-          "type": "uint256"
-        }
-      ],
-      "name": "removeLiquidity",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "tokenA",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "tokenADecimals",
-      "outputs": [
-        {
-          "internalType": "uint32",
-          "name": "",
-          "type": "uint32"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "tokenB",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "tokenBDecimals",
-      "outputs": [
-        {
-          "internalType": "uint32",
-          "name": "",
-          "type": "uint32"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "exactAmountAIn",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minAmountBOut",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "sigmaInitialGuess",
-          "type": "uint256"
-        }
-      ],
-      "name": "tradeExactAInput",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "exactAmountAOut",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "maxAmountBIn",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "sigmaInitialGuess",
-          "type": "uint256"
-        }
-      ],
-      "name": "tradeExactAOutput",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "exactAmountBIn",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minAmountAOut",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "sigmaInitialGuess",
-          "type": "uint256"
-        }
-      ],
-      "name": "tradeExactBInput",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "exactAmountBOut",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "maxAmountAIn",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "sigmaInitialGuess",
-          "type": "uint256"
-        }
-      ],
-      "name": "tradeExactBOutput",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    }
-  ]
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_optionAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_stableAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_priceProvider",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_priceMethod",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_sigma",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_initialSigma",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_feePoolA",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_feePoolB",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountOfStable",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountOfOptions",
+        "type": "uint256"
+      }
+    ],
+    "name": "AddLiquidity",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountOfStable",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountOfOptions",
+        "type": "uint256"
+      }
+    ],
+    "name": "RemoveLiquidity",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "exactAmountAIn",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountBOut",
+        "type": "uint256"
+      }
+    ],
+    "name": "TradeExactAInput",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountBIn",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "exactAmountAOut",
+        "type": "uint256"
+      }
+    ],
+    "name": "TradeExactAOutput",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "exactAmountBIn",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountAOut",
+        "type": "uint256"
+      }
+    ],
+    "name": "TradeExactBInput",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountAIn",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "exactAmountBOut",
+        "type": "uint256"
+      }
+    ],
+    "name": "TradeExactBOutput",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "BS_RES_DECIMALS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "FIMP_PRECISION",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "INITIAL_FIMP",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PERCENT_PRECISION",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountOfA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountOfB",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "addLiquidity",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deamortizedTokenABalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deamortizedTokenBBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feePoolA",
+    "outputs": [
+      {
+        "internalType": "contract IFeePool",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feePoolB",
+    "outputs": [
+      {
+        "internalType": "contract IFeePool",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getABPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "ABPrice",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getMaxRemoveLiquidityAmounts",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "maxWithdrawAmountA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxWithdrawAmountB",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "exactAmountAIn",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOptionTradeDetailsExactAInput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountBOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newIV",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feesTokenA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feesTokenB",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "exactAmountAOut",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOptionTradeDetailsExactAOutput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountBIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newIV",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feesTokenA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feesTokenB",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "exactAmountBIn",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOptionTradeDetailsExactBInput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountAOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newIV",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feesTokenA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feesTokenB",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "exactAmountBOut",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOptionTradeDetailsExactBOutput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountAIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newIV",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feesTokenA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feesTokenB",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPoolBalances",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalTokenA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalTokenB",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "percentA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "percentB",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getRemoveLiquidityAmounts",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "withdrawAmountA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "withdrawAmountB",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "decimalsOutput",
+        "type": "uint256"
+      }
+    ],
+    "name": "getSpotPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "spotPrice",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getUserDepositSnapshot",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenAOriginalBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenBOriginalBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fImpUser",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "impliedVolatility",
+    "outputs": [
+      {
+        "internalType": "contract ISigma",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceMethod",
+    "outputs": [
+      {
+        "internalType": "contract IBlackScholes",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceProperties",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "expiration",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "strikePrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "underlyingAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "enum IPodOption.OptionType",
+        "name": "optionType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currentSigma",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "riskFree",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sigmaInitialGuess",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceProvider",
+    "outputs": [
+      {
+        "internalType": "contract IPriceProvider",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountOfA",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountOfB",
+        "type": "uint256"
+      }
+    ],
+    "name": "removeLiquidity",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenA",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenADecimals",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenB",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenBDecimals",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "exactAmountAIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minAmountBOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sigmaInitialGuess",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeExactAInput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "exactAmountAOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxAmountBIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sigmaInitialGuess",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeExactAOutput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "exactAmountBIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minAmountAOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sigmaInitialGuess",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeExactBInput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "exactAmountBOut",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxAmountAIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sigmaInitialGuess",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeExactBOutput",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "usersSnapshot",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenABalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenBBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fImp",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

@@ -14,8 +14,7 @@ module.exports = async function createMockOption ({
   strikePrice = defaultStrikePrice,
   cap = defaultCap
 } = {}) {
-  const [ContractFactory, MockERC20, WETH] = await Promise.all([
-    ethers.getContractFactory('OptionFactory'),
+  const [MockERC20, WETH] = await Promise.all([
     ethers.getContractFactory('MintableERC20'),
     ethers.getContractFactory('WETH')
   ])
@@ -41,7 +40,7 @@ module.exports = async function createMockOption ({
     underlyingAsset,
     strikeAsset,
     strikePrice,
-    await getTimestamp() + 5 * 60 * 60 * 1000,
+    await getTimestamp() + 16 * 24 * 60 * 60,
     24 * 60 * 60,
     cap
   )

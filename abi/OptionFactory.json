@@ -47,13 +47,13 @@
       },
       {
         "indexed": false,
-        "internalType": "enum PodOption.OptionType",
+        "internalType": "enum IPodOption.OptionType",
         "name": "_optionType",
         "type": "uint8"
       },
       {
         "indexed": false,
-        "internalType": "enum PodOption.ExerciseType",
+        "internalType": "enum IPodOption.ExerciseType",
         "name": "_exerciseType",
         "type": "uint8"
       },
@@ -117,12 +117,12 @@
         "type": "string"
       },
       {
-        "internalType": "enum PodOption.OptionType",
+        "internalType": "enum IPodOption.OptionType",
         "name": "_optionType",
         "type": "uint8"
       },
       {
-        "internalType": "enum PodOption.ExerciseType",
+        "internalType": "enum IPodOption.ExerciseType",
         "name": "_exerciseType",
         "type": "uint8"
       },

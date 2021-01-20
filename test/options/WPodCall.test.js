@@ -142,7 +142,7 @@ scenarios.forEach(scenario => {
         await wPodCall.connect(seller).transfer(buyerAddress, scenario.amountToMint)
 
         await mockStrikeAsset.connect(buyer).approve(wPodCall.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice.add(1))
+        await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice)
 
         await expect(wPodCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has not expired yet')
       })
@@ -155,7 +155,7 @@ scenarios.forEach(scenario => {
         await wPodCall.connect(seller).transfer(buyerAddress, scenario.amountToMint)
 
         await mockStrikeAsset.connect(buyer).approve(wPodCall.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(buyer).mint(scenario.amountToMint.mul(scenario.strikePrice).add(1))
+        await mockStrikeAsset.connect(buyer).mint(scenario.amountToMint.mul(scenario.strikePrice))
 
         const initialBuyerOptionBalance = await wPodCall.balanceOf(buyerAddress)
         const initialBuyerUnderlyingBalance = await ethers.provider.getBalance(buyerAddress)
@@ -179,7 +179,7 @@ scenarios.forEach(scenario => {
         expect(finalBuyerOptionBalance).to.equal(0)
         expect(finalBuyerUnderlyingBalance).to.equal(initialBuyerUnderlyingBalance.add(scenario.amountToMint).sub(txCost))
         expect(finalContractUnderlyingReserves).to.equal(0)
-        expect(finalContractStrikeReserves).to.equal(scenario.amountToMint.mul(scenario.strikePrice).div(ethers.BigNumber.from('10').pow(scenario.underlyingAssetDecimals)).add(1))
+        expect(finalContractStrikeReserves).to.equal(scenario.amountToMint.mul(scenario.strikePrice).div(ethers.BigNumber.from('10').pow(scenario.underlyingAssetDecimals)))
         expect(finalContractOptionSupply).to.equal(0)
       })
       it('should revert if user try to exercise after exercise window closed', async () => {
@@ -376,7 +376,7 @@ scenarios.forEach(scenario => {
         await wPodCall.connect(seller).transfer(anotherAddress, scenario.amountToMint)
 
         await mockStrikeAsset.connect(another).approve(wPodCall.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(another).mint(scenario.amountToMint.mul(scenario.strikePrice).div(2).add(1))
+        await mockStrikeAsset.connect(another).mint(scenario.amountToMint.mul(scenario.strikePrice).div(2))
 
         await forceExpiration(wPodCall)
         await wPodCall.connect(another).exercise(halfAmountMint)
