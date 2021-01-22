@@ -83,7 +83,7 @@ contract WPodCall is PodCall {
         uint256 _strikePrice,
         uint256 _expiration,
         uint256 _exerciseWindowSize,
-        uint256 _capSize
+        IConfigurationManager _configurationManager
     )
         public
         PodCall(
@@ -95,7 +95,7 @@ contract WPodCall is PodCall {
             _strikePrice,
             _expiration,
             _exerciseWindowSize,
-            _capSize
+            _configurationManager
         )
     {
         weth = IWETH(underlyingAsset());

@@ -80,7 +80,7 @@ contract PodCall is PodOption {
         uint256 _strikePrice,
         uint256 _expiration,
         uint256 _exerciseWindowSize,
-        uint256 _capSize
+        IConfigurationManager _configurationManager
     )
         public
         PodOption(
@@ -93,7 +93,7 @@ contract PodCall is PodOption {
             _strikePrice,
             _expiration,
             _exerciseWindowSize,
-            _capSize
+            _configurationManager
         )
     {} // solhint-disable-line no-empty-blocks
 

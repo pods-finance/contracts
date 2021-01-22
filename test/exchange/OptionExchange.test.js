@@ -8,9 +8,9 @@ const addLiquidity = require('../util/addLiquidity')
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
 describe('OptionExchange', () => {
-  let OptionExchange, OptionAMMFactory
+  let OptionExchange, OptionAMMFactory, MintableERC20
   let exchange, configurationManager
-  let stableAsset, strikeAsset
+  let stableAsset, strikeAsset, underlyingAsset
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
   let caller, callerAddress
@@ -22,18 +22,24 @@ describe('OptionExchange', () => {
       caller.getAddress()
     ])
 
-    ;[OptionExchange, OptionAMMFactory] = await Promise.all([
+    ;[OptionExchange, OptionAMMFactory, MintableERC20] = await Promise.all([
       ethers.getContractFactory('OptionExchange'),
       ethers.getContractFactory('OptionAMMFactory'),
+      ethers.getContractFactory('MintableERC20'),
     ])
+
+    underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
   })
 
   beforeEach(async () => {
-    option = await createMockOption()
-
-    const mock = await getPriceProviderMock(caller, '8200000000', 6, await option.underlyingAsset())
+    const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAsset.address)
     const priceProviderMock = mock.priceProvider
     configurationManager = await createConfigurationManager(priceProviderMock)
+
+    option = await createMockOption({
+      configurationManager,
+      underlyingAsset: underlyingAsset.address
+    })
 
     ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),

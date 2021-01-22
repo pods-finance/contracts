@@ -12,6 +12,7 @@ import "../interfaces/IPodOption.sol";
  */
 contract OptionFactory {
     address[] public options;
+    IConfigurationManager public configurationManager;
     IOptionBuilder public podPutBuilder;
     IOptionBuilder public wPodPutBuilder;
     IOptionBuilder public podCallBuilder;
@@ -35,9 +36,11 @@ contract OptionFactory {
         address _PodPutBuilder,
         address _WPodPutBuilder,
         address _PodCallBuilder,
-        address _WPodCallBuilder
+        address _WPodCallBuilder,
+        address _configurationManager
     ) public {
         WETH_ADDRESS = wethAddress;
+        configurationManager = IConfigurationManager(_configurationManager);
         podPutBuilder = IOptionBuilder(_PodPutBuilder);
         wPodPutBuilder = IOptionBuilder(_WPodPutBuilder);
         podCallBuilder = IOptionBuilder(_PodCallBuilder);
@@ -66,8 +69,7 @@ contract OptionFactory {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize,
-        uint256 _capSize
+        uint256 _exerciseWindowSize
     ) public returns (address option) {
         IOptionBuilder builder;
 
@@ -95,7 +97,7 @@ contract OptionFactory {
                 _strikePrice,
                 _expiration,
                 _exerciseWindowSize,
-                _capSize
+                configurationManager
             )
         );
 

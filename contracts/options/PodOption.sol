@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IPodOption.sol";
 import "../lib/CappedOption.sol";
 import "../lib/RequiredDecimals.sol";
+import "../interfaces/IConfigurationManager.sol";
 
 /**
  * @title PodOption
@@ -36,6 +37,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
 
     OptionType private _optionType;
     ExerciseType private _exerciseType;
+    IConfigurationManager private _configurationManager;
 
     address private _underlyingAsset;
     uint8 private _underlyingAssetDecimals;
@@ -76,8 +78,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         uint256 strikePrice,
         uint256 expiration,
         uint256 exerciseWindowSize,
-        uint256 capSize
-    ) public ERC20(name, symbol) CappedOption(capSize) {
+        IConfigurationManager configurationManager
+    ) public ERC20(name, symbol) CappedOption(configurationManager) {
         require(Address.isContract(underlyingAsset), "PodOption: underlying asset is not a contract");
         require(Address.isContract(strikeAsset), "PodOption: strike asset is not a contract");
         require(underlyingAsset != strikeAsset, "PodOption: underlying asset and strike asset must differ");
@@ -91,6 +93,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
                 "PodOption: exercise window must be greater than or equal 86400"
             );
         }
+
+        _configurationManager = configurationManager;
 
         _optionType = optionType;
         _exerciseType = exerciseType;

@@ -1,4 +1,5 @@
 const { expect } = require('chai')
+const createConfigurationManager = require('../util/createConfigurationManager')
 
 let optionFactory
 let underlyingAsset
@@ -15,23 +16,25 @@ const ScenarioA = {
   exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
   expiration: new Date().getTime() + 24 * 60 * 60 * 7,
-  exerciseWindowSize: 24 * 60 * 60, // 24h
-  cap: ethers.BigNumber.from(20e8.toString())
+  exerciseWindowSize: 24 * 60 * 60 // 24h
 }
 
 describe('OptionFactory', function () {
   before(async function () {
-    const OptionFactory = await ethers.getContractFactory('OptionFactory')
-    const PodPutBuilder = await ethers.getContractFactory('PodPutBuilder')
-    const WPodPutBuilder = await ethers.getContractFactory('WPodPutBuilder')
-    const PodCallBuilder = await ethers.getContractFactory('PodCallBuilder')
-    const WPodCallBuilder = await ethers.getContractFactory('WPodCallBuilder')
-    const MockERC20 = await ethers.getContractFactory('MintableERC20')
+    const [PodPutBuilder, WPodPutBuilder, PodCallBuilder, WPodCallBuilder, OptionFactory] = await Promise.all([
+      ethers.getContractFactory('PodPutBuilder'),
+      ethers.getContractFactory('WPodPutBuilder'),
+      ethers.getContractFactory('PodCallBuilder'),
+      ethers.getContractFactory('WPodCallBuilder'),
+      ethers.getContractFactory('OptionFactory')
+    ])
+    const MintableERC20 = await ethers.getContractFactory('MintableERC20')
     const MockWETH = await ethers.getContractFactory('WETH')
+    const configurationManager = await createConfigurationManager()
 
     mockWeth = await MockWETH.deploy()
-    underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8)
-    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6)
+    underlyingAsset = await MintableERC20.deploy('Wrapped BTC', 'WBTC', 8)
+    strikeAsset = await MintableERC20.deploy('USDC Token', 'USDC', 6)
 
     await underlyingAsset.mint(1000e8);
     await strikeAsset.mint(1000e8);
@@ -45,7 +48,14 @@ describe('OptionFactory', function () {
     const wPodCallFactory = await WPodCallBuilder.deploy()
     await wPodPutFactory.deployed()
 
-    optionFactory = await OptionFactory.deploy(mockWeth.address, podPutFactory.address, wPodPutFactory.address, podCallFactory.address, wPodCallFactory.address)
+    optionFactory = await OptionFactory.deploy(
+      mockWeth.address,
+      podPutFactory.address,
+      wPodPutFactory.address,
+      podCallFactory.address,
+      wPodCallFactory.address,
+      configurationManager.address
+    )
 
     await optionFactory.deployed()
     await underlyingAsset.deployed()
@@ -53,25 +63,25 @@ describe('OptionFactory', function () {
   })
 
   it('Should create a new PodPut Option correctly and emit event', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize, ScenarioA.cap]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
 
     await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })
 
   it('Should create a new WPodPut Option correctly and emit event', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, ScenarioA.exerciseType, mockWeth.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize, ScenarioA.cap]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.optionType, ScenarioA.exerciseType, mockWeth.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
 
     await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })
 
   it('Should create a new PodCall Option correctly and emit event', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, 1, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize, ScenarioA.cap]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, 1, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
 
     await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })
 
   it('Should create a new WPodCall Option correctly and emit event', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, 1, ScenarioA.exerciseType, mockWeth.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize, ScenarioA.cap]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, 1, ScenarioA.exerciseType, mockWeth.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
 
     await expect(optionFactory.createOption(...funcParameters)).to.emit(optionFactory, 'OptionCreated')
   })

@@ -2,7 +2,7 @@
 pragma solidity 0.6.12;
 
 import "./WPodPut.sol";
-import "./PodOption.sol";
+import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionBuilder.sol";
 
 /**
@@ -31,8 +31,8 @@ contract WPodPutBuilder is IOptionBuilder {
         uint256 _strikePrice,
         uint256 _expiration,
         uint256 _exerciseWindowSize,
-        uint256 _capSize
-    ) public override returns (PodOption) {
+        IConfigurationManager _configurationManager
+    ) public override returns (IPodOption) {
         WPodPut option = new WPodPut(
             _name,
             _symbol,
@@ -42,7 +42,7 @@ contract WPodPutBuilder is IOptionBuilder {
             _strikePrice,
             _expiration,
             _exerciseWindowSize,
-            _capSize
+            _configurationManager
         );
 
         return option;

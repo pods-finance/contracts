@@ -2,7 +2,9 @@ const { expect } = require('chai')
 const getTxCost = require('../util/getTxCost')
 const forceExpiration = require('../util/forceExpiration')
 const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const getTimestamp = require('../util/getTimestamp')
+const createConfigurationManager = require('../util/createConfigurationManager')
 
 const EXERCISE_TYPE_EUROPEAN = 0 // European
 
@@ -36,6 +38,7 @@ scenarios.forEach(scenario => {
   describe('WPodCall.sol - ' + scenario.name, () => {
     let mockUnderlyingAsset
     let mockStrikeAsset
+    let configurationManager
     let wPodCall
     let seller
     let sellerAddress
@@ -43,26 +46,28 @@ scenarios.forEach(scenario => {
     let buyerAddress
     let another
     let anotherAddress
+    let snapshotId
 
     before(async function () {
       [seller, buyer, another] = await ethers.getSigners()
       sellerAddress = await seller.getAddress()
       buyerAddress = await buyer.getAddress()
       anotherAddress = await another.getAddress()
-    })
 
-    beforeEach(async function () {
-      const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockWETH = await ethers.getContractFactory('WETH')
-      const PodCall = await ethers.getContractFactory('WPodCall')
+      const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
 
       mockUnderlyingAsset = await MockWETH.deploy()
       mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
 
-      await mockUnderlyingAsset.deployed()
-      await mockStrikeAsset.deployed()
+      configurationManager = await createConfigurationManager()
+    })
 
-      wPodCall = await PodCall.deploy(
+    beforeEach(async function () {
+      snapshotId = await takeSnapshot()
+      const WPodCall = await ethers.getContractFactory('WPodCall')
+
+      wPodCall = await WPodCall.deploy(
         scenario.name,
         scenario.name,
         EXERCISE_TYPE_EUROPEAN,
@@ -71,20 +76,19 @@ scenarios.forEach(scenario => {
         scenario.strikePrice,
         await getTimestamp() + 24 * 60 * 60 * 7,
         24 * 60 * 60, // 24h
-        scenario.cap
+        configurationManager.address
       )
 
       await wPodCall.deployed()
     })
 
+    afterEach(async () => {
+      await revertToSnapshot(snapshotId)
+    })
+
     async function MintPhase (amountOfOptionsToMint, signer = seller, owner = sellerAddress) {
       await wPodCall.connect(signer).mintEth(owner, { value: amountOfOptionsToMint })
     }
-
-    // async function ExercisePhase (amountOfOptionsToExercise, signer = seller, receiver = buyer, receiverAddress = buyerAddress) {
-    //   await podCall.connect(signer).transfer(receiverAddress, amountOfOptionsToExercise)
-    //   await podCall.connect(receiver).exerciseEth({ value: amountOfOptionsToExercise })
-    // }
 
     describe('Constructor/Initialization checks', () => {
       it('should have correct number of decimals for underlying and strike asset', async () => {
@@ -121,10 +125,13 @@ scenarios.forEach(scenario => {
       })
 
       it('should not be able to mint more than the cap', async () => {
+        const capProvider = await ethers.getContractAt('Cap', configurationManager.getCapProvider())
+        capProvider.setCap(wPodCall.address, scenario.cap)
+
         expect(await wPodCall.balanceOf(sellerAddress)).to.equal(0)
 
-        const cap = await wPodCall.capSize()
-        const capExceeded = cap.add(1)
+        const capSize = await wPodCall.capSize()
+        const capExceeded = capSize.add(1)
 
         await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: capExceeded }))
           .to.be.revertedWith('CappedOption: amount exceed cap')

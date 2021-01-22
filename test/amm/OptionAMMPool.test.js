@@ -21,7 +21,7 @@ const scenarios = [
     name: 'WBTC/USDC',
     optionType: OPTION_TYPE_PUT,
     underlyingAssetSymbol: 'WBTC',
-    underlyingAssetDecimals: 18,
+    underlyingAssetDecimals: 8,
     expiration: 60 * 60 * 24 * 7, // 7 days
     strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
@@ -72,42 +72,49 @@ scenarios.forEach(scenario => {
     }
 
     before(async () => {
+      ;[deployer, second, buyer, delegator, lp] = await ethers.getSigners()
+
+      ;[deployerAddress, secondAddress, buyerAddress, delegatorAddress, lpAddress] = await Promise.all([
+        deployer.getAddress(),
+        second.getAddress(),
+        buyer.getAddress(),
+        delegator.getAddress(),
+        lp.getAddress()
+      ])
+
       ;[MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory')
       ])
 
-      mockWETH = await MockWETH.deploy()
-
-      ;[mockUnderlyingAsset, mockStrikeAsset, factoryContract] = await Promise.all([
+      ;[mockWETH, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
+        MockWETH.deploy(),
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
-        createOptionFactory(mockWETH.address)
       ])
+
+      const mock = await getPriceProviderMock(
+        deployer,
+        scenario.initialSpotPrice,
+        scenario.underlyingAssetDecimals,
+        mockUnderlyingAsset.address
+      )
+      priceProviderMock = mock.priceProvider
     })
 
     beforeEach(async function () {
-      [deployer, second, buyer, delegator, lp] = await ethers.getSigners()
-      deployerAddress = await deployer.getAddress()
-      secondAddress = await second.getAddress()
-      buyerAddress = await buyer.getAddress()
-      delegatorAddress = await delegator.getAddress()
-      lpAddress = await lp.getAddress()
+      configurationManager = await createConfigurationManager(priceProviderMock)
+      factoryContract = await createOptionFactory(mockWETH.address, configurationManager)
 
-      // Deploy option
-      const currentBlocktimestamp = await getTimestamp()
       podPut = await createMockOption({
         underlyingAsset: mockUnderlyingAsset.address,
         strikeAsset: mockStrikeAsset.address,
         strikePrice: scenario.strikePrice,
-        cap: ethers.BigNumber.from((200 * 10 ** await mockUnderlyingAsset.decimals()).toString())
+        // cap: ethers.BigNumber.from((200 * 10 ** await mockUnderlyingAsset.decimals()).toString()),
+        configurationManager
       })
 
-      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, 8, await podPut.underlyingAsset())
-      priceProviderMock = mock.priceProvider
-
-      configurationManager = await createConfigurationManager(priceProviderMock)
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, scenario.initialSigma)
     })
@@ -1074,7 +1081,7 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountAfterRemove, poolStrikeAmountAfterRemove] = await optionAMMPool.getPoolBalances()
 
-        expect(poolOptionAmountAfterRemove).to.eq(1)
+        expect(poolOptionAmountAfterRemove).to.eq(0)
         expect(poolStrikeAmountAfterRemove).to.eq(1)
       })
 
