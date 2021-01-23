@@ -15,6 +15,8 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
     const content = await fsPromises.readFile(_filePath)
     const contentJSON = JSON.parse(content)
 
+    const deployedOptions = []
+
     const options = [
       {
         strike: 'AUSDC',
@@ -45,6 +47,7 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
           expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString()
         })
         const tokenbAddress = contentJSON[optionObj.strike]
+        deployedOptions.push(optionAddress)
 
         // 5) Create AMMPool test with this asset
         const poolAddress = await run('deployNewOptionAMMPool', {
@@ -57,15 +60,17 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
 
         if (start) {
           // 7) Mint Options
-          await run('mintOptions', { option: optionAddress, amount: '10' })
+          await run('mintOptions', { option: optionAddress, amount: '5' })
 
           // 8) Add Liquidity
           await run('addLiquidityAMM', {
             pooladdress: poolAddress,
-            amounta: '10',
-            amountb: '100000'
+            amounta: '5',
+            amountb: '10000'
           })
         }
       }
     }
+    console.log('deployedOptions:')
+    console.log(deployedOptions)
   })
