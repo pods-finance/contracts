@@ -84,12 +84,11 @@ task('setupLocal', 'Deploy a whole local test environment')
       initialsigma: '2000000000000000000' // 0.77%
     })
 
-    const optionAMMPoolAddress = await run('deployNewOptionAMMPool', {
-      option: optionWETHAddressgs,
+    const optionAMMETHPoolAddress = await run('deployNewOptionAMMPool', {
+      option: optionWETHAddress,
       tokenb: mockUSDC.address,
       initialsigma: '2000000000000000000' // 0.77%
     })
-
 
     // 6) Mint Strike Asset
     console.log('Minting USDC strike asset')
