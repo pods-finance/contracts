@@ -72,9 +72,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 _initialSigma,
         address _feePoolA,
         address _feePoolB,
-        uint256 _stableCapSize,
         IConfigurationManager _configurationManager
-    ) public AMM(_optionAddress, _stableAsset) CappedPool(_stableCapSize) {
+    ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
         priceProperties.currentSigma = _initialSigma;
         priceProperties.sigmaInitialGuess = _initialSigma;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();

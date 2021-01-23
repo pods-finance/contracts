@@ -1,9 +1,7 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
 const forceExpiration = require('../util/forceExpiration')
-const getTimestamp = require('../util/getTimestamp')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
-const createNewOption = require('../util/createNewOption')
 const createMockOption = require('../util/createMockOption')
 const createNewPool = require('../util/createNewPool')
 const createOptionFactory = require('../util/createOptionFactory')
@@ -34,7 +32,8 @@ const scenarios = [
     initialSpotPrice: toBigNumber(18000e8),
     spotPriceDecimals: 8,
     initialSigma: toBigNumber(0.661e18),
-    expectedNewIV: toBigNumber(0.66615e18)
+    expectedNewIV: toBigNumber(0.66615e18),
+    cap: ethers.BigNumber.from(2000000e6.toString())
   }
 ]
 
@@ -111,7 +110,6 @@ scenarios.forEach(scenario => {
         underlyingAsset: mockUnderlyingAsset.address,
         strikeAsset: mockStrikeAsset.address,
         strikePrice: scenario.strikePrice,
-        // cap: ethers.BigNumber.from((200 * 10 ** await mockUnderlyingAsset.decimals()).toString()),
         configurationManager
       })
 
@@ -178,8 +176,11 @@ scenarios.forEach(scenario => {
       })
 
       it('should not be able to add more liquidity than the cap', async () => {
-        const cap = await optionAMMPool.capSize()
-        const capExceeded = cap.add(1)
+        const capProvider = await ethers.getContractAt('Cap', configurationManager.getCapProvider())
+        capProvider.setCap(optionAMMPool.address, scenario.cap)
+
+        const capSize = await optionAMMPool.capSize()
+        const capExceeded = capSize.add(1)
 
         await mockStrikeAsset.mint(capExceeded)
         await expect(optionAMMPool.addLiquidity(0, capExceeded))

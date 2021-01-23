@@ -3,6 +3,8 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../interfaces/IConfigurationManager.sol";
+import "../interfaces/ICap.sol";
 
 /**
  * @title CappedPool
@@ -13,18 +15,22 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 abstract contract CappedPool {
     using SafeMath for uint256;
 
-    uint256 private immutable _capSize;
+    IConfigurationManager private _configurationManager;
 
-    constructor(uint256 capSize) public {
-        _capSize = capSize;
+    constructor(IConfigurationManager configurationManager) public {
+        _configurationManager = configurationManager;
     }
 
     /**
      * @dev Modifier to stop transactions that exceed the cap
      */
     modifier capped(address token, uint256 amountOfLiquidity) {
+        uint256 cap = capSize();
         uint256 poolBalance = IERC20(token).balanceOf(address(this));
-        require(poolBalance.add(amountOfLiquidity) <= _capSize, "CappedPool: amount exceed cap");
+
+        if (cap > 0) {
+            require(poolBalance.add(amountOfLiquidity) <= cap, "CappedPool: amount exceed cap");
+        }
         _;
     }
 
@@ -32,6 +38,7 @@ abstract contract CappedPool {
      * @dev Get the cap size
      */
     function capSize() public view returns (uint256) {
-        return _capSize;
+        ICap cap = ICap(_configurationManager.getCapProvider());
+        return cap.getCap(address(this));
     }
 }

@@ -38,7 +38,6 @@ contract OptionAMMFactory is IOptionAMMFactory {
     function createPool(
         address _optionAddress,
         address _stableAsset,
-        uint256 _stableCapSize,
         uint256 _initialSigma
     ) external override returns (address) {
         require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
@@ -52,7 +51,6 @@ contract OptionAMMFactory is IOptionAMMFactory {
             _initialSigma,
             address(feePoolTokenA),
             address(feePoolTokenB),
-            _stableCapSize,
             _configurationManager
         );
 

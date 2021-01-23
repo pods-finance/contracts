@@ -38,7 +38,6 @@ describe('OptionAMMFactory', () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      5000e6,
       initialSigma
     )
     const pool = await getPoolCreated(factory, tx, caller)
@@ -52,14 +51,12 @@ describe('OptionAMMFactory', () => {
     await factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      5000e6,
       initialSigma
     )
 
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      5000e6,
       initialSigma
     )
 
@@ -70,7 +67,6 @@ describe('OptionAMMFactory', () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      5000e6,
       initialSigma
     )
 

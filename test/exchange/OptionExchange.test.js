@@ -305,7 +305,6 @@ async function createOptionAMMPool (option, optionAMMFactory, caller) {
   const tx = await optionAMMFactory.createPool(
     option.address,
     strikeAssetAddress,
-    5000e6,
     initialSigma
   )
 
