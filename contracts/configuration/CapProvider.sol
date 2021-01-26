@@ -2,7 +2,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/ICap.sol";
+import "../interfaces/ICapProvider.sol";
 
 /**
  * @title Cap
@@ -10,7 +10,7 @@ import "../interfaces/ICap.sol";
  * @notice Keeps the addresses of capped contracts, so contracts can be aware
  * of the max amount allowed of some asset inside the contract
  */
-contract Cap is ICap, Ownable {
+contract CapProvider is ICapProvider, Ownable {
     mapping(address => uint256) private _addresses;
 
     event SetCap(address indexed target, uint256 value);
