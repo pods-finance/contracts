@@ -70,7 +70,9 @@ contract FeePool is IFeePool, Ownable {
         _shares = _shares.sub(amountOfShares);
         _totalLiability = _totalLiability.sub(amortizedLiability);
 
-        require(IERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
+        if (withdrawAmount > 0) {
+            require(IERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
+        }
         emit FeeWithdrawn(_token, to, withdrawAmount, amountOfShares);
     }
 
@@ -103,14 +105,14 @@ contract FeePool is IFeePool, Ownable {
     /**
      * @notice Return the current fee value
      */
-    function feeValue() external override view returns (uint256) {
+    function feeValue() external view override returns (uint256) {
         return _feeValue;
     }
 
     /**
      * @notice Returns the number of decimals used to represent fees
      */
-    function feeDecimals() external override view returns (uint8) {
+    function feeDecimals() external view override returns (uint8) {
         return _feeDecimals;
     }
 
@@ -119,7 +121,7 @@ contract FeePool is IFeePool, Ownable {
      *
      * @param amount Total transaction amount
      */
-    function getCollectable(uint256 amount) external override view returns (uint256) {
+    function getCollectable(uint256 amount) external view override returns (uint256) {
         return amount.mul(_feeValue).div(10**uint256(_feeDecimals));
     }
 
@@ -137,7 +139,7 @@ contract FeePool is IFeePool, Ownable {
      *
      * @param owner Balance owner
      */
-    function sharesOf(address owner) external override view returns (uint256) {
+    function sharesOf(address owner) external view override returns (uint256) {
         return _balances[owner].shares;
     }
 
