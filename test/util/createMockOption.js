@@ -5,7 +5,8 @@ const EXERCISE_TYPE_EUROPEAN = 0
 const OPTION_TYPE_PUT = 0
 
 module.exports = async function createMockOption () {
-  const [MockERC20, WETH] = await Promise.all([
+  const [ContractFactory, MockERC20, WETH] = await Promise.all([
+    ethers.getContractFactory('OptionFactory'),
     ethers.getContractFactory('MintableERC20'),
     ethers.getContractFactory('WETH')
   ])
