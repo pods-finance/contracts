@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
+import "@openzeppelin/contracts/utils/Address.sol";
+import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "./OptionAMMPool.sol";
 import "./FeePool.sol";
@@ -11,27 +13,31 @@ import "./FeePool.sol";
  * @notice Creates and store new OptionAMMPool
  */
 contract OptionAMMFactory is IOptionAMMFactory {
-    mapping(address => OptionAMMPool) private _pools;
+    mapping(address => address) private _pools;
 
-    event PoolCreated(address indexed deployer, OptionAMMPool pool);
+    /**
+     * @dev store globally accessed configurations
+     */
+    IConfigurationManager private _configurationManager;
+
+    event PoolCreated(address indexed deployer, address pool);
+
+    constructor(address configurationManager) public {
+        require(Address.isContract(configurationManager), "OptionAMMFactory: Configuration Manager is not a contract");
+        _configurationManager = IConfigurationManager(configurationManager);
+    }
 
     /**
      * @notice Creates an option pool
      *
      * @param _optionAddress The address of option token
      * @param _stableAsset A stablecoin asset address
-     * @param _priceProvider contract address of the PriceProvider contract for spotPrice
-     * @param _priceMethod contract address of the PriceMethod contract (E.g: BlackScholes)
-     * @param _sigma contract address of the sigma (implied Volatility) contract
      * @param _initialSigma Initial number of sigma (implied volatility)
      * @return The address of the newly created pool
      */
     function createPool(
         address _optionAddress,
         address _stableAsset,
-        address _priceProvider,
-        address _priceMethod,
-        address _sigma,
         uint256 _initialSigma
     ) external override returns (address) {
         require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
@@ -42,21 +48,21 @@ contract OptionAMMFactory is IOptionAMMFactory {
         OptionAMMPool pool = new OptionAMMPool(
             _optionAddress,
             _stableAsset,
-            _priceProvider,
-            _priceMethod,
-            _sigma,
             _initialSigma,
             address(feePoolTokenA),
-            address(feePoolTokenB)
+            address(feePoolTokenB),
+            _configurationManager
         );
 
-        feePoolTokenA.transferOwnership(address(pool));
-        feePoolTokenB.transferOwnership(address(pool));
+        address poolAddress = address(pool);
 
-        _pools[_optionAddress] = pool;
-        emit PoolCreated(msg.sender, pool);
+        feePoolTokenA.transferOwnership(poolAddress);
+        feePoolTokenB.transferOwnership(poolAddress);
 
-        return address(pool);
+        _pools[_optionAddress] = poolAddress;
+        emit PoolCreated(msg.sender, poolAddress);
+
+        return poolAddress;
     }
 
     /**
@@ -68,6 +74,6 @@ contract OptionAMMFactory is IOptionAMMFactory {
      * @return The address of the pool
      */
     function getPool(address _optionAddress) external override view returns (address) {
-        return address(_pools[_optionAddress]);
+        return _pools[_optionAddress];
     }
 }

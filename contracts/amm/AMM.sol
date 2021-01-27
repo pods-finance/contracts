@@ -280,8 +280,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
         }
 
         // 6) Update User properties (tokenABalance, tokenBBalance, fImp)
-        UserDepositSnapshot memory userDepositSnapshot =
-            UserDepositSnapshot(userAmountToStoreTokenA, userAmountToStoreTokenB, fImpOpening);
+        UserDepositSnapshot memory userDepositSnapshot = UserDepositSnapshot(
+            userAmountToStoreTokenA,
+            userAmountToStoreTokenB,
+            fImpOpening
+        );
         usersSnapshot[owner] = userDepositSnapshot;
 
         _onAddLiquidity(usersSnapshot[owner], owner);
@@ -323,8 +326,13 @@ abstract contract AMM is IAMM, RequiredDecimals {
         // 2) Calculate Fimp
         // FImpOpening(balanceOf(A), balanceOf(B), amortizedBalance(A), amortizedBalance(B))
         // fImp = (totalOptions*spotPrice + totalStable) / (deamortizedOption*spotPrice + deamortizedStable)
-        uint256 fImpOpening =
-            _getFImpOpening(totalTokenA, totalTokenB, ABPrice, deamortizedTokenABalance, deamortizedTokenBBalance);
+        uint256 fImpOpening = _getFImpOpening(
+            totalTokenA,
+            totalTokenB,
+            ABPrice,
+            deamortizedTokenABalance,
+            deamortizedTokenBBalance
+        );
 
         // 3) Calculate Multipliers
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
@@ -343,14 +351,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         );
 
         // 6) Calculate amount to send
-        uint256 amountToSendA =
-            originalBalanceAToReduce.mul(multipliers.AA).add(originalBalanceBToReduce.mul(multipliers.BA)).div(
-                usersSnapshot[msg.sender].fImp
-            );
-        uint256 amountToSendB =
-            originalBalanceBToReduce.mul(multipliers.BB).add(originalBalanceAToReduce.mul(multipliers.AB)).div(
-                usersSnapshot[msg.sender].fImp
-            );
+        uint256 amountToSendA = originalBalanceAToReduce
+            .mul(multipliers.AA)
+            .add(originalBalanceBToReduce.mul(multipliers.BA))
+            .div(usersSnapshot[msg.sender].fImp);
+        uint256 amountToSendB = originalBalanceBToReduce
+            .mul(multipliers.BB)
+            .add(originalBalanceAToReduce.mul(multipliers.AB))
+            .div(usersSnapshot[msg.sender].fImp);
 
         _onRemoveLiquidity(usersSnapshot[msg.sender], msg.sender);
 
@@ -638,8 +646,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
         address user
     ) internal view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
-        (uint256 originalBalanceTokenA, uint256 originalBalanceTokenB, uint256 fImpOriginal) =
-            _getUserDepositSnapshot(user);
+        (uint256 originalBalanceTokenA, uint256 originalBalanceTokenB, uint256 fImpOriginal) = _getUserDepositSnapshot(
+            user
+        );
 
         uint256 balanceTokenA = percentA.mul(originalBalanceTokenA).div(PERCENT_PRECISION);
         uint256 balanceTokenB = percentB.mul(originalBalanceTokenB).div(PERCENT_PRECISION);
@@ -650,8 +659,13 @@ abstract contract AMM is IAMM, RequiredDecimals {
         }
 
         uint256 ABPrice = _getABPrice();
-        uint256 fImpOpening =
-            _getFImpOpening(totalTokenA, totalTokenB, ABPrice, deamortizedTokenABalance, deamortizedTokenBBalance);
+        uint256 fImpOpening = _getFImpOpening(
+            totalTokenA,
+            totalTokenB,
+            ABPrice,
+            deamortizedTokenABalance,
+            deamortizedTokenBBalance
+        );
 
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
 
@@ -732,7 +746,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         return a < b ? a : b;
     }
 
-    function _getABPrice() internal view virtual returns (uint256 ABPrice);
+    function _getABPrice() internal virtual view returns (uint256 ABPrice);
 
     function _getTradeDetailsExactAInput(uint256 amountAIn) internal virtual returns (TradeDetails memory);
 
