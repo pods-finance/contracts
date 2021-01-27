@@ -1,5 +1,8 @@
 const { expect } = require('chai')
-const createConfigurationManager = require('../util/createConfigurationManager')
+
+let wPodCallBuilder
+let underlyingAsset
+let strikeAsset
 
 const OPTION_TYPE_PUT = 0
 const EXERCISE_TYPE_EUROPEAN = 0
@@ -11,16 +14,10 @@ const ScenarioA = {
   exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
   expiration: new Date().getTime() + 24 * 60 * 60 * 7,
-  exerciseWindowSize: 24 * 60 * 60, // 24h
-  cap: ethers.BigNumber.from(20e8.toString())
+  exerciseWindowSize: 24 * 60 * 60 // 24h
 }
 
 describe('WPodCallBuilder', function () {
-  let wPodCallBuilder
-  let underlyingAsset
-  let strikeAsset
-  let configurationManager
-
   before(async function () {
     const OptionBuilder = await ethers.getContractFactory('WPodCallBuilder')
     const MintableERC20 = await ethers.getContractFactory('MintableERC20')
@@ -32,12 +29,10 @@ describe('WPodCallBuilder', function () {
     await wPodCallBuilder.deployed()
     await underlyingAsset.deployed()
     await strikeAsset.deployed()
-
-    configurationManager = await createConfigurationManager()
   })
 
   it('Should create a new WPodPut Option correctly and not revert', async function () {
-    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize, configurationManager.address]
+    const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize]
 
     await expect(wPodCallBuilder.buildOption(...funcParameters)).to.not.be.reverted
   })

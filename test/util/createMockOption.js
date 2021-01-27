@@ -4,40 +4,28 @@ const createOptionFactory = require('./createOptionFactory')
 const EXERCISE_TYPE_EUROPEAN = 0
 const OPTION_TYPE_PUT = 0
 
-const defaultStrikePrice = ethers.BigNumber.from(8000e6.toString())
-
-module.exports = async function createMockOption ({
-  underlyingAsset,
-  strikeAsset,
-  weth,
-  strikePrice = defaultStrikePrice,
-  configurationManager
-} = {}) {
+module.exports = async function createMockOption () {
   const [MockERC20, WETH] = await Promise.all([
     ethers.getContractFactory('MintableERC20'),
     ethers.getContractFactory('WETH')
   ])
 
-  if (!underlyingAsset) {
-    underlyingAsset = (await MockERC20.deploy('WBTC', 'WBTC', 8)).address
-  }
+  const [underlyingAsset, strikeAsset, weth] = await Promise.all([
+    MockERC20.deploy('WBTC', 'WBTC', 8),
+    MockERC20.deploy('USDC', 'USDC', 6),
+    WETH.deploy()
+  ])
 
-  if (!strikeAsset) {
-    strikeAsset = (await MockERC20.deploy('USDC', 'USDC', 6)).address
-  }
+  const strikePrice = ethers.BigNumber.from(8000e6.toString())
 
-  if (!weth) {
-    weth = (await WETH.deploy()).address
-  }
-
-  const factoryContract = await createOptionFactory(weth, configurationManager)
+  const factoryContract = await createOptionFactory(weth.address)
   const txIdNewOption = await factoryContract.createOption(
     'pod:WBTC:USDC:8000:A',
     'pod:WBTC:USDC:8000:A',
     OPTION_TYPE_PUT,
     EXERCISE_TYPE_EUROPEAN,
-    underlyingAsset,
-    strikeAsset,
+    underlyingAsset.address,
+    strikeAsset.address,
     strikePrice,
     await getTimestamp() + 16 * 24 * 60 * 60,
     24 * 60 * 60

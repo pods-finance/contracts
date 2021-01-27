@@ -31,7 +31,7 @@ describe('OptionAMMFactory', () => {
     factory = await OptionAMMFactory.deploy(configurationManager.address)
     await factory.deployed()
 
-    option = await createMockOption({ configurationManager })
+    option = await createMockOption()
   })
 
   it('should create new pool', async () => {

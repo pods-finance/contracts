@@ -1,5 +1,5 @@
 
-module.exports = async function createNewOption (deployerAddress, factoryContract, name, symbol, optionType, exerciseType, underlyingAsset, strikeAsset, strikePrice, expiration, exerciseWindowSize, capSize) {
+module.exports = async function createNewOption (deployerAddress, factoryContract, name, symbol, optionType, exerciseType, underlyingAsset, strikeAsset, strikePrice, expiration, exerciseWindowSize) {
   let podPut
   const txIdNewOption = await factoryContract.createOption(
     name,
@@ -10,8 +10,7 @@ module.exports = async function createNewOption (deployerAddress, factoryContrac
     strikeAsset,
     strikePrice,
     expiration,
-    exerciseWindowSize,
-    capSize
+    exerciseWindowSize
   )
 
   const filterFrom = await factoryContract.filters.OptionCreated(deployerAddress)

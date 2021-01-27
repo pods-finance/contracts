@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-import "./IPodOption.sol";
-import "./IConfigurationManager.sol";
+import "../options/PodOption.sol";
 
 interface IOptionBuilder {
     function buildOption(
@@ -13,7 +12,6 @@ interface IOptionBuilder {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize,
-        IConfigurationManager _configurationManager
-    ) external returns (IPodOption);
+        uint256 _exerciseWindowSize
+    ) external returns (PodOption);
 }

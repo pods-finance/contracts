@@ -3,7 +3,6 @@ const getTimestamp = require('../util/getTimestamp')
 const forceExpiration = require('../util/forceExpiration')
 const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
-const createConfigurationManager = require('../util/createConfigurationManager')
 
 const EXERCISE_TYPE_EUROPEAN = 0 // European
 
@@ -16,8 +15,7 @@ const scenarios = [
     strikeAssetDecimals: 6,
     strikePrice: ethers.BigNumber.from(7000e6.toString()),
     amountToMint: ethers.BigNumber.from(1e18.toString()),
-    amountToMintTooLow: 1,
-    cap: ethers.BigNumber.from(20e18.toString())
+    amountToMintTooLow: 1
   },
   {
     name: 'WBTC/aDAI',
@@ -28,8 +26,7 @@ const scenarios = [
     strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
     strikePriceDecimals: 18,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
-    amountToMintTooLow: 1,
-    cap: ethers.BigNumber.from(20e8.toString())
+    amountToMintTooLow: 1
   }
 ]
 
@@ -37,7 +34,6 @@ scenarios.forEach(scenario => {
   describe('PodCall.sol - ' + scenario.name, () => {
     let mockUnderlyingAsset
     let mockStrikeAsset
-    let configurationManager
     let PodCall
     let podCall
     let seller
@@ -46,6 +42,7 @@ scenarios.forEach(scenario => {
     let buyerAddress
     let another
     let anotherAddress
+    let snapshot
     let snapshotId
 
     before(async function () {
@@ -53,20 +50,20 @@ scenarios.forEach(scenario => {
       sellerAddress = await seller.getAddress()
       buyerAddress = await buyer.getAddress()
       anotherAddress = await another.getAddress()
+    })
 
-      ;[MockInterestBearingERC20, PodCall] = await Promise.all([
-        ethers.getContractFactory('MintableInterestBearing'),
-        ethers.getContractFactory('PodCall')
-      ])
+    beforeEach(async function () {
+      snapshot = await takeSnapshot()
+      snapshotId = snapshot.result
+
+      const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
+      PodCall = await ethers.getContractFactory('PodCall')
 
       mockUnderlyingAsset = await MockInterestBearingERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals)
       mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
 
-      configurationManager = await createConfigurationManager()
-    })
-
-    beforeEach(async function () {
-      snapshotId = await takeSnapshot()
+      await mockUnderlyingAsset.deployed()
+      await mockStrikeAsset.deployed()
 
       podCall = await PodCall.deploy(
         scenario.name,
@@ -76,9 +73,10 @@ scenarios.forEach(scenario => {
         mockStrikeAsset.address,
         scenario.strikePrice,
         await getTimestamp() + 24 * 60 * 60 * 7,
-        24 * 60 * 60, // 24h
-        configurationManager.address
+        24 * 60 * 60 // 24h
       )
+
+      await podCall.deployed()
     })
 
     afterEach(async () => {
@@ -286,22 +284,6 @@ scenarios.forEach(scenario => {
         await podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)
         expect(await podCall.balanceOf(sellerAddress)).to.equal(scenario.amountToMint)
         expect(await mockUnderlyingAsset.balanceOf(sellerAddress)).to.equal(0)
-      })
-
-      it('should not be able to mint more than the cap', async () => {
-        const capProvider = await ethers.getContractAt('Cap', configurationManager.getCapProvider())
-        capProvider.setCap(podCall.address, scenario.cap)
-
-        expect(await podCall.balanceOf(sellerAddress)).to.equal(0)
-
-        const capSize = await podCall.capSize()
-        const capExceeded = capSize.add(1)
-
-        await mockStrikeAsset.connect(seller).approve(podCall.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(await podCall.strikeToTransfer(capExceeded))
-
-        await expect(podCall.connect(seller).mint(capExceeded, sellerAddress))
-          .to.be.revertedWith('CappedOption: amount exceed cap')
       })
 
       it('should revert if user try to mint after expiration - European', async () => {

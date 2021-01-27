@@ -8,45 +8,37 @@ const addLiquidity = require('../util/addLiquidity')
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
 describe('OptionExchange', () => {
-  let OptionExchange, OptionAMMFactory, MintableERC20
+  let OptionExchange, OptionAMMFactory
   let exchange, configurationManager
-  let stableAsset, strikeAsset, underlyingAsset
+  let stableAsset, strikeAsset
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
   let caller, callerAddress
 
   before(async () => {
     ;[deployer, caller] = await ethers.getSigners()
-    ;[deployerAddress, callerAddress] = await Promise.all([
-      deployer.getAddress(),
-      caller.getAddress()
-    ])
-
-    ;[OptionExchange, OptionAMMFactory, MintableERC20] = await Promise.all([
-      ethers.getContractFactory('OptionExchange'),
-      ethers.getContractFactory('OptionAMMFactory'),
-      ethers.getContractFactory('MintableERC20'),
-    ])
-
-    underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
+    deployerAddress = await deployer.getAddress()
+    callerAddress = await caller.getAddress()
   })
 
   beforeEach(async () => {
-    const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAsset.address)
-    const priceProviderMock = mock.priceProvider
-    configurationManager = await createConfigurationManager(priceProviderMock)
-
-    option = await createMockOption({
-      configurationManager,
-      underlyingAsset: underlyingAsset.address
-    })
-
-    ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
-      ethers.getContractAt('MintableERC20', await option.strikeAsset()),
-      ethers.getContractAt('MintableERC20', await option.strikeAsset()),
-      OptionAMMFactory.deploy(configurationManager.address)
+    ;[OptionExchange, OptionAMMFactory, option] = await Promise.all([
+      ethers.getContractFactory('OptionExchange'),
+      ethers.getContractFactory('OptionAMMFactory'),
+      createMockOption()
     ])
 
+    const mock = await getPriceProviderMock(caller, '8200000000', 6, await option.underlyingAsset())
+    const priceProviderMock = mock.priceProvider
+
+    configurationManager = await createConfigurationManager(priceProviderMock)
+
+    strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
+    stableAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
+  })
+
+  beforeEach(async () => {
+    optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
     const optionsLiquidity = ethers.BigNumber.from(10e8)
     const stableLiquidity = ethers.BigNumber.from(1000e6)
@@ -60,9 +52,9 @@ describe('OptionExchange', () => {
   })
 
   afterEach(async () => {
-    await option.connect(caller).transfer(BURN_ADDRESS, await option.balanceOf(callerAddress))
     await stableAsset.connect(caller).burn(await stableAsset.balanceOf(callerAddress))
     await strikeAsset.connect(caller).burn(await strikeAsset.balanceOf(callerAddress))
+    await option.connect(caller).transfer(BURN_ADDRESS, await option.balanceOf(callerAddress))
   })
 
   it('assigns the factory address correctly', async () => {
@@ -223,7 +215,7 @@ describe('OptionExchange', () => {
         .withArgs(callerAddress, option.address, amountToBuy, stableAsset.address, spentAmount)
     })
 
-    it('buy options with an exact amount of tokens', async () => {
+    it('buys options with a exact amount of tokens', async () => {
       const inputAmount = ethers.BigNumber.from(200e6.toString())
       const minAcceptedOptions = ethers.BigNumber.from(1e7.toString())
       const deadline = await getTimestamp() + 60

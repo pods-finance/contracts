@@ -2,12 +2,13 @@ const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const forceExpiration = require('../util/forceExpiration')
 const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const createOptionFactory = require('../util/createOptionFactory')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const MockERC20ABI = require('../../abi/ERC20.json')
-const createConfigurationManager = require('../util/createConfigurationManager')
 
 const { deployMockContract } = waffle
 
+const OPTION_TYPE_PUT = 0 // European
 const EXERCISE_TYPE_EUROPEAN = 0 // European
 
 const scenarios = [
@@ -19,8 +20,7 @@ const scenarios = [
     strikeAssetDecimals: 6,
     strikePrice: ethers.BigNumber.from(7000e6.toString()),
     amountToMint: ethers.BigNumber.from(1e8.toString()),
-    amountToMintTooLow: 1,
-    cap: ethers.BigNumber.from(20e8.toString())
+    amountToMintTooLow: 1
   },
   {
     name: 'WBTC/aDAI',
@@ -31,17 +31,16 @@ const scenarios = [
     strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
     strikePriceDecimals: 18,
     amountToMint: ethers.BigNumber.from(1e8.toString()),
-    amountToMintTooLow: 1,
-    cap: ethers.BigNumber.from(20e8.toString())
+    amountToMintTooLow: 1
   }
 ]
 
 scenarios.forEach(scenario => {
   describe('PodPut.sol - ' + scenario.name, () => {
+    let mockWETH
     let mockUnderlyingAsset
     let mockStrikeAsset
-    let configurationManager
-    let PodPut
+    let factoryContract
     let podPut
     let deployer
     let deployerAddress
@@ -51,6 +50,8 @@ scenarios.forEach(scenario => {
     let sellerAddress
     let buyer
     let buyerAddress
+    let txIdNewOption
+    let snapshot
     let snapshotId
 
     before(async function () {
@@ -59,32 +60,47 @@ scenarios.forEach(scenario => {
       sellerAddress = await seller.getAddress()
       buyerAddress = await buyer.getAddress()
       anotherAddress = await another.getAddress()
-
-      ;[MockInterestBearingERC20, PodPut] = await Promise.all([
-        ethers.getContractFactory('MintableInterestBearing'),
-        ethers.getContractFactory('PodPut')
-      ])
-
-      mockUnderlyingAsset = await MockInterestBearingERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals)
-      mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
-
-      configurationManager = await createConfigurationManager()
+      // 1) Deploy Factory
     })
 
     beforeEach(async function () {
-      snapshotId = await takeSnapshot()
+      snapshot = await takeSnapshot()
+      snapshotId = snapshot.result
 
-      podPut = await PodPut.deploy(
+      const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
+      const MockWETHContract = await ethers.getContractFactory('WETH')
+
+      mockWETH = await MockWETHContract.deploy()
+      mockUnderlyingAsset = await MockInterestBearingERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals)
+      mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
+
+      await mockUnderlyingAsset.deployed()
+      await mockStrikeAsset.deployed()
+      factoryContract = await createOptionFactory(mockWETH.address)
+
+      txIdNewOption = await factoryContract.createOption(
         scenario.name,
         scenario.name,
+        OPTION_TYPE_PUT,
         EXERCISE_TYPE_EUROPEAN,
         mockUnderlyingAsset.address,
         mockStrikeAsset.address,
         scenario.strikePrice,
         await getTimestamp() + 24 * 60 * 60 * 7,
-        24 * 60 * 60, // 24h
-        configurationManager.address
+        24 * 60 * 60 // 24h
       )
+
+      const filterFrom = await factoryContract.filters.OptionCreated(deployerAddress)
+      const eventDetails = await factoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
+
+      if (eventDetails.length) {
+        const { option } = eventDetails[0].args
+        podPut = await ethers.getContractAt('PodPut', option)
+      } else {
+        console.log('Something went wrong: No events found')
+      }
+
+      await podPut.deployed()
     })
 
     afterEach(async () => {
@@ -131,136 +147,126 @@ scenarios.forEach(scenario => {
       })
 
       it('should not allow underlyingAsset/strikeAsset with 0x0 address', async () => {
-        podPut = PodPut.deploy(
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           ethers.constants.AddressZero,
           mockStrikeAsset.address,
           scenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
-        await expect(podPut).to.revertedWith('PodOption: underlying asset is not a contract')
+        await expect(podPut).to.revertedWith('PodOption/underlying-asset-is-not-a-contract')
 
-        podPut = PodPut.deploy(
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           mockUnderlyingAsset.address,
           ethers.constants.AddressZero,
           scenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
-        await expect(podPut).to.revertedWith('PodOption: strike asset is not a contract')
+        await expect(podPut).to.revertedWith('PodOption/strike-asset-is-not-a-contract')
       })
 
       it('should not allow underlyingAsset/strikeAsset that are not contracts', async () => {
-        podPut = PodPut.deploy(
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           sellerAddress,
           mockStrikeAsset.address,
           scenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
-        await expect(podPut).to.revertedWith('PodOption: underlying asset is not a contract')
+        await expect(podPut).to.revertedWith('PodOption/underlying-asset-is-not-a-contract')
 
-        podPut = PodPut.deploy(
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           mockUnderlyingAsset.address,
           sellerAddress,
           scenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
-        await expect(podPut).to.revertedWith('PodOption: strike asset is not a contract')
+        await expect(podPut).to.revertedWith('PodOption/strike-asset-is-not-a-contract')
       })
 
-      it('should not allow for underlyingAsset and strikeAsset to be the same address', async () => {
-        podPut = PodPut.deploy(
+      it('should not allow for underlyingAsset and strikeAsset too be the same address', async () => {
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           mockStrikeAsset.address,
           mockStrikeAsset.address,
           scenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
-        await expect(podPut).to.revertedWith('PodOption: underlying asset and strike asset must differ')
+        await expect(podPut).to.revertedWith('PodOption/underlying-asset-and-strike-asset-must-differ')
       })
 
       it('should only allow expiration in the future', async () => {
-        podPut = PodPut.deploy(
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           mockUnderlyingAsset.address,
           mockStrikeAsset.address,
           scenario.strikePrice,
           await getTimestamp(),
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
-        await expect(podPut).to.revertedWith('PodOption: expiration should be in a future timestamp')
+        await expect(podPut).to.revertedWith('PodOption/expiration-should-be-in-a-future-timestamp')
       })
 
       it('should not allow exerciseWindowSize lesser than or equal 0', async () => {
-        podPut = PodPut.deploy(
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           mockUnderlyingAsset.address,
           mockStrikeAsset.address,
           scenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60,
-          0,
-          configurationManager.address
+          0
         )
-        await expect(podPut).to.revertedWith('PodOption: exercise window size must be greater than zero')
+        await expect(podPut).to.revertedWith('PodOption/exercise-window-size-must-be-greater-than-zero')
       })
 
       it('should not allow strikePrice lesser than or equal 0', async () => {
-        podPut = PodPut.deploy(
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           mockUnderlyingAsset.address,
           mockStrikeAsset.address,
           0,
           await getTimestamp() + 24 * 60 * 60,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
-        await expect(podPut).to.revertedWith('PodOption: strike price must be greater than zero')
+        await expect(podPut).to.revertedWith('PodOption/strike-price-must-be-greater-than-zero')
       })
 
       it('should not allow exercise windows shorter than 24 hours', async () => {
-        podPut = PodPut.deploy(
+        podPut = factoryContract.createOption(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
+          OPTION_TYPE_PUT,
           mockUnderlyingAsset.address,
           mockStrikeAsset.address,
           scenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60,
-          (24 * 60 * 60) - 1, // 24h - 1 second
-          configurationManager.address
+          (24 * 60 * 60) - 1 // 24h - 1 second
         )
-        await expect(podPut).to.revertedWith('PodOption: exercise window must be greater than or equal 86400')
+        await expect(podPut).to.revertedWith('PodOption/exercise-window-must-be-greater-than-or-equal-86400')
       })
-
       it('should return right booleans if the option is expired or not', async () => {
         expect(await podPut.hasExpired()).to.be.false
         expect(await podPut.isAfterEndOfExerciseWindow()).to.be.false
@@ -329,22 +335,6 @@ scenarios.forEach(scenario => {
         expect(funds.strikeAmount).to.be.gte(scenario.strikePrice)
       })
 
-      it('should not be able to mint more than the cap', async () => {
-        const capProvider = await ethers.getContractAt('Cap', configurationManager.getCapProvider())
-        capProvider.setCap(podPut.address, scenario.cap)
-
-        expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
-
-        const capSize = await podPut.capSize()
-        const capExceeded = capSize.add(1)
-
-        await mockStrikeAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(await podPut.strikeToTransfer(capExceeded))
-
-        await expect(podPut.connect(seller).mint(capExceeded, sellerAddress))
-          .to.be.revertedWith('CappedOption: amount exceed cap')
-      })
-
       it('should mint, increase senders option balance and decrease sender strike balance', async () => {
         expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
@@ -355,7 +345,6 @@ scenarios.forEach(scenario => {
         expect(await podPut.balanceOf(sellerAddress)).to.equal(scenario.amountToMint)
         expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
       })
-
       it('should mint rounding up the value to receive, and round down the value sent, in order to avoid locked funds - multiple users', async () => {
         const specificScenario = {
           name: 'BRL/USDC',
@@ -365,9 +354,11 @@ scenarios.forEach(scenario => {
           strikeAssetDecimals: 2,
           strikePrice: ethers.BigNumber.from(21)
         }
+        const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
+        const PodPut = await ethers.getContractFactory('PodPut')
 
-        const mockUnderlyingAsset = await MockInterestBearingERC20.deploy(specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetDecimals)
-        const mockStrikeAsset = await MockInterestBearingERC20.deploy(specificScenario.strikeAssetSymbol, specificScenario.strikeAssetSymbol, specificScenario.strikeAssetDecimals)
+        mockUnderlyingAsset = await MockInterestBearingERC20.deploy(specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetDecimals)
+        mockStrikeAsset = await MockInterestBearingERC20.deploy(specificScenario.strikeAssetSymbol, specificScenario.strikeAssetSymbol, specificScenario.strikeAssetDecimals)
 
         await mockUnderlyingAsset.deployed()
         await mockStrikeAsset.deployed()
@@ -380,8 +371,7 @@ scenarios.forEach(scenario => {
           mockStrikeAsset.address,
           specificScenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60 * 7,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
         await podPut.deployed()
 
@@ -395,13 +385,19 @@ scenarios.forEach(scenario => {
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
 
+        const contractBalanceOfStrike = await podPut.strikeReserves()
+        const totalSupply = await podPut.totalSupply()
+        // Check Option Balance
+        // Check Contract Strike
+        // expect(await podPut.balanceOf(sellerAddress)).to.equal(amountToMint.mul(2))
+
         await forceEndOfExerciseWindow(podPut)
         await expect(podPut.connect(seller).withdraw()).to.not.be.reverted
 
         const balanceSellerOfStrikeAfter = await mockStrikeAsset.balanceOf(sellerAddress)
+        const balanceOfStrikeAfter = await podPut.strikeReserves()
         expect(balanceSellerOfStrikeAfter).to.equal('1000000000000000')
       })
-
       it('should mint rounding up the value to receive, and round down the value sent, in order to avoid locked funds', async () => {
         const specificScenario = {
           name: 'BRL/USDC',
@@ -411,9 +407,11 @@ scenarios.forEach(scenario => {
           strikeAssetDecimals: 2,
           strikePrice: ethers.BigNumber.from(21)
         }
+        const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
+        const PodPut = await ethers.getContractFactory('PodPut')
 
-        const mockUnderlyingAsset = await MockInterestBearingERC20.deploy(specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetDecimals)
-        const mockStrikeAsset = await MockInterestBearingERC20.deploy(specificScenario.strikeAssetSymbol, specificScenario.strikeAssetSymbol, specificScenario.strikeAssetDecimals)
+        mockUnderlyingAsset = await MockInterestBearingERC20.deploy(specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetDecimals)
+        mockStrikeAsset = await MockInterestBearingERC20.deploy(specificScenario.strikeAssetSymbol, specificScenario.strikeAssetSymbol, specificScenario.strikeAssetDecimals)
 
         await mockUnderlyingAsset.deployed()
         await mockStrikeAsset.deployed()
@@ -426,8 +424,7 @@ scenarios.forEach(scenario => {
           mockStrikeAsset.address,
           specificScenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60 * 7,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
         await podPut.deployed()
 
@@ -461,7 +458,6 @@ scenarios.forEach(scenario => {
         expect(balanceBuyerOfStrikeAfter).to.equal('1000000000000000')
         expect(balanceContractOfStrikeAfter).to.equal(0)
       })
-
       it('should revert if user try to mint after expiration', async () => {
         expect(await podPut.balanceOf(sellerAddress)).to.equal(0)
 
@@ -497,6 +493,12 @@ scenarios.forEach(scenario => {
           strikePrice: ethers.BigNumber.from(300e6.toString()),
           amountToMint: ethers.BigNumber.from(1e8.toString())
         }
+        // const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
+        const PodPut = await ethers.getContractFactory('PodPut')
+
+        // mockUnderlyingAsset = await MockInterestBearingERC20.deploy(specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetSymbol, specificScenario.underlyingAssetDecimals)
+
+        // await mockUnderlyingAsset.deployed()
 
         podPut = await PodPut.deploy(
           'pod:BRL:USDC:0.21',
@@ -506,8 +508,7 @@ scenarios.forEach(scenario => {
           mockModERC20.address,
           specificScenario.strikePrice,
           await getTimestamp() + 24 * 60 * 60 * 7,
-          24 * 60 * 60, // 24h
-          configurationManager.address
+          24 * 60 * 60 // 24h
         )
         await podPut.deployed()
 
@@ -529,7 +530,6 @@ scenarios.forEach(scenario => {
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
         await expect(podPut.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has not expired yet')
       })
-
       it('should revert if user have underlying approved, but do not have enough options', async () => {
         // Mint underlying
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
@@ -573,7 +573,7 @@ scenarios.forEach(scenario => {
         await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
 
         await forceExpiration(podPut)
-        await podPut.connect(buyer).exercise(scenario.amountToMint)
+        await expect(podPut.connect(buyer).exercise(scenario.amountToMint))
 
         const finalBuyerOptionBalance = await podPut.balanceOf(buyerAddress)
         const finalBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
@@ -587,7 +587,6 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(0)
       })
-
       it('should revert if user try to exercise after exercise window', async () => {
         await MintPhase(scenario.amountToMint)
         // Transfer mint to Buyer address => This will happen through Uniswap
@@ -626,7 +625,7 @@ scenarios.forEach(scenario => {
         expect(initialContractUnderlyingReserves).to.equal(0)
         expect(initialContractStrikeReserves).to.equal(scenario.strikePrice)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
-        await podPut.connect(seller).unmint(scenario.amountToMint)
+        await expect(podPut.connect(seller).unmint(scenario.amountToMint))
 
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -652,7 +651,7 @@ scenarios.forEach(scenario => {
         const initialContractStrikeReserves = await podPut.strikeReserves()
         const initialContractOptionSupply = await podPut.totalSupply()
 
-        await podPut.connect(seller).unmint(scenario.amountToMint)
+        await expect(podPut.connect(seller).unmint(scenario.amountToMint))
 
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)

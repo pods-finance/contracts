@@ -13,6 +13,7 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('AMM.sol - ' + scenario.name, () => {
+    const TEN = ethers.BigNumber.from('10')
     let mockTokenA
     let tokenADecimals
     let mockTokenB
