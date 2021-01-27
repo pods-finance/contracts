@@ -1,6 +1,6 @@
 const getContractFactoryWithLibraries = require('./getContractFactoryWithLibraries')
 
-module.exports = async function createBlackScholes () {
+module.exports = async function deployBlackScholes () {
   const FixidityLib = await ethers.getContractFactory('FixidityLib')
   const fixidity = await FixidityLib.deploy()
   await fixidity.deployed()

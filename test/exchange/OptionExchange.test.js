@@ -1,15 +1,14 @@
 const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const createMockOption = require('../util/createMockOption')
+const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
-const createConfigurationManager = require('../util/createConfigurationManager')
-const addLiquidity = require('../util/addLiquidity')
 
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
 describe('OptionExchange', () => {
   let OptionExchange, OptionAMMFactory
-  let exchange, configurationManager
+  let exchange
   let stableAsset, strikeAsset
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
@@ -28,22 +27,11 @@ describe('OptionExchange', () => {
       createMockOption()
     ])
 
-    const mock = await getPriceProviderMock(caller, '8200000000', 6, await option.underlyingAsset())
-    const priceProviderMock = mock.priceProvider
-
-    configurationManager = await createConfigurationManager(priceProviderMock)
-
     strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
     stableAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
-  })
-
-  beforeEach(async () => {
-    optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
+    optionAMMFactory = await OptionAMMFactory.deploy()
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
-    const optionsLiquidity = ethers.BigNumber.from(10e8)
-    const stableLiquidity = ethers.BigNumber.from(1000e6)
-
-    await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
+    await addLiquidity(pool, deployer)
 
     exchange = await OptionExchange.deploy(optionAMMFactory.address)
 
@@ -289,14 +277,24 @@ describe('OptionExchange', () => {
 async function createOptionAMMPool (option, optionAMMFactory, caller) {
   const initialSigma = '960000000000000000'
 
-  const [strikeAssetAddress, callerAddress] = await Promise.all([
+  const [Sigma, blackScholes, strikeAssetAddress, underlyingAssetAddress, callerAddress] = await Promise.all([
+    ethers.getContractFactory('Sigma'),
+    deployBlackScholes(),
     option.strikeAsset(),
+    option.underlyingAsset(),
     caller.getAddress()
   ])
+
+  const sigma = await Sigma.deploy(blackScholes.address)
+  const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAssetAddress)
+  const priceProviderMock = mock.priceProvider
 
   const tx = await optionAMMFactory.createPool(
     option.address,
     strikeAssetAddress,
+    priceProviderMock.address,
+    blackScholes.address,
+    sigma.address,
     initialSigma
   )
 
@@ -307,4 +305,26 @@ async function createOptionAMMPool (option, optionAMMFactory, caller) {
   const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
 
   return pool
+}
+
+async function addLiquidity (pool, owner) {
+  const ownerAddress = await owner.getAddress()
+  const option = await ethers.getContractAt('PodPut', await pool.tokenA())
+  const stableAsset = await ethers.getContractAt('MintableERC20', await pool.tokenB())
+  const strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
+
+  const optionsLiquidity = ethers.BigNumber.from(10e8)
+  const stableLiquidity = ethers.BigNumber.from(1000e6)
+
+  // Mint Options
+  await strikeAsset.connect(owner).mint((await option.strikeToTransfer(optionsLiquidity)).add(1))
+  await strikeAsset.connect(owner).approve(option.address, ethers.constants.MaxUint256)
+  await option.connect(owner).mint(optionsLiquidity, ownerAddress)
+
+  // Mint stable
+  await stableAsset.connect(owner).mint(stableLiquidity)
+
+  await option.connect(owner).approve(pool.address, ethers.constants.MaxUint256)
+  await stableAsset.connect(owner).approve(pool.address, ethers.constants.MaxUint256)
+  await pool.connect(owner).addLiquidity(optionsLiquidity, stableLiquidity, ownerAddress)
 }
