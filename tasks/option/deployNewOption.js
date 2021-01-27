@@ -46,6 +46,8 @@ task('deployNewOption', 'Deploy New Option')
     console.log('Option Parameters')
     console.log(optionParams)
 
+    console.log('optionFactoryAddress', optionFactoryAddress)
+
     const funcParameters = [
       optionParams.name,
       optionParams.symbol,
@@ -59,28 +61,43 @@ task('deployNewOption', 'Deploy New Option')
     ]
 
     const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
-    const txIdNewOption = await FactoryContract.createOption(...funcParameters)
-    await txIdNewOption.wait()
+    const txIdNewOptionHold = await FactoryContract.createOption(...funcParameters)
 
-    const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
-    const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
-    console.log('txId: ', txIdNewOption.hash)
-    console.log('timestamp: ', new Date())
+    const txIdNewOption = await ethers.provider.waitForTransaction(txIdNewOptionHold.hash)
 
-    if (eventDetails.length) {
-      const { deployer, option } = eventDetails[0].args
-      console.log('blockNumber: ', eventDetails[0].blockNumber)
-      console.log('deployer: ', deployer)
-      console.log('option: ', option)
+    let numberOfTries = 0
+    const queryFilter = async () => {
+      const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
+      console.log('txIdNewOption.blockNumber', txIdNewOption.blockNumber)
+      const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, 'latest')
+      console.log('txId: ', txIdNewOptionHold.hash)
+      console.log('timestamp: ', new Date())
 
-      const currentOptions = require(`../../deployments/${bre.network.name}.json`).options
-      const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
+      if (eventDetails.length) {
+        const { deployer, option } = eventDetails[0].args
+        console.log('blockNumber: ', eventDetails[0].blockNumber)
+        console.log('deployer: ', deployer)
+        console.log('option: ', option)
 
-      await saveJSON(pathFile, { options: newOptionObj })
+        const currentOptions = contentJSON.options
+        const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
 
-      console.log('----Finish Deploy New Option----')
-      return option
-    } else {
-      console.log('Something went wrong: No events found')
+        await saveJSON(pathFile, { options: newOptionObj })
+
+        console.log('----Finish Deploy New Option----')
+        return option
+      } else {
+        if (numberOfTries > 10) {
+          console.log('Something went wrong: No events found')
+          throw Error('Something went wrong: No events found')
+        } else {
+          console.log('numberOfTries', numberOfTries)
+          numberOfTries++
+          await queryFilter()
+        }
+      }
     }
+
+    const option = await queryFilter()
+    return option
   })
