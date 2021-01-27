@@ -79,7 +79,8 @@ contract PodCall is PodOption {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize
+        uint256 _exerciseWindowSize,
+        IConfigurationManager _configurationManager
     )
         public
         PodOption(
@@ -91,7 +92,8 @@ contract PodCall is PodOption {
             _strikeAsset,
             _strikePrice,
             _expiration,
-            _exerciseWindowSize
+            _exerciseWindowSize,
+            _configurationManager
         )
     {} // solhint-disable-line no-empty-blocks
 
@@ -118,20 +120,7 @@ contract PodCall is PodOption {
      */
     function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
         require(amountOfOptions > 0, "PodCall: you can not mint zero options");
-
-        if (totalShares > 0) {
-            uint256 ownerShares = _calculatedShares(amountOfOptions);
-
-            shares[owner] = shares[owner].add(ownerShares);
-            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
-            totalShares = totalShares.add(ownerShares);
-        } else {
-            shares[owner] = amountOfOptions;
-            mintedOptions[owner] = amountOfOptions;
-            totalShares = amountOfOptions;
-        }
-
-        _mint(msg.sender, amountOfOptions);
+        _mintOptions(amountOfOptions, amountOfOptions, owner);
 
         require(
             IERC20(underlyingAsset()).transferFrom(msg.sender, address(this), amountOfOptions),
@@ -180,7 +169,7 @@ contract PodCall is PodOption {
         );
 
         if (strikeReserves > 0) {
-            require(strikeToSend > 0, "WPodPut: amount of options is too low");
+            require(strikeToSend > 0, "PodCall: amount of options is too low");
             require(
                 IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "PodCall: could not transfer strike tokens back to caller"

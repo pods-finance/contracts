@@ -1,4 +1,5 @@
 const { expect } = require('chai')
+const createConfigurationManager = require('../util/createConfigurationManager')
 
 let optionFactory
 let underlyingAsset
@@ -20,17 +21,20 @@ const ScenarioA = {
 
 describe('OptionFactory', function () {
   before(async function () {
-    const OptionFactory = await ethers.getContractFactory('OptionFactory')
-    const PodPutBuilder = await ethers.getContractFactory('PodPutBuilder')
-    const WPodPutBuilder = await ethers.getContractFactory('WPodPutBuilder')
-    const PodCallBuilder = await ethers.getContractFactory('PodCallBuilder')
-    const WPodCallBuilder = await ethers.getContractFactory('WPodCallBuilder')
-    const MockERC20 = await ethers.getContractFactory('MintableERC20')
+    const [PodPutBuilder, WPodPutBuilder, PodCallBuilder, WPodCallBuilder, OptionFactory] = await Promise.all([
+      ethers.getContractFactory('PodPutBuilder'),
+      ethers.getContractFactory('WPodPutBuilder'),
+      ethers.getContractFactory('PodCallBuilder'),
+      ethers.getContractFactory('WPodCallBuilder'),
+      ethers.getContractFactory('OptionFactory')
+    ])
+    const MintableERC20 = await ethers.getContractFactory('MintableERC20')
     const MockWETH = await ethers.getContractFactory('WETH')
+    const configurationManager = await createConfigurationManager()
 
     mockWeth = await MockWETH.deploy()
-    underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8)
-    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6)
+    underlyingAsset = await MintableERC20.deploy('Wrapped BTC', 'WBTC', 8)
+    strikeAsset = await MintableERC20.deploy('USDC Token', 'USDC', 6)
 
     await underlyingAsset.mint(1000e8);
     await strikeAsset.mint(1000e8);
@@ -44,7 +48,14 @@ describe('OptionFactory', function () {
     const wPodCallFactory = await WPodCallBuilder.deploy()
     await wPodPutFactory.deployed()
 
-    optionFactory = await OptionFactory.deploy(mockWeth.address, podPutFactory.address, wPodPutFactory.address, podCallFactory.address, wPodCallFactory.address)
+    optionFactory = await OptionFactory.deploy(
+      mockWeth.address,
+      podPutFactory.address,
+      wPodPutFactory.address,
+      podCallFactory.address,
+      wPodCallFactory.address,
+      configurationManager.address
+    )
 
     await optionFactory.deployed()
     await underlyingAsset.deployed()

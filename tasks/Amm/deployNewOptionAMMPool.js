@@ -8,7 +8,8 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
   .addParam('initialsigma', 'Initial Sigma to start the pool')
-  .setAction(async ({ option, tokenb, initialsigma }, bre) => {
+  .addOptionalParam('cap', 'The cap of tokenB liquidity to be added', 10000, 'number')
+  .setAction(async ({ option, tokenb, initialsigma, cap }, bre) => {
     console.log('----Start Deploy New Pool----')
     const pathFile = `../../deployments/${bre.network.name}.json`
     const [owner] = await ethers.getSigners()
@@ -22,6 +23,9 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const { optionAMMFactory, sigma, blackScholes, priceProvider } = contentJSON
 
     const OptionAMMFactory = await ethers.getContractAt('OptionAMMFactory', optionAMMFactory)
+    const tokenBContract = await ethers.getContractAt('MintableERC20', tokenb)
+
+    const tokenBCap = cap * (10 ** await tokenBContract.decimals())
 
     const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, priceProvider, blackScholes, sigma, initialsigma)
     await txIdNewPool.wait()
@@ -42,7 +46,8 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
         priceProvider,
         blackScholes,
         sigma,
-        initialsigma
+        initialsigma,
+        parsedCap: tokenBCap
       }
 
       const currentPools = require(`../../deployments/${bre.network.name}.json`).pools

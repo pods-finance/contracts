@@ -4,8 +4,10 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "../lib/RequiredDecimals.sol";
 import "../interfaces/IPodOption.sol";
+import "../lib/CappedOption.sol";
+import "../lib/RequiredDecimals.sol";
+import "../interfaces/IConfigurationManager.sol";
 
 /**
  * @title PodOption
@@ -25,7 +27,7 @@ import "../interfaces/IPodOption.sol";
  * Depending on the type (PUT / CALL) or the exercise (AMERICAN / EUROPEAN), those functions have
  * different behave and should be override accordingly.
  */
-abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
+abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption {
     using SafeMath for uint8;
 
     /**
@@ -35,6 +37,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
 
     OptionType private _optionType;
     ExerciseType private _exerciseType;
+    IConfigurationManager private _configurationManager;
 
     address private _underlyingAsset;
     uint8 private _underlyingAssetDecimals;
@@ -74,8 +77,9 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
         address strikeAsset,
         uint256 strikePrice,
         uint256 expiration,
-        uint256 exerciseWindowSize
-    ) public ERC20(name, symbol) {
+        uint256 exerciseWindowSize,
+        IConfigurationManager configurationManager
+    ) public ERC20(name, symbol) CappedOption(configurationManager) {
         require(Address.isContract(underlyingAsset), "PodOption: underlying asset is not a contract");
         require(Address.isContract(strikeAsset), "PodOption: strike asset is not a contract");
         require(underlyingAsset != strikeAsset, "PodOption: underlying asset and strike asset must differ");
@@ -89,6 +93,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
                 "PodOption: exercise window must be greater than or equal 86400"
             );
         }
+
+        _configurationManager = configurationManager;
 
         _optionType = optionType;
         _exerciseType = exerciseType;
@@ -322,5 +328,31 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals {
         }
         ownerShares = numerator.div(denominator);
         return ownerShares;
+    }
+
+    /**
+     * @dev Mint options, creating the shares accordingly to the amount of collateral provided
+     * @param amountOfOptions The amount option tokens to be issued
+     * @param amountOfCollateral The amount of collateral provided to mint options
+     * @param owner Which address will be the owner of the options
+     */
+    function _mintOptions(
+        uint256 amountOfOptions,
+        uint256 amountOfCollateral,
+        address owner
+    ) internal capped(amountOfOptions) {
+        if (totalShares > 0) {
+            uint256 ownerShares = _calculatedShares(amountOfCollateral);
+
+            shares[owner] = shares[owner].add(ownerShares);
+            totalShares = totalShares.add(ownerShares);
+        } else {
+            shares[owner] = amountOfCollateral;
+            totalShares = amountOfCollateral;
+        }
+
+        mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
+
+        _mint(msg.sender, amountOfOptions);
     }
 }
