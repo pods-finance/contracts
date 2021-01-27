@@ -1,5 +1,5 @@
 const { expect } = require('chai')
-const deployBlackScholes = require('../util/deployBlackScholes')
+const createBlackScholes = require('../util/createBlackScholes')
 const { toBigNumber, approximately } = require('../../utils/utils')
 
 const scenarioNextSigma = {
@@ -78,7 +78,7 @@ describe('Sigma', () => {
   let sigma, blackScholes
 
   before(async () => {
-    blackScholes = await deployBlackScholes()
+    blackScholes = await createBlackScholes()
   })
 
   beforeEach(async () => {
@@ -86,6 +86,11 @@ describe('Sigma', () => {
     sigma = await SigmaContract.deploy(blackScholes.address)
     await sigma.deployed()
   })
+
+  it('should return the assigned sigma', async () => {
+    expect(await sigma.blackScholes()).to.be.equal(blackScholes.address)
+  })
+
   describe('FindNextSigma', () => {
     it('Should return the next sigma value correctly', async () => {
       const nextSigma = await sigma.getCloserSigma([
