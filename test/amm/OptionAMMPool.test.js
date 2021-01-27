@@ -1,9 +1,8 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
 const forceExpiration = require('../util/forceExpiration')
-const getTimestamp = require('../util/getTimestamp')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
-const createNewOption = require('../util/createNewOption')
+const createMockOption = require('../util/createMockOption')
 const createNewPool = require('../util/createNewPool')
 const createOptionFactory = require('../util/createOptionFactory')
 const { toBigNumber, approximately } = require('../../utils/utils')
@@ -20,7 +19,7 @@ const scenarios = [
     name: 'WBTC/USDC',
     optionType: OPTION_TYPE_PUT,
     underlyingAssetSymbol: 'WBTC',
-    underlyingAssetDecimals: 18,
+    underlyingAssetDecimals: 8,
     expiration: 60 * 60 * 24 * 7, // 7 days
     strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
@@ -33,7 +32,8 @@ const scenarios = [
     initialSpotPrice: toBigNumber(18000e8),
     spotPriceDecimals: 8,
     initialSigma: toBigNumber(0.661e18),
-    expectedNewIV: toBigNumber(0.66615e18)
+    expectedNewIV: toBigNumber(0.66615e18),
+    cap: ethers.BigNumber.from(2000000e6.toString())
   }
 ]
 
@@ -71,45 +71,48 @@ scenarios.forEach(scenario => {
     }
 
     before(async () => {
+      ;[deployer, second, buyer, delegator, lp] = await ethers.getSigners()
+
+      ;[deployerAddress, secondAddress, buyerAddress, delegatorAddress, lpAddress] = await Promise.all([
+        deployer.getAddress(),
+        second.getAddress(),
+        buyer.getAddress(),
+        delegator.getAddress(),
+        lp.getAddress()
+      ])
+
       ;[MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory')
       ])
 
-      mockWETH = await MockWETH.deploy()
-
-      ;[mockUnderlyingAsset, mockStrikeAsset, factoryContract] = await Promise.all([
+      ;[mockWETH, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
+        MockWETH.deploy(),
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
-        createOptionFactory(mockWETH.address)
       ])
+
+      const mock = await getPriceProviderMock(
+        deployer,
+        scenario.initialSpotPrice,
+        scenario.underlyingAssetDecimals,
+        mockUnderlyingAsset.address
+      )
+      priceProviderMock = mock.priceProvider
     })
 
     beforeEach(async function () {
-      [deployer, second, buyer, delegator, lp] = await ethers.getSigners()
-      deployerAddress = await deployer.getAddress()
-      secondAddress = await second.getAddress()
-      buyerAddress = await buyer.getAddress()
-      delegatorAddress = await delegator.getAddress()
-      lpAddress = await lp.getAddress()
-
-      // Deploy option
-      const currentBlocktimestamp = await getTimestamp()
-      podPut = await createNewOption(deployerAddress, factoryContract, 'pod:WBTC:USDC:5000:A',
-        'pod:WBTC:USDC:5000:A',
-        scenario.optionType,
-        EXERCISE_TYPE_EUROPEAN,
-        mockUnderlyingAsset.address,
-        mockStrikeAsset.address,
-        scenario.strikePrice,
-        currentBlocktimestamp + scenario.expiration,
-        24 * 60 * 60)
-
-      const mock = await getPriceProviderMock(deployer, scenario.initialSpotPrice, 8, await podPut.underlyingAsset())
-      priceProviderMock = mock.priceProvider
-
       configurationManager = await createConfigurationManager(priceProviderMock)
+      factoryContract = await createOptionFactory(mockWETH.address, configurationManager)
+
+      podPut = await createMockOption({
+        underlyingAsset: mockUnderlyingAsset.address,
+        strikeAsset: mockStrikeAsset.address,
+        strikePrice: scenario.strikePrice,
+        configurationManager
+      })
+
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, scenario.initialSigma)
     })
@@ -168,7 +171,20 @@ scenarios.forEach(scenario => {
         await MintPhase(1)
         await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity.add(1))
         const optionBalance = await podPut.balanceOf(deployerAddress)
-        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString())).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString()))
+          .to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+      })
+
+      it('should not be able to add more liquidity than the cap', async () => {
+        const capProvider = await ethers.getContractAt('Cap', configurationManager.getCapProvider())
+        capProvider.setCap(optionAMMPool.address, scenario.cap)
+
+        const capSize = await optionAMMPool.capSize()
+        const capExceeded = capSize.add(1)
+
+        await mockStrikeAsset.mint(capExceeded)
+        await expect(optionAMMPool.addLiquidity(0, capExceeded))
+          .to.be.revertedWith('CappedPool: amount exceed cap')
       })
 
       it('should revert if any dependency contract is stopped', async () => {

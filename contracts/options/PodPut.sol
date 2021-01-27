@@ -77,7 +77,8 @@ contract PodPut is PodOption {
         address _strikeAsset,
         uint256 _strikePrice,
         uint256 _expiration,
-        uint256 _exerciseWindowSize
+        uint256 _exerciseWindowSize,
+        IConfigurationManager _configurationManager
     )
         public
         PodOption(
@@ -89,7 +90,8 @@ contract PodPut is PodOption {
             _strikeAsset,
             _strikePrice,
             _expiration,
-            _exerciseWindowSize
+            _exerciseWindowSize,
+            _configurationManager
         )
     {} // solhint-disable-line no-empty-blocks
 
@@ -118,20 +120,7 @@ contract PodPut is PodOption {
         require(amountOfOptions > 0, "PodPut: you can not mint zero options");
 
         uint256 amountToTransfer = _strikeToTransfer(amountOfOptions);
-
-        if (totalShares > 0) {
-            uint256 ownerShares = _calculatedShares(amountToTransfer);
-
-            totalShares = totalShares.add(ownerShares);
-            mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
-            shares[owner] = shares[owner].add(ownerShares);
-        } else {
-            shares[owner] = amountToTransfer;
-            mintedOptions[owner] = amountOfOptions;
-            totalShares = amountToTransfer;
-        }
-
-        _mint(msg.sender, amountOfOptions);
+        _mintOptions(amountOfOptions, amountToTransfer, owner);
 
         require(
             IERC20(strikeAsset()).transferFrom(msg.sender, address(this), amountToTransfer),
@@ -179,7 +168,7 @@ contract PodPut is PodOption {
         );
 
         if (underlyingReserves > 0) {
-            require(underlyingToSend > 0, "Amount too low");
+            require(underlyingToSend > 0, "PodPut: amount of options is too low");
             require(
                 IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),
                 "PodPut: could not transfer underlying tokens back to caller"
