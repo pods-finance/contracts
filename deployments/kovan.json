@@ -1,6 +1,6 @@
 {
   "optionExchange": "0x4A6fC9165cfD7ee6762aE51a78b8897C0E7cffaE",
-  "optionAMMFactory": "0xEFc49fEaa9e0AE0fDce3763F0A1F6a57bD43a448",
+  "optionAMMFactory": "0x05b990A5C6c5F68d5798ec3d8f0508034d87BF85",
   "sigma": "0xeC2940669edF2B5c25e41AF4a7AF3e31bf991420",
   "blackScholes": "0xE51bf08B1720Eab06022D7592AF20BD84E17e4cf",
   "priceProvider": "0x5e4418095F9a93e92df94FeDf9aB93A1C383f04e",
@@ -37,6 +37,72 @@
       "strikePrice": "560000000",
       "expiration": "1608278400",
       "windowOfExercise": "86400"
+    },
+    "0xCc1Bbe8517962bC0a7F142DFeBaE4952977bd076": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0xA7Ab3884B4E59835d66540bb90B49090E39dB06b": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0xAC10C54E49d17F924051e7Cd0e1985813D96a776": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0xcFCa3154b439C616cDf2E2e0A48E57b50119C195": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0xa93eD17Fb7C531a80e29D9541e5060633Ca101ff": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0x7AfC7c3295AAfEcaC9A8e8A906D29D8f9ECd46E2": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
     }
   },
   "pools": {
@@ -47,6 +113,11 @@
       "blackScholes": "0xAeeA7cF7A81bd22109a31CA264e8c30dD1CAe30E",
       "sigma": "0x6e9A8F6373870F126b2d21dc24D6320641Fd3302",
       "initialsigma": "880000000000000000"
+    },
+    "0xc7362F2ffB0b389Da270A176C50992bA95A65764": {
+      "option": "0x7AfC7c3295AAfEcaC9A8e8A906D29D8f9ECd46E2",
+      "tokenb": "0x58ad4cb396411b691a9aab6f74545b2c5217fe6a",
+      "initialsigma": "660000000000000000"
     }
   },
   "configurationManager": "0xd585E43655D1fbAB76bFC0391d258bCDAB973B3D",

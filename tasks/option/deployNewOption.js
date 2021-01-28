@@ -8,7 +8,7 @@ task('deployNewOption', 'Deploy New Option')
   .addParam('strike', 'symbol of strike asset. (E.G: usdc)')
   .addParam('price', 'Units of strikeAsset in order to trade for 1 unit of underlying. (E.G: 7000)')
   .addParam('expiration', 'Unix Timestamp of the expiration')
-  .addOptionalParam('cap', 'The cap of tokens to be minted', 100, 'number')
+  .addOptionalParam('cap', 'The cap of tokens to be minted')
   .addFlag('call', 'Add this flag if the option is a Call')
   .addFlag('american', 'Add this flag if the option is american')
   .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american }, bre) => {
@@ -43,7 +43,6 @@ task('deployNewOption', 'Deploy New Option')
       strikePrice: strikePrice.toString(), // 7000e6 if strike is USDC,
       expiration: expiration, // 19443856 = 10 july
       windowOfExercise: (60 * 60 * 24).toString(), // 19443856 = 10 july
-      cap: cap * (10 ** await underlyingAssetContract.decimals())
     }
 
     console.log('Option Parameters')
@@ -78,6 +77,16 @@ task('deployNewOption', 'Deploy New Option')
 
       const currentOptions = require(`../../deployments/${bre.network.name}.json`).options
       const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
+
+      if (cap != null && parseFloat(cap) > 0) {
+        const configurationManager = await ethers.getContractAt('ConfigurationManager', await FactoryContract.configurationManager())
+        const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
+
+        const capValue = cap * (10 ** await underlyingAssetContract.decimals())
+        const tx = await capProvider.setCap(option, capValue)
+        await tx.wait(2)
+        console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
+      }
 
       await saveJSON(pathFile, { options: newOptionObj })
 
