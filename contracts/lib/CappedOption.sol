@@ -4,7 +4,7 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IConfigurationManager.sol";
-import "../interfaces/ICap.sol";
+import "../interfaces/ICapProvider.sol";
 
 /**
  * @title CappedOption
@@ -36,7 +36,7 @@ abstract contract CappedOption is IERC20 {
      * @dev Get the cap size
      */
     function capSize() public view returns (uint256) {
-        ICap cap = ICap(_configurationManager.getCapProvider());
-        return cap.getCap(address(this));
+        ICapProvider capProvider = ICapProvider(_configurationManager.getCapProvider());
+        return capProvider.getCap(address(this));
     }
 }

@@ -289,7 +289,7 @@ scenarios.forEach(scenario => {
       })
 
       it('should not be able to mint more than the cap', async () => {
-        const capProvider = await ethers.getContractAt('Cap', configurationManager.getCapProvider())
+        const capProvider = await ethers.getContractAt('CapProvider', configurationManager.getCapProvider())
         capProvider.setCap(podCall.address, scenario.cap)
 
         expect(await podCall.balanceOf(sellerAddress)).to.equal(0)

@@ -176,7 +176,7 @@ scenarios.forEach(scenario => {
       })
 
       it('should not be able to add more liquidity than the cap', async () => {
-        const capProvider = await ethers.getContractAt('Cap', configurationManager.getCapProvider())
+        const capProvider = await ethers.getContractAt('CapProvider', configurationManager.getCapProvider())
         capProvider.setCap(optionAMMPool.address, scenario.cap)
 
         const capSize = await optionAMMPool.capSize()
