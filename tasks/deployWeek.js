@@ -19,19 +19,9 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
 
     const options = [
       {
-        strike: 'AUSDC',
-        underlying: 'WBTC',
-        price: '36000'
-      },
-      {
         strike: 'USDC',
-        underlying: 'WBTC',
-        price: '38000'
-      },
-      {
-        strike: 'USDC',
-        underlying: 'WBTC',
-        price: '40000'
+        underlying: 'WETH',
+        price: '1200'
       }
     ]
 
@@ -44,7 +34,8 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
           strike: optionObj.strike,
           underlying: optionObj.underlying,
           price: optionObj.price,
-          expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString()
+          expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString(),
+          cap: '100'
         })
         const tokenbAddress = contentJSON[optionObj.strike]
         deployedOptions.push(optionAddress)
@@ -53,7 +44,8 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
         const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
-          initialsigma: '2000000000000000000' // 0.77%
+          initialsigma: '2000000000000000000',
+          cap: '50000' // 0.77%
         })
 
         console.log('start Flag: ', start)

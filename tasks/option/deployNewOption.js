@@ -1,4 +1,6 @@
 const saveJSON = require('../utils/saveJSON')
+const { toBigNumber } = require('../../utils/utils')
+
 const fs = require('fs')
 const path = require('path')
 const fsPromises = fs.promises
@@ -88,7 +90,7 @@ task('deployNewOption', 'Deploy New Option')
           const configurationManager = await ethers.getContractAt('ConfigurationManager', await FactoryContract.configurationManager())
           const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
 
-          const capValue = cap * (10 ** await underlyingAssetContract.decimals())
+          const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await underlyingAssetContract.decimals()))
           const tx = await capProvider.setCap(option, capValue)
           await tx.wait(1)
           console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)

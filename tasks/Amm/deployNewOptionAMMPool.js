@@ -52,7 +52,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
         const cm = await ethers.getContractAt('ConfigurationManager', configurationManager)
         const capProvider = await ethers.getContractAt('CapProvider', await cm.getCapProvider())
 
-        const capValue = toBigNumber(cap * (10 ** await tokenBContract.decimals()))
+        const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await tokenBContract.decimals()))
         const tx = await capProvider.setCap(poolAddress, capValue)
         await tx.wait(1)
         console.log(`Pool cap set to: ${capValue} ${await tokenBContract.symbol()}`)
