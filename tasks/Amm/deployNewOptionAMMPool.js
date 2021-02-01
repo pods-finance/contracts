@@ -32,7 +32,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     console.log('txId: ', txIdNewPool.hash)
 
     const filterFrom = await OptionAMMFactory.filters.PoolCreated(deployerAddress)
-    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txIdNewPool.blockNumber, txIdNewPool.blockNumber)
+    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txIdNewPool.blockNumber, 'latest')
     if (eventDetails.length) {
       const { deployer, pool: poolAddress } = eventDetails[0].args
       console.log('blockNumber: ', eventDetails[0].blockNumber)
