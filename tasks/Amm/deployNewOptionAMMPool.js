@@ -28,7 +28,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
 
     const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialsigma)
-    await txIdNewPool.wait()
+    await txIdNewPool.wait(1)
 
 
     console.log('txId: ', txIdNewPoolHold.hash)
@@ -67,4 +67,3 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       console.log('Something went wrong: No events found')
     }
   })
-
