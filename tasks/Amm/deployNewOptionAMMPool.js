@@ -30,7 +30,6 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialsigma)
     await txIdNewPool.wait()
 
-    const txIdNewPool = await ethers.provider.waitForTransaction(txIdNewPoolHold.hash)
 
     console.log('txId: ', txIdNewPoolHold.hash)
 
@@ -68,5 +67,4 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       console.log('Something went wrong: No events found')
     }
   })
-
 
