@@ -31,8 +31,10 @@ task('setupLocal', 'Deploy a whole local test environment')
     }
     await saveJSON(path, tokensObj)
 
+    const configurationManagerAddress = await run('deployConfigurationManager')
+
     // 2) Deploy Option Builders + Option Factory
-    await run('deployOptionFactory', { builders: true })
+    await run('deployOptionFactory', { builders: true, configuration: configurationManagerAddress })
 
     // 3) Start deploying all Option Pool contracts
     // 3.1) Chainlink Mock
@@ -43,7 +45,7 @@ task('setupLocal', 'Deploy a whole local test environment')
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
     // 3.2) Deploy BS + Sigma + AMMPoolFactory + Oracles
-    await run('setEnvironment', { asset: mockWBTC.address, source: chainlinkWBTCFeed.address })
+    await run('setAMMEnvironment', { asset: mockWBTC.address, source: chainlinkWBTCFeed.address, configuration: configurationManagerAddress })
 
     // 3.3) Deploy Option Exchange
     const _filePath = pathJoin.join(__dirname, path)
@@ -58,14 +60,16 @@ task('setupLocal', 'Deploy a whole local test environment')
       strike: 'USDC',
       underlying: 'WBTC',
       price: '18000',
-      expiration: (currentBlockTimestamp + 48 * 60 * 60).toString()
+      expiration: (currentBlockTimestamp + 48 * 60 * 60).toString(),
+      cap: '200'
     })
 
     // 5) Create AMMPool test with this asset
     const optionAMMPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWBTCAddress,
       tokenb: mockUSDC.address,
-      initialsigma: '770000000000000000' // 0.77%
+      initialsigma: '770000000000000000', // 0.77%
+      cap: '50000'
     })
 
     // 6) Mint Strike Asset
@@ -73,12 +77,12 @@ task('setupLocal', 'Deploy a whole local test environment')
     await mockUSDC.mint('10000000000000000')
 
     // 7) Mint Options
-    await run('mintOptions', { option: optionWBTCAddress, amount: '10000' })
+    await run('mintOptions', { option: optionWBTCAddress, amount: '100' })
 
     // 8) Add Liquidity
     await run('addLiquidityAMM', {
       pooladdress: optionAMMPoolAddress,
-      amounta: '1000',
-      amountb: '100000'
+      amounta: '100',
+      amountb: '10000'
     })
   })

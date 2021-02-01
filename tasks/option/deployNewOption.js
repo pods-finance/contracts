@@ -42,7 +42,7 @@ task('deployNewOption', 'Deploy New Option')
       strikeAsset: strikeAssetAddress, // 0xe22da380ee6B445bb8273C81944ADEB6E8450422
       strikePrice: strikePrice.toString(), // 7000e6 if strike is USDC,
       expiration: expiration, // 19443856 = 10 july
-      windowOfExercise: (60 * 60 * 24).toString(), // 19443856 = 10 july
+      windowOfExercise: (60 * 60 * 24).toString() // 19443856 = 10 july
     }
 
     console.log('Option Parameters')
@@ -84,7 +84,7 @@ task('deployNewOption', 'Deploy New Option')
 
         const capValue = cap * (10 ** await underlyingAssetContract.decimals())
         const tx = await capProvider.setCap(option, capValue)
-        await tx.wait(2)
+        await tx.wait(1)
         console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
       }
 
