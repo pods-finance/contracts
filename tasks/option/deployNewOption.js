@@ -8,9 +8,10 @@ task('deployNewOption', 'Deploy New Option')
   .addParam('strike', 'symbol of strike asset. (E.G: usdc)')
   .addParam('price', 'Units of strikeAsset in order to trade for 1 unit of underlying. (E.G: 7000)')
   .addParam('expiration', 'Unix Timestamp of the expiration')
+  .addOptionalParam('cap', 'The cap of tokens to be minted')
   .addFlag('call', 'Add this flag if the option is a Call')
   .addFlag('american', 'Add this flag if the option is american')
-  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, call, american }, bre) => {
+  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american }, bre) => {
     console.log('----Start Deploy New Option----')
     const pathFile = `../../deployments/${bre.network.name}.json`
 
@@ -27,6 +28,7 @@ task('deployNewOption', 'Deploy New Option')
 
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()
+    const underlyingAssetContract = await ethers.getContractAt('MintableERC20', underlyingAssetAddress)
     const strikeAssetContract = await ethers.getContractAt('MintableERC20', strikeAssetAddress)
     const strikeDecimals = await strikeAssetContract.decimals()
     const strikePrice = ethers.BigNumber.from(price).mul(ethers.BigNumber.from(10).pow(strikeDecimals))
@@ -40,7 +42,7 @@ task('deployNewOption', 'Deploy New Option')
       strikeAsset: strikeAssetAddress, // 0xe22da380ee6B445bb8273C81944ADEB6E8450422
       strikePrice: strikePrice.toString(), // 7000e6 if strike is USDC,
       expiration: expiration, // 19443856 = 10 july
-      windowOfExercise: (60 * 60 * 24).toString() // 19443856 = 10 july
+      windowOfExercise: (60 * 60 * 24).toString(), // 19443856 = 10 july
     }
 
     console.log('Option Parameters')
@@ -82,8 +84,18 @@ task('deployNewOption', 'Deploy New Option')
         const currentOptions = contentJSON.options
         const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
 
-        await saveJSON(pathFile, { options: newOptionObj })
+      if (cap != null && parseFloat(cap) > 0) {
+        const configurationManager = await ethers.getContractAt('ConfigurationManager', await FactoryContract.configurationManager())
+        const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
 
+        const capValue = cap * (10 ** await underlyingAssetContract.decimals())
+        const tx = await capProvider.setCap(option, capValue)
+        await tx.wait(2)
+        console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
+      }
+
+      await saveJSON(pathFile, { options: newOptionObj })
+\
         console.log('----Finish Deploy New Option----')
         return option
       } else {

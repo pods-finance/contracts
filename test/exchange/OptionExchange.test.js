@@ -1,37 +1,57 @@
 const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const createMockOption = require('../util/createMockOption')
-const deployBlackScholes = require('../util/deployBlackScholes')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
+const createConfigurationManager = require('../util/createConfigurationManager')
+const addLiquidity = require('../util/addLiquidity')
 
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
 describe('OptionExchange', () => {
-  let OptionExchange, OptionAMMFactory
-  let exchange
-  let stableAsset, strikeAsset
+  let OptionExchange, OptionAMMFactory, MintableERC20
+  let exchange, configurationManager
+  let stableAsset, strikeAsset, underlyingAsset
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
   let caller, callerAddress
 
   before(async () => {
     ;[deployer, caller] = await ethers.getSigners()
-    deployerAddress = await deployer.getAddress()
-    callerAddress = await caller.getAddress()
+    ;[deployerAddress, callerAddress] = await Promise.all([
+      deployer.getAddress(),
+      caller.getAddress()
+    ])
+
+    ;[OptionExchange, OptionAMMFactory, MintableERC20] = await Promise.all([
+      ethers.getContractFactory('OptionExchange'),
+      ethers.getContractFactory('OptionAMMFactory'),
+      ethers.getContractFactory('MintableERC20'),
+    ])
+
+    underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
   })
 
   beforeEach(async () => {
-    ;[OptionExchange, OptionAMMFactory, option] = await Promise.all([
-      ethers.getContractFactory('OptionExchange'),
-      ethers.getContractFactory('OptionAMMFactory'),
-      createMockOption()
+    const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAsset.address)
+    const priceProviderMock = mock.priceProvider
+    configurationManager = await createConfigurationManager(priceProviderMock)
+
+    option = await createMockOption({
+      configurationManager,
+      underlyingAsset: underlyingAsset.address
+    })
+
+    ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
+      ethers.getContractAt('MintableERC20', await option.strikeAsset()),
+      ethers.getContractAt('MintableERC20', await option.strikeAsset()),
+      OptionAMMFactory.deploy(configurationManager.address)
     ])
 
-    strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
-    stableAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
-    optionAMMFactory = await OptionAMMFactory.deploy()
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
-    await addLiquidity(pool, deployer)
+    const optionsLiquidity = ethers.BigNumber.from(10e8)
+    const stableLiquidity = ethers.BigNumber.from(1000e6)
+
+    await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
 
     exchange = await OptionExchange.deploy(optionAMMFactory.address)
 
@@ -40,9 +60,9 @@ describe('OptionExchange', () => {
   })
 
   afterEach(async () => {
+    await option.connect(caller).transfer(BURN_ADDRESS, await option.balanceOf(callerAddress))
     await stableAsset.connect(caller).burn(await stableAsset.balanceOf(callerAddress))
     await strikeAsset.connect(caller).burn(await strikeAsset.balanceOf(callerAddress))
-    await option.connect(caller).transfer(BURN_ADDRESS, await option.balanceOf(callerAddress))
   })
 
   it('assigns the factory address correctly', async () => {
@@ -203,7 +223,7 @@ describe('OptionExchange', () => {
         .withArgs(callerAddress, option.address, amountToBuy, stableAsset.address, spentAmount)
     })
 
-    it('buys options with a exact amount of tokens', async () => {
+    it('buy options with an exact amount of tokens', async () => {
       const inputAmount = ethers.BigNumber.from(200e6.toString())
       const minAcceptedOptions = ethers.BigNumber.from(1e7.toString())
       const deadline = await getTimestamp() + 60
@@ -277,24 +297,14 @@ describe('OptionExchange', () => {
 async function createOptionAMMPool (option, optionAMMFactory, caller) {
   const initialSigma = '960000000000000000'
 
-  const [Sigma, blackScholes, strikeAssetAddress, underlyingAssetAddress, callerAddress] = await Promise.all([
-    ethers.getContractFactory('Sigma'),
-    deployBlackScholes(),
+  const [strikeAssetAddress, callerAddress] = await Promise.all([
     option.strikeAsset(),
-    option.underlyingAsset(),
     caller.getAddress()
   ])
-
-  const sigma = await Sigma.deploy(blackScholes.address)
-  const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAssetAddress)
-  const priceProviderMock = mock.priceProvider
 
   const tx = await optionAMMFactory.createPool(
     option.address,
     strikeAssetAddress,
-    priceProviderMock.address,
-    blackScholes.address,
-    sigma.address,
     initialSigma
   )
 
@@ -305,26 +315,4 @@ async function createOptionAMMPool (option, optionAMMFactory, caller) {
   const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
 
   return pool
-}
-
-async function addLiquidity (pool, owner) {
-  const ownerAddress = await owner.getAddress()
-  const option = await ethers.getContractAt('PodPut', await pool.tokenA())
-  const stableAsset = await ethers.getContractAt('MintableERC20', await pool.tokenB())
-  const strikeAsset = await ethers.getContractAt('MintableERC20', await option.strikeAsset())
-
-  const optionsLiquidity = ethers.BigNumber.from(10e8)
-  const stableLiquidity = ethers.BigNumber.from(1000e6)
-
-  // Mint Options
-  await strikeAsset.connect(owner).mint((await option.strikeToTransfer(optionsLiquidity)).add(1))
-  await strikeAsset.connect(owner).approve(option.address, ethers.constants.MaxUint256)
-  await option.connect(owner).mint(optionsLiquidity, ownerAddress)
-
-  // Mint stable
-  await stableAsset.connect(owner).mint(stableLiquidity)
-
-  await option.connect(owner).approve(pool.address, ethers.constants.MaxUint256)
-  await stableAsset.connect(owner).approve(pool.address, ethers.constants.MaxUint256)
-  await pool.connect(owner).addLiquidity(optionsLiquidity, stableLiquidity, ownerAddress)
 }

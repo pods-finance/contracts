@@ -3,12 +3,14 @@ const saveJSON = require('../utils/saveJSON')
 const fs = require('fs')
 const path = require('path')
 const fsPromises = fs.promises
+const { toBigNumber } = require('../../utils/utils')
 
 task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
   .addParam('initialsigma', 'Initial Sigma to start the pool')
-  .setAction(async ({ option, tokenb, initialsigma }, bre) => {
+  .addOptionalParam('cap', 'The cap of tokenB liquidity to be added', 10000, 'number')
+  .setAction(async ({ option, tokenb, initialsigma, cap }, bre) => {
     console.log('----Start Deploy New Pool----')
     const pathFile = `../../deployments/${bre.network.name}.json`
     const [owner] = await ethers.getSigners()
@@ -19,11 +21,14 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const content = await fsPromises.readFile(_filePath)
     const contentJSON = JSON.parse(content)
 
-    const { optionAMMFactory, sigma, blackScholes, priceProvider } = contentJSON
+    const { optionAMMFactory, configurationManager } = contentJSON
 
     const OptionAMMFactory = await ethers.getContractAt('OptionAMMFactory', optionAMMFactory)
+    const tokenBContract = await ethers.getContractAt('MintableERC20', tokenb)
 
-    const txIdNewPoolHold = await OptionAMMFactory.createPool(option, tokenb, priceProvider, blackScholes, sigma, initialsigma)
+
+    const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialsigma)
+    await txIdNewPool.wait()
 
     const txIdNewPool = await ethers.provider.waitForTransaction(txIdNewPoolHold.hash)
 
@@ -40,14 +45,21 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       const poolObj = {
         option,
         tokenb,
-        priceProvider,
-        blackScholes,
-        sigma,
         initialsigma
       }
 
       const currentPools = contentJSON.pools
       const newPoolObj = Object.assign({}, currentPools, { [poolAddress]: poolObj })
+
+      if (cap != null && parseFloat(cap) > 0) {
+        const cm = await ethers.getContractAt('ConfigurationManager', configurationManager)
+        const capProvider = await ethers.getContractAt('CapProvider', await cm.getCapProvider())
+
+        const capValue = toBigNumber(cap * (10 ** await tokenBContract.decimals()))
+        const tx = await capProvider.setCap(poolAddress, capValue)
+        await tx.wait(2)
+        console.log(`Pool cap set to: ${capValue} ${await tokenBContract.symbol()}`)
+      }
 
       await saveJSON(pathFile, { pools: newPoolObj })
       console.log('----End Deploy New Pool----')
@@ -56,3 +68,5 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       console.log('Something went wrong: No events found')
     }
   })
+
+

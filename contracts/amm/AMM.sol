@@ -278,6 +278,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         // Update the User Balances for each token and with the Pool Factor previously calculated
         UserDepositSnapshot memory userDepositSnapshot =
             UserDepositSnapshot(userAmountToStoreTokenA, userAmountToStoreTokenB, fImpOpening);
+
         usersSnapshot[owner] = userDepositSnapshot;
 
         _onAddLiquidity(usersSnapshot[owner], owner);
@@ -631,8 +632,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
         address user
     ) internal view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
-        (uint256 originalBalanceTokenA, uint256 originalBalanceTokenB, uint256 fImpOriginal) =
-            _getUserDepositSnapshot(user);
+        (uint256 originalBalanceTokenA, uint256 originalBalanceTokenB, uint256 fImpOriginal) = _getUserDepositSnapshot(
+            user
+        );
 
         uint256 balanceTokenA = percentA.mul(originalBalanceTokenA).div(PERCENT_PRECISION);
         uint256 balanceTokenB = percentB.mul(originalBalanceTokenB).div(PERCENT_PRECISION);
@@ -643,8 +645,13 @@ abstract contract AMM is IAMM, RequiredDecimals {
         }
 
         uint256 ABPrice = _getABPrice();
-        uint256 fImpOpening =
-            _getFImpOpening(totalTokenA, totalTokenB, ABPrice, deamortizedTokenABalance, deamortizedTokenBBalance);
+        uint256 fImpOpening = _getFImpOpening(
+            totalTokenA,
+            totalTokenB,
+            ABPrice,
+            deamortizedTokenABalance,
+            deamortizedTokenBBalance
+        );
 
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
 
@@ -725,7 +732,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         return a < b ? a : b;
     }
 
-    function _getABPrice() internal view virtual returns (uint256 ABPrice);
+    function _getABPrice() internal virtual view returns (uint256 ABPrice);
 
     function _getTradeDetailsExactAInput(uint256 amountAIn) internal virtual returns (TradeDetails memory);
 

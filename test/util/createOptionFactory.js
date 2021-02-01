@@ -1,4 +1,4 @@
-module.exports = async function createOptionFactory (wethAddress) {
+module.exports = async function createOptionFactory (wethAddress, configurationManager) {
   const [PodPutBuilder, WPodPutBuilder, PodCallBuilder, WPodCallBuilder, OptionFactory] = await Promise.all([
     ethers.getContractFactory('PodPutBuilder'),
     ethers.getContractFactory('WPodPutBuilder'),
@@ -14,7 +14,14 @@ module.exports = async function createOptionFactory (wethAddress) {
     WPodCallBuilder.deploy()
   ])
 
-  const factoryContract = await OptionFactory.deploy(wethAddress, podPutBuilder.address, wPodPutBuilder.address, podCallBuilder.address, wPodCallBuilder.address)
+  const factoryContract = await OptionFactory.deploy(
+    wethAddress,
+    podPutBuilder.address,
+    wPodPutBuilder.address,
+    podCallBuilder.address,
+    wPodCallBuilder.address,
+    configurationManager.address
+  )
   await factoryContract.deployed()
-  return await ethers.getContractAt('OptionFactory', factoryContract.address)
+  return factoryContract
 }

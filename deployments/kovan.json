@@ -1,4 +1,9 @@
 {
+  "optionExchange": "0x4A6fC9165cfD7ee6762aE51a78b8897C0E7cffaE",
+  "optionAMMFactory": "0x05b990A5C6c5F68d5798ec3d8f0508034d87BF85",
+  "sigma": "0xeC2940669edF2B5c25e41AF4a7AF3e31bf991420",
+  "blackScholes": "0xE51bf08B1720Eab06022D7592AF20BD84E17e4cf",
+  "priceProvider": "0x5e4418095F9a93e92df94FeDf9aB93A1C383f04e",
   "USDC": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
   "DAI": "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
   "ADAI": "0x58ad4cb396411b691a9aab6f74545b2c5217fe6a",
@@ -9,7 +14,6 @@
   "WPodPutBuilder": "0x3154F6d4995E899348e86388Fa63ef5eE0Cdd4A1",
   "PodCallBuilder": "0x75Bb66F4000E133895d1F34e51be682fcD0ddaD9",
   "WPodCallBuilder": "0x6d9F880F04cA68DF4974088c863E4305Fda79724",
-  "optionFactory": "0xE58D2833aB4034EB5ca6e2b2b38292cCd39B9EB4",
   "optionAMMFactory": "0x844616f0A0A20360F18Bd415592E66104a483461",
   "normalDistribution": "0x962e54960743B13B8cff9F845A462eDfB96F3f71",
   "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
@@ -808,6 +812,72 @@
       "strikePrice": "30000000000000000000000",
       "expiration": "1611964792",
       "windowOfExercise": "86400"
+    },
+    "0xCc1Bbe8517962bC0a7F142DFeBaE4952977bd076": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0xA7Ab3884B4E59835d66540bb90B49090E39dB06b": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0xAC10C54E49d17F924051e7Cd0e1985813D96a776": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0xcFCa3154b439C616cDf2E2e0A48E57b50119C195": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0xa93eD17Fb7C531a80e29D9541e5060633Ca101ff": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
+    },
+    "0x7AfC7c3295AAfEcaC9A8e8A906D29D8f9ECd46E2": {
+      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "8000000000",
+      "expiration": "1612050905",
+      "windowOfExercise": "86400"
     }
   },
   "pools": {
@@ -982,379 +1052,19 @@
     "0x39DEB72725A833f79BAd3415b9A337863f8db696": {
       "option": "0xA60A3c1aB56B281b4D12349e7CD0210c92042E9d",
       "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
+
+      "priceProvider": "0x5e4418095F9a93e92df94FeDf9aB93A1C383f04e",
+      "blackScholes": "0xAeeA7cF7A81bd22109a31CA264e8c30dD1CAe30E",
+      "sigma": "0x6e9A8F6373870F126b2d21dc24D6320641Fd3302",
+      "initialsigma": "880000000000000000"
     },
-    "0x226D6d9491A4E845A35955F14815d9FcCa7196d4": {
-      "option": "0xEcf7deC3c50390Aa53B84D48b1A895625828Fa33",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x8392ff0FFC876Fe1370BF187E4431C8B480ab3EB": {
-      "option": "0x24f3d079405581aF5F2c890593Eb7d57E67a7C28",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x2Dd7c237487330A37342D05062cAFa3D4B7E18A5": {
-      "option": "0x3B1db33851A058aA6F1Af7a63bD35Dc6d419EB23",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0xc8b36333b400449ce87A061419A8195646A249F2": {
-      "option": "0xD6D92578A8ae94B5E08296d496Cd08FC4EF8FE25",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0xfbc11aC9156991869729145DA64F448e79aBaB59": {
-      "option": "0xfc8CEcfFcbe005292Ac215fb87c5CeF3BafDBAf3",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x3A99b7D14A7D57090a2259cc5BD498B866ed6DD7": {
-      "option": "0x3f23043422d217d5105F4D0C251cA5b3d83EbEF9",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x29073a8ec11f8eD216DD77688A2469354C4cF5CE": {
-      "option": "0x19d2a8632177E72028cf3f44E9c8993e7bC08287",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x79aFF8c2b8F70FDFA82A03163c5DcF558FADCfa9": {
-      "option": "0xf90B60D3d1c7539161e9eF9B66F33c960fD3d31d",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0xd68284f24b74646671DD44d079a3909103D46194": {
-      "option": "0xe58827f28d1c1AAa12D2B68E61BB3F6dd4c2aB4d",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x48D1B5f805B8cE4A1A9f969FDaf70DF9475F434A": {
-      "option": "0xF90143515ebB738e629A2467029d80763679C26E",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x708ef9281360dC691C0e1f9780a148caAc4A7B72": {
-      "option": "0x7Beb222C65FA49ae0DC5177e4FB7E5368499708f",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0xA6bfe76bE7386a929c918Bb776e78568DD8e4655": {
-      "option": "0xBc73a1005d9CA1f50E6f5A3d41adB49E0F036027",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x6FC0e96fEb58Cec2BEdE07125c8BB14248413C37": {
-      "option": "0xa2Aa1c186E73FEBbC2E992F68b2fa1D3941E7872",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x27484dED0C34E6D7aCFa1c54aF5C8C30aab0eC5F": {
-      "option": "0x5dA3EF10ccCa7247413F308284D5BCa5a96fDDbb",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x39Cb0f432c42653A7CeB957409467D0913bD8Ac6": {
-      "option": "0x37D41fAB8e1fE132539A637789551cB760F0042D",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0xEe93866b24E3645f723526BDcAa1c9c32B7Fa399": {
-      "option": "0x1C83C869ebF939E71615f2e4b2c13C46d7B12E33",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x1795562ccC2b9421D5EC5CF3FdD8399409358cfD": {
-      "option": "0xA0bd01d8991e4a3878016d84A92e71785c28d74a",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x7819868A947C20C6D7FEd099a154eE338B57DBA4": {
-      "option": "0x5f3600193dc08439a8384b82Cc81Cd559826d6BA",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x72f58B884d26B7EF12F423f7a4e5f65ac6fD6Bd4": {
-      "option": "0x58E080c10de572a2B3FCC97886b94cb230A67F36",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x8B13B5DBAC1668a561a460858dC41C4026cbC85A": {
-      "option": "0xeBb1C93aaB948e2c3be2C51A3df276B0Aa2cf5eC",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x97F86742834ba300cd176907E5fef66FFa888e52": {
-      "option": "0xeBfb5Cae81ED883ed7fE5fD035197f2FB1a153B1",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x8149cdF057de2279eF43c1cC38b2014B66F91A4c": {
-      "option": "0xBa0358BAAB4c72899A72BEDC249c68Edd951faCd",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x223Df63631896b8ED10e7e399B4E68b3628B0615": {
-      "option": "0x63EA7fe1D4fcBcE239183Ae6d85d2ceD0369FAd3",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0xE03fB1eCB09953bb9F0aa606978221302AF0890d": {
-      "option": "0x4332B2873974141aEB704f362404ad69DD0855d7",
-      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2000000000000000000"
-    },
-    "0x68e0B293AcCf52A6e35382Aa59412D6A47FAA333": {
-      "option": "0x908AC1EDf623546607202b3755DBFe3c81a5b1bb",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xD78916473fCEE31381da8638E6c8d9d55B3F363C": {
-      "option": "0x984CF6c916f25509E2969c5E5C5b14f051Ee804c",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xAcDBA5637B76406948E572799bc93d65647e7f55": {
-      "option": "0xf8e35DF413f486329231608ea2E8587b755F5D52",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xD22106d419D5e96c63a88480182e5e948dD8cf9D": {
-      "option": "0x05DA6C5adc56574A9e2854edebD8b24087BAAA52",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xF8bcfE5920110f1B5952f155bf2ffF44912b8d3E": {
-      "option": "0x36d92E9842d6d64741c0A2F0C5f896D0f1707F89",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x4Bc0e5FeE7649F2625DdD178C48b744cDA89e587": {
-      "option": "0x87e7eC54811fBe4bCC9159e0802f142AB17E7939",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xc28842b8355a66FC00eFFe7F5B169484598B746d": {
-      "option": "0xfdEd2bF06946D8DD0342f723Ada9fb925be57d44",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xFc1f1396547BDE7A517A8443a946711a79E78aA8": {
-      "option": "0x96FE8e57421cD20591F6790f21F9D013a17b2895",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x50fEe52229C8F751f35fD96c793ce15633EbD97F": {
-      "option": "0xeF291e18Aa94Bce1653eC556E3a6833368cd8879",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x5CA8Ac1cb7367A6825424275018d394De8a16435": {
-      "option": "0x4d1F86835c20dc47B2C598d1c6a3bF2dE2A91aB8",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x2A2A9aC21F7DB88482980A1Ca982D2C393D9F15c": {
-      "option": "0xA00F3594082C282Be80ec28ff7a608f892B3a23C",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x46dAFc73B26505fbF6b12c395A322bacDE8d6158": {
-      "option": "0x68d837ed1E1d2f50E0f444afa269EBe58F2b1B35",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xCAfB25D4E378e2912c8e25185cB8a04b1164f779": {
-      "option": "0x4847d99C46B988baC3Aac901f4351411271E4F40",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x8E74eB0c000C7B8902bAC515cEFfCbd0Ce571003": {
-      "option": "0x6062b6611b46A23fA9F663e7A4CEb998D7BB7ADD",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x31BABb2630Ba9194B1E9cF47bC2d53562B818bB7": {
-      "option": "0x15F6f5b0cd009Ad7fb816753c21d3bdE90Af6cfe",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xa8234F13Cd01f9b57c81Acf16E2F2CEeAA73227c": {
-      "option": "0x28c70FC0bfc9Ecc052dC580d18d9272294e0E7D3",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0xB8A6F153e087506186f9Df591e87fC6e83e3c7f8": {
-      "option": "0x16b99b4bf23FBaE11CAf9a7e7FF7173f675130F9",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x569f678C92b58F2DDBcBD45628c1A85214617c46": {
-      "option": "0x28716572850b50bBCC2971990060e740b8d5B51d",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x9aEDa8f2178297768916975D91F6118463Dc7b41": {
-      "option": "0x34C0a8a13e4D777C2e8B78B93c4a6cbCe4dF6E70",
-      "tokenb": "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x40E637720fC89f8085983052e7907A2C75a3d964": {
-      "option": "0xe55384713365CE778834655409428009544D2C4B",
-      "tokenb": "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x006ebB1b0a87Ebab55126fCd4d9A83c9103eaDa7": {
-      "option": "0xF6f8a29D4C91202F304c256122338Fd4F593F354",
-      "tokenb": "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
-    },
-    "0x41138113E8eB4c973c5ff6ef4851709f8225AB00": {
-      "option": "0x17D2b4DB5d0378446370B5a32119b86BdFbF4294",
-      "tokenb": "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
-      "priceProvider": "0x089F187C53A329C638335a6cC61A05f0B8E733FF",
-      "blackScholes": "0x7565cb3a27ea274f0f93BCF5209392D88289C122",
-      "sigma": "0x42d84C3e817C4e6D6633A758329E2d471C3C3848",
-      "initialsigma": "2500000000000000000"
+    "0xc7362F2ffB0b389Da270A176C50992bA95A65764": {
+      "option": "0x7AfC7c3295AAfEcaC9A8e8A906D29D8f9ECd46E2",
+      "tokenb": "0x58ad4cb396411b691a9aab6f74545b2c5217fe6a",
+      "initialsigma": "660000000000000000"
     }
   },
-  "optionExchange": "0xB7B9353570D1026F35b436f3035F75229B1Ac70e"
+  "configurationManager": "0xd585E43655D1fbAB76bFC0391d258bCDAB973B3D",
+  "normalDistribution": "0x4Ee7197769b44D3A4cb40C5777BDc1ff1235f049",
+  "optionFactory": "0x385265B5e875EEFFdC49BBD062A724901740D1c6"
 }
