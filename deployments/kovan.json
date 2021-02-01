@@ -1,126 +1,25 @@
 {
   "optionExchange": "0x4A6fC9165cfD7ee6762aE51a78b8897C0E7cffaE",
-  "optionAMMFactory": "0x05b990A5C6c5F68d5798ec3d8f0508034d87BF85",
-  "sigma": "0xeC2940669edF2B5c25e41AF4a7AF3e31bf991420",
-  "blackScholes": "0xE51bf08B1720Eab06022D7592AF20BD84E17e4cf",
-  "priceProvider": "0x5e4418095F9a93e92df94FeDf9aB93A1C383f04e",
+  "optionAMMFactory": "0xBbFc08E9a98D904b4021896DFc0F561EeE3CC8ed",
+  "sigma": "0xF8F5B5f62Ef1cd9a84388302395B0FE6D8Fd9Eca",
+  "blackScholes": "0x6f01211406B7d6A1e353eBCa32b5B8dD4C7f2Bc5",
+  "priceProvider": "0x3b96d6cc999D52d58375C6034e98316D8Ec5A382",
   "USDC": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
   "DAI": "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
   "ADAI": "0x58ad4cb396411b691a9aab6f74545b2c5217fe6a",
   "AUSDC": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
   "WBTC": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
   "WETH": "0xD7FDf2747A855AC20b96A5cEDeA84b2138cEd280",
-  "PodPutBuilder": "0xA907c0507993F77E54b36C427588DbDdaB682ee1",
-  "WPodPutBuilder": "0xC8bCdc72c7fdc2B160ad5242684bFF07777E701A",
-  "PodCallBuilder": "0x772DCb636AbD8EB7ca57eB838a3B92C138b08FC3",
-  "WPodCallBuilder": "0xB367e9eB98491c2A34ecDCE531593941eE9CC0Bf",
-  "OptionFactory": "0xcDf05F839B65a8922dBBf9eeBc6fde94EeA4310D",
-  "options": {
-    "0x82B496d3907E345c54838c5CFe2bC5c1218Dc4B1": {
-      "name": "Pods Put WETH:AUSDC 560 2020-12-18",
-      "symbol": "PodWETH:AUSDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0xD7FDf2747A855AC20b96A5cEDeA84b2138cEd280",
-      "strikeAsset": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "strikePrice": "560000000",
-      "expiration": "1608278400",
-      "windowOfExercise": "86400"
-    },
-    "0x9D99dD5e11367eDc1ea4627c67F5F0B17b5BF35E": {
-      "name": "Pods Put WETH:AUSDC 560 2020-12-18",
-      "symbol": "PodWETH:AUSDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0xD7FDf2747A855AC20b96A5cEDeA84b2138cEd280",
-      "strikeAsset": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "strikePrice": "560000000",
-      "expiration": "1608278400",
-      "windowOfExercise": "86400"
-    },
-    "0xCc1Bbe8517962bC0a7F142DFeBaE4952977bd076": {
-      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
-      "symbol": "PodWBTC:USDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
-      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "strikePrice": "8000000000",
-      "expiration": "1612050905",
-      "windowOfExercise": "86400"
-    },
-    "0xA7Ab3884B4E59835d66540bb90B49090E39dB06b": {
-      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
-      "symbol": "PodWBTC:USDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
-      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "strikePrice": "8000000000",
-      "expiration": "1612050905",
-      "windowOfExercise": "86400"
-    },
-    "0xAC10C54E49d17F924051e7Cd0e1985813D96a776": {
-      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
-      "symbol": "PodWBTC:USDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
-      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "strikePrice": "8000000000",
-      "expiration": "1612050905",
-      "windowOfExercise": "86400"
-    },
-    "0xcFCa3154b439C616cDf2E2e0A48E57b50119C195": {
-      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
-      "symbol": "PodWBTC:USDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
-      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "strikePrice": "8000000000",
-      "expiration": "1612050905",
-      "windowOfExercise": "86400"
-    },
-    "0xa93eD17Fb7C531a80e29D9541e5060633Ca101ff": {
-      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
-      "symbol": "PodWBTC:USDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
-      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "strikePrice": "8000000000",
-      "expiration": "1612050905",
-      "windowOfExercise": "86400"
-    },
-    "0x7AfC7c3295AAfEcaC9A8e8A906D29D8f9ECd46E2": {
-      "name": "Pods Put WBTC:USDC 8000 2021-01-30",
-      "symbol": "PodWBTC:USDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
-      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
-      "strikePrice": "8000000000",
-      "expiration": "1612050905",
-      "windowOfExercise": "86400"
-    }
-  },
-  "pools": {
-    "0x303e0FdaF4897B8615aFa997889cF86832A94CDE": {
-      "option": "0x82B496d3907E345c54838c5CFe2bC5c1218Dc4B1",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x5e4418095F9a93e92df94FeDf9aB93A1C383f04e",
-      "blackScholes": "0xAeeA7cF7A81bd22109a31CA264e8c30dD1CAe30E",
-      "sigma": "0x6e9A8F6373870F126b2d21dc24D6320641Fd3302",
-      "initialsigma": "880000000000000000"
-    },
-    "0xc7362F2ffB0b389Da270A176C50992bA95A65764": {
-      "option": "0x7AfC7c3295AAfEcaC9A8e8A906D29D8f9ECd46E2",
-      "tokenb": "0x58ad4cb396411b691a9aab6f74545b2c5217fe6a",
-      "initialsigma": "660000000000000000"
-    }
-  },
-  "configurationManager": "0xd585E43655D1fbAB76bFC0391d258bCDAB973B3D",
-  "normalDistribution": "0x4Ee7197769b44D3A4cb40C5777BDc1ff1235f049",
-  "optionFactory": "0x385265B5e875EEFFdC49BBD062A724901740D1c6"
+  "PodPutBuilder": "0xF3e485acC555E711CaB7a3C80f7ec260643B7b52",
+  "WPodPutBuilder": "0xd10971F3916F60784fEa930bB6407F4652DC11A6",
+  "PodCallBuilder": "0x64221528610E6C3917EBd13Bfdc0C56a820C5B3d",
+  "WPodCallBuilder": "0x99693b36edD7ab35712D8801504F68c8cb4aEf33",
+  "options": {},
+  "pools": {},
+  "configurationManager": "0x13B3CaBc1ABd928dabd16cbF57ed0dDE2a2dDa42",
+  "normalDistribution": "0x544780f9952D41a9324000E41b09df7eC3BbE2aD",
+  "optionFactory": "0x72A445203C76c401Faef24964d6040d26Df86A80",
+  "emergencyStop": "0xB4FFeF655550E9424aD152ac7a16C904CDb818e0",
+  "capProvider": "0xf4D10a3D80Cec474e16fa544f837DE3b1AF31B0b",
+  "chainlinkPriceFeed": "0x3d94bFa2ec5c060f1B6d36A9e3e8E6B22F4b5E51"
 }
