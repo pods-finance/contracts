@@ -65,53 +65,40 @@ task('deployNewOption', 'Deploy New Option')
     ]
 
     const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
-    const txIdNewOptionHold = await FactoryContract.createOption(...funcParameters)
+    const txIdNewOption = await FactoryContract.createOption(...funcParameters)
+    await txIdNewOption.wait(1)
 
-    const txIdNewOption = await ethers.provider.waitForTransaction(txIdNewOptionHold.hash)
+    const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
+    console.log('txIdNewOption.blockNumber', txIdNewOption.blockNumber)
+    const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, 'latest')
+    console.log('txId: ', txIdNewOption.hash)
+    console.log('timestamp: ', new Date())
 
-    let numberOfTries = 0
-    const queryFilter = async () => {
-      const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
-      console.log('txIdNewOption.blockNumber', txIdNewOption.blockNumber)
-      const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, 'latest')
-      console.log('txId: ', txIdNewOptionHold.hash)
-      console.log('timestamp: ', new Date())
+    if (eventDetails.length) {
+      const { deployer, option } = eventDetails[0].args
+      console.log('blockNumber: ', eventDetails[0].blockNumber)
+      console.log('deployer: ', deployer)
+      console.log('option: ', option)
 
-      if (eventDetails.length) {
-        const { deployer, option } = eventDetails[0].args
-        console.log('blockNumber: ', eventDetails[0].blockNumber)
-        console.log('deployer: ', deployer)
-        console.log('option: ', option)
+      const currentOptions = contentJSON.options
+      const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
 
-        const currentOptions = contentJSON.options
-        const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
+      if (cap != null && parseFloat(cap) > 0) {
+        const configurationManager = await ethers.getContractAt('ConfigurationManager', await FactoryContract.configurationManager())
+        const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
 
-        if (cap != null && parseFloat(cap) > 0) {
-          const configurationManager = await ethers.getContractAt('ConfigurationManager', await FactoryContract.configurationManager())
-          const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
-
-          const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await underlyingAssetContract.decimals()))
-          const tx = await capProvider.setCap(option, capValue)
-          await tx.wait(1)
-          console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
-        }
-
-        await saveJSON(pathFile, { options: newOptionObj })
-
-        console.log('----Finish Deploy New Option----')
-        return option
-      } else {
-        if (numberOfTries > 10) {
-          console.log('Something went wrong: No events found')
-          throw Error('Something went wrong: No events found')
-        } else {
-          console.log('numberOfTries', numberOfTries)
-          numberOfTries++
-          await queryFilter()
-        }
+        const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await underlyingAssetContract.decimals()))
+        const tx = await capProvider.setCap(option, capValue)
+        await tx.wait(1)
+        console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
       }
-    }
 
-    const option = await queryFilter()
-    return option
+      await saveJSON(pathFile, { options: newOptionObj })
+
+      console.log('----Finish Deploy New Option----')
+      return option
+    } else {
+      console.log('Something went wrong: No events found')
+      throw Error('Something went wrong: No events found')
+    }
   })

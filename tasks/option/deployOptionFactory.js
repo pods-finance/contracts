@@ -4,8 +4,8 @@ const pathJoin = require('path')
 const fsPromises = fs.promises
 
 task('deployOptionFactory', 'Deploy OptionFactory')
-  .addParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addFlag('builders', 'true if want to deploy all builders combined')
+  .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addOptionalParam('podputbuilder', 'podputbuilder contract address')
   .addOptionalParam('wpodputbuilder', 'wpodputbuilder contract address')
   .addOptionalParam('podcallbuilder', 'podcallbuilder contract address')
@@ -16,7 +16,11 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     const _filePath = pathJoin.join(__dirname, path)
     const content = await fsPromises.readFile(_filePath)
     const wethAddress = JSON.parse(content).WETH
-    const configurationManager = configuration
+    const configurationManager = configuration || JSON.parse(content).configurationManager
+
+    if (!configurationManager) {
+      throw Error('Configuration Manager not found')
+    }
 
     if (builders) {
       podputbuilder = await run('deployBuilder', { optiontype: 'PodPut' })
