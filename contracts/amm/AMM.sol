@@ -134,8 +134,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
     mapping(address => UserDepositSnapshot) public usersSnapshot;
 
     /** Events */
-    event AddLiquidity(address indexed caller, address indexed owner, uint256 amountOfStable, uint256 amountOfOptions);
-    event RemoveLiquidity(address indexed caller, uint256 amountOfStable, uint256 amountOfOptions);
+    event AddLiquidity(address indexed caller, address indexed owner, uint256 amountA, uint256 amountB);
+    event RemoveLiquidity(address indexed caller, uint256 amountA, uint256 amountB);
     event TradeExactAInput(address indexed caller, address indexed owner, uint256 exactAmountAIn, uint256 amountBOut);
     event TradeExactBInput(address indexed caller, address indexed owner, uint256 exactAmountBIn, uint256 amountAOut);
     event TradeExactAOutput(address indexed caller, address indexed owner, uint256 amountBIn, uint256 exactAmountAOut);
@@ -396,7 +396,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(IERC20(tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
 
-        emit TradeExactAInput(msg.sender, owner, exactAmountAIn, exactAmountAIn);
+        emit TradeExactAInput(msg.sender, owner, exactAmountAIn, amountBOut);
         return amountBOut;
     }
 
@@ -430,7 +430,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(IERC20(tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
 
-        emit TradeExactAOutput(msg.sender, owner, exactAmountAOut, amountBIn);
+        emit TradeExactAOutput(msg.sender, owner, amountBIn, exactAmountAOut);
         return amountBIn;
     }
 
@@ -464,7 +464,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(IERC20(tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
 
-        emit TradeExactBInput(msg.sender, owner, amountAOut, exactAmountBIn);
+        emit TradeExactBInput(msg.sender, owner, exactAmountBIn, amountAOut);
         return amountAOut;
     }
 
@@ -472,7 +472,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @notice _tradeExactBOutput owner is able to receive exact amount of token B from the contract in exchange of a
      * max acceptable amount of token A sent by the msg.sender to the contract.
      *
-     * @dev The inheritor contract should implement _getTradeDetailsExactBOutput and _onTradeExactBInput functions
+     * @dev The inheritor contract should implement _getTradeDetailsExactBOutput and _tradeExactBOutput functions
      * _getTradeDetailsExactBOutput should return tradeDetails struct format
      *
      * @param exactAmountBOut exact amount of token B that will be transfer to owner
