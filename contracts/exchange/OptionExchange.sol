@@ -3,6 +3,7 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMFactory.sol";
@@ -15,6 +16,7 @@ import "../interfaces/IOptionAMMPool.sol";
  * alternatively it can buy to a Option Buyer
  */
 contract OptionExchange {
+    using SafeERC20 for IERC20;
     using SafeMath for uint256;
     IOptionAMMFactory public factory;
 
@@ -60,7 +62,9 @@ contract OptionExchange {
      */
     function mint(IPodOption option, uint256 optionAmount) external {
         _mint(option, optionAmount);
-        require(option.transfer(msg.sender, optionAmount), "OptionExchange: could not transfer options back to caller");
+
+        // Transfers back the minted options
+        IERC20(address(option)).safeTransfer(msg.sender, optionAmount);
     }
 
     /**
@@ -87,7 +91,7 @@ contract OptionExchange {
         _mint(option, optionAmount);
 
         // Approving Option transfer to Exchange
-        option.approve(address(pool), optionAmount);
+        IERC20(address(option)).safeApprove(address(pool), optionAmount);
 
         uint256 tokensBought = pool.tradeExactAInput(optionAmount, minTokenAmount, msg.sender, sigma);
 
@@ -110,19 +114,18 @@ contract OptionExchange {
         uint256 tokenAmount
     ) external {
         IOptionAMMPool pool = _getPool(option);
+        IERC20 stableToken = IERC20(token);
 
         _mint(option, optionAmount);
 
-        require(
-            IERC20(token).transferFrom(msg.sender, address(this), tokenAmount),
-            "OptionExchange: could not transfer token from caller"
-        );
+        // Take stable token from caller
+        stableToken.safeTransferFrom(msg.sender, address(this), tokenAmount);
 
         // Approving Option transfer to pool
-        option.approve(address(pool), optionAmount);
+        IERC20(address(option)).safeApprove(address(pool), optionAmount);
 
         // Approving Token transfer to pool
-        IERC20(token).approve(address(pool), tokenAmount);
+        stableToken.safeApprove(address(pool), tokenAmount);
 
         pool.addLiquidity(optionAmount, tokenAmount, msg.sender);
 
@@ -149,24 +152,20 @@ contract OptionExchange {
         uint256 sigma
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
+        IERC20 tokenIn = IERC20(token);
 
         // Take input amount from caller
-        require(
-            IERC20(token).transferFrom(msg.sender, address(this), maxTokenAmount),
-            "OptionExchange: could not transfer tokens from caller"
-        );
+        tokenIn.safeTransferFrom(msg.sender, address(this), maxTokenAmount);
 
         // Approve pool usage
-        IERC20(token).approve(address(pool), maxTokenAmount);
+        tokenIn.safeApprove(address(pool), maxTokenAmount);
 
         uint256 tokensSold = pool.tradeExactAOutput(optionAmount, maxTokenAmount, msg.sender, sigma);
+        uint256 unusedFunds = maxTokenAmount.sub(tokensSold);
 
         // Transfer back unused funds
-        if (tokensSold < maxTokenAmount) {
-            require(
-                IERC20(token).transfer(msg.sender, maxTokenAmount.sub(tokensSold)),
-                "OptionExchange: could not transfer tokens back to caller"
-            );
+        if (unusedFunds > 0) {
+            tokenIn.safeTransfer(msg.sender, unusedFunds);
         }
 
         emit OptionsBought(msg.sender, address(option), optionAmount, token, tokensSold);
@@ -191,15 +190,13 @@ contract OptionExchange {
         uint256 sigma
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
+        IERC20 tokenIn = IERC20(token);
 
         // Take input amount from caller
-        require(
-            IERC20(token).transferFrom(msg.sender, address(this), tokenAmount),
-            "OptionExchange: could not transfer tokens from caller"
-        );
+        tokenIn.safeTransferFrom(msg.sender, address(this), tokenAmount);
 
         // Approve pool usage
-        IERC20(token).approve(address(pool), tokenAmount);
+        tokenIn.safeApprove(address(pool), tokenAmount);
 
         uint256 optionsBought = pool.tradeExactBInput(tokenAmount, minOptionAmount, msg.sender, sigma);
 
@@ -216,13 +213,12 @@ contract OptionExchange {
         IERC20 strikeAsset = IERC20(option.strikeAsset());
         uint256 strikeToTransfer = option.strikeToTransfer(amount);
 
-        require(
-            strikeAsset.transferFrom(msg.sender, address(this), strikeToTransfer),
-            "OptionExchange: could not transfer strike from caller"
-        );
+        // Take strike asset from caller
+        strikeAsset.safeTransferFrom(msg.sender, address(this), strikeToTransfer);
 
         // Approving Strike transfer to Option
-        strikeAsset.approve(address(option), strikeToTransfer);
+        strikeAsset.safeApprove(address(option), strikeToTransfer);
+
         option.mint(amount, msg.sender);
     }
 

@@ -179,24 +179,25 @@ describe('OptionExchange', () => {
 
   describe('Buy', () => {
     it('buys the exact amount of options', async () => {
-      const minAcceptedCost = ethers.BigNumber.from(200e6.toString())
+      const maxAcceptedCost = ethers.BigNumber.from(200e6.toString())
       const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp() + 60
 
       const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
 
-      await stableAsset.connect(caller).mint(minAcceptedCost)
+      await stableAsset.connect(caller).mint(maxAcceptedCost)
 
       const tx = await exchange.connect(caller).buyExactOptions(
         option.address,
         amountToBuy,
         stableAsset.address,
-        minAcceptedCost,
+        maxAcceptedCost,
         deadline,
         sigma
       )
 
-      const spentAmount = minAcceptedCost.sub(await stableAsset.balanceOf(callerAddress))
+      const balanceAfterTrade = await stableAsset.balanceOf(callerAddress)
+      const spentAmount = maxAcceptedCost.sub(balanceAfterTrade)
 
       await expect(Promise.resolve(tx))
         .to.emit(exchange, 'OptionsBought')
