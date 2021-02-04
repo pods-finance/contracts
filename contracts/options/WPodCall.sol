@@ -145,8 +145,8 @@ contract WPodCall is PodCall {
         uint256 ownerMintedOptions = mintedOptions[msg.sender];
         require(amountOfOptions <= ownerMintedOptions, "WPodCall: not enough minted options");
 
-        uint256 strikeReserves = ERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset()).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
 
         uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
 
@@ -225,8 +225,8 @@ contract WPodCall is PodCall {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "WPodCall: you do not have balance to withdraw");
 
-        uint256 strikeReserves = ERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = ERC20(underlyingAsset()).balanceOf(address(this));
+        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
+        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
 
         uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
         uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
