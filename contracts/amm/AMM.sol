@@ -134,8 +134,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
     mapping(address => UserDepositSnapshot) public usersSnapshot;
 
     /** Events */
-    event AddLiquidity(address indexed caller, address indexed owner, uint256 amountOfStable, uint256 amountOfOptions);
-    event RemoveLiquidity(address indexed caller, uint256 amountOfStable, uint256 amountOfOptions);
+    event AddLiquidity(address indexed caller, address indexed owner, uint256 amountA, uint256 amountB);
+    event RemoveLiquidity(address indexed caller, uint256 amountA, uint256 amountB);
     event TradeExactAInput(address indexed caller, address indexed owner, uint256 exactAmountAIn, uint256 amountBOut);
     event TradeExactBInput(address indexed caller, address indexed owner, uint256 exactAmountBIn, uint256 amountAOut);
     event TradeExactAOutput(address indexed caller, address indexed owner, uint256 amountBIn, uint256 exactAmountAOut);
