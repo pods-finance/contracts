@@ -472,7 +472,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @notice _tradeExactBOutput owner is able to receive exact amount of token B from the contract in exchange of a
      * max acceptable amount of token A sent by the msg.sender to the contract.
      *
-     * @dev The inheritor contract should implement _getTradeDetailsExactBOutput and _onTradeExactBInput functions
+     * @dev The inheritor contract should implement _getTradeDetailsExactBOutput and _tradeExactBOutput functions
      * _getTradeDetailsExactBOutput should return tradeDetails struct format
      *
      * @param exactAmountBOut exact amount of token B that will be transfer to owner
