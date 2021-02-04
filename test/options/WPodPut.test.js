@@ -121,6 +121,13 @@ scenarios.forEach(scenario => {
       it('should have equal number of decimals StrikePrice and strikeAsset', async () => {
         expect(await wPodPut.strikePriceDecimals()).to.equal(await wPodPut.strikeAssetDecimals())
       })
+
+      it('should not be able to send ETH directly', async () => {
+        await expect(seller.sendTransaction({
+          to: wPodPut.address,
+          value: 200
+        })).to.be.revertedWith('WPodPut: Only deposits from WETH are allowed')
+      })
     })
 
     describe('Minting options', () => {
