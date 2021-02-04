@@ -67,17 +67,34 @@ describe('PriceProvider', () => {
     })
 
     it('should revert if create with invalid PriceFeed', async () => {
-      await expect(provider.setAssetFeeds([asset1], ['0x'])).to.be.revertedWith('PriceProvider: invalid PriceFeed')
+      await expect(provider.setAssetFeeds([asset1], [ethers.constants.AddressZero])).to.be.revertedWith('PriceProvider: invalid PriceFeed')
     })
 
     it('should revert if Price Feed not started', async () => {
       const notStartedPriceFeed = await createPriceFeedMock()
-      await expect(provider.setAssetFeeds([asset1], [notStartedPriceFeed.address])).to.be.revertedWith('PriceProvider: PriceFeed not started')
+      await notStartedPriceFeed.setDecimals(6)
+      await notStartedPriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt: 0,
+        updatedAt,
+        answeredInRound: 1
+      })
+      await expect(provider.setAssetFeeds([asset1], [notStartedPriceFeed.contract.address])).to.be.revertedWith('PriceProvider: PriceFeed not started')
     })
 
     it('should revert if stale price feed', async () => {
       const stalePriceFeed = await createPriceFeedMock()
-      await expect(provider.setAssetFeeds([asset1], [stalePriceFeed.address])).to.be.revertedWith('PriceProvider: stale PriceFeed')
+      const currentTimestamp = await getTimestamp()
+      await stalePriceFeed.setDecimals(6)
+      await stalePriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt: currentTimestamp - 11101,
+        answeredInRound: 1
+      })
+      await expect(provider.setAssetFeeds([asset1], [stalePriceFeed.contract.address])).to.be.revertedWith('PriceProvider: stale PriceFeed')
     })
   })
 
@@ -128,13 +145,13 @@ describe('PriceProvider', () => {
 
   describe('latestRoundData', () => {
     it('fetches the round data', async () => {
-      expect(await provider.latestRoundData(asset0)).to.be.deep.equal([
-        ethers.BigNumber.from(1),
-        price,
-        ethers.BigNumber.from(startedAt),
-        ethers.BigNumber.from(updatedAt),
-        ethers.BigNumber.from(1)
-      ])
+      const result = await provider.latestRoundData(asset0)
+
+      expect(result.roundId).to.be.equal(ethers.BigNumber.from(1))
+      expect(result.answer).to.be.equal(price)
+      expect(result.startedAt).to.be.equal(ethers.BigNumber.from(startedAt))
+      expect(result.updatedAt).to.be.equal(ethers.BigNumber.from(updatedAt))
+      expect(result.answeredInRound).to.be.equal(ethers.BigNumber.from(1))
     })
     it('should revert if fetches unregistered Feed', async () => {
       await expect(provider.latestRoundData(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
@@ -171,6 +188,6 @@ async function createPriceFeedMock () {
       return mockChainlink.mock.decimals.returns(decimals)
     },
     setRoundData,
-    setPrice,
+    setPrice
   }
 }

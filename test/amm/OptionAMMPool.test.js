@@ -90,7 +90,7 @@ scenarios.forEach(scenario => {
       ;[mockWETH, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
         MockWETH.deploy(),
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
-        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals),
+        MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
       ])
 
       const mock = await getPriceProviderMock(
@@ -159,11 +159,11 @@ scenarios.forEach(scenario => {
 
     describe('Add Liquidity', () => {
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(optionAMMPool.addLiquidity(0, 10000)).to.be.revertedWith('ou should add both tokens on the first liquidity')
+        await expect(optionAMMPool.addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('AMM: you should add both tokens on the first liquidity')
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
-        await expect(optionAMMPool.addLiquidity(1000, 10000)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+        await expect(optionAMMPool.addLiquidity(1000, 10000, buyerAddress)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
       })
 
       it('should revert if user do not approved one of assets to be spent by OptionAMMPool', async () => {
@@ -171,7 +171,7 @@ scenarios.forEach(scenario => {
         await MintPhase(1)
         await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity.add(1))
         const optionBalance = await podPut.balanceOf(deployerAddress)
-        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString()))
+        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString(), buyerAddress))
           .to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
 
@@ -183,7 +183,7 @@ scenarios.forEach(scenario => {
         const capExceeded = capSize.add(1)
 
         await mockStrikeAsset.mint(capExceeded)
-        await expect(optionAMMPool.addLiquidity(0, capExceeded))
+        await expect(optionAMMPool.addLiquidity(0, capExceeded, buyerAddress))
           .to.be.revertedWith('CappedPool: amount exceed cap')
       })
 

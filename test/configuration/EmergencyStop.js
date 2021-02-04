@@ -1,4 +1,4 @@
-const { ethers } = require('@nomiclabs/buidler')
+const { ethers } = require('hardhat')
 const { expect } = require('chai')
 
 describe('EmergencyStop', () => {

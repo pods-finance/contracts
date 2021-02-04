@@ -1,4 +1,4 @@
-const { ethers } = require('@nomiclabs/buidler')
+const { ethers } = require('hardhat')
 const createBlackScholes = require('./createBlackScholes')
 
 module.exports = async function createConfigurationManager (priceProvider) {
@@ -18,7 +18,7 @@ module.exports = async function createConfigurationManager (priceProvider) {
     Sigma.deploy(blackScholes.address)
   ])
 
-  if(!priceProvider) {
+  if (!priceProvider) {
     priceProvider = await PriceProvider.deploy([], [])
   }
 

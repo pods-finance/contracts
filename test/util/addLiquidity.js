@@ -1,4 +1,4 @@
-const { ethers } = require('@nomiclabs/buidler')
+const { ethers } = require('hardhat')
 const mintOptions = require('./mintOptions')
 
 /**

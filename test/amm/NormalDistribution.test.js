@@ -1,5 +1,5 @@
 const { expect } = require('chai')
-const { ethers } = require('@nomiclabs/buidler')
+const { ethers } = require('hardhat')
 
 describe('NormalDistribution', () => {
   let NormalDistribution, nd
