@@ -117,7 +117,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         address owner
     ) external override beforeExpiration capped(tokenB, amountOfB) {
         _emergencyStopCheck();
-        return _addLiquidity(amountOfA, amountOfB, owner);
+        _addLiquidity(amountOfA, amountOfB, owner);
     }
 
     /**
@@ -128,7 +128,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
      */
     function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
         _emergencyStopCheck();
-        return _removeLiquidity(amountOfA, amountOfB);
+        _removeLiquidity(amountOfA, amountOfB);
     }
 
     /**
