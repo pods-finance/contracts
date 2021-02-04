@@ -247,6 +247,7 @@ contract WPodCall is PodCall {
     }
 
     receive() external payable {
+        require(msg.sender == address(weth), "WPodCall: Only deposits from WETH are allowed");
         emit Received(msg.sender, msg.value);
     }
 }

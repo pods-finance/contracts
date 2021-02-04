@@ -208,6 +208,7 @@ contract WPodPut is PodPut {
     }
 
     receive() external payable {
+        require(msg.sender == address(weth), "WPodPut: Only deposits from WETH are allowed");
         emit Received(msg.sender, msg.value);
     }
 }
