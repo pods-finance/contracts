@@ -9,7 +9,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
   .addParam('initialsigma', 'Initial Sigma to start the pool')
-  .addOptionalParam('cap', 'The cap of tokenB liquidity to be added', 10000, 'number')
+  .addOptionalParam('cap', 'The cap of tokenB liquidity to be added')
   .setAction(async ({ option, tokenb, initialsigma, cap }, bre) => {
     console.log('----Start Deploy New Pool----')
     const pathFile = `../../deployments/${bre.network.name}.json`
@@ -27,12 +27,12 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const tokenBContract = await ethers.getContractAt('MintableERC20', tokenb)
 
     const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialsigma)
-    await txIdNewPool.wait()
+    await txIdNewPool.wait(1)
 
     console.log('txId: ', txIdNewPool.hash)
 
     const filterFrom = await OptionAMMFactory.filters.PoolCreated(deployerAddress)
-    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txIdNewPool.blockNumber, txIdNewPool.blockNumber)
+    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txIdNewPool.blockNumber, 'latest')
     if (eventDetails.length) {
       const { deployer, pool: poolAddress } = eventDetails[0].args
       console.log('blockNumber: ', eventDetails[0].blockNumber)
@@ -45,16 +45,16 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
         initialsigma
       }
 
-      const currentPools = require(`../../deployments/${bre.network.name}.json`).pools
+      const currentPools = contentJSON.pools
       const newPoolObj = Object.assign({}, currentPools, { [poolAddress]: poolObj })
 
       if (cap != null && parseFloat(cap) > 0) {
         const cm = await ethers.getContractAt('ConfigurationManager', configurationManager)
         const capProvider = await ethers.getContractAt('CapProvider', await cm.getCapProvider())
 
-        const capValue = toBigNumber(cap * (10 ** await tokenBContract.decimals()))
+        const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await tokenBContract.decimals()))
         const tx = await capProvider.setCap(poolAddress, capValue)
-        await tx.wait(2)
+        await tx.wait(1)
         console.log(`Pool cap set to: ${capValue} ${await tokenBContract.symbol()}`)
       }
 
@@ -65,5 +65,3 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       console.log('Something went wrong: No events found')
     }
   })
-
-

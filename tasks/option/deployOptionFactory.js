@@ -1,22 +1,32 @@
 const saveJSON = require('../utils/saveJSON')
+const fs = require('fs')
+const pathJoin = require('path')
+const fsPromises = fs.promises
 
 task('deployOptionFactory', 'Deploy OptionFactory')
   .addFlag('builders', 'true if want to deploy all builders combined')
+  .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addOptionalParam('podputbuilder', 'podputbuilder contract address')
   .addOptionalParam('wpodputbuilder', 'wpodputbuilder contract address')
   .addOptionalParam('podcallbuilder', 'podcallbuilder contract address')
   .addOptionalParam('wpodcallbuilder', 'wpodcallbuilder contract address')
-  .addOptionalParam('configurationManager', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
-  .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, configurationManager, builders }, bre) => {
+
+  .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, configuration, builders }, bre) => {
     const path = `../../deployments/${bre.network.name}.json`
-    const wethAddress = require(`../../deployments/${bre.network.name}.json`).WETH
+    const _filePath = pathJoin.join(__dirname, path)
+    const content = await fsPromises.readFile(_filePath)
+    const wethAddress = JSON.parse(content).WETH
+    const configurationManager = configuration || JSON.parse(content).configurationManager
+
+    if (!configurationManager) {
+      throw Error('Configuration Manager not found')
+    }
 
     if (builders) {
       podputbuilder = await run('deployBuilder', { optiontype: 'PodPut' })
       wpodputbuilder = await run('deployBuilder', { optiontype: 'WPodPut' })
       podcallbuilder = await run('deployBuilder', { optiontype: 'PodCall' })
       wpodcallbuilder = await run('deployBuilder', { optiontype: 'WPodCall' })
-      configurationManager = await run('deployConfigurationManager')
     }
 
     const OptionFactory = await ethers.getContractFactory('OptionFactory')
