@@ -396,7 +396,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(IERC20(tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
 
-        emit TradeExactAInput(msg.sender, owner, exactAmountAIn, exactAmountAIn);
+        emit TradeExactAInput(msg.sender, owner, exactAmountAIn, amountBOut);
         return amountBOut;
     }
 
@@ -430,7 +430,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(IERC20(tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
 
-        emit TradeExactAOutput(msg.sender, owner, exactAmountAOut, amountBIn);
+        emit TradeExactAOutput(msg.sender, owner, amountBIn, exactAmountAOut);
         return amountBIn;
     }
 
@@ -464,7 +464,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(IERC20(tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
 
-        emit TradeExactBInput(msg.sender, owner, amountAOut, exactAmountBIn);
+        emit TradeExactBInput(msg.sender, owner, exactAmountBIn, amountAOut);
         return amountAOut;
     }
 
