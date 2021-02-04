@@ -1,52 +1,43 @@
 {
-  "optionExchange": "0x4A6fC9165cfD7ee6762aE51a78b8897C0E7cffaE",
-  "optionAMMFactory": "0xEFc49fEaa9e0AE0fDce3763F0A1F6a57bD43a448",
-  "sigma": "0x6e9A8F6373870F126b2d21dc24D6320641Fd3302",
-  "blackScholes": "0xAeeA7cF7A81bd22109a31CA264e8c30dD1CAe30E",
-  "priceProvider": "0x5e4418095F9a93e92df94FeDf9aB93A1C383f04e",
+  "optionExchange": "0x625C0b05b350E9C617E38F667bDF03c20C58EBcC",
+  "optionAMMFactory": "0xBbFc08E9a98D904b4021896DFc0F561EeE3CC8ed",
+  "sigma": "0xF8F5B5f62Ef1cd9a84388302395B0FE6D8Fd9Eca",
+  "blackScholes": "0x6f01211406B7d6A1e353eBCa32b5B8dD4C7f2Bc5",
+  "priceProvider": "0x3b96d6cc999D52d58375C6034e98316D8Ec5A382",
   "USDC": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
   "DAI": "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
   "ADAI": "0x58ad4cb396411b691a9aab6f74545b2c5217fe6a",
   "AUSDC": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
   "WBTC": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
   "WETH": "0xD7FDf2747A855AC20b96A5cEDeA84b2138cEd280",
-  "PodPutBuilder": "0x36356614A9A493389BcFa57e94025aEa6721D956",
-  "WPodPutBuilder": "0x0F50430FC8221DD948ba44B4fd35e1ad5ea9a525",
-  "PodCallBuilder": "0xa89A366e51e67E525dd2e745Ee4e156955fFc758",
-  "WPodCallBuilder": "0x86C2240aaB0EeDbC1864FA11f9eC90137ce71778",
-  "OptionFactory": "0xcDf05F839B65a8922dBBf9eeBc6fde94EeA4310D",
+  "PodPutBuilder": "0xF3e485acC555E711CaB7a3C80f7ec260643B7b52",
+  "WPodPutBuilder": "0xd10971F3916F60784fEa930bB6407F4652DC11A6",
+  "PodCallBuilder": "0x64221528610E6C3917EBd13Bfdc0C56a820C5B3d",
+  "WPodCallBuilder": "0x99693b36edD7ab35712D8801504F68c8cb4aEf33",
   "options": {
-    "0x82B496d3907E345c54838c5CFe2bC5c1218Dc4B1": {
-      "name": "Pods Put WETH:AUSDC 560 2020-12-18",
-      "symbol": "PodWETH:AUSDC",
+    "0x7d6FFF0dAF545EEC85A9eA509e61A6D1f2F7751f": {
+      "name": "Pods Put WETH:USDC 1200 2021-02-03",
+      "symbol": "PodWETH:USDC",
       "optionType": 0,
       "exerciseType": 0,
       "underlyingAsset": "0xD7FDf2747A855AC20b96A5cEDeA84b2138cEd280",
-      "strikeAsset": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "strikePrice": "560000000",
-      "expiration": "1608278400",
-      "windowOfExercise": "86400"
-    },
-    "0x9D99dD5e11367eDc1ea4627c67F5F0B17b5BF35E": {
-      "name": "Pods Put WETH:AUSDC 560 2020-12-18",
-      "symbol": "PodWETH:AUSDC",
-      "optionType": 0,
-      "exerciseType": 0,
-      "underlyingAsset": "0xD7FDf2747A855AC20b96A5cEDeA84b2138cEd280",
-      "strikeAsset": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "strikePrice": "560000000",
-      "expiration": "1608278400",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "1200000000",
+      "expiration": "1612350064",
       "windowOfExercise": "86400"
     }
   },
   "pools": {
-    "0x303e0FdaF4897B8615aFa997889cF86832A94CDE": {
-      "option": "0x82B496d3907E345c54838c5CFe2bC5c1218Dc4B1",
-      "tokenb": "0x02f626c6ccb6d2ebc071c068dc1f02bf5693416a",
-      "priceProvider": "0x5e4418095F9a93e92df94FeDf9aB93A1C383f04e",
-      "blackScholes": "0xAeeA7cF7A81bd22109a31CA264e8c30dD1CAe30E",
-      "sigma": "0x6e9A8F6373870F126b2d21dc24D6320641Fd3302",
-      "initialsigma": "880000000000000000"
+    "0xA12Ccc086E6Ff1F0F909fd69Ba4a2fF87fDA4A70": {
+      "option": "0x7d6FFF0dAF545EEC85A9eA509e61A6D1f2F7751f",
+      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "initialsigma": "2000000000000000000"
     }
-  }
+  },
+  "configurationManager": "0x13B3CaBc1ABd928dabd16cbF57ed0dDE2a2dDa42",
+  "normalDistribution": "0x544780f9952D41a9324000E41b09df7eC3BbE2aD",
+  "optionFactory": "0x72A445203C76c401Faef24964d6040d26Df86A80",
+  "emergencyStop": "0xB4FFeF655550E9424aD152ac7a16C904CDb818e0",
+  "capProvider": "0xf4D10a3D80Cec474e16fa544f837DE3b1AF31B0b",
+  "chainlinkPriceFeed": "0x3d94bFa2ec5c060f1B6d36A9e3e8E6B22F4b5E51"
 }

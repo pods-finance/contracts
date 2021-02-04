@@ -3,12 +3,15 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./AMM.sol";
+import "../lib/CappedPool.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/ISigma.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMPool.sol";
 import "../interfaces/IFeePool.sol";
+import "../interfaces/IConfigurationManager.sol";
+import "../interfaces/IEmergencyStop.sol";
 
 /**
  * Represents an Option specific single-sided AMM.
@@ -25,26 +28,16 @@ import "../interfaces/IFeePool.sol";
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
-contract OptionAMMPool is AMM, IOptionAMMPool {
+contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     using SafeMath for uint256;
     uint256 public constant BS_RES_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
 
     // External Contracts
     /**
-     * @notice responsible for the the spot price of the option's underlying asset.
+     * @notice store globally accessed configurations
      */
-    IPriceProvider public priceProvider;
-
-    /**
-     * @notice responsible for the current price of the option itself.
-     */
-    IBlackScholes public priceMethod;
-
-    /**
-     * @notice responsible for one of the priceMethod inputs: implied Volatility (also known as sigma)
-     */
-    ISigma public impliedVolatility;
+    IConfigurationManager public configurationManager;
 
     /**
      * @notice responsible for handling Liquidity providers fees of the token A
@@ -76,13 +69,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     constructor(
         address _optionAddress,
         address _stableAsset,
-        address _priceProvider,
-        address _priceMethod,
-        address _sigma,
         uint256 _initialSigma,
         address _feePoolA,
-        address _feePoolB
-    ) public AMM(_optionAddress, _stableAsset) {
+        address _feePoolB,
+        IConfigurationManager _configurationManager
+    ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
         priceProperties.currentSigma = _initialSigma;
         priceProperties.sigmaInitialGuess = _initialSigma;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
@@ -97,15 +88,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
 
-        priceProvider = IPriceProvider(_priceProvider);
-        priceMethod = IBlackScholes(_priceMethod);
-        impliedVolatility = ISigma(_sigma);
         feePoolA = IFeePool(_feePoolA);
         feePoolB = IFeePool(_feePoolB);
-
-        address sigmaBSAddress = impliedVolatility.blackScholes();
-        // Check if sigma black scholes version is the same as the above
-        require(sigmaBSAddress == _priceMethod, "OptionAMMPool: not same BS contract version");
+        configurationManager = IConfigurationManager(_configurationManager);
     }
 
     /**
@@ -130,7 +115,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external override beforeExpiration {
+    ) external override beforeExpiration capped(tokenB, amountOfB) {
+        _emergencyStopCheck();
         _addLiquidity(amountOfA, amountOfB, owner);
     }
 
@@ -141,6 +127,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      * @param amountOfB amount of TokenB to add
      */
     function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
+        _emergencyStopCheck();
         _removeLiquidity(amountOfA, amountOfB);
     }
 
@@ -164,6 +151,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address owner,
         uint256 sigmaInitialGuess
     ) external override beforeExpiration returns (uint256) {
+        _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
     }
@@ -188,6 +176,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address owner,
         uint256 sigmaInitialGuess
     ) external override beforeExpiration returns (uint256) {
+        _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
     }
@@ -211,6 +200,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address owner,
         uint256 sigmaInitialGuess
     ) external override beforeExpiration returns (uint256) {
+        _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
     }
@@ -235,6 +225,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         address owner,
         uint256 sigmaInitialGuess
     ) external override beforeExpiration returns (uint256) {
+        _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
     }
@@ -246,7 +237,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      *
      * @return ABPrice ABPrice is the unit price AB. Meaning how many units of B, buys 1 unit of A
      */
-    function getABPrice() external view override returns (uint256 ABPrice) {
+    function getABPrice() external override view returns (uint256 ABPrice) {
         return _getABPrice();
     }
 
@@ -264,8 +255,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      */
     function getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
         external
-        view
         override
+        view
         returns (
             uint256 amountBOut,
             uint256 newIV,
@@ -290,8 +281,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      */
     function getOptionTradeDetailsExactAOutput(uint256 exactAmountAOut)
         external
-        view
         override
+        view
         returns (
             uint256 amountBIn,
             uint256 newIV,
@@ -316,8 +307,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      */
     function getOptionTradeDetailsExactBInput(uint256 exactAmountBIn)
         external
-        view
         override
+        view
         returns (
             uint256 amountAOut,
             uint256 newIV,
@@ -342,8 +333,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      */
     function getOptionTradeDetailsExactBOutput(uint256 exactAmountBOut)
         external
-        view
         override
+        view
         returns (
             uint256 amountAIn,
             uint256 newIV,
@@ -363,7 +354,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      * @return spotPrice amount of A that will be transfer from msg.sender to the pool
      */
 
-    function getSpotPrice(address asset, uint256 decimalsOutput) external view override returns (uint256 spotPrice) {
+    function getSpotPrice(address asset, uint256 decimalsOutput) external override view returns (uint256 spotPrice) {
         return _getSpotPrice(asset, decimalsOutput);
     }
 
@@ -378,10 +369,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         if (timeToMaturity == 0) {
             return 0;
         }
+        IBlackScholes pricingMethod = IBlackScholes(configurationManager.getPricingMethod());
         uint256 newABPrice;
 
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
-            newABPrice = priceMethod.getPutPrice(
+            newABPrice = pricingMethod.getPutPrice(
                 int256(spotPrice),
                 int256(priceProperties.strikePrice),
                 priceProperties.currentSigma,
@@ -389,7 +381,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
                 int256(priceProperties.riskFree)
             );
         } else {
-            newABPrice = priceMethod.getCallPrice(
+            newABPrice = pricingMethod.getCallPrice(
                 int256(spotPrice),
                 int256(priceProperties.strikePrice),
                 priceProperties.currentSigma,
@@ -423,7 +415,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         return (poolAmountA, poolAmountB);
     }
 
-    function _getABPrice() internal view override returns (uint256) {
+    function _getABPrice() internal override view returns (uint256) {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
@@ -432,6 +424,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     }
 
     function _getSpotPrice(address asset, uint256 decimalsOutput) internal view returns (uint256) {
+        IPriceProvider priceProvider = IPriceProvider(configurationManager.getPriceProvider());
         uint256 spotPrice = priceProvider.getAssetPrice(asset);
         uint256 spotPriceDecimals = priceProvider.getAssetDecimals(asset);
         uint256 diffDecimals;
@@ -455,6 +448,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     ) internal view returns (uint256) {
         uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
         uint256 newIV;
+        ISigma impliedVolatility = ISigma(configurationManager.getImpliedVolatility());
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             (newIV, ) = impliedVolatility.getPutSigma(
                 newTargetABPriceWithDecimals,
@@ -631,32 +625,36 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
     }
 
     function _getTradeDetailsExactAInput(uint256 exactAmountAIn) internal override returns (TradeDetails memory) {
-        (uint256 amountBOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) =
-            _getOptionTradeDetailsExactAInput(exactAmountAIn);
+        (uint256 amountBOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactAInput(
+            exactAmountAIn
+        );
 
         TradeDetails memory tradeDetails = TradeDetails(amountBOut, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactAOutput(uint256 exactAmountAOut) internal override returns (TradeDetails memory) {
-        (uint256 amountBIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) =
-            _getOptionTradeDetailsExactAOutput(exactAmountAOut);
+        (uint256 amountBIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactAOutput(
+            exactAmountAOut
+        );
 
         TradeDetails memory tradeDetails = TradeDetails(amountBIn, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactBInput(uint256 exactAmountBIn) internal override returns (TradeDetails memory) {
-        (uint256 amountAOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) =
-            _getOptionTradeDetailsExactBInput(exactAmountBIn);
+        (uint256 amountAOut, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactBInput(
+            exactAmountBIn
+        );
 
         TradeDetails memory tradeDetails = TradeDetails(amountAOut, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
     }
 
     function _getTradeDetailsExactBOutput(uint256 exactAmountBOut) internal override returns (TradeDetails memory) {
-        (uint256 amountAIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) =
-            _getOptionTradeDetailsExactBOutput(exactAmountBOut);
+        (uint256 amountAIn, uint256 newIV, uint256 feesTokenA, uint256 feesTokenB) = _getOptionTradeDetailsExactBOutput(
+            exactAmountBOut
+        );
 
         TradeDetails memory tradeDetails = TradeDetails(amountAIn, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
@@ -666,14 +664,16 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
-        uint256 amountOfQuotesAToAdd =
-            _userDepositSnapshot.tokenABalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp).sub(
-                currentQuotesA
-            );
-        uint256 amountOfQuotesBToAdd =
-            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp).sub(
-                currentQuotesB
-            );
+        uint256 amountOfQuotesAToAdd = _userDepositSnapshot
+            .tokenABalance
+            .mul(10**FIMP_PRECISION)
+            .div(_userDepositSnapshot.fImp)
+            .sub(currentQuotesA);
+        uint256 amountOfQuotesBToAdd = _userDepositSnapshot
+            .tokenBBalance
+            .mul(10**FIMP_PRECISION)
+            .div(_userDepositSnapshot.fImp)
+            .sub(currentQuotesB);
 
         feePoolA.mint(owner, amountOfQuotesAToAdd);
         feePoolB.mint(owner, amountOfQuotesBToAdd);
@@ -683,14 +683,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
-        uint256 amountOfQuotesAToRemove =
-            currentQuotesA.sub(
-                _userDepositSnapshot.tokenABalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
-            );
-        uint256 amountOfQuotesBToRemove =
-            currentQuotesB.sub(
-                _userDepositSnapshot.tokenBBalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
-            );
+        uint256 amountOfQuotesAToRemove = currentQuotesA.sub(
+            _userDepositSnapshot.tokenABalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
+        );
+        uint256 amountOfQuotesBToRemove = currentQuotesB.sub(
+            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
+        );
 
         if (amountOfQuotesAToRemove > 0) {
             feePoolA.withdraw(owner, amountOfQuotesAToRemove);
@@ -729,5 +727,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
 
     function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal override {
         _onTrade(tradeDetails);
+    }
+
+    function _emergencyStopCheck() private view {
+        IEmergencyStop emergencyStop = IEmergencyStop(configurationManager.getEmergencyStop());
+        require(
+            !emergencyStop.isStopped(configurationManager.getPriceProvider()) &&
+                !emergencyStop.isStopped(configurationManager.getPricingMethod()) &&
+                !emergencyStop.isStopped(configurationManager.getImpliedVolatility()),
+            "OptionAMMPool: Pool is stopped"
+        );
     }
 }

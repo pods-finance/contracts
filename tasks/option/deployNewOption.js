@@ -1,4 +1,6 @@
 const saveJSON = require('../utils/saveJSON')
+const { toBigNumber } = require('../../utils/utils')
+
 const fs = require('fs')
 const path = require('path')
 const fsPromises = fs.promises
@@ -8,9 +10,10 @@ task('deployNewOption', 'Deploy New Option')
   .addParam('strike', 'symbol of strike asset. (E.G: usdc)')
   .addParam('price', 'Units of strikeAsset in order to trade for 1 unit of underlying. (E.G: 7000)')
   .addParam('expiration', 'Unix Timestamp of the expiration')
+  .addOptionalParam('cap', 'The cap of tokens to be minted')
   .addFlag('call', 'Add this flag if the option is a Call')
   .addFlag('american', 'Add this flag if the option is american')
-  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, call, american }, bre) => {
+  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american }, bre) => {
     console.log('----Start Deploy New Option----')
     const pathFile = `../../deployments/${bre.network.name}.json`
 
@@ -27,6 +30,7 @@ task('deployNewOption', 'Deploy New Option')
 
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()
+    const underlyingAssetContract = await ethers.getContractAt('MintableERC20', underlyingAssetAddress)
     const strikeAssetContract = await ethers.getContractAt('MintableERC20', strikeAssetAddress)
     const strikeDecimals = await strikeAssetContract.decimals()
     const strikePrice = ethers.BigNumber.from(price).mul(ethers.BigNumber.from(10).pow(strikeDecimals))
@@ -46,6 +50,8 @@ task('deployNewOption', 'Deploy New Option')
     console.log('Option Parameters')
     console.log(optionParams)
 
+    console.log('optionFactoryAddress', optionFactoryAddress)
+
     const funcParameters = [
       optionParams.name,
       optionParams.symbol,
@@ -60,10 +66,11 @@ task('deployNewOption', 'Deploy New Option')
 
     const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
     const txIdNewOption = await FactoryContract.createOption(...funcParameters)
-    await txIdNewOption.wait()
+    await txIdNewOption.wait(1)
 
     const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
-    const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, txIdNewOption.blockNumber)
+    console.log('txIdNewOption.blockNumber', txIdNewOption.blockNumber)
+    const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, 'latest')
     console.log('txId: ', txIdNewOption.hash)
     console.log('timestamp: ', new Date())
 
@@ -73,8 +80,18 @@ task('deployNewOption', 'Deploy New Option')
       console.log('deployer: ', deployer)
       console.log('option: ', option)
 
-      const currentOptions = require(`../../deployments/${bre.network.name}.json`).options
+      const currentOptions = contentJSON.options
       const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
+
+      if (cap != null && parseFloat(cap) > 0) {
+        const configurationManager = await ethers.getContractAt('ConfigurationManager', await FactoryContract.configurationManager())
+        const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
+
+        const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await underlyingAssetContract.decimals()))
+        const tx = await capProvider.setCap(option, capValue)
+        await tx.wait(1)
+        console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
+      }
 
       await saveJSON(pathFile, { options: newOptionObj })
 
@@ -82,5 +99,6 @@ task('deployNewOption', 'Deploy New Option')
       return option
     } else {
       console.log('Something went wrong: No events found')
+      throw Error('Something went wrong: No events found')
     }
   })

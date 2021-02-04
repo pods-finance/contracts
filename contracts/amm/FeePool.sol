@@ -70,7 +70,9 @@ contract FeePool is IFeePool, Ownable {
         _shares = _shares.sub(amountOfShares);
         _totalLiability = _totalLiability.sub(amortizedLiability);
 
-        require(IERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
+        if (withdrawAmount > 0) {
+            require(IERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
+        }
         emit FeeWithdrawn(_token, to, withdrawAmount, amountOfShares);
     }
 
