@@ -8,18 +8,19 @@ require('./tasks/configuration/index')
 require('./tasks/option/index')
 require('./tasks/local/index')
 
-usePlugin('@nomiclabs/buidler-waffle')
-usePlugin('@nomiclabs/buidler-web3')
-usePlugin('@nomiclabs/buidler-solhint')
-usePlugin('buidler-gas-reporter')
-usePlugin('solidity-coverage')
+require('@nomiclabs/hardhat-ethers')
+require('@nomiclabs/hardhat-waffle')
+require('@nomiclabs/hardhat-web3')
+require('@nomiclabs/hardhat-solhint')
+require('hardhat-gas-reporter')
+require('solidity-coverage')
 
 module.exports = {
   networks: {
-    buidlerevm: {
-      gasMultiplier: 2,
+    hardhat: {
       loggingEnabled: !!(process.env.BUIDLER_LOGGING_ENABLED) || false,
-      chainId: 1337
+      chainId: 1337,
+      hardfork: 'istanbul'
     },
     local: {
       protocol: 'http',
@@ -50,11 +51,12 @@ module.exports = {
       url: 'http://localhost:8555'
     }
   },
-  solc: {
+  solidity: {
     version: '0.6.12',
-    optimizer: {
-      enabled: true,
-      runs: 200
+    settings: {
+      optimizer: {
+        enabled: true
+      }
     }
   },
   mocha: {
