@@ -131,7 +131,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
         uint256 amountOfB,
         address owner
     ) external override beforeExpiration {
-        return _addLiquidity(amountOfA, amountOfB, owner);
+        _addLiquidity(amountOfA, amountOfB, owner);
     }
 
     /**
@@ -141,7 +141,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool {
      * @param amountOfB amount of TokenB to add
      */
     function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
-        return _removeLiquidity(amountOfA, amountOfB);
+        _removeLiquidity(amountOfA, amountOfB);
     }
 
     /**
