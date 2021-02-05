@@ -1,5 +1,5 @@
 
-internalTask('deployChainlink', 'Deploy Chainlink Contract')
+task('deployChainlink', 'Deploy Chainlink Contract')
   .addParam('source', 'address of chainlink pricefeed')
   .setAction(async ({ source }) => {
     console.log('----Start Deploy Chainlink----')
