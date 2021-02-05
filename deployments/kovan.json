@@ -69,6 +69,17 @@
       "strikePrice": "33000000000",
       "expiration": "1612851340",
       "windowOfExercise": "86400"
+    },
+    "0x280fFa1eAf7EDba840f3a409e653035e1573ef53": {
+      "name": "Pods Put WBTC:USDC 33000 2021-02-09",
+      "symbol": "PodWBTC:USDC",
+      "optionType": 0,
+      "exerciseType": 0,
+      "underlyingAsset": "0x0094e8cf72acf138578e399768879cedd1ddd33c",
+      "strikeAsset": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "strikePrice": "33000000000",
+      "expiration": "1612874916",
+      "windowOfExercise": "86400"
     }
   },
   "pools": {
@@ -94,6 +105,11 @@
     },
     "0x57c25ef5b4f16d71D59791cced3d468082D65a0C": {
       "option": "0x9F61CE409742299A8cAd740f1b1e170Eae77d3EA",
+      "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
+      "initialsigma": "2000000000000000000"
+    },
+    "0x2267DA4eF02eCa80C21821eeE940bA476c0d4A2F": {
+      "option": "0x280fFa1eAf7EDba840f3a409e653035e1573ef53",
       "tokenb": "0xe22da380ee6b445bb8273c81944adeb6e8450422",
       "initialsigma": "2000000000000000000"
     }
