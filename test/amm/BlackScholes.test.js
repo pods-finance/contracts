@@ -49,7 +49,7 @@ describe('BlackScholes', () => {
     await fixidity.deployed()
 
     const LogarithmLib = await ethers.getContractFactory('LogarithmLib', {
-      library: {
+      libraries: {
         FixidityLib: fixidity.address
       }
     })
@@ -57,7 +57,7 @@ describe('BlackScholes', () => {
     await logarithm.deployed()
 
     const ExponentLib = await ethers.getContractFactory('ExponentLib', {
-      library: {
+      libraries: {
         FixidityLib: fixidity.address,
         LogarithmLib: logarithm.address
       }
@@ -70,7 +70,7 @@ describe('BlackScholes', () => {
     await normalDistribution.deployed()
 
     BlackScholes = await ethers.getContractFactory('BlackScholes', {
-      library: {
+      libraries: {
         FixidityLib: fixidity.address,
         LogarithmLib: logarithm.address
       }
