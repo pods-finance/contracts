@@ -7,6 +7,7 @@ require('./tasks/Amm/index')
 require('./tasks/configuration/index')
 require('./tasks/option/index')
 require('./tasks/local/index')
+require('./tasks/oracle/index')
 
 require('@nomiclabs/hardhat-ethers')
 require('@nomiclabs/hardhat-waffle')
