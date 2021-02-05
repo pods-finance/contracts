@@ -84,7 +84,6 @@ task('deployNewOption', 'Deploy New Option')
       const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
 
       if (cap != null && parseFloat(cap) > 0) {
-        console.log('nao deveria logar')
         const configurationManager = await ethers.getContractAt('ConfigurationManager', await FactoryContract.configurationManager())
         const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
 
