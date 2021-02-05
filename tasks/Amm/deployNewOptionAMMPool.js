@@ -10,9 +10,9 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('tokenb', 'What is the other token that will be in the pool')
   .addParam('initialsigma', 'Initial Sigma to start the pool')
   .addOptionalParam('cap', 'The cap of tokenB liquidity to be added')
-  .setAction(async ({ option, tokenb, initialsigma, cap }, bre) => {
+  .setAction(async ({ option, tokenb, initialsigma, cap }, hre) => {
     console.log('----Start Deploy New Pool----')
-    const pathFile = `../../deployments/${bre.network.name}.json`
+    const pathFile = `../../deployments/${hre.network.name}.json`
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()
 
@@ -27,7 +27,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const tokenBContract = await ethers.getContractAt('MintableERC20', tokenb)
 
     const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialsigma)
-    await txIdNewPool.wait(1)
+    await txIdNewPool.wait(2)
 
     console.log('txId: ', txIdNewPool.hash)
 
