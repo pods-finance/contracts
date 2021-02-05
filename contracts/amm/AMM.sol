@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../lib/RequiredDecimals.sol";
 import "../interfaces/IAMM.sol";
-import "hardhat/console.sol";
 
 /**
  * Represents a generalized contract for a single-sided AMM pair.
