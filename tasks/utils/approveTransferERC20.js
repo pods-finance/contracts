@@ -14,6 +14,6 @@ module.exports = async function approveTransferERC20 (contract, spender, amount)
 
   if (approval.lt(amount)) {
     const approve = await contract.approve(spender, amount.sub(approval))
-    await approve.wait(1)
+    await approve.wait(2)
   }
 }

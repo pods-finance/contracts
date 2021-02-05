@@ -9,7 +9,7 @@ internalTask('addLiquidityAMM', 'addLiquidityAMM')
     const [caller] = await ethers.getSigners()
     const callerAddress = await caller.getAddress()
 
-    if(!owner) {
+    if (!owner) {
       owner = callerAddress
     }
 

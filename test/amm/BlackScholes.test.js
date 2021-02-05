@@ -1,5 +1,4 @@
 const { expect } = require('chai')
-const getContractFactoryWithLibraries = require('../util/getContractFactoryWithLibraries')
 const { toBigNumber, approximately } = require('../../utils/utils')
 
 const scenarios = [
@@ -49,15 +48,19 @@ describe('BlackScholes', () => {
     const fixidity = await FixidityLib.deploy()
     await fixidity.deployed()
 
-    const LogarithmLib = await getContractFactoryWithLibraries('LogarithmLib', {
-      FixidityLib: fixidity.address
+    const LogarithmLib = await ethers.getContractFactory('LogarithmLib', {
+      libraries: {
+        FixidityLib: fixidity.address
+      }
     })
     const logarithm = await LogarithmLib.deploy()
     await logarithm.deployed()
 
-    const ExponentLib = await getContractFactoryWithLibraries('ExponentLib', {
-      FixidityLib: fixidity.address,
-      LogarithmLib: logarithm.address
+    const ExponentLib = await ethers.getContractFactory('ExponentLib', {
+      libraries: {
+        FixidityLib: fixidity.address,
+        LogarithmLib: logarithm.address
+      }
     })
     const exponent = await ExponentLib.deploy()
     await exponent.deployed()
@@ -66,10 +69,11 @@ describe('BlackScholes', () => {
     normalDistribution = await NormalDistribution.deploy()
     await normalDistribution.deployed()
 
-    BlackScholes = await getContractFactoryWithLibraries('BlackScholes', {
-      FixidityLib: fixidity.address,
-      LogarithmLib: logarithm.address,
-      ExponentLib: exponent.address
+    BlackScholes = await ethers.getContractFactory('BlackScholes', {
+      libraries: {
+        FixidityLib: fixidity.address,
+        LogarithmLib: logarithm.address
+      }
     })
   })
 

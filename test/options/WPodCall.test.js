@@ -215,7 +215,7 @@ scenarios.forEach(scenario => {
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(wPodCall.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('Exceed address minted options')
+        await expect(wPodCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('WPodCall: not enough minted options')
       })
       it('should unmint, destroy sender option, reduce its balance and send underlying back - European', async () => {
         await MintPhase(scenario.amountToMint)

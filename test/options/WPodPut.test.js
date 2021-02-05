@@ -262,13 +262,13 @@ scenarios.forEach(scenario => {
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(wPodPut.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('Exceed address minted options')
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('WPodPut: not enough minted options')
       })
       it('should revert if unmint amount is too low', async () => {
         const minimumAmount = ethers.BigNumber.from(scenario.strikePrice).div((10 ** await mockUnderlyingAsset.decimals()).toString())
         if (minimumAmount.gt(0)) return
         await MintPhase(scenario.amountToMint)
-        await expect(wPodPut.connect(seller).unmint(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('PodOption: amount of options is too low')
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMintTooLow)).to.be.revertedWith('WPodPut: amount of options is too low')
       })
       it('should unmint, destroy sender option, reduce its balance and send strike back (Without Exercise Scenario)', async () => {
         await MintPhase(scenario.amountToMint)
@@ -353,7 +353,7 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(wPodPut)
-        await expect(wPodPut.connect(seller).unmint()).to.be.revertedWith('PodOption: option has not expired yet')
+        await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: option has expired')
       })
     })
 

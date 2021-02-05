@@ -1,4 +1,4 @@
-const { ethers } = require('@nomiclabs/buidler')
+const { ethers } = require('hardhat')
 const { expect } = require('chai')
 
 describe('ModuleStorage', () => {
@@ -24,7 +24,7 @@ describe('ModuleStorage', () => {
     const tokenBurnerAddress = '0x0000000000000000000000000000000000000001'
 
     await expect(moduleStorageUser.setTokenBurner(tokenBurnerAddress))
-      .to.emit(moduleStorageUser ,'ModuleSet')
+      .to.emit(moduleStorageUser , 'ModuleSet')
       .withArgs(moduleName, tokenBurnerAddress)
 
     expect(await moduleStorageUser.getModule(moduleName))

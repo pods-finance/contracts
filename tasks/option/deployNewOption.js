@@ -13,9 +13,9 @@ task('deployNewOption', 'Deploy New Option')
   .addOptionalParam('cap', 'The cap of tokens to be minted')
   .addFlag('call', 'Add this flag if the option is a Call')
   .addFlag('american', 'Add this flag if the option is american')
-  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american }, bre) => {
+  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american }, hre) => {
     console.log('----Start Deploy New Option----')
-    const pathFile = `../../deployments/${bre.network.name}.json`
+    const pathFile = `../../deployments/${hre.network.name}.json`
 
     const strikeAsset = strike.toUpperCase()
     const underlyingAsset = underlying.toUpperCase()
@@ -66,7 +66,7 @@ task('deployNewOption', 'Deploy New Option')
 
     const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
     const txIdNewOption = await FactoryContract.createOption(...funcParameters)
-    await txIdNewOption.wait(1)
+    await txIdNewOption.wait(2)
 
     const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
     console.log('txIdNewOption.blockNumber', txIdNewOption.blockNumber)
@@ -89,7 +89,7 @@ task('deployNewOption', 'Deploy New Option')
 
         const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await underlyingAssetContract.decimals()))
         const tx = await capProvider.setCap(option, capValue)
-        await tx.wait(1)
+        await tx.wait(2)
         console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
       }
 

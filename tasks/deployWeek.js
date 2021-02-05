@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const fsPromises = fs.promises
 
-internalTask('deployWeek', 'Deploy a whole local test environment')
+task('deployWeek', 'Deploy a whole local test environment')
   .addFlag('start', 'add this flag if you want to start and mint the initial options and add liquidity')
   .setAction(async ({ start }, bre) => {
     const pathFile = `../deployments/${bre.network.name}.json`
@@ -21,11 +21,21 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
       {
         strike: 'USDC',
         underlying: 'WETH',
-        price: '1200'
+        price: '1400'
+      },
+      {
+        strike: 'DAI',
+        underlying: 'WETH',
+        price: '1500'
+      },
+      {
+        strike: 'USDC',
+        underlying: 'WBTC',
+        price: '33000'
       }
     ]
 
-    const intervals = [2]
+    const intervals = [4]
     const oneDayInSeconds = 24 * 60 * 60
 
     for (const optionObj of options) {
@@ -34,8 +44,7 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
           strike: optionObj.strike,
           underlying: optionObj.underlying,
           price: optionObj.price,
-          expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString(),
-          cap: '100'
+          expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString()
         })
         const tokenbAddress = contentJSON[optionObj.strike]
         deployedOptions.push(optionAddress)
@@ -44,21 +53,20 @@ internalTask('deployWeek', 'Deploy a whole local test environment')
         const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
-          initialsigma: '2000000000000000000',
-          cap: '50000' // 0.77%
+          initialsigma: '2000000000000000000'
         })
 
         console.log('start Flag: ', start)
 
         if (start) {
           // 7) Mint Options
-          await run('mintOptions', { option: optionAddress, amount: '5' })
+          await run('mintOptions', { option: optionAddress, amount: '10' })
 
           // 8) Add Liquidity
           await run('addLiquidityAMM', {
             pooladdress: poolAddress,
-            amounta: '5',
-            amountb: '10000'
+            amounta: '10',
+            amountb: '50000'
           })
         }
       }

@@ -691,7 +691,7 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(podPut)
-        await expect(podPut.connect(seller).unmint()).to.be.revertedWith('PodOption: option has not expired yet')
+        await expect(podPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: option has expired')
       })
     })
 

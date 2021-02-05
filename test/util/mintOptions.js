@@ -1,4 +1,4 @@
-const { ethers } = require('@nomiclabs/buidler')
+const { ethers } = require('hardhat')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1

@@ -1,5 +1,4 @@
 
-const getContractFactoryWithLibraries = require('../utils/getContractFactoryWithLibraries')
 const saveJSON = require('../utils/saveJSON')
 
 internalTask('deployBS', 'Deploy Black Scholes')
@@ -8,8 +7,8 @@ internalTask('deployBS', 'Deploy Black Scholes')
   .addOptionalParam('logarithm', 'logarithm address to use')
   .addOptionalParam('exponent', 'exponent address to use')
   .addFlag('deploylibs', 'Activate this parameter if you want to deploy libs')
-  .setAction(async ({ normaldist, fixidity, logarithm, exponent, deploylibs }, bre) => {
-    const path = `../../deployments/${bre.network.name}.json`
+  .setAction(async ({ normaldist, fixidity, logarithm, exponent, deploylibs }, hre) => {
+    const path = `../../deployments/${hre.network.name}.json`
     let libs = {
       fixidity,
       logarithm,
@@ -21,11 +20,13 @@ internalTask('deployBS', 'Deploy Black Scholes')
     }
 
     console.log('libs', libs)
-    const BlackScholes = await getContractFactoryWithLibraries('BlackScholes', {
-      FixidityLib: libs.fixidity,
-      LogarithmLib: libs.logarithm,
-      ExponentLib: libs.exponent
-    }, bre.config.paths.artifacts)
+
+    const BlackScholes = await hre.ethers.getContractFactory('BlackScholes', {
+      libraries: {
+        FixidityLib: libs.fixidity,
+        LogarithmLib: libs.logarithm
+      }
+    })
 
     const bs = await BlackScholes.deploy(normaldist)
     await bs.deployed()
