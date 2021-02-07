@@ -5,7 +5,8 @@ const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const createConfigurationManager = require('../util/createConfigurationManager')
 
-const EXERCISE_TYPE_EUROPEAN = 0 // European
+const EXERCISE_TYPE_EUROPEAN = 0
+const EXERCISE_TYPE_AMERICAN = 1
 
 const scenarios = [
   {
@@ -205,21 +206,6 @@ scenarios.forEach(scenario => {
         await expect(podCall).to.revertedWith('PodOption: expiration should be in a future timestamp')
       })
 
-      it('should not allow exerciseWindowSize lesser than or equal 0', async () => {
-        podCall = PodCall.deploy(
-          'pod:WBTC:USDC:5000:A',
-          'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
-          mockUnderlyingAsset.address,
-          mockStrikeAsset.address,
-          scenario.strikePrice,
-          await getTimestamp() + 24 * 60 * 60,
-          0,
-          configurationManager.address
-        )
-        await expect(podCall).to.revertedWith('PodOption: exercise window size must be greater than zero')
-      })
-
       it('should not allow strikePrice lesser than or equal 0', async () => {
         podCall = PodCall.deploy(
           'pod:WBTC:USDC:5000:A',
@@ -235,7 +221,7 @@ scenarios.forEach(scenario => {
         await expect(podCall).to.revertedWith('PodOption: strike price must be greater than zero')
       })
 
-      it('should not allow exercise windows shorter than 24 hours', async () => {
+      it('should not allow exercise windows shorter than 24 hours if EUROPEAN exercise type', async () => {
         podCall = PodCall.deploy(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
@@ -248,6 +234,21 @@ scenarios.forEach(scenario => {
           configurationManager.address
         )
         await expect(podCall).to.revertedWith('PodOption: exercise window must be greater than or equal 86400')
+      })
+
+      it('should not allow exercise windows equal to 0 if AMERICAN exercise type', async () => {
+        podCall = PodCall.deploy(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          EXERCISE_TYPE_AMERICAN,
+          mockUnderlyingAsset.address,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          (24 * 60 * 60) - 1, // 24h - 1 second
+          configurationManager.address
+        )
+        await expect(podCall).to.revertedWith('PodOption: exercise window size must be equal to zero')
       })
     })
 

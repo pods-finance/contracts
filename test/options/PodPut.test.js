@@ -217,21 +217,6 @@ scenarios.forEach(scenario => {
         await expect(podPut).to.revertedWith('PodOption: expiration should be in a future timestamp')
       })
 
-      it('should not allow exerciseWindowSize lesser than or equal 0', async () => {
-        podPut = PodPut.deploy(
-          'pod:WBTC:USDC:5000:A',
-          'pod:WBTC:USDC:5000:A',
-          EXERCISE_TYPE_EUROPEAN,
-          mockUnderlyingAsset.address,
-          mockStrikeAsset.address,
-          scenario.strikePrice,
-          await getTimestamp() + 24 * 60 * 60,
-          0,
-          configurationManager.address
-        )
-        await expect(podPut).to.revertedWith('PodOption: exercise window size must be greater than zero')
-      })
-
       it('should not allow strikePrice lesser than or equal 0', async () => {
         podPut = PodPut.deploy(
           'pod:WBTC:USDC:5000:A',
