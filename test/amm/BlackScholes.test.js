@@ -89,7 +89,7 @@ describe('BlackScholes', () => {
       toBigNumber(1e40),
       scenarios[0].time,
       scenarios[0].riskFree
-    )).to.be.revertedWith('Multiplication overflow')
+    )).to.be.revertedWith('SafeMath: multiplication overflow')
   })
 
   scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
