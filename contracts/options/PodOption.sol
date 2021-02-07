@@ -8,7 +8,6 @@ import "../interfaces/IPodOption.sol";
 import "../lib/CappedOption.sol";
 import "../lib/RequiredDecimals.sol";
 import "../interfaces/IConfigurationManager.sol";
-import "hardhat/console.sol";
 
 /**
  * @title PodOption
