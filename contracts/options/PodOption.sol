@@ -8,6 +8,7 @@ import "../interfaces/IPodOption.sol";
 import "../lib/CappedOption.sol";
 import "../lib/RequiredDecimals.sol";
 import "../interfaces/IConfigurationManager.sol";
+import "hardhat/console.sol";
 
 /**
  * @title PodOption
@@ -323,7 +324,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
             );
         } else {
             denominator = _underlyingReserves.add(
-                _strikeReserves.mul((uint256(10)**_underlyingAssetDecimals).div(_strikePrice))
+                _strikeReserves.mul(uint256(10)**_underlyingAssetDecimals).div(_strikePrice)
             );
         }
         ownerShares = numerator.div(denominator);
