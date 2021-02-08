@@ -60,10 +60,11 @@ contract FeePool is IFeePool, Ownable {
         require(_balances[to].shares >= amountOfShares, "Burn exceeds balance");
 
         uint256 feesCollected = IERC20(_token).balanceOf(address(this));
-        uint256 shareValue = feesCollected.add(_totalLiability).div(_shares);
 
         uint256 amortizedLiability = amountOfShares.mul(_balances[to].liability).div(_balances[to].shares);
-        uint256 withdrawAmount = amountOfShares.mul(shareValue).sub(amortizedLiability);
+        uint256 withdrawAmount = feesCollected.add(_totalLiability).mul(amountOfShares).div(_shares).sub(
+            amortizedLiability
+        );
 
         _balances[to].shares = _balances[to].shares.sub(amountOfShares);
         _balances[to].liability = _balances[to].liability.sub(amortizedLiability);
@@ -72,8 +73,8 @@ contract FeePool is IFeePool, Ownable {
 
         if (withdrawAmount > 0) {
             require(IERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
+            emit FeeWithdrawn(_token, to, withdrawAmount, amountOfShares);
         }
-        emit FeeWithdrawn(_token, to, withdrawAmount, amountOfShares);
     }
 
     /**
@@ -84,15 +85,13 @@ contract FeePool is IFeePool, Ownable {
      */
     function mint(address to, uint256 amount) external override onlyOwner {
         // If no share was minted, share value should worth nothing
-        uint256 shareValue = 0;
+        uint256 newLiability = 0;
 
         // Otherwise it should divide the total collected by total shares minted
         if (_shares > 0) {
             uint256 feesCollected = IERC20(_token).balanceOf(address(this));
-            shareValue = feesCollected.add(_totalLiability).div(_shares);
+            newLiability = feesCollected.add(_totalLiability).mul(amount).div(_shares);
         }
-
-        uint256 newLiability = amount.mul(shareValue);
 
         _balances[to].shares = _balances[to].shares.add(amount);
         _balances[to].liability = _balances[to].liability.add(newLiability);
