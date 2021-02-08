@@ -84,7 +84,6 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         require(Address.isContract(strikeAsset), "PodOption: strike asset is not a contract");
         require(underlyingAsset != strikeAsset, "PodOption: underlying asset and strike asset must differ");
         require(expiration > block.timestamp, "PodOption: expiration should be in a future timestamp");
-        require(exerciseWindowSize > 0, "PodOption: exercise window size must be greater than zero");
         require(strikePrice > 0, "PodOption: strike price must be greater than zero");
 
         if (exerciseType == ExerciseType.EUROPEAN) {
@@ -92,6 +91,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
                 exerciseWindowSize >= MIN_EXERCISE_WINDOW_SIZE,
                 "PodOption: exercise window must be greater than or equal 86400"
             );
+        } else {
+            require(exerciseWindowSize == 0, "PodOption: exercise window size must be equal to zero");
         }
 
         _configurationManager = configurationManager;
