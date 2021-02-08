@@ -26,8 +26,8 @@ contract MockChainlinkFeed is IPriceFeed {
         return _currentPrice;
     }
 
-    function getLatestPrice() external override view returns (int256) {
-        return _currentPrice;
+    function getLatestPrice() external override view returns (int256, uint256) {
+        return (_currentPrice, _updatedAt);
     }
 
     function latestRoundData()
