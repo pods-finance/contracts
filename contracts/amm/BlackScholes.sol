@@ -2,6 +2,7 @@
 // solhint-disable var-name-mixedcase
 pragma solidity 0.6.12;
 
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/INormalDistribution.sol";
 
 import "../lib/FixidityLib.sol";
@@ -15,6 +16,7 @@ import "../interfaces/IBlackScholes.sol";
  * @notice Black-Scholes calculus
  */
 contract BlackScholes is IBlackScholes {
+    using SafeMath for uint256;
     using FixidityLib for int256;
     using ExponentLib for int256;
     using LogarithmLib for int256;
@@ -117,7 +119,7 @@ contract BlackScholes is IBlackScholes {
         uint256 time,
         int256 riskFree
     ) internal pure returns (int256 d1, int256 d2) {
-        int256 sigma2 = int256(_mul(_normalized(sigma), _normalized(sigma)) / PRECISION_UNIT);
+        int256 sigma2 = int256(_normalized(sigma).mul(_normalized(sigma)) / PRECISION_UNIT);
 
         int256 A = _cachedLn(spotPrice.divide(strikePrice));
         int256 B = (sigma2 / 2).add(_normalized(riskFree)).multiply(_normalized(int256(time)));
@@ -125,7 +127,7 @@ contract BlackScholes is IBlackScholes {
         int256 n = A.add(B);
 
         uint256 sqrtTime = _sqrt(_normalized(time));
-        uint256 d = _mul(sigma, sqrtTime) / UNIT_TO_PRECISION_FACTOR;
+        uint256 d = sigma.mul(sqrtTime) / UNIT_TO_PRECISION_FACTOR;
 
         d1 = n.divide(int256(d));
         d2 = d1.subtract(int256(d));
@@ -155,23 +157,6 @@ contract BlackScholes is IBlackScholes {
      */
     function _cachedLn(int256 x) internal pure returns (int256) {
         return LogarithmLib.ln(x);
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function _mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a * b;
-        require(c / a == b, "Multiplication overflow");
-
-        return c;
     }
 
     /**
