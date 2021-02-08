@@ -3,7 +3,7 @@ const { deployMockContract } = waffle
 const PriceFeed = require('../../abi/ChainlinkPriceFeed.json')
 const getTimestamp = require('../util/getTimestamp')
 
-describe.only('PriceProvider', () => {
+describe('PriceProvider', () => {
   let PriceProvider, provider
   let defaultPriceFeed, startedAt, updatedAt
 
