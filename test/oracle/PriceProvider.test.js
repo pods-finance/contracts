@@ -3,7 +3,7 @@ const { deployMockContract } = waffle
 const PriceFeed = require('../../abi/ChainlinkPriceFeed.json')
 const getTimestamp = require('../util/getTimestamp')
 
-describe('PriceProvider', () => {
+describe.only('PriceProvider', () => {
   let PriceProvider, provider
   let defaultPriceFeed, startedAt, updatedAt
 
@@ -129,6 +129,28 @@ describe('PriceProvider', () => {
       expect(await provider.getAssetPrice(asset0)).to.be.equal(price)
     })
 
+    it('should revert if stale price', async () => {
+      const stalePriceFeed = await createPriceFeedMock()
+      const currentTimestamp = await getTimestamp()
+      await stalePriceFeed.setDecimals(6)
+      await stalePriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt: currentTimestamp,
+        answeredInRound: 1
+      })
+      await expect(provider.setAssetFeeds([asset1], [stalePriceFeed.contract.address])).to.not.be.reverted
+      await stalePriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt: currentTimestamp - 11101,
+        answeredInRound: 1
+      })
+      await expect(provider.getAssetPrice(asset1)).to.be.revertedWith('PriceProvider: stale PriceFeed')
+    })
+
     it('should revert if fetches the price of nonexistent asset', async () => {
       await expect(provider.getAssetPrice(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
     })
@@ -138,7 +160,7 @@ describe('PriceProvider', () => {
     })
 
     it('should revert when the price is negative', async () => {
-      defaultPriceFeed.setPrice(ethers.BigNumber.from(-450e6))
+      await defaultPriceFeed.setPrice(ethers.BigNumber.from(-450e6))
       await expect(provider.getAssetPrice(asset0)).to.be.revertedWith('PriceProvider: Negative price')
     })
   })
@@ -167,7 +189,7 @@ async function createPriceFeedMock () {
 
   const setRoundData = async roundData => {
     _roundData = roundData
-    await mockChainlink.mock.getLatestPrice.returns(roundData.answer)
+    await mockChainlink.mock.getLatestPrice.returns(roundData.answer, roundData.updatedAt)
     await mockChainlink.mock.latestRoundData.returns(
       roundData.roundId,
       roundData.answer,
