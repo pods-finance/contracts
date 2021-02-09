@@ -112,6 +112,13 @@ scenarios.forEach(scenario => {
         amm = MockAMM.deploy(mockTokenA.address, ethers.constants.AddressZero)
         await expect(amm).to.revertedWith('AMM: token b is not a contract')
       })
+
+      it('should not allow the same token as tokenA and tokenB', async () => {
+        const MockAMM = await ethers.getContractFactory('MockAMM')
+
+        amm = MockAMM.deploy(mockTokenA.address, mockTokenA.address)
+        await expect(amm).to.be.revertedWith('AMM: tokens must differ')
+      })
     })
 
     describe('Add Liquidity', () => {

@@ -144,6 +144,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
     constructor(address _tokenA, address _tokenB) public {
         require(Address.isContract(_tokenA), "AMM: token a is not a contract");
         require(Address.isContract(_tokenB), "AMM: token b is not a contract");
+        require(_tokenA != _tokenB, "AMM: tokens must differ");
+
         tokenA = _tokenA;
         tokenB = _tokenB;
 
