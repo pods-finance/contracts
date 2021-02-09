@@ -25,7 +25,7 @@ describe('OptionExchange', () => {
     ;[OptionExchange, OptionAMMFactory, MintableERC20] = await Promise.all([
       ethers.getContractFactory('OptionExchange'),
       ethers.getContractFactory('OptionAMMFactory'),
-      ethers.getContractFactory('MintableERC20'),
+      ethers.getContractFactory('MintableERC20')
     ])
 
     underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)

@@ -22,10 +22,10 @@ describe('ChainlinkPriceFeed', () => {
       answer: price,
       startedAt,
       updatedAt,
-      answeredInRound: 1,
+      answeredInRound: 1
     }
 
-    const [ deployer ] = await ethers.getSigners()
+    const [deployer] = await ethers.getSigners()
     const mockChainlink = await deployMockContract(deployer, IChainlinkPriceFeedABI)
 
     await mockChainlink.mock.decimals.returns(decimals)
@@ -45,7 +45,8 @@ describe('ChainlinkPriceFeed', () => {
   })
 
   it('returns the correct price', async () => {
-    expect(await feed.getLatestPrice()).to.equal(price)
+    const priceObj = await feed.getLatestPrice()
+    expect(priceObj[0]).to.equal(price)
   })
 
   it('returns the correct round data', async () => {
