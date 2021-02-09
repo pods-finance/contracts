@@ -124,8 +124,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      */
     function getSellerWithdrawAmounts(address owner)
         external
-        view
         override
+        view
         returns (uint256 strikeAmount, uint256 underlyingAmount)
     {
         uint256 ownerShares = shares[owner];
@@ -142,14 +142,14 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     /**
      * @notice Checks if the options series has already expired.
      */
-    function hasExpired() external view override returns (bool) {
+    function hasExpired() external override view returns (bool) {
         return _hasExpired();
     }
 
     /**
      * @notice Checks if the options exercise window has closed.
      */
-    function isAfterEndOfExerciseWindow() external view override returns (bool) {
+    function isAfterEndOfExerciseWindow() external override view returns (bool) {
         return _isAfterEndOfExerciseWindow();
     }
 
@@ -157,49 +157,49 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice External function to calculate the amount of strike asset
      * needed given the option amount
      */
-    function strikeToTransfer(uint256 amountOfOptions) external view override returns (uint256) {
+    function strikeToTransfer(uint256 amountOfOptions) external override view returns (uint256) {
         return _strikeToTransfer(amountOfOptions);
     }
 
     /**
      * @notice The option type. eg: CALL, PUT
      */
-    function optionType() public view override returns (OptionType) {
+    function optionType() public override view returns (OptionType) {
         return _optionType;
     }
 
     /**
      * @notice Exercise type. eg: AMERICAN, EUROPEAN
      */
-    function exerciseType() public view override returns (ExerciseType) {
+    function exerciseType() public override view returns (ExerciseType) {
         return _exerciseType;
     }
 
     /**
      * @notice The asset used as the underlying token, e.g. WETH, WBTC, UNI
      */
-    function underlyingAsset() public view override returns (address) {
+    function underlyingAsset() public override view returns (address) {
         return _underlyingAsset;
     }
 
     /**
      * @notice How many decimals does the underlying token have? E.g.: 18
      */
-    function underlyingAssetDecimals() public view override returns (uint8) {
+    function underlyingAssetDecimals() public override view returns (uint8) {
         return _underlyingAssetDecimals;
     }
 
     /**
      * @notice The asset used as the strike asset, e.g. USDC, DAI
      */
-    function strikeAsset() public view override returns (address) {
+    function strikeAsset() public override view returns (address) {
         return _strikeAsset;
     }
 
     /**
      * @notice How many decimals does the strike token have? E.g.: 18
      */
-    function strikeAssetDecimals() public view override returns (uint8) {
+    function strikeAssetDecimals() public override view returns (uint8) {
         return _strikeAssetDecimals;
     }
 
@@ -207,28 +207,28 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice The sell price of each unit of underlyingAsset; given in units
      * of strikeAsset, e.g. 0.99 USDC
      */
-    function strikePrice() public view override returns (uint256) {
+    function strikePrice() public override view returns (uint256) {
         return _strikePrice;
     }
 
     /**
      * @notice The number of decimals of strikePrice
      */
-    function strikePriceDecimals() public view override returns (uint8) {
+    function strikePriceDecimals() public override view returns (uint8) {
         return _strikePriceDecimals;
     }
 
     /**
      * @notice The UNIX timestamp that represents the series expiration
      */
-    function expiration() public view override returns (uint256) {
+    function expiration() public override view returns (uint256) {
         return _expiration;
     }
 
     /**
      * @notice The UNIX timestamp that represents the end of exercise window
      */
-    function endOfExerciseWindow() public view override returns (uint256) {
+    function endOfExerciseWindow() public override view returns (uint256) {
         return _endOfExerciseWindow;
     }
 
@@ -236,7 +236,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice Utility function to check the amount of the underlying tokens
      * locked inside this contract
      */
-    function underlyingReserves() public view override returns (uint256) {
+    function underlyingReserves() public override view returns (uint256) {
         return IERC20(_underlyingAsset).balanceOf(address(this));
     }
 
@@ -244,7 +244,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice Utility function to check the amount of the strike tokens locked
      * inside this contract
      */
-    function strikeReserves() public view override returns (uint256) {
+    function strikeReserves() public override view returns (uint256) {
         return IERC20(_strikeAsset).balanceOf(address(this));
     }
 
