@@ -11,6 +11,8 @@ module.exports = async function createMockOption ({
   strikeAsset,
   weth,
   strikePrice = defaultStrikePrice,
+  optionType = OPTION_TYPE_PUT,
+  exerciseType = EXERCISE_TYPE_EUROPEAN,
   configurationManager
 } = {}) {
   const [MockERC20, WETH] = await Promise.all([
@@ -34,8 +36,8 @@ module.exports = async function createMockOption ({
   const txIdNewOption = await factoryContract.createOption(
     'pod:WBTC:USDC:8000:A',
     'pod:WBTC:USDC:8000:A',
-    OPTION_TYPE_PUT,
-    EXERCISE_TYPE_EUROPEAN,
+    optionType,
+    exerciseType,
     underlyingAsset,
     strikeAsset,
     strikePrice,
