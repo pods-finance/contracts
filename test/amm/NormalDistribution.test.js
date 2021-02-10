@@ -24,6 +24,10 @@ describe('NormalDistribution', () => {
     )
   })
 
+  it('should revert if decimals input probabilty is higher than 76', async () => {
+    await expect(nd.getProbability('-2839918236000000000000000', 77)).to.be.revertedWith('NormalDistribution: decimals too big')
+  })
+
   it('gets concentrated probabilities', async () => {
     expect(
       await nd.getProbability('3080000000000000000000000', 24)

@@ -103,6 +103,7 @@ describe('BlackScholes', () => {
       )
 
       console.log(`\tPut price: ${putPrice}`)
+      console.log(`\tscenario.expectedPrice: ${scenario.expectedPrice}`)
 
       expect(approximately(scenario.expectedPrice, putPrice)).to.equal(true)
     })

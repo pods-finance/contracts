@@ -374,16 +374,16 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             newABPrice = pricingMethod.getPutPrice(
-                int256(spotPrice),
-                int256(priceProperties.strikePrice),
+                spotPrice,
+                priceProperties.strikePrice,
                 priceProperties.currentSigma,
                 timeToMaturity,
                 int256(priceProperties.riskFree)
             );
         } else {
             newABPrice = pricingMethod.getCallPrice(
-                int256(spotPrice),
-                int256(priceProperties.strikePrice),
+                spotPrice,
+                priceProperties.strikePrice,
                 priceProperties.currentSigma,
                 timeToMaturity,
                 int256(priceProperties.riskFree)

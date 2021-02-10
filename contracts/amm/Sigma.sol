@@ -181,16 +181,16 @@ contract Sigma is ISigma {
     ) internal view returns (uint256 price) {
         if (_optionType == OptionType.PUT) {
             price = _blackScholes.getPutPrice(
-                int256(_spotPrice),
-                int256(_strikePrice),
+                _spotPrice,
+                _strikePrice,
                 calculatedSigma,
                 _timeToMaturity,
                 int256(_riskFree)
             );
         } else {
             price = _blackScholes.getCallPrice(
-                int256(_spotPrice),
-                int256(_strikePrice),
+                _spotPrice,
+                _strikePrice,
                 calculatedSigma,
                 _timeToMaturity,
                 int256(_riskFree)
