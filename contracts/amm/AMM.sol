@@ -387,6 +387,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 minAmountBOut,
         address owner
     ) internal returns (uint256) {
+        _isValidInput(exactAmountAIn);
         _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactAInput(exactAmountAIn);
         uint256 amountBOut = tradeDetails.amount;
@@ -422,6 +423,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 maxAmountBIn,
         address owner
     ) internal returns (uint256) {
+        _isValidInput(maxAmountBIn);
         _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactAOutput(exactAmountAOut);
         uint256 amountBIn = tradeDetails.amount;
@@ -457,6 +459,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 minAmountAOut,
         address owner
     ) internal returns (uint256) {
+        _isValidInput(exactAmountBIn);
         _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactBInput(exactAmountBIn);
         uint256 amountAOut = tradeDetails.amount;
@@ -492,6 +495,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 maxAmountAIn,
         address owner
     ) internal returns (uint256) {
+        _isValidInput(maxAmountAIn);
         _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactBOutput(exactAmountBOut);
         uint256 amountAIn = tradeDetails.amount;
@@ -772,5 +776,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
     function _isRecipient(address recipient) private {
         require(recipient != address(0), "AMM: transfer to the zero address");
+    }
+
+    function _isValidInput(uint256 input) private {
+        require(input > 0, "AMM: input should be greater than zero");
     }
 }
