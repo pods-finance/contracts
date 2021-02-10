@@ -1,10 +1,10 @@
 const { expect } = require('chai')
 const { deployMockContract } = waffle
-const PriceFeed = require('../../abi/ChainlinkPriceFeed.json')
+const createPriceFeedMock = require('../util/createPriceFeedMock')
 const getTimestamp = require('../util/getTimestamp')
 
 describe('PriceProvider', () => {
-  let PriceProvider, provider
+  let PriceProvider, provider, deployer
   let defaultPriceFeed, startedAt, updatedAt
 
   const decimals = ethers.BigNumber.from(6)
@@ -16,8 +16,8 @@ describe('PriceProvider', () => {
     PriceProvider = await ethers.getContractFactory('PriceProvider')
     startedAt = await getTimestamp()
     updatedAt = startedAt + 1
-
-    defaultPriceFeed = await createPriceFeedMock()
+    ;[deployer] = await ethers.getSigners()
+    defaultPriceFeed = await createPriceFeedMock(deployer)
   })
 
   beforeEach(async () => {
@@ -44,7 +44,7 @@ describe('PriceProvider', () => {
 
   describe('setAssetFeeds', () => {
     it('should set a new feed', async () => {
-      const newPriceFeed = await createPriceFeedMock()
+      const newPriceFeed = await createPriceFeedMock(deployer)
       await newPriceFeed.setDecimals(6)
       await newPriceFeed.setRoundData({
         roundId: 1,
@@ -71,7 +71,7 @@ describe('PriceProvider', () => {
     })
 
     it('should revert if Price Feed not started', async () => {
-      const notStartedPriceFeed = await createPriceFeedMock()
+      const notStartedPriceFeed = await createPriceFeedMock(deployer)
       await notStartedPriceFeed.setDecimals(6)
       await notStartedPriceFeed.setRoundData({
         roundId: 1,
@@ -84,7 +84,7 @@ describe('PriceProvider', () => {
     })
 
     it('should revert if stale price feed', async () => {
-      const stalePriceFeed = await createPriceFeedMock()
+      const stalePriceFeed = await createPriceFeedMock(deployer)
       const currentTimestamp = await getTimestamp()
       await stalePriceFeed.setDecimals(6)
       await stalePriceFeed.setRoundData({
@@ -100,7 +100,7 @@ describe('PriceProvider', () => {
 
   describe('removeAssetFeeds', () => {
     it('should remove a feed', async () => {
-      const newPriceFeed = await createPriceFeedMock()
+      const newPriceFeed = await createPriceFeedMock(deployer)
       await newPriceFeed.setDecimals(6)
       await newPriceFeed.setRoundData({
         roundId: 1,
@@ -129,6 +129,28 @@ describe('PriceProvider', () => {
       expect(await provider.getAssetPrice(asset0)).to.be.equal(price)
     })
 
+    it('should revert if stale price', async () => {
+      const stalePriceFeed = await createPriceFeedMock(deployer)
+      const currentTimestamp = await getTimestamp()
+      await stalePriceFeed.setDecimals(6)
+      await stalePriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt: currentTimestamp,
+        answeredInRound: 1
+      })
+      await expect(provider.setAssetFeeds([asset1], [stalePriceFeed.contract.address])).to.not.be.reverted
+      await stalePriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt: currentTimestamp - 11101,
+        answeredInRound: 1
+      })
+      await expect(provider.getAssetPrice(asset1)).to.be.revertedWith('PriceProvider: stale PriceFeed')
+    })
+
     it('should revert if fetches the price of nonexistent asset', async () => {
       await expect(provider.getAssetPrice(asset1)).to.be.revertedWith('PriceProvider: Feed not registered')
     })
@@ -138,7 +160,7 @@ describe('PriceProvider', () => {
     })
 
     it('should revert when the price is negative', async () => {
-      defaultPriceFeed.setPrice(ethers.BigNumber.from(-450e6))
+      await defaultPriceFeed.setPrice(ethers.BigNumber.from(-450e6))
       await expect(provider.getAssetPrice(asset0)).to.be.revertedWith('PriceProvider: Negative price')
     })
   })
@@ -158,36 +180,3 @@ describe('PriceProvider', () => {
     })
   })
 })
-
-async function createPriceFeedMock () {
-  let _roundData
-
-  const [deployer] = await ethers.getSigners()
-  const mockChainlink = await deployMockContract(deployer, PriceFeed)
-
-  const setRoundData = async roundData => {
-    _roundData = roundData
-    await mockChainlink.mock.getLatestPrice.returns(roundData.answer)
-    await mockChainlink.mock.latestRoundData.returns(
-      roundData.roundId,
-      roundData.answer,
-      roundData.startedAt,
-      roundData.updatedAt,
-      roundData.answeredInRound
-    )
-  }
-
-  const setPrice = price => {
-    _roundData.answer = price
-    return setRoundData(_roundData)
-  }
-
-  return {
-    contract: mockChainlink,
-    setDecimals: decimals => {
-      return mockChainlink.mock.decimals.returns(decimals)
-    },
-    setRoundData,
-    setPrice
-  }
-}

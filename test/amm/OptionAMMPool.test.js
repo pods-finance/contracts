@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
 const forceExpiration = require('../util/forceExpiration')
-const getPriceProviderMock = require('../util/getPriceProviderMock')
+const createPriceFeedMock = require('../util/createPriceFeedMock')
 const createMockOption = require('../util/createMockOption')
 const createNewPool = require('../util/createNewPool')
 const createOptionFactory = require('../util/createOptionFactory')
@@ -9,6 +9,7 @@ const { toBigNumber, approximately } = require('../../utils/utils')
 const createConfigurationManager = require('../util/createConfigurationManager')
 const mintOptions = require('../util/mintOptions')
 const addLiquidity = require('../util/addLiquidity')
+const getTimestamp = require('../util/getTimestamp')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
@@ -46,7 +47,7 @@ scenarios.forEach(scenario => {
     let mockStrikeAsset
     let factoryContract
     let optionAMMFactory
-    let priceProviderMock
+    let priceProvider
     let podPut
     let optionAMMPool
     let deployer
@@ -59,6 +60,7 @@ scenarios.forEach(scenario => {
     let delegatorAddress
     let lp
     let lpAddress
+    let defaultPriceFeed
 
     async function MintPhase (amountOfOptionsToMint, signer = deployer, owner = deployerAddress) {
       const amountToMintBN = ethers.BigNumber.from(amountOfOptionsToMint)
@@ -92,18 +94,22 @@ scenarios.forEach(scenario => {
         MockERC20.deploy(scenario.underlyingAssetSymbol, scenario.underlyingAssetSymbol, scenario.underlyingAssetDecimals),
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
       ])
-
-      const mock = await getPriceProviderMock(
-        deployer,
-        scenario.initialSpotPrice,
-        scenario.underlyingAssetDecimals,
-        mockUnderlyingAsset.address
-      )
-      priceProviderMock = mock.priceProvider
+      defaultPriceFeed = await createPriceFeedMock(deployer)
     })
 
     beforeEach(async function () {
-      configurationManager = await createConfigurationManager(priceProviderMock)
+      const PriceProvider = await ethers.getContractFactory('PriceProvider')
+      await defaultPriceFeed.setDecimals(scenario.spotPriceDecimals)
+      await defaultPriceFeed.setRoundData({
+        roundId: 1,
+        answer: scenario.initialSpotPrice,
+        startedAt: await getTimestamp(),
+        updatedAt: await getTimestamp() + 1,
+        answeredInRound: 1
+      })
+      priceProvider = await PriceProvider.deploy([mockUnderlyingAsset.address], [defaultPriceFeed.contract.address])
+
+      configurationManager = await createConfigurationManager(priceProvider)
       factoryContract = await createOptionFactory(mockWETH.address, configurationManager)
 
       podPut = await createMockOption({
@@ -268,6 +274,7 @@ scenarios.forEach(scenario => {
 
         const nearExpiration = expiration - 60 * 60 * 2 // 2 hours before expiration
         await ethers.provider.send('evm_mine', [nearExpiration])
+        await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
         await expect(optionAMMPool.addLiquidity(1000, 10000, lpAddress)).to.be.revertedWith('AMM: can not add liquidity when option price is zero')
       })
@@ -450,6 +457,7 @@ scenarios.forEach(scenario => {
 
         const nearExpiration = expiration - 60 * 60 * 2 // 2 hours before expiration
         await ethers.provider.send('evm_mine', [nearExpiration])
+        await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
@@ -536,6 +544,7 @@ scenarios.forEach(scenario => {
         const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
         await forceExpiration(podPut)
+        await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
@@ -712,6 +721,7 @@ scenarios.forEach(scenario => {
 
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt((expiration - 60 * 1).toString()))
+        await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
         await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
 

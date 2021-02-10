@@ -44,6 +44,11 @@
         "internalType": "int256",
         "name": "",
         "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
