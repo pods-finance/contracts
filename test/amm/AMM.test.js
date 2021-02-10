@@ -192,6 +192,21 @@ scenarios.forEach(scenario => {
         expect(balanceAfterUserATokenA).to.equal(toBigNumber(0))
         expect(balanceAfterUserATokenB).to.equal(toBigNumber(0))
       })
+
+      it('should not be able to add liquidity in zero-address behalf', async () => {
+        const amountTokenAToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenADecimals))
+        const amountTokenBToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        await mockTokenA.connect(userA).mint(amountTokenAToMint)
+        await mockTokenA.connect(userA).approve(amm.address, amountTokenAToMint)
+
+        await mockTokenB.connect(userA).mint(amountTokenBToMint)
+        await mockTokenB.connect(userA).approve(amm.address, amountTokenBToMint)
+
+        const tx = amm.connect(userA).addLiquidity(amountTokenAToMint, amountTokenBToMint, ethers.constants.AddressZero)
+
+        await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+      })
     })
 
     describe('Remove Liquidity', () => {
@@ -1672,6 +1687,33 @@ scenarios.forEach(scenario => {
         expect(balanceAfterUser01TokenB.add(balanceAfterUser02TokenB)).to.equal(balanceAfterUser01TokenD)
       })
     })
+
+    it('should not be able to trade in zero-address behalf', async () => {
+        const amountTokenAToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenADecimals))
+        const amountTokenBToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        await mockTokenA.connect(userA).mint(amountTokenAToMint)
+        await mockTokenA.connect(userA).approve(amm.address, amountTokenAToMint)
+
+        await mockTokenB.connect(userA).mint(amountTokenBToMint)
+        await mockTokenB.connect(userA).approve(amm.address, amountTokenBToMint)
+
+        await amm.connect(userA).addLiquidity(amountTokenAToMint, amountTokenBToMint, userAAddress)
+
+        let tx
+
+        tx = amm.tradeExactAInput(1, 0, ethers.constants.AddressZero)
+        await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+
+        tx = amm.tradeExactAOutput(1, ethers.constants.MaxUint256, ethers.constants.AddressZero)
+        await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+
+        tx = amm.tradeExactBInput(1, 0, ethers.constants.AddressZero)
+        await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+
+        tx = amm.tradeExactBOutput(1, ethers.constants.MaxUint256, ethers.constants.AddressZero)
+        await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+      })
   })
 })
 

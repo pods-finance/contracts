@@ -236,6 +236,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 amountOfB,
         address owner
     ) internal {
+        _isRecipient(owner);
         // 1) Get Pool UserDepositSnapshot
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
@@ -386,6 +387,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 minAmountBOut,
         address owner
     ) internal returns (uint256) {
+        _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactAInput(exactAmountAIn);
         uint256 amountBOut = tradeDetails.amount;
         require(amountBOut > 0, "AMM: can not trade when option price is zero");
@@ -420,6 +422,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 maxAmountBIn,
         address owner
     ) internal returns (uint256) {
+        _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactAOutput(exactAmountAOut);
         uint256 amountBIn = tradeDetails.amount;
         require(amountBIn > 0, "AMM: can not trade when option price is zero");
@@ -454,6 +457,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 minAmountAOut,
         address owner
     ) internal returns (uint256) {
+        _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactBInput(exactAmountBIn);
         uint256 amountAOut = tradeDetails.amount;
         require(amountAOut > 0, "AMM: can not trade when option price is zero");
@@ -488,6 +492,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 maxAmountAIn,
         address owner
     ) internal returns (uint256) {
+        _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactBOutput(exactAmountBOut);
         uint256 amountAIn = tradeDetails.amount;
         require(amountAIn > 0, "AMM: can not trade when option price is zero");
@@ -764,4 +769,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
     function _onRemoveLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
 
     function _onAddLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
+
+    function _isRecipient(address recipient) private {
+        require(recipient != address(0), "AMM: transfer to the zero address");
+    }
 }

@@ -33,6 +33,30 @@ contract MockAMM is AMM {
         return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
     }
 
+    function tradeExactAOutput(
+        uint256 exactAmountAOut,
+        uint256 maxAmountBIn,
+        address owner
+    ) external returns (uint256) {
+        return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
+    }
+
+    function tradeExactBInput(
+        uint256 exactAmountBIn,
+        uint256 minAmountAOut,
+        address owner
+    ) external returns (uint256) {
+        return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
+    }
+
+    function tradeExactBOutput(
+        uint256 exactAmountBOut,
+        uint256 maxAmountAIn,
+        address owner
+    ) external returns (uint256) {
+        return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
+    }
+
     function _getABPrice() internal override view returns (uint256) {
         return price;
     }
