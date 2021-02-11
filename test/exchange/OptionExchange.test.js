@@ -145,7 +145,6 @@ describe('OptionExchange', () => {
       const tx = exchange.connect(caller).mintAndAddLiquidity(
         option.address,
         amountToMint,
-        stableAsset.address,
         stableToAdd
       )
 
@@ -165,7 +164,6 @@ describe('OptionExchange', () => {
       const tx = exchange.connect(caller).mintAndAddLiquidity(
         ethers.constants.AddressZero,
         amountToMint,
-        stableAsset.address,
         stableToAdd
       )
 
@@ -186,7 +184,6 @@ describe('OptionExchange', () => {
       const tx = await exchange.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
-        stableAsset.address,
         0,
         deadline,
         sigma
@@ -212,7 +209,6 @@ describe('OptionExchange', () => {
       const tx = exchange.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
-        stableAsset.address,
         minOutputAmount,
         deadline,
         sigma
@@ -234,7 +230,6 @@ describe('OptionExchange', () => {
       const tx = exchange.connect(caller).mintAndSellOptions(
         ethers.constants.AddressZero,
         amountToMint,
-        stableAsset.address,
         minOutputAmount,
         deadline,
         sigma
@@ -257,7 +252,6 @@ describe('OptionExchange', () => {
       const tx = await exchange.connect(caller).buyExactOptions(
         option.address,
         amountToBuy,
-        stableAsset.address,
         maxAcceptedCost,
         deadline,
         sigma
@@ -283,7 +277,6 @@ describe('OptionExchange', () => {
       const tx = await exchange.connect(caller).buyOptionsWithExactTokens(
         option.address,
         minAcceptedOptions,
-        stableAsset.address,
         inputAmount,
         deadline,
         sigma
@@ -310,7 +303,6 @@ describe('OptionExchange', () => {
       const tx = exchange.connect(caller).buyExactOptions(
         ethers.constants.AddressZero,
         amountToBuy,
-        stableAsset.address,
         minAcceptedCost,
         deadline,
         sigma
@@ -331,7 +323,6 @@ describe('OptionExchange', () => {
       const tx = exchange.connect(caller).buyExactOptions(
         ethers.constants.AddressZero,
         amountToBuy,
-        stableAsset.address,
         minAcceptedCost,
         deadline,
         sigma

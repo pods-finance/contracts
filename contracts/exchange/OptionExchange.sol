@@ -74,7 +74,6 @@ contract OptionExchange {
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
-     * @param token The token which the premium will be paid
      * @param minTokenAmount Minimum amount of output tokens accepted
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
      * @param sigma The initial volatility guess
@@ -82,7 +81,6 @@ contract OptionExchange {
     function mintAndSellOptions(
         IPodOption option,
         uint256 optionAmount,
-        address token,
         uint256 minTokenAmount,
         uint256 deadline,
         uint256 sigma
@@ -105,32 +103,30 @@ contract OptionExchange {
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
-     * @param token The output token which the premium will be paid
      * @param tokenAmount Amount of output tokens accepted
      */
     function mintAndAddLiquidity(
         IPodOption option,
         uint256 optionAmount,
-        address token,
         uint256 tokenAmount
     ) external {
         IOptionAMMPool pool = _getPool(option);
-        IERC20 stableToken = IERC20(token);
+        IERC20 tokenB = IERC20(pool.tokenB());
 
         _mint(option, optionAmount);
 
         // Take stable token from caller
-        stableToken.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
 
         // Approving Option transfer to pool
         IERC20(address(option)).safeApprove(address(pool), optionAmount);
 
         // Approving Token transfer to pool
-        stableToken.safeApprove(address(pool), tokenAmount);
+        tokenB.safeApprove(address(pool), tokenAmount);
 
         pool.addLiquidity(optionAmount, tokenAmount, msg.sender);
 
-        emit LiquidityAdded(msg.sender, address(option), optionAmount, token, tokenAmount);
+        emit LiquidityAdded(msg.sender, address(option), optionAmount, pool.tokenB(), tokenAmount);
     }
 
     /**
@@ -139,7 +135,6 @@ contract OptionExchange {
      *
      * @param option The option contract to buy
      * @param optionAmount Amount of options to buy
-     * @param token The token spent to buy options
      * @param maxTokenAmount Max amount of input tokens sold
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
      * @param sigma The initial volatility guess
@@ -147,29 +142,28 @@ contract OptionExchange {
     function buyExactOptions(
         IPodOption option,
         uint256 optionAmount,
-        address token,
         uint256 maxTokenAmount,
         uint256 deadline,
         uint256 sigma
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
-        IERC20 tokenIn = IERC20(token);
+        IERC20 tokenB = IERC20(pool.tokenB());
 
         // Take input amount from caller
-        tokenIn.safeTransferFrom(msg.sender, address(this), maxTokenAmount);
+        tokenB.safeTransferFrom(msg.sender, address(this), maxTokenAmount);
 
         // Approve pool usage
-        tokenIn.safeApprove(address(pool), maxTokenAmount);
+        tokenB.safeApprove(address(pool), maxTokenAmount);
 
         uint256 tokensSold = pool.tradeExactAOutput(optionAmount, maxTokenAmount, msg.sender, sigma);
         uint256 unusedFunds = maxTokenAmount.sub(tokensSold);
 
         // Transfer back unused funds
         if (unusedFunds > 0) {
-            tokenIn.safeTransfer(msg.sender, unusedFunds);
+            tokenB.safeTransfer(msg.sender, unusedFunds);
         }
 
-        emit OptionsBought(msg.sender, address(option), optionAmount, token, tokensSold);
+        emit OptionsBought(msg.sender, address(option), optionAmount, pool.tokenB(), tokensSold);
     }
 
     /**
@@ -178,30 +172,28 @@ contract OptionExchange {
      *
      * @param option The option contract to buy
      * @param minOptionAmount Min amount of options bought
-     * @param token The token spent to buy options
      * @param tokenAmount The exact amount of input tokens sold
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
      */
     function buyOptionsWithExactTokens(
         IPodOption option,
         uint256 minOptionAmount,
-        address token,
         uint256 tokenAmount,
         uint256 deadline,
         uint256 sigma
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
-        IERC20 tokenIn = IERC20(token);
+        IERC20 tokenB = IERC20(pool.tokenB());
 
         // Take input amount from caller
-        tokenIn.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
 
         // Approve pool usage
-        tokenIn.safeApprove(address(pool), tokenAmount);
+        tokenB.safeApprove(address(pool), tokenAmount);
 
         uint256 optionsBought = pool.tradeExactBInput(tokenAmount, minOptionAmount, msg.sender, sigma);
 
-        emit OptionsBought(msg.sender, address(option), optionsBought, token, tokenAmount);
+        emit OptionsBought(msg.sender, address(option), optionsBought, pool.tokenB(), tokenAmount);
     }
 
     /**
