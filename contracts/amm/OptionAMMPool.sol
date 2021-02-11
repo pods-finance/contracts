@@ -2,6 +2,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "./AMM.sol";
 import "../lib/CappedPool.sol";
 import "../interfaces/IPriceProvider.sol";
@@ -74,6 +75,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         address _feePoolB,
         IConfigurationManager _configurationManager
     ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
+        require(Address.isContract(_feePoolA) && Address.isContract(_feePoolB), "OptionAMMPool: Invalid fee pools");
+
         priceProperties.currentSigma = _initialSigma;
         priceProperties.sigmaInitialGuess = _initialSigma;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
