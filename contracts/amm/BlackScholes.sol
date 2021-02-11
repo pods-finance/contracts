@@ -53,7 +53,7 @@ contract BlackScholes is IBlackScholes {
         uint256 time,
         int256 riskFree
     ) public override view returns (uint256) {
-        (int256 d1, int256 d2) = _getProbabilities(int256(spotPrice), int256(strikePrice), sigma, time, riskFree);
+        (int256 d1, int256 d2) = _getProbabilities(uintToInt(spotPrice), uintToInt(strikePrice), sigma, time, riskFree);
 
         uint256 Nd1 = normalDistribution.getProbability(d1, precisionDecimals);
         uint256 Nd2 = normalDistribution.getProbability(d2, precisionDecimals);
@@ -86,7 +86,7 @@ contract BlackScholes is IBlackScholes {
         uint256 time,
         int256 riskFree
     ) public override view returns (uint256) {
-        (int256 d1, int256 d2) = _getProbabilities(int256(spotPrice), int256(strikePrice), sigma, time, riskFree);
+        (int256 d1, int256 d2) = _getProbabilities(uintToInt(spotPrice), uintToInt(strikePrice), sigma, time, riskFree);
 
         uint256 Nd1 = normalDistribution.getProbability(-d1, precisionDecimals);
         uint256 Nd2 = normalDistribution.getProbability(-d2, precisionDecimals);
@@ -127,18 +127,18 @@ contract BlackScholes is IBlackScholes {
         uint256 time,
         int256 riskFree
     ) internal pure returns (int256 d1, int256 d2) {
-        int256 sigma2 = int256(_normalized(sigma).mul(_normalized(sigma)) / PRECISION_UNIT);
+        uint256 sigma2 = _normalized(sigma).mul(_normalized(sigma)) / PRECISION_UNIT;
 
         int256 A = _cachedLn(spotPrice.divide(strikePrice));
-        int256 B = (sigma2 / 2).add(_normalized(riskFree)).multiply(_normalized(int256(time)));
+        int256 B = (uintToInt(sigma2 / 2)).add(_normalized(riskFree)).multiply(_normalized(uintToInt(time)));
 
         int256 n = A.add(B);
 
         uint256 sqrtTime = _sqrt(_normalized(time));
         uint256 d = sigma.mul(sqrtTime) / UNIT_TO_PRECISION_FACTOR;
 
-        d1 = n.divide(int256(d));
-        d2 = d1.subtract(int256(d));
+        d1 = n.divide(uintToInt(d));
+        d2 = d1.subtract(uintToInt(d));
 
         return (d1, d2);
     }
@@ -150,11 +150,11 @@ contract BlackScholes is IBlackScholes {
      * @return y The square root of x
      */
     function _sqrt(uint256 x) internal pure returns (uint256 y) {
-        uint256 z = (x + 1) / 2;
+        uint256 z = (x.add(1)) / 2;
         y = x;
         while (z < y) {
             y = z;
-            z = (x / z + z) / 2;
+            z = (x / z).add(z) / 2;
         }
     }
 
@@ -171,13 +171,33 @@ contract BlackScholes is IBlackScholes {
      * Normalizes uint numbers to precision uint
      */
     function _normalized(uint256 x) internal pure returns (uint256) {
-        return x * UNIT_TO_PRECISION_FACTOR;
+        return x.mul(UNIT_TO_PRECISION_FACTOR);
     }
 
     /**
      * Normalizes int numbers to precision int
      */
     function _normalized(int256 x) internal pure returns (int256) {
-        return x * int256(UNIT_TO_PRECISION_FACTOR);
+        return mulInt(x, int256(UNIT_TO_PRECISION_FACTOR));
+    }
+
+    /**
+     * Safe math multiplications for Int.
+     */
+
+    function mulInt(int256 a, int256 b) internal pure returns (int256) {
+        int256 c = a * b;
+        require(a == 0 || c / a == b);
+        return c;
+    }
+
+    /**
+     * Convert uint256 to int256 taking in account overflow.
+     */
+
+    function uintToInt(uint256 input) public pure returns (int256) {
+        int256 output = int256(input);
+        require(output > 0, "BlackScholes: casting overflow");
+        return output;
     }
 }

@@ -159,7 +159,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     /**
      * @notice _tradeExactAOutput owner is able to receive exact amount of token A in exchange of a max
      * acceptable amount of token B transfer from the msg.sender. After that, this function also updates
-     * the priceProperties.* currentSigma
+     * the priceProperties.currentSigma
      *
      * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
      * out of thin ar, caller can help the Numeric Method achieve the result in less iterations with this parameter.

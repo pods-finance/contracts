@@ -37,10 +37,19 @@ const scenarios = [
     riskFree: toBigNumber(0),
     time: toBigNumber(0.0114155251141553 * 1e18), // 3.5 days
     expectedPrice: toBigNumber(4.0835637054095 * 1e18)
+  },
+  {
+    type: 'CALL', // Call price should be 0
+    spotPrice: toBigNumber(300 * 1e18),
+    strikePrice: toBigNumber(320 * 1e18),
+    sigma: toBigNumber(0.6 * 1e18),
+    riskFree: toBigNumber(0),
+    time: toBigNumber(11).mul(1e14), // 0.0011
+    expectedPrice: toBigNumber(0)
   }
 ]
 
-describe('BlackScholes', () => {
+describe.only('BlackScholes', () => {
   let BlackScholes, bs, normalDistribution
 
   before(async () => {
