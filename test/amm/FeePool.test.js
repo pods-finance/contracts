@@ -34,6 +34,12 @@ describe('FeePool', () => {
     await usdc.connect(owner1).burn(await usdc.balanceOf(owner1Address))
   })
 
+  it('cannot charge more than 100% fees', async () => {
+    const decimals = await usdc.decimals()
+    const tx = FeePool.connect(poolOwner).deploy(usdc.address, 10 ** decimals + 1, decimals)
+    await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
+  })
+
   it('cannot create a pool with a zero-address token', async () => {
     const tx = FeePool.connect(poolOwner).deploy(ethers.constants.AddressZero, initialFee, initialDecimals)
     await expect(tx).to.be.revertedWith('FeePool: Invalid token')
