@@ -74,24 +74,24 @@ abstract contract AMM is IAMM, RequiredDecimals {
     uint256 public constant PERCENT_PRECISION = 100;
 
     /**
-     * @notice Address of the token A
+     * @dev Address of the token A
      */
-    address public tokenA;
+    address private _tokenA;
 
     /**
-     * @notice Address of the token B
+     * @dev Address of the token B
      */
-    address public tokenB;
+    address private _tokenB;
 
     /**
-     * @notice Token A number of decimals
+     * @dev Token A number of decimals
      */
-    uint8 public tokenADecimals;
+    uint8 private _tokenADecimals;
 
     /**
-     * @notice Token B number of decimals
+     * @dev Token B number of decimals
      */
-    uint8 public tokenBDecimals;
+    uint8 private _tokenBDecimals;
 
     /**
      * @notice The total balance of token A in the pool not counting the amortization
@@ -141,16 +141,44 @@ abstract contract AMM is IAMM, RequiredDecimals {
     event TradeExactAOutput(address indexed caller, address indexed owner, uint256 amountBIn, uint256 exactAmountAOut);
     event TradeExactBOutput(address indexed caller, address indexed owner, uint256 amountAIn, uint256 exactAmountBOut);
 
-    constructor(address _tokenA, address _tokenB) public {
-        require(Address.isContract(_tokenA), "AMM: token a is not a contract");
-        require(Address.isContract(_tokenB), "AMM: token b is not a contract");
-        require(_tokenA != _tokenB, "AMM: tokens must differ");
+    constructor(address tokenA, address tokenB) public {
+        require(Address.isContract(tokenA), "AMM: token a is not a contract");
+        require(Address.isContract(tokenB), "AMM: token b is not a contract");
+        require(tokenA != tokenB, "AMM: tokens must differ");
 
-        tokenA = _tokenA;
-        tokenB = _tokenB;
+        _tokenA = tokenA;
+        _tokenB = tokenB;
 
-        tokenADecimals = tryDecimals(IERC20(_tokenA));
-        tokenBDecimals = tryDecimals(IERC20(_tokenB));
+        _tokenADecimals = tryDecimals(IERC20(tokenA));
+        _tokenBDecimals = tryDecimals(IERC20(tokenB));
+    }
+
+    /**
+     * @dev Returns the address for tokenA
+     */
+    function tokenA() public override view returns (address) {
+        return _tokenA;
+    }
+
+    /**
+     * @dev Returns the address for tokenB
+     */
+    function tokenB() public override view returns (address) {
+        return _tokenB;
+    }
+
+    /**
+     * @dev Returns the decimals for tokenA
+     */
+    function tokenADecimals() public override view returns (uint8) {
+        return _tokenADecimals;
+    }
+
+    /**
+     * @dev Returns the decimals for tokenB
+     */
+    function tokenBDecimals() public override view returns (uint8) {
+        return _tokenBDecimals;
     }
 
     /**
@@ -292,12 +320,12 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         // Update Total Balance of the pool for each token
         require(
-            IERC20(tokenA).transferFrom(msg.sender, address(this), amountOfA),
+            IERC20(_tokenA).transferFrom(msg.sender, address(this), amountOfA),
             "AMM: could not transfer option tokens from caller"
         );
 
         require(
-            IERC20(tokenB).transferFrom(msg.sender, address(this), amountOfB),
+            IERC20(_tokenB).transferFrom(msg.sender, address(this), amountOfB),
             "AMM: could not transfer stable tokens from caller"
         );
 
@@ -362,11 +390,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         // Transfers / Update
         if (amountToSendA > 0) {
-            require(IERC20(tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
+            require(IERC20(_tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
         }
 
         if (amountToSendB > 0) {
-            require(IERC20(tokenB).transfer(msg.sender, amountToSendB), "AMM: could not transfer token B from caller");
+            require(IERC20(_tokenB).transfer(msg.sender, amountToSendB), "AMM: could not transfer token B from caller");
         }
 
         emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
@@ -397,11 +425,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(amountBOut >= minAmountBOut, "AMM: amount tokens out lower than minimum asked");
         require(
-            IERC20(tokenA).transferFrom(msg.sender, address(this), exactAmountAIn),
+            IERC20(_tokenA).transferFrom(msg.sender, address(this), exactAmountAIn),
             "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
+        require(IERC20(_tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactAInput(msg.sender, owner, exactAmountAIn, amountBOut);
         return amountBOut;
@@ -433,11 +461,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(amountBIn <= maxAmountBIn, "AMM: amount tokens out higher than maximum asked");
         require(
-            IERC20(tokenB).transferFrom(msg.sender, address(this), amountBIn),
+            IERC20(_tokenB).transferFrom(msg.sender, address(this), amountBIn),
             "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
+        require(IERC20(_tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactAOutput(msg.sender, owner, amountBIn, exactAmountAOut);
         return amountBIn;
@@ -469,11 +497,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(amountAOut >= minAmountAOut, "AMM: amount tokens out lower than minimum asked");
         require(
-            IERC20(tokenB).transferFrom(msg.sender, address(this), exactAmountBIn),
+            IERC20(_tokenB).transferFrom(msg.sender, address(this), exactAmountBIn),
             "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
+        require(IERC20(_tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactBInput(msg.sender, owner, exactAmountBIn, amountAOut);
         return amountAOut;
@@ -505,11 +533,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         require(amountAIn <= maxAmountAIn, "AMM: amount tokens out higher than maximum asked");
         require(
-            IERC20(tokenA).transferFrom(msg.sender, address(this), amountAIn),
+            IERC20(_tokenA).transferFrom(msg.sender, address(this), amountAIn),
             "AMM: could not transfer token A from caller"
         );
 
-        require(IERC20(tokenB).transfer(owner, exactAmountBOut), "AMM: could not transfer token B to caller");
+        require(IERC20(_tokenB).transfer(owner, exactAmountBOut), "AMM: could not transfer token B to caller");
 
         emit TradeExactBOutput(msg.sender, owner, amountAIn, exactAmountBOut);
         return amountAIn;
@@ -535,12 +563,12 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 numerator;
         uint256 denominator;
         {
-            numerator = _totalTokenA.mul(_ABPrice).div(10**uint256(tokenADecimals)).add(_totalTokenB).mul(
+            numerator = _totalTokenA.mul(_ABPrice).div(10**uint256(_tokenADecimals)).add(_totalTokenB).mul(
                 10**FIMP_PRECISION
             );
         }
         {
-            denominator = _deamortizedTokenABalance.mul(_ABPrice).div(10**uint256(tokenADecimals)).add(
+            denominator = _deamortizedTokenABalance.mul(_ABPrice).div(10**uint256(_tokenADecimals)).add(
                 _deamortizedTokenBBalance
             );
         }
@@ -556,8 +584,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @return totalTokenB balanceOf this contract of token B
      */
     function _getPoolBalances() internal view returns (uint256 totalTokenA, uint256 totalTokenB) {
-        totalTokenA = IERC20(tokenA).balanceOf(address(this));
-        totalTokenB = IERC20(tokenB).balanceOf(address(this));
+        totalTokenA = IERC20(_tokenA).balanceOf(address(this));
+        totalTokenB = IERC20(_tokenB).balanceOf(address(this));
 
         return (totalTokenA, totalTokenB);
     }
@@ -774,11 +802,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
     function _onAddLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
 
-    function _isRecipient(address recipient) private {
+    function _isRecipient(address recipient) private pure {
         require(recipient != address(0), "AMM: transfer to the zero address");
     }
 
-    function _isValidInput(uint256 input) private {
+    function _isValidInput(uint256 input) private pure {
         require(input > 0, "AMM: input should be greater than zero");
     }
 }

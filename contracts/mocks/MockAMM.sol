@@ -62,7 +62,7 @@ contract MockAMM is AMM {
     }
 
     function _getTradeDetailsExactAInput(uint256 exactAmountAIn) internal override returns (TradeDetails memory) {
-        uint256 amountTokensOut = exactAmountAIn.mul(price).div(10**uint256(tokenADecimals));
+        uint256 amountTokensOut = exactAmountAIn.mul(price).div(10**uint256(tokenADecimals()));
         uint256 feesTokenA = 0;
         uint256 feesTokenB = 0;
         TradeDetails memory tradeDetails = TradeDetails(
@@ -76,7 +76,7 @@ contract MockAMM is AMM {
     }
 
     function _getTradeDetailsExactAOutput(uint256 exactAmountAOut) internal override returns (TradeDetails memory) {
-        uint256 amountTokensBIn = exactAmountAOut.mul(price).div(10**uint256(tokenADecimals));
+        uint256 amountTokensBIn = exactAmountAOut.mul(price).div(10**uint256(tokenADecimals()));
         uint256 feesTokenA = 0;
         uint256 feesTokenB = 0;
         TradeDetails memory tradeDetails = TradeDetails(
@@ -90,7 +90,7 @@ contract MockAMM is AMM {
     }
 
     function _getTradeDetailsExactBInput(uint256 exactAmountBIn) internal override returns (TradeDetails memory) {
-        uint256 amountTokensAOut = exactAmountBIn.mul(10**uint256(tokenBDecimals).div(price));
+        uint256 amountTokensAOut = exactAmountBIn.mul(10**uint256(tokenBDecimals()).div(price));
         uint256 feesTokenA = 0;
         uint256 feesTokenB = 0;
         TradeDetails memory tradeDetails = TradeDetails(
@@ -104,7 +104,7 @@ contract MockAMM is AMM {
     }
 
     function _getTradeDetailsExactBOutput(uint256 exactAmountBOut) internal override returns (TradeDetails memory) {
-        uint256 amountTokensAIn = exactAmountBOut.mul(10**uint256(tokenBDecimals).div(price));
+        uint256 amountTokensAIn = exactAmountBOut.mul(10**uint256(tokenBDecimals()).div(price));
         uint256 feesTokenA = 0;
         uint256 feesTokenB = 0;
         TradeDetails memory tradeDetails = TradeDetails(

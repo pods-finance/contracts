@@ -96,7 +96,7 @@ contract OptionExchange {
 
         uint256 tokensBought = pool.tradeExactAInput(optionAmount, minTokenAmount, msg.sender, sigma);
 
-        emit OptionsSold(msg.sender, address(option), optionAmount, token, tokensBought);
+        emit OptionsSold(msg.sender, address(option), optionAmount, pool.tokenB(), tokensBought);
     }
 
     /**
