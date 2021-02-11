@@ -187,7 +187,7 @@ contract BlackScholes is IBlackScholes {
 
     function mulInt(int256 a, int256 b) internal pure returns (int256) {
         int256 c = a * b;
-        require(a == 0 || c / a == b);
+        require(a == 0 || c / a == b, "BlackScholes: multInt overflow");
         return c;
     }
 
@@ -195,7 +195,7 @@ contract BlackScholes is IBlackScholes {
      * Convert uint256 to int256 taking in account overflow.
      */
 
-    function uintToInt(uint256 input) public pure returns (int256) {
+    function uintToInt(uint256 input) internal pure returns (int256) {
         int256 output = int256(input);
         require(output > 0, "BlackScholes: casting overflow");
         return output;

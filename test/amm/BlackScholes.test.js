@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const { toBigNumber, approximately } = require('../../utils/utils')
+const INT256_MAX = toBigNumber(2).pow(255)
 
 const scenarios = [
   {
@@ -99,6 +100,26 @@ describe('BlackScholes', () => {
       scenarios[0].time,
       scenarios[0].riskFree
     )).to.be.revertedWith('SafeMath: multiplication overflow')
+  })
+
+  it('should revert if multInt overflows', async () => {
+    await expect(bs.getPutPrice(
+      scenarios[0].spotPrice,
+      scenarios[0].strikePrice,
+      scenarios[0].sigma,
+      INT256_MAX.sub(1),
+      scenarios[0].riskFree
+    )).to.be.revertedWith('BlackScholes: multInt overflow')
+  })
+
+  it('should revert if casting uint to int overflow', async () => {
+    await expect(bs.getPutPrice(
+      scenarios[0].spotPrice,
+      scenarios[0].strikePrice,
+      scenarios[0].sigma,
+      INT256_MAX,
+      scenarios[0].riskFree
+    )).to.be.revertedWith('BlackScholes: casting overflow')
   })
 
   scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
