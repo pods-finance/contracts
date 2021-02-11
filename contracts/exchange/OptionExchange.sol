@@ -210,16 +210,28 @@ contract OptionExchange {
      * @param amount The amount of options to mint
      */
     function _mint(IPodOption option, uint256 amount) internal {
-        IERC20 strikeAsset = IERC20(option.strikeAsset());
-        uint256 strikeToTransfer = option.strikeToTransfer(amount);
+        if (option.optionType() == IPodOption.OptionType.PUT) {
+            IERC20 strikeAsset = IERC20(option.strikeAsset());
+            uint256 strikeToTransfer = option.strikeToTransfer(amount);
 
-        // Take strike asset from caller
-        strikeAsset.safeTransferFrom(msg.sender, address(this), strikeToTransfer);
+            // Take strike asset from caller
+            strikeAsset.safeTransferFrom(msg.sender, address(this), strikeToTransfer);
 
-        // Approving Strike transfer to Option
-        strikeAsset.safeApprove(address(option), strikeToTransfer);
+            // Approving strike asset transfer to Option
+            strikeAsset.safeApprove(address(option), strikeToTransfer);
 
-        option.mint(amount, msg.sender);
+            option.mint(amount, msg.sender);
+        } else if (option.optionType() == IPodOption.OptionType.CALL) {
+            IERC20 underlyingAsset = IERC20(option.underlyingAsset());
+
+            // Take underlying asset from caller
+            underlyingAsset.safeTransferFrom(msg.sender, address(this), amount);
+
+            // Approving underlying asset to Option
+            underlyingAsset.safeApprove(address(option), amount);
+
+            option.mint(amount, msg.sender);
+        }
     }
 
     /**

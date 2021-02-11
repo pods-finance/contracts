@@ -62,7 +62,8 @@ contract PriceProvider is IPriceProvider, Ownable {
     function getAssetPrice(address _asset) external override view returns (uint256) {
         IPriceFeed feed = _assetPriceFeeds[_asset];
         require(address(feed) != address(0), "PriceProvider: Feed not registered");
-        int256 price = feed.getLatestPrice();
+        (int256 price, uint256 updatedAt) = feed.getLatestPrice();
+        require(!_isObsolete(updatedAt), "PriceProvider: stale PriceFeed");
         require(price > 0, "PriceProvider: Negative price");
 
         return uint256(price);

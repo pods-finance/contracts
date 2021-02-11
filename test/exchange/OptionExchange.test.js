@@ -7,6 +7,9 @@ const addLiquidity = require('../util/addLiquidity')
 
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
+const OPTION_TYPE_PUT = 0
+const OPTION_TYPE_CALL = 1
+
 describe('OptionExchange', () => {
   let OptionExchange, OptionAMMFactory, MintableERC20
   let exchange, configurationManager
@@ -25,7 +28,7 @@ describe('OptionExchange', () => {
     ;[OptionExchange, OptionAMMFactory, MintableERC20] = await Promise.all([
       ethers.getContractFactory('OptionExchange'),
       ethers.getContractFactory('OptionAMMFactory'),
-      ethers.getContractFactory('MintableERC20'),
+      ethers.getContractFactory('MintableERC20')
     ])
 
     underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
@@ -83,6 +86,45 @@ describe('OptionExchange', () => {
       )
 
       expect(await option.balanceOf(callerAddress)).to.equal(amountToMint)
+    })
+
+    it('mints both puts and call options', async () => {
+      const amountToMint = ethers.BigNumber.from(1e8.toString())
+
+      const putOption = await createMockOption({
+        configurationManager,
+        underlyingAsset: underlyingAsset.address,
+        strikeAsset: stableAsset.address,
+        optionType: OPTION_TYPE_PUT
+      })
+
+      const strikeToTransfer = await putOption.strikeToTransfer(amountToMint)
+      await stableAsset.connect(caller).mint(strikeToTransfer)
+      await stableAsset.connect(caller).approve(exchange.address, strikeToTransfer)
+
+      await exchange.connect(caller).mint(
+        putOption.address,
+        amountToMint
+      )
+
+      expect(await putOption.balanceOf(callerAddress)).to.equal(amountToMint)
+
+      const callOption = await createMockOption({
+        configurationManager,
+        underlyingAsset: underlyingAsset.address,
+        strikeAsset: stableAsset.address,
+        optionType: OPTION_TYPE_CALL
+      })
+
+      await underlyingAsset.connect(caller).mint(amountToMint)
+      await underlyingAsset.connect(caller).approve(exchange.address, amountToMint)
+
+      await exchange.connect(caller).mint(
+        callOption.address,
+        amountToMint
+      )
+
+      expect(await callOption.balanceOf(callerAddress)).to.equal(amountToMint)
     })
   })
 

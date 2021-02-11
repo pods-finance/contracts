@@ -2,7 +2,7 @@
 pragma solidity 0.6.12;
 
 interface IPriceFeed {
-    function getLatestPrice() external view returns (int256);
+    function getLatestPrice() external view returns (int256, uint256);
 
     function latestRoundData()
         external

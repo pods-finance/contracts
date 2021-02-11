@@ -1,36 +1,23 @@
-const { deployMockContract } = waffle
-const PriceFeedABI = require('../../abi/ChainlinkPriceFeed.json')
 const getTimestamp = require('./getTimestamp')
+const createPriceFeedMock = require('./createPriceFeedMock')
 
-module.exports = async function getPriceFeedMock (deployer, refPrice, refDecimals, tokenAddress) {
+module.exports = async function getPriceProviderMock (deployer, refPrice, refDecimals, tokenAddress) {
   const PriceProvider = await ethers.getContractFactory('PriceProvider')
-  const priceFeed = await deployMockContract(deployer, PriceFeedABI)
-  const roundData = {
+  const priceFeed = await createPriceFeedMock(deployer)
+  await priceFeed.setDecimals(refDecimals)
+  await priceFeed.setRoundData({
     roundId: 1,
     answer: refPrice,
     startedAt: await getTimestamp(),
     updatedAt: await getTimestamp() + 1,
     answeredInRound: 1
-  }
+  })
 
-  await priceFeed.mock.latestRoundData.returns(
-    roundData.roundId,
-    roundData.answer,
-    roundData.startedAt,
-    roundData.updatedAt,
-    roundData.answeredInRound
-  )
-
-  await priceFeed.mock.getLatestPrice
-    .returns(refPrice)
-
-  await priceFeed.mock.decimals
-    .returns(refDecimals)
-
-  const priceProvider = await PriceProvider.deploy([tokenAddress], [priceFeed.address])
+  const priceProvider = await PriceProvider.deploy([tokenAddress], [priceFeed.contract.address])
   await priceProvider.deployed()
 
   return {
-    priceProvider
+    priceProvider,
+    priceFeed
   }
 }
