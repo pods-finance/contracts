@@ -49,7 +49,7 @@ const scenarios = [
   }
 ]
 
-describe.only('BlackScholes', () => {
+describe('BlackScholes', () => {
   let BlackScholes, bs, normalDistribution
 
   before(async () => {
