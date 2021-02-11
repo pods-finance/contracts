@@ -22,6 +22,15 @@ const scenarios = [
     expectedPrice: toBigNumber(1275.126573 * 1e18)
   },
   {
+    type: 'PUT', // Call price should be 0
+    spotPrice: toBigNumber(320 * 1e18),
+    strikePrice: toBigNumber(300 * 1e18),
+    sigma: toBigNumber(0.6 * 1e18),
+    riskFree: toBigNumber(0),
+    time: toBigNumber(11).mul(1e14), // 0.0011
+    expectedPrice: toBigNumber(0)
+  },
+  {
     type: 'CALL',
     spotPrice: toBigNumber(601 * 1e18),
     strikePrice: toBigNumber(580 * 1e18),
