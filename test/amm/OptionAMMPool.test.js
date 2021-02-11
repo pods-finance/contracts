@@ -150,6 +150,32 @@ scenarios.forEach(scenario => {
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('OptionAMMPool: option has expired')
       })
 
+      it('should revert when trying to deploy a Pool with strikeAsset decimals > BS_RES_DECIMALS', async () => {
+        const mockTokenB = await MockERC20.deploy('TEST', 'TEST', '16')
+        const mockStrikeAssetB = await MockERC20.deploy('TEST', 'TEST', '20')
+        podPut = await createMockOption({
+          underlyingAsset: mockUnderlyingAsset.address,
+          strikeAsset: mockStrikeAssetB.address,
+          strikePrice: scenario.strikePrice,
+          configurationManager
+        })
+
+        optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockTokenB.address, scenario.initialSigma)
+        await expect(optionAMMPool).to.be.revertedWith('OptionAMMPool: not supported strikePrice unit')
+      })
+
+      it('should revert when trying to deploy a Pool with tokenB decimals > BS_RES_DECIMALS', async () => {
+        podPut = await createMockOption({
+          underlyingAsset: mockUnderlyingAsset.address,
+          strikeAsset: mockStrikeAsset.address,
+          strikePrice: scenario.strikePrice,
+          configurationManager
+        })
+        const mockTokenB = await MockERC20.deploy('TEST', 'TEST', '20')
+        optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockTokenB.address, scenario.initialSigma)
+        await expect(optionAMMPool).to.be.revertedWith('OptionAMMPool: not supported tokenB unit')
+      })
+
       it('should not allow add liquidity after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
