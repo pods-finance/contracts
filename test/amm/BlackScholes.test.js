@@ -82,6 +82,11 @@ describe('BlackScholes', () => {
     await normalDistribution.deployed()
   })
 
+  it('cannot create a pool with a zero-address normalDistribution', async () => {
+    const tx = BlackScholes.deploy(ethers.constants.AddressZero)
+    await expect(tx).to.be.revertedWith('BlackScholes: Invalid normalDistribution')
+  })
+
   it('should revert if number multiplication overflow', async () => {
     await expect(bs.getCallPrice(
       scenarios[0].spotPrice,

@@ -45,6 +45,7 @@ contract OptionExchange {
     );
 
     constructor(IOptionAMMFactory _factory) public {
+        require(address(_factory) != address(0), "OptionExchange: Invalid factory");
         factory = _factory;
     }
 

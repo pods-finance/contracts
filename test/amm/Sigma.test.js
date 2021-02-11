@@ -75,20 +75,25 @@ const initialSigmaNull = {
 }
 
 describe('Sigma', () => {
-  let sigma, blackScholes
+  let Sigma, sigma, blackScholes
 
   before(async () => {
+    Sigma = await ethers.getContractFactory('Sigma')
     blackScholes = await createBlackScholes()
   })
 
   beforeEach(async () => {
-    const SigmaContract = await ethers.getContractFactory('Sigma')
-    sigma = await SigmaContract.deploy(blackScholes.address)
+    sigma = await Sigma.deploy(blackScholes.address)
     await sigma.deployed()
   })
 
   it('should return the assigned sigma', async () => {
     expect(await sigma.blackScholes()).to.be.equal(blackScholes.address)
+  })
+
+  it('cannot be deployed with a zero-address BlackScholes', async () => {
+    const tx = Sigma.deploy(ethers.constants.AddressZero)
+    await expect(tx).to.be.revertedWith('Sigma: Invalid blackScholes')
   })
 
   describe('FindNextSigma', () => {

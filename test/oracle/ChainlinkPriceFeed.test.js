@@ -40,6 +40,11 @@ describe('ChainlinkPriceFeed', () => {
     feed = await ChainlinkPriceFeed.deploy(mockChainlink.address)
   })
 
+  it('cannot be deployed with a zero-address source', async () => {
+    const tx = ChainlinkPriceFeed.deploy(ethers.constants.AddressZero)
+    await expect(tx).to.be.revertedWith('ChainlinkPriceFeed: Invalid source')
+  })
+
   it('returns the correct decimals', async () => {
     expect(await feed.decimals()).to.equal(decimals)
   })

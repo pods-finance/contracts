@@ -34,6 +34,11 @@ describe('FeePool', () => {
     await usdc.connect(owner1).burn(await usdc.balanceOf(owner1Address))
   })
 
+  it('cannot create a pool with a zero-address token', async () => {
+    const tx = FeePool.connect(poolOwner).deploy(ethers.constants.AddressZero, initialFee, initialDecimals)
+    await expect(tx).to.be.revertedWith('FeePool: Invalid token')
+  })
+
   describe('Fee parameters', () => {
     it('sets the contract with initial params', async () => {
       expect(await pool.feeValue()).to.equal(initialFee)

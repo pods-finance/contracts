@@ -72,6 +72,11 @@ describe('OptionExchange', () => {
     expect(await exchange.factory()).to.equal(optionAMMFactory.address)
   })
 
+  it('cannot be deployed with a zero-address factory', async () => {
+    const tx = OptionExchange.deploy(ethers.constants.AddressZero)
+    await expect(tx).to.be.revertedWith('OptionExchange: Invalid factory')
+  })
+
   describe('Mint', () => {
     it('mints the exact amount of options', async () => {
       const amountToMint = ethers.BigNumber.from(1e8.toString())
