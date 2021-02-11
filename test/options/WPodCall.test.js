@@ -148,6 +148,11 @@ scenarios.forEach(scenario => {
         await forceExpiration(wPodCall)
         await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: option has expired')
       })
+
+      it('should not mint for the zero address behalf', async () => {
+        const tx = wPodCall.connect(seller).mintEth(ethers.constants.AddressZero, { value: scenario.amountToMint.toString() })
+        await expect(tx).to.be.revertedWith('PodOption: zero address cannot be the owner')
+      })
     })
 
     describe('Exercising options', () => {

@@ -342,6 +342,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         uint256 amountOfCollateral,
         address owner
     ) internal capped(amountOfOptions) {
+        require(owner != address(0), "PodOption: zero address cannot be the owner");
+
         if (totalShares > 0) {
             uint256 ownerShares = _calculatedShares(amountOfCollateral);
 
