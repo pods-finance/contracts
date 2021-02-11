@@ -12,6 +12,11 @@ describe('NormalDistribution', () => {
     nd = await NormalDistribution.deploy()
   })
 
+  it('fails when the decimals is less than 4', async () => {
+    const tx = nd.getProbability('2839918236000000000000000', 3)
+    await expect(tx).to.be.revertedWith('NormalDistribution: z too small')
+  })
+
   it('gets cached normal distribution', async () => {
     const result = await nd.getProbability('2839918236000000000000000', 24)
     expect(result).to.equal(ethers.BigNumber.from('997700000000000000000000'))
