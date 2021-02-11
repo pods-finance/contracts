@@ -33,7 +33,7 @@ contract Sigma is ISigma {
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
-        uint256 _riskFree
+        int256 _riskFree
     ) external override view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
         (calculatedSigma, calculatedPrice) = getSigma(
             _targetPrice,
@@ -53,7 +53,7 @@ contract Sigma is ISigma {
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
-        uint256 _riskFree
+        int256 _riskFree
     ) external override view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
         (calculatedSigma, calculatedPrice) = getSigma(
             _targetPrice,
@@ -91,7 +91,7 @@ contract Sigma is ISigma {
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
-        uint256 _riskFree,
+        int256 _riskFree,
         OptionType _optionType
     ) public view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
         require(_sigmaInitialGuess > 0, "Sigma: initial guess should be greater than zero");
@@ -176,25 +176,13 @@ contract Sigma is ISigma {
         uint256 _strikePrice,
         uint256 calculatedSigma,
         uint256 _timeToMaturity,
-        uint256 _riskFree,
+        int256 _riskFree,
         OptionType _optionType
     ) internal view returns (uint256 price) {
         if (_optionType == OptionType.PUT) {
-            price = _blackScholes.getPutPrice(
-                _spotPrice,
-                _strikePrice,
-                calculatedSigma,
-                _timeToMaturity,
-                int256(_riskFree)
-            );
+            price = _blackScholes.getPutPrice(_spotPrice, _strikePrice, calculatedSigma, _timeToMaturity, _riskFree);
         } else {
-            price = _blackScholes.getCallPrice(
-                _spotPrice,
-                _strikePrice,
-                calculatedSigma,
-                _timeToMaturity,
-                int256(_riskFree)
-            );
+            price = _blackScholes.getCallPrice(_spotPrice, _strikePrice, calculatedSigma, _timeToMaturity, _riskFree);
         }
         return price;
     }
@@ -221,7 +209,7 @@ contract Sigma is ISigma {
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
-        uint256 _riskFree,
+        int256 _riskFree,
         OptionType _optionType
     ) internal view returns (Boundaries memory b) {
         b.sigmaLower = 0;

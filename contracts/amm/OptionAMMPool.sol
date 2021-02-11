@@ -56,7 +56,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         address underlyingAsset;
         IPodOption.OptionType optionType;
         uint256 currentSigma;
-        uint256 riskFree;
+        int256 riskFree;
         uint256 sigmaInitialGuess;
     }
 
@@ -378,7 +378,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
                 priceProperties.strikePrice,
                 priceProperties.currentSigma,
                 timeToMaturity,
-                int256(priceProperties.riskFree)
+                priceProperties.riskFree
             );
         } else {
             newABPrice = pricingMethod.getCallPrice(
@@ -386,7 +386,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
                 priceProperties.strikePrice,
                 priceProperties.currentSigma,
                 timeToMaturity,
-                int256(priceProperties.riskFree)
+                priceProperties.riskFree
             );
         }
         if (newABPrice == 0) {

@@ -10,7 +10,7 @@ interface ISigma {
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
-        uint256 _riskFree
+        int256 _riskFree
     ) external view returns (uint256, uint256);
 
     function getCallSigma(
@@ -19,6 +19,6 @@ interface ISigma {
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
-        uint256 _riskFree
+        int256 _riskFree
     ) external view returns (uint256, uint256);
 }
