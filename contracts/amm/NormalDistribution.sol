@@ -2,6 +2,7 @@
 pragma solidity 0.6.12;
 
 import "../interfaces/INormalDistribution.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title NormalDistribution
@@ -10,7 +11,8 @@ import "../interfaces/INormalDistribution.sol";
  * the standard normal distribution
  */
 contract NormalDistribution is INormalDistribution {
-    mapping(int256 => int256) private _probabilities;
+    using SafeMath for uint256;
+    mapping(uint256 => uint256) private _probabilities;
 
     constructor() public {
         _probabilities[100] = 5040;
@@ -330,30 +332,32 @@ contract NormalDistribution is INormalDistribution {
      * @param decimals Amount of decimals of z
      * @return The probability of z
      */
-    function getProbability(int256 z, uint256 decimals) external override view returns (int256) {
+    function getProbability(int256 z, uint256 decimals) external override view returns (uint256) {
         require(decimals >= 2, "NormalDistribution: z too small");
-        int256 truncatedZ = _mod((z / int256(10**(decimals - 2))) * 100);
-        int256 responseDecimals = int256(10**(decimals - 4));
+        require(decimals < 77, "NormalDistribution: decimals too big");
+        uint256 absZ = _abs(z);
+        uint256 truncatedZ = absZ.div(10**(decimals.sub(2))).mul(100);
+        uint256 responseDecimals = 10**(decimals.sub(4));
 
         // Handle negative z
         if (z < 0) {
-            return (10000 - _nearest(truncatedZ)) * responseDecimals;
+            return uint256(10000).sub(_nearest(truncatedZ)).mul(responseDecimals);
         }
 
-        return _nearest(truncatedZ) * responseDecimals;
+        return _nearest(truncatedZ).mul(responseDecimals);
     }
 
     /**
      * @dev Returns the module of a number.
      */
-    function _mod(int256 a) internal pure returns (int256) {
-        return a < 0 ? -a : a;
+    function _abs(int256 a) internal pure returns (uint256) {
+        return a < 0 ? uint256(-a) : uint256(a);
     }
 
     /**
      * @dev Returns the nearest z value on the table
      */
-    function _nearest(int256 z) internal view returns (int256) {
+    function _nearest(uint256 z) internal view returns (uint256) {
         if (z >= 36300) {
             return 9999;
         } else if (z >= 34900) {
