@@ -7,12 +7,11 @@ internalTask('deployBS', 'Deploy Black Scholes')
   .addOptionalParam('logarithm', 'logarithm address to use')
   .addOptionalParam('exponent', 'exponent address to use')
   .addFlag('deploylibs', 'Activate this parameter if you want to deploy libs')
-  .setAction(async ({ normaldist, fixidity, logarithm, exponent, deploylibs }, hre) => {
+  .setAction(async ({ normaldist, fixidity, logarithm, deploylibs }, hre) => {
     const path = `../../deployments/${hre.network.name}.json`
     let libs = {
       fixidity,
-      logarithm,
-      exponent
+      logarithm
     }
 
     if (deploylibs) {

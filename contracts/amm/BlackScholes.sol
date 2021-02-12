@@ -7,7 +7,6 @@ import "../interfaces/INormalDistribution.sol";
 
 import "../lib/FixidityLib.sol";
 import "../lib/LogarithmLib.sol";
-import "../lib/ExponentLib.sol";
 import "../interfaces/IBlackScholes.sol";
 
 /**
@@ -18,7 +17,6 @@ import "../interfaces/IBlackScholes.sol";
 contract BlackScholes is IBlackScholes {
     using SafeMath for uint256;
     using FixidityLib for int256;
-    using ExponentLib for int256;
     using LogarithmLib for int256;
 
     INormalDistribution public normalDistribution;
