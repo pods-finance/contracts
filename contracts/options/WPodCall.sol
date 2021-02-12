@@ -48,7 +48,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  * - Will lock their WETH into this contract
  * - Will issue option tokens corresponding to this WETH amount
- * - These options could be sold in our AMM or in any other market
+ * - This contract is agnostic about where to sell/buy and how much should be the
+ * the option premium.
  *
  * WETH holders who also hold the option tokens may call unmint() until the
  * expiration date, which in turn:
@@ -67,6 +68,9 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  * - Will give back its amount of collateral locked. That could be o mix of
  * underlying asset and strike asset based if and how the pool was exercised.
+ *
+ * IMPORTANT: Note that after expiration, option tokens are worthless since they can not
+ * be exercised and it price should be worth 0 in a health market.
  *
  */
 contract WPodCall is PodCall {
