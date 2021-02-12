@@ -33,6 +33,8 @@ contract FeePool is IFeePool, Ownable {
         uint256 feeValue,
         uint8 feeDecimals
     ) public {
+        require(token != address(0), "FeePool: Invalid token");
+        require(feeDecimals <= 77 && feeValue <= uint256(10)**feeDecimals, "FeePool: Invalid Fee data");
         _token = token;
         _feeValue = feeValue;
         _feeDecimals = feeDecimals;

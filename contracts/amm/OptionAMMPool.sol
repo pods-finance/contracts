@@ -2,6 +2,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "./AMM.sol";
 import "../lib/CappedPool.sol";
 import "../interfaces/IPriceProvider.sol";
@@ -74,6 +75,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         address _feePoolB,
         IConfigurationManager _configurationManager
     ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
+        require(Address.isContract(_feePoolA) && Address.isContract(_feePoolB), "OptionAMMPool: Invalid fee pools");
+
         priceProperties.currentSigma = _initialSigma;
         priceProperties.sigmaInitialGuess = _initialSigma;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
@@ -84,7 +87,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 strikePriceDecimals = IPodOption(_optionAddress).strikePriceDecimals();
 
         require(strikePriceDecimals <= BS_RES_DECIMALS, "OptionAMMPool: not supported strikePrice unit");
-        require(tokenBDecimals <= BS_RES_DECIMALS, "OptionAMMPool: not supported tokenB unit");
+        require(tokenBDecimals() <= BS_RES_DECIMALS, "OptionAMMPool: not supported tokenB unit");
         uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
@@ -116,7 +119,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external override beforeExpiration capped(tokenB, amountOfB) {
+    ) external override beforeExpiration capped(tokenB(), amountOfB) {
         _emergencyStopCheck();
         _addLiquidity(amountOfA, amountOfB, owner);
     }
@@ -393,7 +396,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         if (newABPrice == 0) {
             return 0;
         }
-        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals())));
         return newABPriceWithDecimals;
     }
 
@@ -410,8 +413,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256 poolAmountA, uint256 poolAmountB) {
         (uint256 totalAmountA, uint256 totalAmountB) = _getPoolBalances();
         if (newABPrice != 0) {
-            poolAmountA = _min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals)).div(newABPrice));
-            poolAmountB = _min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals)));
+            poolAmountA = _min(totalAmountA, totalAmountB.mul(10**uint256(tokenADecimals())).div(newABPrice));
+            poolAmountB = _min(totalAmountB, totalAmountA.mul(newABPrice).div(10**uint256(tokenADecimals())));
         }
         return (poolAmountA, poolAmountB);
     }
@@ -447,7 +450,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 timeToMaturity,
         PriceProperties memory properties
     ) internal view returns (uint256) {
-        uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals)));
+        uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals())));
         uint256 newIV;
         ISigma impliedVolatility = ISigma(configurationManager.getImpliedVolatility());
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
@@ -496,7 +499,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         uint256 amountBOutUser = amountBOutPool.sub(feesTokenA).sub(feesTokenB);
 
-        uint256 newTargetABPrice = amountBOutPool.mul(10**uint256(tokenADecimals)).div(exactAmountAIn);
+        uint256 newTargetABPrice = amountBOutPool.mul(10**uint256(tokenADecimals())).div(exactAmountAIn);
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
@@ -534,7 +537,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         uint256 amountBInUser = amountBInPool.add(feesTokenA).add(feesTokenB);
 
-        uint256 newTargetABPrice = amountBInPool.mul(10**uint256(tokenADecimals)).div(exactAmountAOut);
+        uint256 newTargetABPrice = amountBInPool.mul(10**uint256(tokenADecimals())).div(exactAmountAOut);
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
@@ -571,7 +574,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         uint256 amountAOut = _getAmountAOut(newABPrice, poolBIn);
 
-        uint256 newTargetABPrice = poolBIn.mul(10**uint256(tokenADecimals)).div(amountAOut);
+        uint256 newTargetABPrice = poolBIn.mul(10**uint256(tokenADecimals())).div(amountAOut);
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
@@ -606,7 +609,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut);
 
         uint256 amountAInPool = _getAmountAIn(exactAmountBOut, feesTokenA, feesTokenB, newABPrice);
-        uint256 newTargetABPrice = exactAmountBOut.mul(10**uint256(tokenADecimals)).div(amountAInPool);
+        uint256 newTargetABPrice = exactAmountBOut.mul(10**uint256(tokenADecimals())).div(amountAInPool);
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
@@ -704,12 +707,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         priceProperties.currentSigma = newSigma;
 
         require(
-            IERC20(tokenB).transfer(address(feePoolA), tradeDetails.feesTokenA),
+            IERC20(tokenB()).transfer(address(feePoolA), tradeDetails.feesTokenA),
             "OptionAMMPool: could not transfer Fees to feePoolA"
         );
 
         require(
-            IERC20(tokenB).transfer(address(feePoolB), tradeDetails.feesTokenB),
+            IERC20(tokenB()).transfer(address(feePoolB), tradeDetails.feesTokenB),
             "OptionAMMPool: could not transfer Fees to feePoolB"
         );
     }

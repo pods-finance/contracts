@@ -40,7 +40,7 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('OptionAMMPool.sol - ' + scenario.name, () => {
-    let MockERC20, MockWETH, OptionAMMFactory
+    let MockERC20, MockWETH, OptionAMMFactory, OptionAMMPool
     let mockWETH
     let configurationManager
     let mockUnderlyingAsset
@@ -83,10 +83,11 @@ scenarios.forEach(scenario => {
         lp.getAddress()
       ])
 
-      ;[MockERC20, MockWETH, OptionAMMFactory] = await Promise.all([
+      ;[MockERC20, MockWETH, OptionAMMFactory, OptionAMMPool] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
-        ethers.getContractFactory('OptionAMMFactory')
+        ethers.getContractFactory('OptionAMMFactory'),
+        ethers.getContractFactory('OptionAMMPool'),
       ])
 
       ;[mockWETH, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
@@ -180,6 +181,18 @@ scenarios.forEach(scenario => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
         await expect(optionAMMPool.connect(buyer).addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('OptionAMMPool: option has expired')
+      })
+
+      it('should not create a pool with fee pools that are non-contracts', async () => {
+        const tx = OptionAMMPool.deploy(
+          podPut.address,
+          mockStrikeAsset.address,
+          scenario.initialSigma,
+          buyerAddress,
+          buyerAddress,
+          configurationManager.address
+        )
+        await expect(tx).to.be.revertedWith('OptionAMMPool: Invalid fee pools')
       })
     })
 

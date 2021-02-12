@@ -20,6 +20,7 @@ contract Sigma is ISigma {
     }
 
     constructor(address blackScholes) public {
+        require(blackScholes != address(0), "Sigma: Invalid blackScholes");
         _blackScholes = IBlackScholes(blackScholes);
     }
 

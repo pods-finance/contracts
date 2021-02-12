@@ -112,6 +112,13 @@ scenarios.forEach(scenario => {
         amm = MockAMM.deploy(mockTokenA.address, ethers.constants.AddressZero)
         await expect(amm).to.revertedWith('AMM: token b is not a contract')
       })
+
+      it('should not allow the same token as tokenA and tokenB', async () => {
+        const MockAMM = await ethers.getContractFactory('MockAMM')
+
+        amm = MockAMM.deploy(mockTokenA.address, mockTokenA.address)
+        await expect(amm).to.be.revertedWith('AMM: tokens must differ')
+      })
     })
 
     describe('Add Liquidity', () => {
@@ -184,6 +191,21 @@ scenarios.forEach(scenario => {
         expect(balanceAfterPoolTokenB).to.equal(amountTokenBToMint)
         expect(balanceAfterUserATokenA).to.equal(toBigNumber(0))
         expect(balanceAfterUserATokenB).to.equal(toBigNumber(0))
+      })
+
+      it('should not be able to add liquidity in zero-address behalf', async () => {
+        const amountTokenAToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenADecimals))
+        const amountTokenBToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        await mockTokenA.connect(userA).mint(amountTokenAToMint)
+        await mockTokenA.connect(userA).approve(amm.address, amountTokenAToMint)
+
+        await mockTokenB.connect(userA).mint(amountTokenBToMint)
+        await mockTokenB.connect(userA).approve(amm.address, amountTokenBToMint)
+
+        const tx = amm.connect(userA).addLiquidity(amountTokenAToMint, amountTokenBToMint, ethers.constants.AddressZero)
+
+        await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
       })
     })
 
@@ -1739,6 +1761,60 @@ scenarios.forEach(scenario => {
         expect(balanceAfterUser01TokenA.add(balanceAfterUser02TokenA)).to.equal(balanceAfterUser01TokenC)
         expect(balanceAfterUser01TokenB.add(balanceAfterUser02TokenB)).to.equal(balanceAfterUser01TokenD)
       })
+    })
+
+    it('should not be able to trade in zero-address behalf', async () => {
+      const amountTokenAToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenADecimals))
+      const amountTokenBToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+      await mockTokenA.connect(userA).mint(amountTokenAToMint)
+      await mockTokenA.connect(userA).approve(amm.address, amountTokenAToMint)
+
+      await mockTokenB.connect(userA).mint(amountTokenBToMint)
+      await mockTokenB.connect(userA).approve(amm.address, amountTokenBToMint)
+
+      await amm.connect(userA).addLiquidity(amountTokenAToMint, amountTokenBToMint, userAAddress)
+
+      let tx
+
+      tx = amm.tradeExactAInput(1, 0, ethers.constants.AddressZero)
+      await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+
+      tx = amm.tradeExactAOutput(1, ethers.constants.MaxUint256, ethers.constants.AddressZero)
+      await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+
+      tx = amm.tradeExactBInput(1, 0, ethers.constants.AddressZero)
+      await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+
+      tx = amm.tradeExactBOutput(1, ethers.constants.MaxUint256, ethers.constants.AddressZero)
+      await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+    })
+
+    it('should not be able to trade inputting zero-amount', async () => {
+      const amountTokenAToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenADecimals))
+      const amountTokenBToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+      await mockTokenA.connect(userA).mint(amountTokenAToMint)
+      await mockTokenA.connect(userA).approve(amm.address, amountTokenAToMint)
+
+      await mockTokenB.connect(userA).mint(amountTokenBToMint)
+      await mockTokenB.connect(userA).approve(amm.address, amountTokenBToMint)
+
+      await amm.connect(userA).addLiquidity(amountTokenAToMint, amountTokenBToMint, userAAddress)
+
+      let tx
+
+      tx = amm.tradeExactAInput(0, 0, userBAddress)
+      await expect(tx).to.be.revertedWith('AMM: input should be greater than zero')
+
+      tx = amm.tradeExactAOutput(1, 0, userBAddress)
+      await expect(tx).to.be.revertedWith('AMM: input should be greater than zero')
+
+      tx = amm.tradeExactBInput(0, amountTokenAToMint, userBAddress)
+      await expect(tx).to.be.revertedWith('AMM: input should be greater than zero')
+
+      tx = amm.tradeExactBOutput(1, 0, userBAddress)
+      await expect(tx).to.be.revertedWith('AMM: input should be greater than zero')
     })
   })
 })

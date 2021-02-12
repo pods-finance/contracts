@@ -9,4 +9,12 @@ interface IAMM {
     ) external;
 
     function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external;
+
+    function tokenA() external view returns (address);
+
+    function tokenB() external view returns (address);
+
+    function tokenADecimals() external view returns (uint8);
+
+    function tokenBDecimals() external view returns (uint8);
 }

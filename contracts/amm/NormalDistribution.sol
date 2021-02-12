@@ -333,7 +333,7 @@ contract NormalDistribution is INormalDistribution {
      * @return The probability of z
      */
     function getProbability(int256 z, uint256 decimals) external override view returns (uint256) {
-        require(decimals >= 2, "NormalDistribution: z too small");
+        require(decimals >= 4, "NormalDistribution: z too small");
         require(decimals < 77, "NormalDistribution: decimals too big");
         uint256 absZ = _abs(z);
         uint256 truncatedZ = absZ.div(10**(decimals.sub(2))).mul(100);

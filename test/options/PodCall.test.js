@@ -324,6 +324,14 @@ scenarios.forEach(scenario => {
         await forceExpiration(podCall)
         await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: option has expired')
       })
+
+      it('should not mint for the zero address behalf', async () => {
+        await mockUnderlyingAsset.connect(seller).mint(scenario.strikePrice)
+        await mockUnderlyingAsset.connect(seller).approve(podCall.address, scenario.strikePrice)
+
+        const tx = podCall.connect(seller).mint(scenario.amountToMint, ethers.constants.AddressZero)
+        await expect(tx).to.be.revertedWith('PodOption: zero address cannot be the owner')
+      })
     })
 
     describe('Exercising options', () => {

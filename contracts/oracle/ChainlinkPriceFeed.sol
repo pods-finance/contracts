@@ -13,6 +13,7 @@ contract ChainlinkPriceFeed is IPriceFeed {
     address public chainlinkFeedAddress;
 
     constructor(address _source) public {
+        require(_source != address(0), "ChainlinkPriceFeed: Invalid source");
         chainlinkFeedAddress = _source;
     }
 

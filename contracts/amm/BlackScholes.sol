@@ -32,6 +32,7 @@ contract BlackScholes is IBlackScholes {
     uint256 public constant UNIT_TO_PRECISION_FACTOR = 10**uint256(precisionDecimals - decimals);
 
     constructor(address _normalDistribution) public {
+        require(_normalDistribution != address(0), "BlackScholes: Invalid normalDistribution");
         normalDistribution = INormalDistribution(_normalDistribution);
     }
 
