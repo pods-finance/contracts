@@ -237,7 +237,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         // 1) Get Pool UserDepositSnapshot
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
-        bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
+        bool hasNoLiquidity = deamortizedTokenABalance == 0 && deamortizedTokenBBalance == 0;
         uint256 fImpOpening;
         uint256 userAmountToStoreTokenA = amountOfA;
         uint256 userAmountToStoreTokenB = amountOfB;
@@ -246,9 +246,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
             // In the first liquidity, is necessary add both tokens
             bool bothTokensHigherThanZero = amountOfA > 0 && amountOfB > 0;
             require(bothTokensHigherThanZero, "AMM: you should add both tokens on the first liquidity");
-            require(amountOfA > 0 && amountOfB > 0, "AMM: you should add both tokens on the first liquidity");
 
             fImpOpening = INITIAL_FIMP;
+
             deamortizedTokenABalance = amountOfA;
             deamortizedTokenBBalance = amountOfB;
         } else {

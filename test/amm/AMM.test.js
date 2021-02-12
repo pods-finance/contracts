@@ -254,6 +254,81 @@ scenarios.forEach(scenario => {
         expect(balanceAfterUserATokenB).to.equal(amountTokenBToMint)
       })
 
+      it('should remove liquidity completely even if some address sent tokens directly to the contract before the initial liquidity', async () => {
+        const amountTokenAToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenADecimals))
+        const amountTokenBToMint = await toBigNumber(1).mul(toBigNumber(10 ** scenario.tokenBDecimals))
+
+        const amountTokenAToSendDirectly = amountTokenAToMint.mul(2)
+        const amountTokenBToSendDirectly = amountTokenBToMint.mul(2)
+
+        await mockTokenA.connect(userB).mint(amountTokenAToSendDirectly)
+        await mockTokenA.connect(userB).transfer(amm.address, amountTokenAToSendDirectly)
+
+        await mockTokenB.connect(userB).mint(amountTokenBToSendDirectly)
+        await mockTokenB.connect(userB).transfer(amm.address, amountTokenBToSendDirectly)
+
+        const actions = [
+          {
+            name: 'mint',
+            contract: mockTokenA,
+            user: userA,
+            params: [amountTokenAToMint]
+          },
+          {
+            name: 'mint',
+            contract: mockTokenB,
+            user: userA,
+            params: [amountTokenBToMint]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenA,
+            user: userA,
+            params: [amm.address, amountTokenAToMint]
+          },
+          {
+            name: 'approve',
+            contract: mockTokenB,
+            user: userA,
+            params: [amm.address, amountTokenBToMint]
+          },
+          {
+            name: 'addLiquidity',
+            contract: amm,
+            user: userA,
+            params: [amountTokenAToMint, amountTokenBToMint, userAAddress]
+          },
+          {
+            name: 'removeLiquidity',
+            contract: amm,
+            user: userA,
+            params: [100, 100]
+          }
+
+        ]
+
+        const fnActions = actions.map(action => {
+          const fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const balanceAfterPoolTokenA = await mockTokenA.balanceOf(amm.address)
+        const balanceAfterPoolTokenB = await mockTokenB.balanceOf(amm.address)
+
+        const balanceAfterUserATokenA = await mockTokenA.balanceOf(userAAddress)
+        const balanceAfterUserATokenB = await mockTokenB.balanceOf(userAAddress)
+
+        expect(balanceAfterPoolTokenA).to.equal(toBigNumber(0))
+        expect(balanceAfterPoolTokenB).to.equal(toBigNumber(0))
+
+        expect(balanceAfterUserATokenA).to.equal(amountTokenAToMint.add(amountTokenAToSendDirectly))
+        expect(balanceAfterUserATokenB).to.equal(amountTokenBToMint.add(amountTokenBToSendDirectly))
+      })
+
       it('should show the position of users that did not add liquidity', async () => {
         let maxWithdrawAmountA, maxWithdrawAmountB
         // User A asking before there is any liquidity
