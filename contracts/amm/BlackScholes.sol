@@ -9,7 +9,6 @@ import "../lib/FixidityLib.sol";
 import "../lib/LogarithmLib.sol";
 import "../lib/ExponentLib.sol";
 import "../interfaces/IBlackScholes.sol";
-import "hardhat/console.sol";
 
 /**
  * @title BlackScholes
