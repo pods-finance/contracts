@@ -54,6 +54,7 @@ scenarios.forEach(scenario => {
     let buyerAddress
     let snapshotId
     let MockInterestBearingERC20
+    let podPutAmerican
 
     before(async function () {
       [deployer, seller, buyer, another] = await ethers.getSigners()
@@ -248,7 +249,7 @@ scenarios.forEach(scenario => {
         await expect(podPut).to.revertedWith('PodOption: exercise window must be greater than or equal 86400')
       })
 
-      it('should not allow exercise windows different than 0 if AMERICAN option', async () => {
+      it('should not allow exercise window different than 0 if AMERICAN option', async () => {
         podPut = PodPut.deploy(
           'pod:WBTC:USDC:5000:A',
           'pod:WBTC:USDC:5000:A',
@@ -883,6 +884,68 @@ scenarios.forEach(scenario => {
         const initialBuyerStriked = await podPut.strikeToTransfer(scenario.amountToMint)
 
         expect(totalEarnedBuyer).to.gte(initialBuyerStriked)
+      })
+    })
+
+    describe('American Options', () => {
+      beforeEach(async function () {
+        snapshotId = await takeSnapshot()
+
+        podPutAmerican = await PodPut.deploy(
+          scenario.name,
+          scenario.name,
+          EXERCISE_TYPE_AMERICAN,
+          mockUnderlyingAsset.address,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          0, // 24h
+          configurationManager.address
+        )
+      })
+
+      it('should mint american options correctly', async () => {
+        expect(await podPutAmerican.balanceOf(sellerAddress)).to.equal(0)
+
+        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
+
+        await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
+
+        const funds = await podPutAmerican.connect(seller).getSellerWithdrawAmounts(sellerAddress)
+        expect(funds.underlyingAmount).to.be.equal(0)
+        expect(funds.strikeAmount).to.be.gte(scenario.strikePrice)
+      })
+
+      it('should revert if trying to exercise after expiration', async () => {
+        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
+
+        await forceExpiration(podPutAmerican)
+        await expect(podPutAmerican.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has expired')
+      })
+
+      it('should withdraw american options correctly', async () => {
+        expect(await podPutAmerican.balanceOf(sellerAddress)).to.equal(0)
+
+        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
+
+        await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(0)
+
+        await forceExpiration(podPutAmerican)
+        await expect(podPutAmerican.connect(seller).withdraw()).to.not.be.reverted
+      })
+
+      it('should revert if trying to withdraw before expiration', async () => {
+        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
+
+        await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
+
+        await expect(podPutAmerican.connect(seller).withdraw()).to.be.revertedWith('PodOption: option has not expired yet')
       })
     })
   })
