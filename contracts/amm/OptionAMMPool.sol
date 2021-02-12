@@ -87,7 +87,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 strikePriceDecimals = IPodOption(_optionAddress).strikePriceDecimals();
 
         require(strikePriceDecimals <= BS_RES_DECIMALS, "OptionAMMPool: not supported strikePrice unit");
-        require(tokenBDecimals <= BS_RES_DECIMALS, "OptionAMMPool: not supported tokenB unit");
+        require(tokenBDecimals() <= BS_RES_DECIMALS, "OptionAMMPool: not supported tokenB unit");
         uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
