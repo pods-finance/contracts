@@ -12,15 +12,6 @@ module.exports = async function createBlackScholes () {
   const logarithm = await LogarithmLib.deploy()
   await logarithm.deployed()
 
-  const ExponentLib = await ethers.getContractFactory('ExponentLib', {
-    libraries: {
-      FixidityLib: fixidity.address,
-      LogarithmLib: logarithm.address
-    }
-  })
-  const exponent = await ExponentLib.deploy()
-  await exponent.deployed()
-
   const NormalDistribution = await ethers.getContractFactory('NormalDistribution')
   const normalDistribution = await NormalDistribution.deploy()
   await normalDistribution.deployed()

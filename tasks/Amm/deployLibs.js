@@ -18,15 +18,5 @@ internalTask('deployLibs', 'Deploy Math Libs')
 
     console.log('logarithm Address', logarithm.address)
 
-    const ExponentLib = await hre.ethers.getContractFactory('ExponentLib', {
-      libraries: {
-        FixidityLib: fixidity.address,
-        LogarithmLib: logarithm.address
-      }
-    })
-    const exponent = await ExponentLib.deploy()
-    await exponent.deployed()
-
-    console.log('exponent Address', exponent.address)
-    return { fixidity: fixidity.address, logarithm: logarithm.address, exponent: exponent.address }
+    return { fixidity: fixidity.address, logarithm: logarithm.address }
   })
