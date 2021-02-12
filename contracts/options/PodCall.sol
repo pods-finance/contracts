@@ -67,7 +67,7 @@ import "./PodOption.sol";
  *
  * - Will give back its amount of collateral locked. That could be o mix of
  * underlying asset and strike asset based if and how the pool was exercised.
- * 
+ *
  * IMPORTANT: Note that after expiration, option tokens are worthless since they can not
  * be exercised and it price should worth 0 in a health market.
  *
