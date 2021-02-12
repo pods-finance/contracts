@@ -918,6 +918,23 @@ scenarios.forEach(scenario => {
         expect(funds.strikeAmount).to.be.gte(scenario.strikePrice)
       })
 
+      it('should unmint american options partially', async () => {
+        expect(await podPutAmerican.balanceOf(sellerAddress)).to.equal(0)
+
+        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
+
+        await mockUnderlyingAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
+        await mockUnderlyingAsset.connect(seller).mint(scenario.strikePrice.mul(2))
+
+        await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        await podPutAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
+
+        await podPutAmerican.connect(seller).unmint(scenario.amountToMint.div(2))
+
+        // should receive underlying + strike
+      })
+
       it('should revert if trying to exercise after expiration', async () => {
         await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
         await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
@@ -937,6 +954,7 @@ scenarios.forEach(scenario => {
 
         await forceExpiration(podPutAmerican)
         await expect(podPutAmerican.connect(seller).withdraw()).to.not.be.reverted
+        await expect(podPutAmerican.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has expired')
       })
 
       it('should revert if trying to withdraw before expiration', async () => {
