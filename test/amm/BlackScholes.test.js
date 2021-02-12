@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const { toBigNumber, approximately } = require('../../utils/utils')
+const INT256_MAX = toBigNumber(2).pow(255)
 
 const scenarios = [
   {
@@ -21,6 +22,15 @@ const scenarios = [
     expectedPrice: toBigNumber(1275.126573 * 1e18)
   },
   {
+    type: 'PUT', // Call price should be 0
+    spotPrice: toBigNumber(320 * 1e18),
+    strikePrice: toBigNumber(300 * 1e18),
+    sigma: toBigNumber(0.6 * 1e18),
+    riskFree: toBigNumber(0),
+    time: toBigNumber(11).mul(1e14), // 0.0011
+    expectedPrice: toBigNumber(0)
+  },
+  {
     type: 'CALL',
     spotPrice: toBigNumber(601 * 1e18),
     strikePrice: toBigNumber(580 * 1e18),
@@ -37,6 +47,15 @@ const scenarios = [
     riskFree: toBigNumber(0),
     time: toBigNumber(0.0114155251141553 * 1e18), // 3.5 days
     expectedPrice: toBigNumber(4.0835637054095 * 1e18)
+  },
+  {
+    type: 'CALL', // Call price should be 0
+    spotPrice: toBigNumber(300 * 1e18),
+    strikePrice: toBigNumber(320 * 1e18),
+    sigma: toBigNumber(0.6 * 1e18),
+    riskFree: toBigNumber(0),
+    time: toBigNumber(11).mul(1e14), // 0.0011
+    expectedPrice: toBigNumber(0)
   }
 ]
 
@@ -97,6 +116,26 @@ describe('BlackScholes', () => {
     )).to.be.revertedWith('SafeMath: multiplication overflow')
   })
 
+  it('should revert if multInt overflows', async () => {
+    await expect(bs.getPutPrice(
+      scenarios[0].spotPrice,
+      scenarios[0].strikePrice,
+      scenarios[0].sigma,
+      INT256_MAX.sub(1),
+      scenarios[0].riskFree
+    )).to.be.revertedWith('BlackScholes: multInt overflow')
+  })
+
+  it('should revert if casting uint to int overflow', async () => {
+    await expect(bs.getPutPrice(
+      scenarios[0].spotPrice,
+      scenarios[0].strikePrice,
+      scenarios[0].sigma,
+      INT256_MAX,
+      scenarios[0].riskFree
+    )).to.be.revertedWith('BlackScholes: casting overflow')
+  })
+
   scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
     it('Calculates the put price correctly', async () => {
       const putPrice = await bs.getPutPrice(
@@ -108,6 +147,7 @@ describe('BlackScholes', () => {
       )
 
       console.log(`\tPut price: ${putPrice}`)
+      console.log(`\tscenario.expectedPrice: ${scenario.expectedPrice}`)
 
       expect(approximately(scenario.expectedPrice, putPrice)).to.equal(true)
     })

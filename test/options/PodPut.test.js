@@ -53,6 +53,7 @@ scenarios.forEach(scenario => {
     let buyer
     let buyerAddress
     let snapshotId
+    let MockInterestBearingERC20
 
     before(async function () {
       [deployer, seller, buyer, another] = await ethers.getSigners()
@@ -275,6 +276,38 @@ scenarios.forEach(scenario => {
 
         expect(await podPut.hasExpired()).to.be.true
         expect(await podPut.isAfterEndOfExerciseWindow()).to.be.true
+      })
+
+      it('should not allow underlyingAsset or strikeAsset decimals higher than 76', async () => {
+        const mockUnderlying77Decimals = await MockInterestBearingERC20.deploy('Teste Token', 'TEST', '77')
+
+        podPut = PodPut.deploy(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          EXERCISE_TYPE_EUROPEAN,
+          mockUnderlying77Decimals.address,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          (24 * 60 * 60), // 24h - 1 second
+          configurationManager.address
+        )
+        await expect(podPut).to.revertedWith('RequiredDecimals: token decimals should be lower than 77')
+
+        const mockStrike77Decimals = await MockInterestBearingERC20.deploy('Teste Token', 'TEST', '77')
+
+        podPut = PodPut.deploy(
+          'pod:WBTC:USDC:5000:A',
+          'pod:WBTC:USDC:5000:A',
+          EXERCISE_TYPE_EUROPEAN,
+          mockUnderlyingAsset.address,
+          mockStrike77Decimals.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60,
+          (24 * 60 * 60), // 24h - 1 second
+          configurationManager.address
+        )
+        await expect(podPut).to.revertedWith('RequiredDecimals: token decimals should be lower than 77')
       })
     })
 

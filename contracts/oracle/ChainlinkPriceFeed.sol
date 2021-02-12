@@ -20,9 +20,9 @@ contract ChainlinkPriceFeed is IPriceFeed {
     /**
      * @dev Get the latest price
      */
-    function getLatestPrice() external override view returns (int256) {
-        (, int256 price, , , ) = IChainlinkPriceFeed(chainlinkFeedAddress).latestRoundData();
-        return price;
+    function getLatestPrice() external override view returns (int256, uint256) {
+        (, int256 price, , uint256 lastUpdate, ) = IChainlinkPriceFeed(chainlinkFeedAddress).latestRoundData();
+        return (price, lastUpdate);
     }
 
     /**

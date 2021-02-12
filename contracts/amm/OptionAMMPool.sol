@@ -57,7 +57,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         address underlyingAsset;
         IPodOption.OptionType optionType;
         uint256 currentSigma;
-        uint256 riskFree;
+        int256 riskFree;
         uint256 sigmaInitialGuess;
     }
 
@@ -86,7 +86,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 strikePrice = IPodOption(_optionAddress).strikePrice();
         uint256 strikePriceDecimals = IPodOption(_optionAddress).strikePriceDecimals();
 
-        require(strikePriceDecimals <= BS_RES_DECIMALS, "not supported strikePrice unit");
+        require(strikePriceDecimals <= BS_RES_DECIMALS, "OptionAMMPool: not supported strikePrice unit");
+        require(tokenBDecimals <= BS_RES_DECIMALS, "OptionAMMPool: not supported tokenB unit");
         uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
@@ -162,7 +163,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     /**
      * @notice _tradeExactAOutput owner is able to receive exact amount of token A in exchange of a max
      * acceptable amount of token B transfer from the msg.sender. After that, this function also updates
-     * the priceProperties.* currentSigma
+     * the priceProperties.currentSigma
      *
      * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
      * out of thin ar, caller can help the Numeric Method achieve the result in less iterations with this parameter.
@@ -377,19 +378,19 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             newABPrice = pricingMethod.getPutPrice(
-                int256(spotPrice),
-                int256(priceProperties.strikePrice),
+                spotPrice,
+                priceProperties.strikePrice,
                 priceProperties.currentSigma,
                 timeToMaturity,
-                int256(priceProperties.riskFree)
+                priceProperties.riskFree
             );
         } else {
             newABPrice = pricingMethod.getCallPrice(
-                int256(spotPrice),
-                int256(priceProperties.strikePrice),
+                spotPrice,
+                priceProperties.strikePrice,
                 priceProperties.currentSigma,
                 timeToMaturity,
-                int256(priceProperties.riskFree)
+                priceProperties.riskFree
             );
         }
         if (newABPrice == 0) {
