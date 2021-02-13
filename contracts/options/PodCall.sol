@@ -69,7 +69,7 @@ import "./PodOption.sol";
  * underlying asset and strike asset based if and how the pool was exercised.
  *
  * IMPORTANT: Note that after expiration, option tokens are worthless since they can not
- * be exercised and it price should worth 0 in a health market.
+ * be exercised and it price should worth 0 in a healthy market.
  *
  */
 contract PodCall is PodOption {
