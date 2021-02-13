@@ -48,8 +48,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  * - Will lock their WETH into this contract
  * - Will issue option tokens corresponding to this WETH amount
- * - This contract is agnostic about where to sell/buy and how much should be the
- * the option premium.
+ * - This contract is agnostic about where options could be bought or sold and how much the
+ * the option premium should be.
  *
  * WETH holders who also hold the option tokens may call unmint() until the
  * expiration date, which in turn:
