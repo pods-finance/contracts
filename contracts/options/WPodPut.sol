@@ -65,7 +65,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * - Will burn the corresponding amount of put tokens.
  *
  * IMPORTANT: Note that after expiration, option tokens are worthless since they can not
- * be exercised and it price should be worth 0 in a health market.
+ * be exercised and its price should be worth 0 in a healthy market.
  *
  */
 contract WPodPut is PodPut {
