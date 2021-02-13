@@ -49,9 +49,10 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  * - Will lock their USDC into this contract
  * - Will issue put tokens corresponding to this USDC amount
- * - These put tokens will be freely tradable until the expiration date
+ * - This contract is agnostic about where options could be bought or sold and how much the
+ * the option premium should be.
  *
- * USDC holders who also hold the option tokens may call burn() until the
+ * USDC holders who also hold the option tokens may call unmint() until the
  * expiration date, which in turn:
  *
  * - Will unlock their USDC from this contract
@@ -62,6 +63,10 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  * - Will sell 1 ETH for 300 USDC (the strike price) each.
  * - Will burn the corresponding amount of put tokens.
+ *
+ * IMPORTANT: Note that after expiration, option tokens are worthless since they can not
+ * be exercised and its price should be worth 0 in a healthy market.
+ *
  */
 contract WPodPut is PodPut {
     IWETH public weth;
