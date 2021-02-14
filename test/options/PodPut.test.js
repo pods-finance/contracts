@@ -13,13 +13,13 @@ const EXERCISE_TYPE_AMERICAN = 1
 
 const scenarios = [
   {
-    name: 'WBTC/aUSDC',
-    underlyingAssetSymbol: 'WBTC',
-    underlyingAssetDecimals: 8,
-    strikeAssetSymbol: 'aUSDC',
+    name: 'WETH/USDC',
+    underlyingAssetSymbol: 'WETH',
+    underlyingAssetDecimals: 18,
+    strikeAssetSymbol: 'USDC',
     strikeAssetDecimals: 6,
-    strikePrice: ethers.BigNumber.from(7000e6.toString()),
-    amountToMint: ethers.BigNumber.from(1e8.toString()),
+    strikePrice: ethers.BigNumber.from(1500e6.toString()),
+    amountToMint: ethers.BigNumber.from(1e18.toString()),
     amountToMintTooLow: 1,
     cap: ethers.BigNumber.from(20e8.toString())
   },
@@ -100,9 +100,9 @@ scenarios.forEach(scenario => {
       const optionsDecimals = await podPut.decimals()
       await mockStrikeAsset.connect(signer).approve(podPut.address, ethers.constants.MaxUint256)
       // calculate amount of Strike necessary to mint
-      await mockStrikeAsset.connect(signer).mint(scenario.strikePrice.mul(amountOfOptionsToMint).div(10 ** optionsDecimals))
+      await mockStrikeAsset.connect(signer).mint(scenario.strikePrice.mul(amountOfOptionsToMint).div(ethers.BigNumber.from(10).pow(optionsDecimals)))
 
-      expect(await mockStrikeAsset.balanceOf(signerAddress)).to.equal(scenario.strikePrice.mul(amountOfOptionsToMint).div(10 ** optionsDecimals))
+      expect(await mockStrikeAsset.balanceOf(signerAddress)).to.equal(scenario.strikePrice.mul(amountOfOptionsToMint).div(ethers.BigNumber.from(10).pow(optionsDecimals)))
       await podPut.connect(signer).mint(amountOfOptionsToMint, owner)
       expect(await podPut.balanceOf(signerAddress)).to.equal(amountOfOptionsToMint)
       expect(await mockStrikeAsset.balanceOf(signerAddress)).to.equal(0)
@@ -343,7 +343,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
 
         expect(await mockStrikeAsset.balanceOf(sellerAddress)).to.equal(scenario.strikePrice)
-        await expect(podPut.connect(seller).mint(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('Amount too low')
+        await expect(podPut.connect(seller).mint(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('PodOption: amount of options is too low')
       })
 
       it('should revert if amount of options asked is zero', async () => {
@@ -532,13 +532,13 @@ scenarios.forEach(scenario => {
         await mockModERC20.mock.transfer.returns(true)
 
         const specificScenario = {
-          name: 'WBTC/USDC',
-          underlyingAssetSymbol: 'WBTC',
-          underlyingAssetDecimals: 8,
+          name: 'WETH/USDC',
+          underlyingAssetSymbol: 'WETH',
+          underlyingAssetDecimals: 18,
           strikeAssetSymbol: 'USDC',
           strikeAssetDecimals: 6,
-          strikePrice: ethers.BigNumber.from(300e6.toString()),
-          amountToMint: ethers.BigNumber.from(1e8.toString())
+          strikePrice: ethers.BigNumber.from(1500e6.toString()),
+          amountToMint: ethers.BigNumber.from(1e18.toString())
         }
 
         podPut = await PodPut.deploy(
@@ -556,12 +556,14 @@ scenarios.forEach(scenario => {
 
         await podPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
 
-        await mockUnderlyingAsset.connect(buyer).mint(specificScenario.amountToMint)
+        await mockUnderlyingAsset.connect(seller).mint(specificScenario.amountToMint)
         // Approve PodPut spend underlying asset
-        await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
+        await mockUnderlyingAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
 
         await forceExpiration(podPut)
-        await expect(podPut.connect(seller).exercise(specificScenario.amountToMint)).to.be.revertedWith('transfer amount exceeds balance')
+
+        await mockModERC20.mock.transfer.returns(false)
+        await expect(podPut.connect(seller).exercise(specificScenario.amountToMint)).to.be.revertedWith('PodPut: could not transfer strike tokens to caller')
       })
 
       it('should revert if user try to exercise before expiration', async () => {
@@ -648,14 +650,56 @@ scenarios.forEach(scenario => {
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podPut.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('PodPut: not enough minted options')
+        await expect(podPut.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodPut: not enough minted options')
       })
       it('should revert if unmint amount is too low', async () => {
-        const minimumAmount = ethers.BigNumber.from(scenario.strikePrice).div((10 ** await mockUnderlyingAsset.decimals()).toString())
-        if (minimumAmount.gt(0)) return
         await MintPhase(scenario.amountToMint)
-        await expect(podPut.connect(seller).unmint(scenario.amountToMintTooLow, sellerAddress)).to.be.revertedWith('Amount too low')
+
+        const ownerShares = await podPut.shares(sellerAddress)
+        const userMintedOptions = await podPut.mintedOptions(sellerAddress)
+
+        if (ownerShares.div(userMintedOptions).gt(1)) return
+        await expect(podPut.connect(seller).unmint('1')).to.be.revertedWith('PodPut: amount of options is too low')
       })
+      it('should revert if transfer fail from ERC20', async () => {
+        // deploy option with mock function
+        const mockModERC20 = await deployMockContract(deployer, MockERC20ABI)
+
+        await mockModERC20.mock.decimals.returns(6)
+        await mockModERC20.mock.transferFrom.returns(true)
+        await mockModERC20.mock.transfer.returns(true)
+
+        const specificScenario = {
+          name: 'WETH/USDC',
+          underlyingAssetSymbol: 'WETH',
+          underlyingAssetDecimals: 18,
+          strikeAssetSymbol: 'USDC',
+          strikeAssetDecimals: 6,
+          strikePrice: ethers.BigNumber.from(1500e6.toString()),
+          amountToMint: ethers.BigNumber.from(1e18.toString())
+        }
+
+        await mockModERC20.mock.balanceOf.returns(specificScenario.strikePrice)
+
+        podPut = await PodPut.deploy(
+          'pod:BRL:USDC:0.21',
+          'pod:BRL:USDC:0.21',
+          EXERCISE_TYPE_EUROPEAN,
+          mockUnderlyingAsset.address,
+          mockModERC20.address,
+          specificScenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          24 * 60 * 60, // 24h
+          configurationManager.address
+        )
+        await podPut.deployed()
+
+        await podPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
+
+        await mockModERC20.mock.transfer.returns(false)
+        await expect(podPut.connect(seller).unmint(specificScenario.amountToMint)).to.be.revertedWith('PodPut: could not transfer strike tokens back to caller')
+      })
+
       it('should unmint, destroy sender option, reduce its balance and send strike back', async () => {
         await MintPhase(scenario.amountToMint)
         const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
@@ -762,6 +806,47 @@ scenarios.forEach(scenario => {
         expect(funds.strikeAmount).to.be.equal(scenario.strikePrice.div(2))
       })
 
+      it('should revert if transfer fail from ERC20', async () => {
+        // deploy option with mock function
+        const mockModERC20 = await deployMockContract(deployer, MockERC20ABI)
+
+        await mockModERC20.mock.decimals.returns(6)
+        await mockModERC20.mock.transferFrom.returns(true)
+        await mockModERC20.mock.transfer.returns(true)
+
+        const specificScenario = {
+          name: 'WETH/USDC',
+          underlyingAssetSymbol: 'WETH',
+          underlyingAssetDecimals: 18,
+          strikeAssetSymbol: 'USDC',
+          strikeAssetDecimals: 6,
+          strikePrice: ethers.BigNumber.from(1500e6.toString()),
+          amountToMint: ethers.BigNumber.from(1e18.toString())
+        }
+
+        await mockModERC20.mock.balanceOf.returns(specificScenario.strikePrice)
+
+        podPut = await PodPut.deploy(
+          'pod:BRL:USDC:0.21',
+          'pod:BRL:USDC:0.21',
+          EXERCISE_TYPE_EUROPEAN,
+          mockUnderlyingAsset.address,
+          mockModERC20.address,
+          specificScenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          24 * 60 * 60, // 24h
+          configurationManager.address
+        )
+
+        await podPut.deployed()
+
+        await podPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
+        await forceEndOfExerciseWindow(podPut)
+
+        await mockModERC20.mock.transfer.returns(false)
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: could not transfer strike tokens back to caller')
+      })
+
       it('should withdraw Strike Asset balance plus interest earned', async () => {
         await MintPhase(scenario.amountToMint)
         // Earned 10% interest
@@ -797,7 +882,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.earnInterest(podPut.address)
 
         // seller 1
-        const twoTimesAmountToMint = scenario.amountToMint.mul(ethers.BigNumber.from('2'))
+        const twoTimesAmountToMint = scenario.amountToMint.mul(2)
         await MintPhase(twoTimesAmountToMint, buyer, buyerAddress)
         const optionDecimals = await podPut.decimals()
 
@@ -810,7 +895,7 @@ scenarios.forEach(scenario => {
 
         expect(initialSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(initialSellerStrikeBalance).to.equal(0)
-        expect(initialContractStrikeReserves).to.gt(scenario.strikePrice.add(twoTimesAmountToMint))
+        expect(initialContractStrikeReserves).to.gt(scenario.strikePrice.mul(3))
 
         await forceEndOfExerciseWindow(podPut)
         await podPut.connect(seller).withdraw()
@@ -820,7 +905,7 @@ scenarios.forEach(scenario => {
 
         expect(finalSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(finalSellerStrikegBalance).to.gt(scenario.strikePrice)
-        expect(finalSellerStrikegBalance).to.lt(scenario.strikePrice.mul(twoTimesAmountToMint).div(10 ** optionDecimals))
+        expect(finalSellerStrikegBalance).to.lt(scenario.strikePrice.mul(twoTimesAmountToMint).div(ethers.BigNumber.from(10).pow(optionDecimals)))
         // Cant withdraw two times in a row
         await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
 
@@ -829,7 +914,7 @@ scenarios.forEach(scenario => {
         const finalBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
         const finalContractStrikeReserves = await podPut.strikeReserves()
 
-        expect(finalBuyerStrikeBalance).to.gt(scenario.strikePrice.mul(twoTimesAmountToMint).div(10 ** optionDecimals))
+        expect(finalBuyerStrikeBalance).to.gt(scenario.strikePrice.mul(twoTimesAmountToMint).div(ethers.BigNumber.from(10).pow(optionDecimals)))
         expect(finalContractStrikeReserves).to.equal(0)
 
         await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
@@ -860,7 +945,7 @@ scenarios.forEach(scenario => {
 
         const earnedSellerStrike = finalSellerStrikeBalance.sub(initialSellerStrikeBalance)
         const earnedSellerUnderlying = finalSellerUnderlyingBalance.sub(initialSellerUnderlyingBalance)
-        const earnedSellerInUnitsOfStrike = earnedSellerUnderlying.mul(scenario.strikePrice).div(10 ** underlyingDecimals)
+        const earnedSellerInUnitsOfStrike = earnedSellerUnderlying.mul(scenario.strikePrice).div(ethers.BigNumber.from(10).pow(underlyingDecimals))
         const totalEarned = earnedSellerStrike.add(earnedSellerInUnitsOfStrike)
 
         const initialSellerStriked = await podPut.strikeToTransfer(scenario.amountToMint)
@@ -878,12 +963,56 @@ scenarios.forEach(scenario => {
 
         const earnedBuyerStrike = finalBuyerStrikeBalance.sub(initialBuyerStrikeBalance)
         const earnedBuyerUnderlying = finalBuyerUnderlyingBalance.sub(initialBuyerUnderlyingBalance)
-        const earnedBuyerInUnitsOfStrike = earnedBuyerUnderlying.mul(scenario.strikePrice).div(10 ** underlyingDecimals)
+        const earnedBuyerInUnitsOfStrike = earnedBuyerUnderlying.mul(scenario.strikePrice).div(ethers.BigNumber.from(10).pow(underlyingDecimals))
         const totalEarnedBuyer = earnedBuyerStrike.add(earnedBuyerInUnitsOfStrike)
 
         const initialBuyerStriked = await podPut.strikeToTransfer(scenario.amountToMint)
 
         expect(totalEarnedBuyer).to.gte(initialBuyerStriked)
+      })
+
+      it('Withdraw - should revert if transfer fail from ERC20', async () => {
+        // deploy option with mock function
+        const mockModERC20 = await deployMockContract(deployer, MockERC20ABI)
+
+        await mockModERC20.mock.decimals.returns(18)
+        await mockModERC20.mock.transferFrom.returns(true)
+        await mockModERC20.mock.transfer.returns(true)
+
+        const specificScenario = {
+          name: 'WETH/USDC',
+          underlyingAssetSymbol: 'WETH',
+          underlyingAssetDecimals: 18,
+          strikeAssetSymbol: 'USDC',
+          strikeAssetDecimals: 6,
+          strikePrice: ethers.BigNumber.from(1500e6.toString()),
+          amountToMint: ethers.BigNumber.from(1).mul(ethers.BigNumber.from(10).pow(18))
+        }
+
+        await mockModERC20.mock.balanceOf.returns(specificScenario.strikePrice)
+
+        podPut = await PodPut.deploy(
+          'pod:BRL:USDC:0.21',
+          'pod:BRL:USDC:0.21',
+          EXERCISE_TYPE_AMERICAN,
+          mockModERC20.address,
+          mockStrikeAsset.address,
+          specificScenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          0, // 24h
+          configurationManager.address
+        )
+
+        await podPut.deployed()
+
+        await mockStrikeAsset.connect(seller).mint(specificScenario.strikePrice.mul(2))
+        await mockStrikeAsset.connect(seller).approve(podPut.address, specificScenario.strikePrice.mul(2))
+
+        await podPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
+
+        await mockModERC20.mock.transfer.returns(false)
+        await forceExpiration(podPut)
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: could not transfer underlying tokens back to caller')
       })
     })
 
@@ -925,7 +1054,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
 
         await mockUnderlyingAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
-        await mockUnderlyingAsset.connect(seller).mint(scenario.strikePrice.mul(2))
+        await mockUnderlyingAsset.connect(seller).mint(scenario.amountToMint.mul(2))
 
         await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
         await podPutAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
@@ -964,6 +1093,66 @@ scenarios.forEach(scenario => {
         await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
 
         await expect(podPutAmerican.connect(seller).withdraw()).to.be.revertedWith('PodOption: option has not expired yet')
+      })
+
+      it('Unmint - should revert if transfer fail from ERC20', async () => {
+        // deploy option with mock function
+        const mockModERC20 = await deployMockContract(deployer, MockERC20ABI)
+
+        await mockModERC20.mock.decimals.returns(18)
+        await mockModERC20.mock.transferFrom.returns(true)
+        await mockModERC20.mock.transfer.returns(true)
+
+        const specificScenario = {
+          name: 'WETH/USDC',
+          underlyingAssetSymbol: 'WETH',
+          underlyingAssetDecimals: 18,
+          strikeAssetSymbol: 'USDC',
+          strikeAssetDecimals: 6,
+          strikePrice: ethers.BigNumber.from(1500e6.toString()),
+          amountToMint: ethers.BigNumber.from(1).mul(ethers.BigNumber.from(10).pow(18))
+        }
+
+        await mockModERC20.mock.balanceOf.returns(specificScenario.strikePrice)
+
+        podPutAmerican = await PodPut.deploy(
+          'pod:BRL:USDC:0.21',
+          'pod:BRL:USDC:0.21',
+          EXERCISE_TYPE_AMERICAN,
+          mockModERC20.address,
+          mockStrikeAsset.address,
+          specificScenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          0, // 24h
+          configurationManager.address
+        )
+
+        await podPutAmerican.deployed()
+
+        await mockStrikeAsset.connect(seller).mint(specificScenario.strikePrice.mul(2))
+        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, specificScenario.strikePrice.mul(2))
+
+        await podPutAmerican.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
+
+        await mockModERC20.mock.transfer.returns(false)
+        await expect(podPutAmerican.connect(seller).unmint(specificScenario.amountToMint)).to.be.revertedWith('PodPut: could not transfer underlying tokens back to caller')
+      })
+      it('should revert if unmint amount is too low - underlying', async () => {
+        if (scenario.underlyingAssetDecimals > scenario.strikeAssetDecimals) return
+        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice.mul(2))
+
+        await mockUnderlyingAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
+        await mockUnderlyingAsset.connect(seller).mint(scenario.amountToMint.mul(2))
+
+        await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        const ownerShares = await podPut.shares(sellerAddress)
+        const userMintedOptions = await podPut.mintedOptions(sellerAddress)
+
+        await podPutAmerican.connect(seller).exercise('1')
+
+        // if (ownerShares.div(userMintedOptions).gt(1)) return
+        await expect(podPutAmerican.connect(seller).unmint('1')).to.be.revertedWith('PodPut: amount of options is too low')
       })
     })
   })
