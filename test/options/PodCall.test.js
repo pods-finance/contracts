@@ -4,8 +4,8 @@ const forceExpiration = require('../util/forceExpiration')
 const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const createConfigurationManager = require('../util/createConfigurationManager')
-const MockERC20ABI = require('../../abi/ERC20.json')
 
+const MockERC20ABI = require('../../abi/ERC20.json')
 const { deployMockContract } = waffle
 
 const EXERCISE_TYPE_EUROPEAN = 0
@@ -803,7 +803,7 @@ scenarios.forEach(scenario => {
       })
 
       it('Unmint - should revert if strikeToSend is 0 (option amount too low)', async () => {
-        if (scenario.strikeAssetDecimals > scenario.underlyingAssetDecimals) return
+        if (scenario.strikeAssetDecimals >= scenario.underlyingAssetDecimals) return
         expect(await podCallAmerican.balanceOf(sellerAddress)).to.equal(0)
 
         await mockStrikeAsset.connect(seller).approve(podCallAmerican.address, ethers.constants.MaxUint256)
