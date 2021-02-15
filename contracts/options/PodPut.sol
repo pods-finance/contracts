@@ -231,11 +231,7 @@ contract PodPut is PodOption {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "PodPut: you do not have balance to withdraw");
 
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
+        (uint256 strikeToSend, uint256 underlyingToSend) = getSellerWithdrawAmounts(msg.sender);
 
         shares[msg.sender] = shares[msg.sender].sub(ownerShares);
         totalShares = totalShares.sub(ownerShares);
@@ -244,7 +240,7 @@ contract PodPut is PodOption {
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "PodPut: could not transfer strike tokens back to caller"
         );
-        if (underlyingReserves > 0) {
+        if (underlyingToSend > 0) {
             require(
                 IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),
                 "PodPut: could not transfer underlying tokens back to caller"

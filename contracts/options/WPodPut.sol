@@ -187,11 +187,7 @@ contract WPodPut is PodPut {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "WPodPut: you do not have balance to withdraw");
 
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
+        (uint256 strikeToSend, uint256 underlyingToSend) = getSellerWithdrawAmounts(msg.sender);
 
         shares[msg.sender] = shares[msg.sender].sub(ownerShares);
         totalShares = totalShares.sub(ownerShares);
@@ -200,7 +196,7 @@ contract WPodPut is PodPut {
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens back to caller"
         );
-        if (underlyingReserves > 0) {
+        if (underlyingToSend > 0) {
             weth.withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }

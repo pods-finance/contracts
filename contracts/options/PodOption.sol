@@ -123,7 +123,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @return underlyingAmount current amount of underlying the user will receive. It may change until maturity
      */
     function getSellerWithdrawAmounts(address owner)
-        external
+        public
         override
         view
         returns (uint256 strikeAmount, uint256 underlyingAmount)
