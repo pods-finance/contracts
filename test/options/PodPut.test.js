@@ -643,11 +643,11 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodPut: you do not have minted options')
+        await expect(podPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodOption: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podPut.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('PodPut: not enough minted options')
+        await expect(podPut.connect(seller).unmint(2 * scenario.amountToMint)).to.be.revertedWith('PodOption: not enough minted options')
       })
       it('should revert if unmint amount is too low', async () => {
         const minimumAmount = ethers.BigNumber.from(scenario.strikePrice).div((10 ** await mockUnderlyingAsset.decimals()).toString())

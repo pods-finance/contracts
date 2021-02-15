@@ -106,37 +106,25 @@ contract WPodPut is PodPut {
      * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external override beforeExpiration {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "WPodPut: you do not have minted options");
-
-        uint256 userMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= userMintedOptions, "WPodPut: not enough minted options");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 ownerSharesToReduce = ownerShares.mul(amountOfOptions).div(userMintedOptions);
-        uint256 strikeToSend = ownerSharesToReduce.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = ownerSharesToReduce.mul(underlyingReserves).div(totalShares);
+        (uint256 strikeToSend, uint256 underlyingToSend, , uint256 underlyingReserves) = _burnOptions(
+            amountOfOptions,
+            msg.sender
+        );
         require(strikeToSend > 0, "WPodPut: amount of options is too low");
 
-        shares[msg.sender] = shares[msg.sender].sub(ownerSharesToReduce);
-        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
-        totalShares = totalShares.sub(ownerSharesToReduce);
-
-        _burn(msg.sender, amountOfOptions);
-
-        // Unlocks the strike token
+        // Sends strike asset
         require(
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens back to caller"
         );
 
+        // Sends the underlying asset if the option was exercised
         if (underlyingReserves > 0) {
             require(underlyingToSend > 0, "WPodPut: amount of options is too low");
             weth.withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }
+
         emit Unmint(msg.sender, amountOfOptions);
     }
 

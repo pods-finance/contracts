@@ -140,34 +140,19 @@ contract PodCall is PodOption {
      * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "PodCall: you do not have minted options");
-
-        uint256 ownerMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= ownerMintedOptions, "PodCall: not enough minted options");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
-
-        uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
-
+        (uint256 strikeToSend, uint256 underlyingToSend, uint256 strikeReserves, ) = _burnOptions(
+            amountOfOptions,
+            msg.sender
+        );
         require(underlyingToSend > 0, "PodCall: amount of options is too low");
 
-        shares[msg.sender] = shares[msg.sender].sub(sharesToDeduce);
-        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
-        totalShares = totalShares.sub(sharesToDeduce);
-
-        _burn(msg.sender, amountOfOptions);
-
-        // Unlocks the strike token
+        // Sends underlying asset
         require(
             IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),
             "PodCall: could not transfer underlying tokens back to caller"
         );
 
+        // Sends the strike asset if the option was exercised
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "PodCall: amount of options is too low");
             require(
@@ -175,6 +160,7 @@ contract PodCall is PodOption {
                 "PodCall: could not transfer strike tokens back to caller"
             );
         }
+
         emit Unmint(msg.sender, amountOfOptions);
     }
 

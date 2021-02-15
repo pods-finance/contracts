@@ -266,11 +266,11 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('WPodPut: you do not have minted options')
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodOption: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('WPodPut: not enough minted options')
+        await expect(wPodPut.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
       })
       it('should revert if unmint amount is too low', async () => {
         const minimumAmount = ethers.BigNumber.from(scenario.strikePrice).div((10 ** await mockUnderlyingAsset.decimals()).toString())
@@ -357,7 +357,7 @@ scenarios.forEach(scenario => {
       it('should not unmint if there is not enough options', async () => {
         await MintPhase(scenario.amountToMint)
         await expect(wPodPut.connect(seller).unmint(scenario.amountToMint.add(1)))
-          .to.be.revertedWith('WPodPut: not enough minted options')
+          .to.be.revertedWith('PodOption: not enough minted options')
       })
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(wPodPut)

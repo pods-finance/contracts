@@ -358,4 +358,40 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
 
         _mint(msg.sender, amountOfOptions);
     }
+
+    /**
+     * @dev Burns options, removing shares accordingly and releasing a certain amount of collateral.
+     * In case of American options where exercise can happen before the expiration, the caller may receive a
+     * mix of underlying asset and strike asset.
+     * @param amountOfOptions The amount option tokens to be burned
+     * @param owner Which address options will be burned from
+     */
+    function _burnOptions(uint256 amountOfOptions, address owner)
+        internal
+        returns (
+            uint256 strikeToSend,
+            uint256 underlyingToSend,
+            uint256 strikeReserves,
+            uint256 underlyingReserves
+        )
+    {
+        uint256 ownerShares = shares[owner];
+        require(ownerShares > 0, "PodOption: you do not have minted options");
+
+        uint256 ownerMintedOptions = mintedOptions[owner];
+        require(amountOfOptions <= ownerMintedOptions, "PodOption: not enough minted options");
+
+        strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
+        underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
+
+        uint256 burnedShares = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
+        strikeToSend = burnedShares.mul(strikeReserves).div(totalShares);
+        underlyingToSend = burnedShares.mul(underlyingReserves).div(totalShares);
+
+        shares[owner] = shares[owner].sub(burnedShares);
+        mintedOptions[owner] = mintedOptions[owner].sub(amountOfOptions);
+        totalShares = totalShares.sub(burnedShares);
+
+        _burn(owner, amountOfOptions);
+    }
 }

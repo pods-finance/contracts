@@ -139,31 +139,17 @@ contract WPodCall is PodCall {
      * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "WPodCall: you do not have minted options");
-
-        uint256 ownerMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= ownerMintedOptions, "WPodCall: not enough minted options");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
-
-        uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
+        (uint256 strikeToSend, uint256 underlyingToSend, uint256 strikeReserves, ) = _burnOptions(
+            amountOfOptions,
+            msg.sender
+        );
         require(underlyingToSend > 0, "WPodCall: amount of options is too low");
 
-        shares[msg.sender] = shares[msg.sender].sub(sharesToDeduce);
-        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
-        totalShares = totalShares.sub(sharesToDeduce);
-
-        _burn(msg.sender, amountOfOptions);
-
-        // Unlocks the strike token
+        // Sends underlying asset
         weth.withdraw(underlyingToSend);
         Address.sendValue(msg.sender, underlyingToSend);
 
+        // Sends the strike asset if the option was exercised
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "WPodCall: amount of options is too low");
             require(
@@ -171,6 +157,7 @@ contract WPodCall is PodCall {
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
+
         emit Unmint(msg.sender, amountOfOptions);
     }
 

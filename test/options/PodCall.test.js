@@ -434,11 +434,11 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodCall: you do not have minted options')
+        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodOption: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodCall: not enough minted options')
+        await expect(podCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
       })
       it('should unmint, destroy sender option, reduce its balance and send underlying back', async () => {
         await MintPhase(scenario.amountToMint)
