@@ -17,6 +17,7 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     bytes32 private constant IMPLIED_VOLATILITY = "IMPLIED_VOLATILITY";
     bytes32 private constant PRICE_PROVIDER = "PRICE_PROVIDER";
     bytes32 private constant CAP_PROVIDER = "CAP_PROVIDER";
+
     /* solhint-enable private-vars-leading-underscore */
 
     function setEmergencyStop(address emergencyStop) external override onlyOwner {
