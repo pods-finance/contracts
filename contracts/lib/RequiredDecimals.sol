@@ -16,7 +16,7 @@ contract RequiredDecimals {
         // solhint-disable avoid-low-level-calls
         (bool success, bytes memory returnData) = address(token).staticcall(payload);
 
-        require(success, "OptionalDecimals: required decimals");
+        require(success, "RequiredDecimals: required decimals");
         uint8 decimals = abi.decode(returnData, (uint8));
         require(decimals < 77, "RequiredDecimals: token decimals should be lower than 77");
 
