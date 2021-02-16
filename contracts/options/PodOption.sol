@@ -143,26 +143,39 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     {
         uint256 ownerShares = shares[owner];
 
-        uint256 strikeReserves = IERC20(_strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(_underlyingAsset).balanceOf(address(this));
-
-        strikeAmount = ownerShares.mul(strikeReserves).div(totalShares);
-        underlyingAmount = ownerShares.mul(underlyingReserves).div(totalShares);
+        strikeAmount = ownerShares.mul(strikeReserves()).div(totalShares);
+        underlyingAmount = ownerShares.mul(underlyingReserves()).div(totalShares);
 
         return (strikeAmount, underlyingAmount);
     }
 
     /**
+     * @notice Utility function to check the amount of the underlying tokens
+     * locked inside this contract
+     */
+    function underlyingReserves() public override view returns (uint256) {
+        return IERC20(_underlyingAsset).balanceOf(address(this));
+    }
+
+    /**
+     * @notice Utility function to check the amount of the strike tokens locked
+     * inside this contract
+     */
+    function strikeReserves() public override view returns (uint256) {
+        return IERC20(_strikeAsset).balanceOf(address(this));
+    }
+
+    /**
      * @notice The option type. eg: CALL, PUT
      */
-    function optionType() public override view returns (OptionType) {
+    function optionType() external override view returns (OptionType) {
         return _optionType;
     }
 
     /**
      * @notice Exercise type. eg: AMERICAN, EUROPEAN
      */
-    function exerciseType() public override view returns (ExerciseType) {
+    function exerciseType() external override view returns (ExerciseType) {
         return _exerciseType;
     }
 
@@ -190,7 +203,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     /**
      * @notice How many decimals does the strike token have? E.g.: 18
      */
-    function strikeAssetDecimals() public override view returns (uint8) {
+    function strikeAssetDecimals() external override view returns (uint8) {
         return ERC20(_strikeAsset).decimals();
     }
 
@@ -198,45 +211,29 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice The sell price of each unit of underlyingAsset; given in units
      * of strikeAsset, e.g. 0.99 USDC
      */
-    function strikePrice() public override view returns (uint256) {
+    function strikePrice() external override view returns (uint256) {
         return _strikePrice;
     }
 
     /**
      * @notice The number of decimals of strikePrice
      */
-    function strikePriceDecimals() public override view returns (uint8) {
+    function strikePriceDecimals() external override view returns (uint8) {
         return ERC20(_strikeAsset).decimals();
     }
 
     /**
      * @notice The UNIX timestamp that represents the series expiration
      */
-    function expiration() public override view returns (uint256) {
+    function expiration() external override view returns (uint256) {
         return _expiration;
     }
 
     /**
      * @notice The UNIX timestamp that represents the end of exercise window
      */
-    function endOfExerciseWindow() public override view returns (uint256) {
+    function endOfExerciseWindow() external override view returns (uint256) {
         return _endOfExerciseWindow;
-    }
-
-    /**
-     * @notice Utility function to check the amount of the underlying tokens
-     * locked inside this contract
-     */
-    function underlyingReserves() public override view returns (uint256) {
-        return IERC20(_underlyingAsset).balanceOf(address(this));
-    }
-
-    /**
-     * @notice Utility function to check the amount of the strike tokens locked
-     * inside this contract
-     */
-    function strikeReserves() public override view returns (uint256) {
-        return IERC20(_strikeAsset).balanceOf(address(this));
     }
 
     /**
@@ -303,19 +300,19 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @dev Calculate number of reserve shares based on the amount of collateral locked by the minter
      */
     function _calculatedShares(uint256 amountOfCollateral) internal view returns (uint256 ownerShares) {
-        uint256 _strikeReserves = strikeReserves();
-        uint256 _underlyingReserves = underlyingReserves();
+        uint256 currentStrikeReserves = strikeReserves();
+        uint256 currentUnderlyingReserves = underlyingReserves();
 
         uint256 numerator = amountOfCollateral.mul(totalShares);
         uint256 denominator;
 
         if (_optionType == OptionType.PUT) {
-            denominator = _strikeReserves.add(
-                _underlyingReserves.mul(_strikePrice).div(uint256(10)**underlyingAssetDecimals())
+            denominator = currentStrikeReserves.add(
+                currentUnderlyingReserves.mul(_strikePrice).div(uint256(10)**underlyingAssetDecimals())
             );
         } else {
-            denominator = _underlyingReserves.add(
-                _strikeReserves.mul(uint256(10)**underlyingAssetDecimals()).div(_strikePrice)
+            denominator = currentUnderlyingReserves.add(
+                currentStrikeReserves.mul(uint256(10)**underlyingAssetDecimals()).div(_strikePrice)
             );
         }
         ownerShares = numerator.div(denominator);
@@ -362,8 +359,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         returns (
             uint256 strikeToSend,
             uint256 underlyingToSend,
-            uint256 strikeReserves,
-            uint256 underlyingReserves
+            uint256 currentStrikeReserves,
+            uint256 currentUnderlyingReserves
         )
     {
         uint256 ownerShares = shares[owner];
@@ -372,12 +369,12 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         uint256 ownerMintedOptions = mintedOptions[owner];
         require(amountOfOptions <= ownerMintedOptions, "PodOption: not enough minted options");
 
-        strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
+        currentStrikeReserves = strikeReserves();
+        currentUnderlyingReserves = underlyingReserves();
 
         uint256 burnedShares = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
-        strikeToSend = burnedShares.mul(strikeReserves).div(totalShares);
-        underlyingToSend = burnedShares.mul(underlyingReserves).div(totalShares);
+        strikeToSend = burnedShares.mul(currentStrikeReserves).div(totalShares);
+        underlyingToSend = burnedShares.mul(currentUnderlyingReserves).div(totalShares);
 
         shares[owner] = shares[owner].sub(burnedShares);
         mintedOptions[owner] = mintedOptions[owner].sub(amountOfOptions);
