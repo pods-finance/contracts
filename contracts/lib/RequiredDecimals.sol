@@ -10,7 +10,7 @@ contract RequiredDecimals {
      * @param token An instance of IERC20
      * @return The decimals of a token
      */
-    function tryDecimals(IERC20 token) internal view returns (uint8) {
+    function tryDecimals(IERC20 token) internal view returns (uint8) {// solhint-disable-line private-vars-leading-underscore
         bytes memory payload = abi.encodeWithSignature("decimals()");
         // solhint-disable avoid-low-level-calls
         (bool success, bytes memory returnData) = address(token).staticcall(payload);

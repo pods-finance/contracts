@@ -112,6 +112,28 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
+     * @notice Checks if the options series has already expired.
+     */
+    function hasExpired() external override view returns (bool) {
+        return _hasExpired();
+    }
+
+    /**
+     * @notice Checks if the options exercise window has closed.
+     */
+    function isAfterEndOfExerciseWindow() external override view returns (bool) {
+        return _isAfterEndOfExerciseWindow();
+    }
+
+    /**
+     * @notice External function to calculate the amount of strike asset
+     * needed given the option amount
+     */
+    function strikeToTransfer(uint256 amountOfOptions) external override view returns (uint256) {
+        return _strikeToTransfer(amountOfOptions);
+    }
+
+    /**
      * @notice getSellerWithdrawAmounts returns the seller position based on his amount of shares
      * and the current option position
      *
@@ -135,28 +157,6 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         underlyingAmount = ownerShares.mul(underlyingReserves).div(totalShares);
 
         return (strikeAmount, underlyingAmount);
-    }
-
-    /**
-     * @notice Checks if the options series has already expired.
-     */
-    function hasExpired() external override view returns (bool) {
-        return _hasExpired();
-    }
-
-    /**
-     * @notice Checks if the options exercise window has closed.
-     */
-    function isAfterEndOfExerciseWindow() external override view returns (bool) {
-        return _isAfterEndOfExerciseWindow();
-    }
-
-    /**
-     * @notice External function to calculate the amount of strike asset
-     * needed given the option amount
-     */
-    function strikeToTransfer(uint256 amountOfOptions) external override view returns (uint256) {
-        return _strikeToTransfer(amountOfOptions);
     }
 
     /**

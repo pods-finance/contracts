@@ -95,7 +95,7 @@ contract WPodCall is PodCall {
             _exerciseWindowSize,
             _configurationManager
         )
-    {}
+    {} // solhint-disable-line no-empty-blocks
 
     /**
      * @notice Locks underlying asset (ETH) and write option tokens.

@@ -89,7 +89,7 @@ contract WPodPut is PodPut {
             _exerciseWindowSize,
             _configurationManager
         )
-    {}
+    {} // solhint-disable-line no-empty-blocks
 
     /**
      * @notice Unlocks collateral by burning option tokens.
