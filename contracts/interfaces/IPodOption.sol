@@ -5,7 +5,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IPodOption is IERC20 {
     /** Enums */
+    // @dev 0 for Put, 1 for Call
     enum OptionType { PUT, CALL }
+    // @dev 0 for European, 1 for American
     enum ExerciseType { EUROPEAN, AMERICAN }
 
     /** Events */
