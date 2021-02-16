@@ -213,13 +213,7 @@ contract PodCall is PodOption {
      * the exercised assets or a combination of exercised and underlying asset tokens.
      */
     function withdraw() external virtual override withdrawWindow {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "PodCall: you do not have balance to withdraw");
-
-        (uint256 strikeToSend, uint256 underlyingToSend) = getSellerWithdrawAmounts(msg.sender);
-
-        shares[msg.sender] = shares[msg.sender].sub(ownerShares);
-        totalShares = totalShares.sub(ownerShares);
+        (uint256 strikeToSend, uint256 underlyingToSend) = _withdraw();
 
         require(
             IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),

@@ -392,4 +392,17 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
 
         _burn(owner, amountOfOptions);
     }
+
+    /**
+     * @dev Removes all shares, returning the amounts that would be withdrawable
+     */
+    function _withdraw() internal returns (uint256 strikeToSend, uint256 underlyingToSend) {
+        uint256 ownerShares = shares[msg.sender];
+        require(ownerShares > 0, "PodOption: you do not have balance to withdraw");
+
+        (strikeToSend, underlyingToSend) = getSellerWithdrawAmounts(msg.sender);
+
+        shares[msg.sender] = 0;
+        totalShares = totalShares.sub(ownerShares);
+    }
 }

@@ -528,7 +528,7 @@ scenarios.forEach(scenario => {
       it('should revert if user try to withdraw without balance after expiration', async () => {
         await forceEndOfExerciseWindow(podCall)
 
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset', async () => {
@@ -561,7 +561,7 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractUnderlyingReserves).to.equal(0)
         // Cant withdraw two times in a row
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should withdraw Underlying Asset balance plus interest earned proportional (Ma-Mb-Wa-Wb)', async () => {

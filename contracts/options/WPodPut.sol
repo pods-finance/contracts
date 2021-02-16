@@ -170,13 +170,7 @@ contract WPodPut is PodPut {
      * the exercised assets or a combination of exercised and strike asset tokens.
      */
     function withdraw() external override withdrawWindow {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "WPodPut: you do not have balance to withdraw");
-
-        (uint256 strikeToSend, uint256 underlyingToSend) = getSellerWithdrawAmounts(msg.sender);
-
-        shares[msg.sender] = shares[msg.sender].sub(ownerShares);
-        totalShares = totalShares.sub(ownerShares);
+        (uint256 strikeToSend, uint256 underlyingToSend) = _withdraw();
 
         require(
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),

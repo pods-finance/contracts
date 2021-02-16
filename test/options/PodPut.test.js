@@ -746,7 +746,7 @@ scenarios.forEach(scenario => {
         // Set Expiration
         await forceEndOfExerciseWindow(podPut)
 
-        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {
@@ -821,7 +821,7 @@ scenarios.forEach(scenario => {
         expect(finalSellerStrikegBalance).to.gt(scenario.strikePrice)
         expect(finalSellerStrikegBalance).to.lt(scenario.strikePrice.mul(twoTimesAmountToMint).div(10 ** optionDecimals))
         // Cant withdraw two times in a row
-        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
 
         await podPut.connect(buyer).withdraw()
 
@@ -831,7 +831,7 @@ scenarios.forEach(scenario => {
         expect(finalBuyerStrikeBalance).to.gt(scenario.strikePrice.mul(twoTimesAmountToMint).div(10 ** optionDecimals))
         expect(finalContractStrikeReserves).to.equal(0)
 
-        await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should withdraw mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {
@@ -852,7 +852,7 @@ scenarios.forEach(scenario => {
 
         await forceEndOfExerciseWindow(podPut)
         await expect(podPut.connect(seller).withdraw())
-        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
 
         const finalSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -870,7 +870,7 @@ scenarios.forEach(scenario => {
         const initialBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await expect(podPut.connect(buyer).withdraw())
-        await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
 
         const finalBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
         const finalBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
