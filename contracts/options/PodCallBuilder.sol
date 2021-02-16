@@ -32,7 +32,7 @@ contract PodCallBuilder is IOptionBuilder {
         uint256 _expiration,
         uint256 _exerciseWindowSize,
         IConfigurationManager _configurationManager
-    ) public override returns (IPodOption) {
+    ) external override returns (IPodOption) {
         PodCall option = new PodCall(
             _name,
             _symbol,

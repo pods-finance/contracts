@@ -32,7 +32,7 @@ contract WPodPutBuilder is IOptionBuilder {
         uint256 _expiration,
         uint256 _exerciseWindowSize,
         IConfigurationManager _configurationManager
-    ) public override returns (IPodOption) {
+    ) external override returns (IPodOption) {
         WPodPut option = new WPodPut(
             _name,
             _symbol,
