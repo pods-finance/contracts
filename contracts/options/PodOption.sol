@@ -28,8 +28,6 @@ import "../interfaces/IConfigurationManager.sol";
  * different behave and should be override accordingly.
  */
 abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption {
-    using SafeMath for uint8;
-
     /**
      * @dev Minimum allowed exercise window: 24 hours
      */

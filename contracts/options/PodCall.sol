@@ -69,8 +69,6 @@ import "./PodOption.sol";
  *
  */
 contract PodCall is PodOption {
-    using SafeMath for uint8;
-
     constructor(
         string memory _name,
         string memory _symbol,
