@@ -318,7 +318,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
 
         if (_optionType == OptionType.PUT) {
             denominator = _strikeReserves.add(
-                _underlyingReserves.mul(_strikePrice).div((uint256(10)**_underlyingAssetDecimals))
+                _underlyingReserves.mul(_strikePrice).div(uint256(10)**_underlyingAssetDecimals)
             );
         } else {
             denominator = _underlyingReserves.add(
