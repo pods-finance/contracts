@@ -152,11 +152,13 @@ contract WPodPut is PodPut {
 
         // Retrieve the underlying asset from caller
         IWETH(underlyingAsset()).deposit{ value: msg.value }();
+
         // Releases the strike asset to caller, completing the exchange
         require(
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens to caller"
         );
+
         emit Exercise(msg.sender, amountOfOptions);
     }
 
@@ -180,10 +182,12 @@ contract WPodPut is PodPut {
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens back to caller"
         );
+
         if (underlyingToSend > 0) {
             IWETH(underlyingAsset()).withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }
+
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
     }
 

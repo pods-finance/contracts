@@ -141,10 +141,6 @@ contract WPodCall is PodCall {
         );
         require(underlyingToSend > 0, "WPodCall: amount of options is too low");
 
-        // Sends underlying asset
-        IWETH(underlyingAsset()).withdraw(underlyingToSend);
-        Address.sendValue(msg.sender, underlyingToSend);
-
         // Sends the strike asset if the option was exercised
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "WPodCall: amount of options is too low");
@@ -153,6 +149,10 @@ contract WPodCall is PodCall {
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
+
+        // Sends underlying asset
+        IWETH(underlyingAsset()).withdraw(underlyingToSend);
+        Address.sendValue(msg.sender, underlyingToSend);
 
         emit Unmint(msg.sender, amountOfOptions);
     }
@@ -191,6 +191,7 @@ contract WPodCall is PodCall {
             "WPodCall: could not transfer strike tokens from caller"
         );
 
+        // Sends underlying asset
         IWETH(underlyingAsset()).withdraw(amountOfOptions);
         Address.sendValue(msg.sender, amountOfOptions);
 
@@ -213,15 +214,17 @@ contract WPodCall is PodCall {
         shares[msg.sender] = shares[msg.sender].sub(ownerShares);
         totalShares = totalShares.sub(ownerShares);
 
-        IWETH(underlyingAsset()).withdraw(underlyingToSend);
-        Address.sendValue(msg.sender, underlyingToSend);
-
         if (strikeToSend > 0) {
             require(
                 IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
+
+        // Sends underlying asset
+        IWETH(underlyingAsset()).withdraw(underlyingToSend);
+        Address.sendValue(msg.sender, underlyingToSend);
+
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
     }
 
