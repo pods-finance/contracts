@@ -70,8 +70,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  */
 contract WPodCall is PodCall {
-    IWETH public weth;
-
     event Received(address indexed sender, uint256 value);
 
     constructor(
@@ -97,9 +95,7 @@ contract WPodCall is PodCall {
             _exerciseWindowSize,
             _configurationManager
         )
-    {
-        weth = IWETH(underlyingAsset());
-    }
+    {}
 
     /**
      * @notice Locks underlying asset (ETH) and write option tokens.
@@ -123,7 +119,7 @@ contract WPodCall is PodCall {
         require(amountOfOptions > 0, "WPodCall: you can not mint zero options");
         _mintOptions(amountOfOptions, amountOfOptions, owner);
 
-        weth.deposit{ value: amountOfOptions }();
+        IWETH(underlyingAsset()).deposit{ value: amountOfOptions }();
 
         emit Mint(owner, amountOfOptions);
     }
@@ -146,7 +142,7 @@ contract WPodCall is PodCall {
         require(underlyingToSend > 0, "WPodCall: amount of options is too low");
 
         // Sends underlying asset
-        weth.withdraw(underlyingToSend);
+        IWETH(underlyingAsset()).withdraw(underlyingToSend);
         Address.sendValue(msg.sender, underlyingToSend);
 
         // Sends the strike asset if the option was exercised
@@ -195,7 +191,7 @@ contract WPodCall is PodCall {
             "WPodCall: could not transfer strike tokens from caller"
         );
 
-        weth.withdraw(amountOfOptions);
+        IWETH(underlyingAsset()).withdraw(amountOfOptions);
         Address.sendValue(msg.sender, amountOfOptions);
 
         emit Exercise(msg.sender, amountOfOptions);
@@ -217,7 +213,7 @@ contract WPodCall is PodCall {
         shares[msg.sender] = shares[msg.sender].sub(ownerShares);
         totalShares = totalShares.sub(ownerShares);
 
-        weth.withdraw(underlyingToSend);
+        IWETH(underlyingAsset()).withdraw(underlyingToSend);
         Address.sendValue(msg.sender, underlyingToSend);
 
         if (strikeToSend > 0) {
@@ -230,7 +226,7 @@ contract WPodCall is PodCall {
     }
 
     receive() external payable {
-        require(msg.sender == address(weth), "WPodCall: Only deposits from WETH are allowed");
+        require(msg.sender == this.underlyingAsset(), "WPodCall: Only deposits from WETH are allowed");
         emit Received(msg.sender, msg.value);
     }
 }

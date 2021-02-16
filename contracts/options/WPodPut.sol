@@ -64,8 +64,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * - Will burn the corresponding amount of put tokens.
  */
 contract WPodPut is PodPut {
-    IWETH public weth;
-
     event Received(address indexed sender, uint256 value);
 
     constructor(
@@ -91,9 +89,7 @@ contract WPodPut is PodPut {
             _exerciseWindowSize,
             _configurationManager
         )
-    {
-        weth = IWETH(underlyingAsset());
-    }
+    {}
 
     /**
      * @notice Unlocks collateral by burning option tokens.
@@ -121,7 +117,7 @@ contract WPodPut is PodPut {
         // Sends the underlying asset if the option was exercised
         if (underlyingReserves > 0) {
             require(underlyingToSend > 0, "WPodPut: amount of options is too low");
-            weth.withdraw(underlyingToSend);
+            IWETH(underlyingAsset()).withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }
 
@@ -155,7 +151,7 @@ contract WPodPut is PodPut {
         _burn(msg.sender, amountOfOptions);
 
         // Retrieve the underlying asset from caller
-        weth.deposit{ value: msg.value }();
+        IWETH(underlyingAsset()).deposit{ value: msg.value }();
         // Releases the strike asset to caller, completing the exchange
         require(
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
@@ -185,14 +181,14 @@ contract WPodPut is PodPut {
             "WPodPut: could not transfer strike tokens back to caller"
         );
         if (underlyingToSend > 0) {
-            weth.withdraw(underlyingToSend);
+            IWETH(underlyingAsset()).withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
     }
 
     receive() external payable {
-        require(msg.sender == address(weth), "WPodPut: Only deposits from WETH are allowed");
+        require(msg.sender == this.underlyingAsset(), "WPodPut: Only deposits from WETH are allowed");
         emit Received(msg.sender, msg.value);
     }
 }
