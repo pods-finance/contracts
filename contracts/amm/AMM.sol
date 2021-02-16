@@ -340,7 +340,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @param percentB proportion of the exposition of the original tokenB that want to be removed
      */
     function _removeLiquidity(uint256 percentA, uint256 percentB) internal {
-        (uint256 userTokenABalance, uint256 userTokenBBalance, ) = _getUserDepositSnapshot(msg.sender);
+        (uint256 userTokenABalance, uint256 userTokenBBalance, uint256 userFImp) = _getUserDepositSnapshot(msg.sender);
         require(percentA <= 100 && percentB <= 100, "AMM: forbidden removal percent");
 
         uint256 originalBalanceAToReduce = percentA.mul(userTokenABalance).div(PERCENT_PRECISION);
@@ -370,21 +370,21 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         // Update deamortized balance
         deamortizedTokenABalance = deamortizedTokenABalance.sub(
-            originalBalanceAToReduce.mul(10**FIMP_PRECISION).div(usersSnapshot[msg.sender].fImp)
+            originalBalanceAToReduce.mul(10**FIMP_PRECISION).div(userFImp)
         );
         deamortizedTokenBBalance = deamortizedTokenBBalance.sub(
-            originalBalanceBToReduce.mul(10**FIMP_PRECISION).div(usersSnapshot[msg.sender].fImp)
+            originalBalanceBToReduce.mul(10**FIMP_PRECISION).div(userFImp)
         );
 
         // Calculate amount to send
         uint256 amountToSendA = originalBalanceAToReduce
             .mul(multipliers.AA)
             .add(originalBalanceBToReduce.mul(multipliers.BA))
-            .div(usersSnapshot[msg.sender].fImp);
+            .div(userFImp);
         uint256 amountToSendB = originalBalanceBToReduce
             .mul(multipliers.BB)
             .add(originalBalanceAToReduce.mul(multipliers.AB))
-            .div(usersSnapshot[msg.sender].fImp);
+            .div(userFImp);
 
         _onRemoveLiquidity(usersSnapshot[msg.sender], msg.sender);
 
