@@ -38,14 +38,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     IConfigurationManager private _configurationManager;
 
     address private _underlyingAsset;
-    uint8 private _underlyingAssetDecimals;
-
     address private _strikeAsset;
-    uint8 private _strikeAssetDecimals;
-
     uint256 private _strikePrice;
-    uint8 private _strikePriceDecimals;
-
     uint256 private _expiration;
     uint256 private _endOfExerciseWindow;
 
@@ -101,14 +95,13 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         _endOfExerciseWindow = expiration.add(exerciseWindowSize);
 
         _underlyingAsset = underlyingAsset;
-        _underlyingAssetDecimals = tryDecimals(IERC20(_underlyingAsset));
-        _setupDecimals(_underlyingAssetDecimals);
-
         _strikeAsset = strikeAsset;
-        _strikeAssetDecimals = tryDecimals(IERC20(_strikeAsset));
+
+        uint8 underlyingDecimals = tryDecimals(IERC20(_underlyingAsset));
+        tryDecimals(IERC20(_strikeAsset));
 
         _strikePrice = strikePrice;
-        _strikePriceDecimals = _strikeAssetDecimals;
+        _setupDecimals(underlyingDecimals);
     }
 
     /**
@@ -184,7 +177,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice How many decimals does the underlying token have? E.g.: 18
      */
     function underlyingAssetDecimals() public override view returns (uint8) {
-        return _underlyingAssetDecimals;
+        return ERC20(_underlyingAsset).decimals();
     }
 
     /**
@@ -198,7 +191,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice How many decimals does the strike token have? E.g.: 18
      */
     function strikeAssetDecimals() public override view returns (uint8) {
-        return _strikeAssetDecimals;
+        return ERC20(_strikeAsset).decimals();
     }
 
     /**
@@ -213,7 +206,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice The number of decimals of strikePrice
      */
     function strikePriceDecimals() public override view returns (uint8) {
-        return _strikePriceDecimals;
+        return ERC20(_strikeAsset).decimals();
     }
 
     /**
@@ -301,7 +294,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @param amountOfOptions Intended amount to options to mint
      */
     function _strikeToTransfer(uint256 amountOfOptions) internal view returns (uint256) {
-        uint256 strikeAmount = amountOfOptions.mul(_strikePrice).div(10**uint256(_underlyingAssetDecimals));
+        uint256 strikeAmount = amountOfOptions.mul(_strikePrice).div(10**uint256(underlyingAssetDecimals()));
         require(strikeAmount > 0, "PodOption: amount of options is too low");
         return strikeAmount;
     }
@@ -318,11 +311,11 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
 
         if (_optionType == OptionType.PUT) {
             denominator = _strikeReserves.add(
-                _underlyingReserves.mul(_strikePrice).div(uint256(10)**_underlyingAssetDecimals)
+                _underlyingReserves.mul(_strikePrice).div(uint256(10)**underlyingAssetDecimals())
             );
         } else {
             denominator = _underlyingReserves.add(
-                _strikeReserves.mul(uint256(10)**_underlyingAssetDecimals).div(_strikePrice)
+                _strikeReserves.mul(uint256(10)**underlyingAssetDecimals()).div(_strikePrice)
             );
         }
         ownerShares = numerator.div(denominator);
