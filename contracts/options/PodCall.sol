@@ -218,8 +218,8 @@ contract PodCall is PodOption {
 
         (uint256 strikeToSend, uint256 underlyingToSend) = getSellerWithdrawAmounts(msg.sender);
 
+        shares[msg.sender] = shares[msg.sender].sub(ownerShares);
         totalShares = totalShares.sub(ownerShares);
-        shares[msg.sender] = 0;
 
         require(
             IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),
