@@ -86,8 +86,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 strikePrice = IPodOption(_optionAddress).strikePrice();
         uint256 strikePriceDecimals = IPodOption(_optionAddress).strikePriceDecimals();
 
-        require(strikePriceDecimals <= BS_RES_DECIMALS, "OptionAMMPool: not supported strikePrice unit");
-        require(tokenBDecimals() <= BS_RES_DECIMALS, "OptionAMMPool: not supported tokenB unit");
+        require(strikePriceDecimals <= BS_RES_DECIMALS, "OptionAMMPool: invalid strikePrice unit");
+        require(tokenBDecimals() <= BS_RES_DECIMALS, "OptionAMMPool: invalid tokenB unit");
         uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
@@ -708,12 +708,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         require(
             IERC20(tokenB()).transfer(address(feePoolA), tradeDetails.feesTokenA),
-            "OptionAMMPool: could not transfer Fees to feePoolA"
+            "OptionAMMPool: transfer error - feePoolA"
         );
 
         require(
             IERC20(tokenB()).transfer(address(feePoolB), tradeDetails.feesTokenB),
-            "OptionAMMPool: could not transfer Fees to feePoolB"
+            "OptionAMMPool: transfer error - feePoolB"
         );
     }
 
