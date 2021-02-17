@@ -541,7 +541,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 _ABPrice,
         uint256 _deamortizedTokenABalance,
         uint256 _deamortizedTokenBBalance
-    ) internal view returns (uint256 fImpOpening) {
+    ) internal view returns (uint256) {
         uint256 numerator;
         uint256 denominator;
         {
@@ -555,8 +555,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
             );
         }
 
-        fImpOpening = numerator.div(denominator);
-        return fImpOpening;
+        return numerator.div(denominator);
     }
 
     /**
@@ -568,8 +567,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
     function _getPoolBalances() internal view returns (uint256 totalTokenA, uint256 totalTokenB) {
         totalTokenA = IERC20(_tokenA).balanceOf(address(this));
         totalTokenB = IERC20(_tokenB).balanceOf(address(this));
-
-        return (totalTokenA, totalTokenB);
     }
 
     /**
@@ -594,8 +591,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
         tokenAOriginalBalance = usersSnapshot[user].tokenABalance;
         tokenBOriginalBalance = usersSnapshot[user].tokenBBalance;
         fImpOriginal = usersSnapshot[user].fImp;
-
-        return (tokenAOriginalBalance, tokenBOriginalBalance, fImpOriginal);
     }
 
     /**
@@ -643,7 +638,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
         }
 
         multipliers = Mult(mAA, mAB, mBA, mBB);
-        return multipliers;
     }
 
     /**
@@ -691,7 +685,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
             fImpOriginal,
             multipliers
         );
-        return (withdrawAmountA, withdrawAmountB);
     }
 
     /**
@@ -751,8 +744,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
                 amountOfB
             );
         }
-
-        return (userToStoreTokenA, userToStoreTokenB);
     }
 
     /**

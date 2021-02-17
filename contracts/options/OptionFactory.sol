@@ -70,7 +70,7 @@ contract OptionFactory {
         uint256 strikePrice,
         uint256 expiration,
         uint256 exerciseWindowSize
-    ) external returns (address option) {
+    ) external returns (address) {
         IOptionBuilder builder;
 
         if (optionType == IPodOption.OptionType.PUT) {
@@ -87,7 +87,7 @@ contract OptionFactory {
             }
         }
 
-        option = address(
+        address option = address(
             builder.buildOption(
                 name,
                 symbol,
@@ -114,6 +114,7 @@ contract OptionFactory {
             expiration,
             exerciseWindowSize
         );
+
         return option;
     }
 }
