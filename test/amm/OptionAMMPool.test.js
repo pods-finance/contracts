@@ -149,7 +149,7 @@ scenarios.forEach(scenario => {
       it('should not allow trade after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
-        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('OptionAMMPool: exercise window has started')
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('Pool: exercise window has started')
       })
 
       it('should revert when trying to deploy a Pool with strikeAsset decimals > BS_RES_DECIMALS', async () => {
@@ -163,7 +163,7 @@ scenarios.forEach(scenario => {
         })
 
         optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockTokenB.address, scenario.initialSigma)
-        await expect(optionAMMPool).to.be.revertedWith('OptionAMMPool: invalid strikePrice unit')
+        await expect(optionAMMPool).to.be.revertedWith('Pool: invalid strikePrice unit')
       })
 
       it('should revert when trying to deploy a Pool with tokenB decimals > BS_RES_DECIMALS', async () => {
@@ -175,13 +175,13 @@ scenarios.forEach(scenario => {
         })
         const mockTokenB = await MockERC20.deploy('TEST', 'TEST', '20')
         optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockTokenB.address, scenario.initialSigma)
-        await expect(optionAMMPool).to.be.revertedWith('OptionAMMPool: invalid tokenB unit')
+        await expect(optionAMMPool).to.be.revertedWith('Pool: invalid tokenB unit')
       })
 
       it('should not allow add liquidity after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
-        await expect(optionAMMPool.connect(buyer).addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('OptionAMMPool: exercise window has started')
+        await expect(optionAMMPool.connect(buyer).addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('Pool: exercise window has started')
       })
 
       it('should not create a pool with fee pools that are non-contracts', async () => {
@@ -193,7 +193,7 @@ scenarios.forEach(scenario => {
           buyerAddress,
           configurationManager.address
         )
-        await expect(tx).to.be.revertedWith('OptionAMMPool: Invalid fee pools')
+        await expect(tx).to.be.revertedWith('Pool: Invalid fee pools')
       })
 
       it('should not create a pool with American options', async () => {
@@ -207,7 +207,7 @@ scenarios.forEach(scenario => {
         })
 
         const tx = createNewPool(deployerAddress, optionAMMFactory, americanOption.address, mockStrikeAsset.address, scenario.initialSigma)
-        await expect(tx).to.be.revertedWith('OptionAMMPool: invalid exercise type')
+        await expect(tx).to.be.revertedWith('Pool: invalid exercise type')
       })
     })
 
@@ -263,7 +263,7 @@ scenarios.forEach(scenario => {
 
         await expect(
           optionAMMPool.addLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity, deployerAddress)
-        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+        ).to.be.revertedWith('Pool: Pool is stopped')
       })
 
       it('should revert if add liquidity when the option price is zero', async () => {
@@ -446,7 +446,7 @@ scenarios.forEach(scenario => {
 
         await expect(
           optionAMMPool.removeLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity)
-        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+        ).to.be.revertedWith('Pool: Pool is stopped')
       })
 
       it('should remove liquidity when option price is rounded to zero', async () => {
@@ -920,7 +920,7 @@ scenarios.forEach(scenario => {
         await expect(
           optionAMMPool.connect(buyer)
             .tradeExactAOutput(optionsToBuy, minStableToSell, buyerAddress, scenario.initialSigma)
-        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+        ).to.be.revertedWith('Pool: Pool is stopped')
       })
     })
 
@@ -1050,7 +1050,7 @@ scenarios.forEach(scenario => {
         await expect(
           optionAMMPool.connect(buyer)
             .tradeExactAInput(optionsToSell, minStableToBuy, buyerAddress, scenario.initialSigma)
-        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+        ).to.be.revertedWith('Pool: Pool is stopped')
       })
     })
 
@@ -1188,7 +1188,7 @@ scenarios.forEach(scenario => {
         await expect(
           optionAMMPool.connect(buyer)
             .tradeExactBOutput(stableToBuy, maxOptionsToSell, buyerAddress, scenario.initialSigma)
-        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+        ).to.be.revertedWith('Pool: Pool is stopped')
       })
     })
 
@@ -1299,7 +1299,7 @@ scenarios.forEach(scenario => {
         await expect(
           optionAMMPool.connect(buyer)
             .tradeExactBInput(stableToSell, minOptionsToBuy, buyerAddress, scenario.initialSigma)
-        ).to.be.revertedWith('OptionAMMPool: Pool is stopped')
+        ).to.be.revertedWith('Pool: Pool is stopped')
       })
     })
   })
