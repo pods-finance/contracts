@@ -255,7 +255,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     modifier mintWindow() {
         if (_exerciseType == ExerciseType.EUROPEAN) {
             require(!_hasExpired(), "PodOption: option has expired");
-            require(!_isAfterStartOfExerciseWindow(), "PodOption: exercise window started");
+            require(!_isAfterStartOfExerciseWindow(), "PodOption: exercise window has started");
         } else {
             require(!_hasExpired(), "PodOption: option has expired");
         }

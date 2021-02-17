@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const getTxCost = require('../util/getTxCost')
 const forceExpiration = require('../util/forceExpiration')
-const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const forceStartOfExerciseWindow = require('../util/forceStartOfExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const getTimestamp = require('../util/getTimestamp')
 const createConfigurationManager = require('../util/createConfigurationManager')
@@ -147,6 +147,11 @@ scenarios.forEach(scenario => {
       it('should revert if user try to mint after expiration', async () => {
         await forceExpiration(wPodCall)
         await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: option has expired')
+      })
+
+      it.only('should revert if user try to mint after start of exercise window', async () => {
+        await forceStartOfExerciseWindow(wPodCall)
+        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: exercise window has started')
       })
 
       it('should not mint for the zero address behalf', async () => {

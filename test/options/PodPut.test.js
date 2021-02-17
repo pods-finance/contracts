@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const forceExpiration = require('../util/forceExpiration')
-const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const forceStartOfExerciseWindow = require('../util/forceStartOfExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const MockERC20ABI = require('../../abi/ERC20.json')
 const createConfigurationManager = require('../util/createConfigurationManager')
@@ -264,18 +264,18 @@ scenarios.forEach(scenario => {
       })
 
       it('should return right booleans if the option is expired or not', async () => {
+        expect(await podPut.isAfterStartOfExerciseWindow()).to.be.false
         expect(await podPut.hasExpired()).to.be.false
-        expect(await podPut.isAfterEndOfExerciseWindow()).to.be.false
+
+        await forceStartOfExerciseWindow(podPut)
+
+        expect(await podPut.isAfterStartOfExerciseWindow()).to.be.true
+        expect(await podPut.hasExpired()).to.be.false
 
         await forceExpiration(podPut)
 
+        expect(await podPut.isAfterStartOfExerciseWindow()).to.be.true
         expect(await podPut.hasExpired()).to.be.true
-        expect(await podPut.isAfterEndOfExerciseWindow()).to.be.false
-
-        await forceEndOfExerciseWindow(podPut)
-
-        expect(await podPut.hasExpired()).to.be.true
-        expect(await podPut.isAfterEndOfExerciseWindow()).to.be.true
       })
 
       it('should not allow underlyingAsset or strikeAsset decimals higher than 76', async () => {
@@ -429,7 +429,7 @@ scenarios.forEach(scenario => {
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
 
-        await forceEndOfExerciseWindow(podPut)
+        await forceExpiration(podPut)
         await expect(podPut.connect(seller).withdraw()).to.not.be.reverted
 
         const balanceSellerOfStrikeAfter = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -484,7 +484,7 @@ scenarios.forEach(scenario => {
         // Check Contract Strike
         // expect(await podPut.balanceOf(sellerAddress)).to.equal(amountToMint.mul(2))
 
-        await forceEndOfExerciseWindow(podPut)
+        await forceExpiration(podPut)
         await expect(podPut.connect(seller).withdraw()).to.not.be.reverted
         await expect(podPut.connect(buyer).withdraw()).to.not.be.reverted
 
@@ -517,7 +517,7 @@ scenarios.forEach(scenario => {
 
     describe('Exercising options', () => {
       it('should revert if amount of options asked is zero', async () => {
-        await forceExpiration(podPut)
+        await forceStartOfExerciseWindow(podPut)
         await expect(podPut.connect(seller).exercise(ethers.BigNumber.from(0)))
           .to.be.revertedWith('PodPut: you can not exercise zero options')
       })
@@ -559,17 +559,17 @@ scenarios.forEach(scenario => {
         // Approve PodPut spend underlying asset
         await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
 
-        await forceExpiration(podPut)
+        await forceStartOfExerciseWindow(podPut)
         await expect(podPut.connect(seller).exercise(specificScenario.amountToMint)).to.be.revertedWith('transfer amount exceeds balance')
       })
 
-      it('should revert if user try to exercise before expiration', async () => {
+      it('should revert if user try to exercise before start of exercise window', async () => {
         await MintPhase(scenario.amountToMint)
         // Transfer mint to Buyer address => This will happen through Uniswap
         await podPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         // Mint Underlying Asset
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
-        await expect(podPut.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has not expired yet')
+        await expect(podPut.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: window of exercise has not started')
       })
 
       it('should revert if user have underlying approved, but do not have enough options', async () => {
@@ -577,7 +577,7 @@ scenarios.forEach(scenario => {
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
         // Approve PodPut spend underlying asset
         await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
-        await forceExpiration(podPut)
+        await forceStartOfExerciseWindow(podPut)
         await expect(podPut.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('ERC20: burn amount exceeds balance')
       })
 
@@ -588,7 +588,7 @@ scenarios.forEach(scenario => {
         expect(await podPut.balanceOf(buyerAddress)).to.equal(scenario.amountToMint)
         // Approve PodPut spend underlying asset
         await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
-        await forceExpiration(podPut)
+        await forceStartOfExerciseWindow(podPut)
         await expect(podPut.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
       })
 
@@ -600,7 +600,7 @@ scenarios.forEach(scenario => {
         // Mint Underlying Asset
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
 
-        await forceExpiration(podPut)
+        await forceStartOfExerciseWindow(podPut)
         await expect(podPut.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
 
@@ -614,7 +614,7 @@ scenarios.forEach(scenario => {
         // Approve Underlying to be spent by contract
         await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
 
-        await forceExpiration(podPut)
+        await forceStartOfExerciseWindow(podPut)
         await podPut.connect(buyer).exercise(scenario.amountToMint)
 
         const finalBuyerOptionBalance = await podPut.balanceOf(buyerAddress)
@@ -636,7 +636,7 @@ scenarios.forEach(scenario => {
         await podPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         // Mint Underlying Asset
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
-        await forceEndOfExerciseWindow(podPut)
+        await forceExpiration(podPut)
         await expect(podPut.connect(seller).exercise(scenario.amountToMint)).to.be.reverted
       })
     })
@@ -739,12 +739,12 @@ scenarios.forEach(scenario => {
 
     describe('Withdrawing options', () => {
       it('should revert if user try to withdraw before expiration', async () => {
-        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: window of exercise has not ended yet')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: option has not expired yet')
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         // Set Expiration
-        await forceEndOfExerciseWindow(podPut)
+        await forceExpiration(podPut)
 
         await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
       })
@@ -753,7 +753,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
 
-        await forceExpiration(podPut)
+        await forceStartOfExerciseWindow(podPut)
         await ExercisePhase(scenario.amountToMint, seller, another, anotherAddress)
 
         const funds = await podPut.connect(seller).getSellerWithdrawAmounts(sellerAddress)
@@ -775,7 +775,7 @@ scenarios.forEach(scenario => {
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialContractStrikeReserves).to.equal(scenario.strikePrice.add(earnedInterest))
 
-        await forceEndOfExerciseWindow(podPut)
+        await forceExpiration(podPut)
         await podPut.connect(seller).withdraw()
 
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
@@ -811,7 +811,7 @@ scenarios.forEach(scenario => {
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialContractStrikeReserves).to.gt(scenario.strikePrice.add(twoTimesAmountToMint))
 
-        await forceEndOfExerciseWindow(podPut)
+        await forceExpiration(podPut)
         await podPut.connect(seller).withdraw()
 
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
@@ -842,7 +842,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
         await mockStrikeAsset.earnInterest(podPut.address)
 
-        await forceExpiration(podPut)
+        await forceStartOfExerciseWindow(podPut)
         await ExercisePhase(halfAmountMint, seller, another, anotherAddress)
 
         const underlyingDecimals = await mockUnderlyingAsset.decimals()
@@ -850,7 +850,7 @@ scenarios.forEach(scenario => {
         const initialSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
 
-        await forceEndOfExerciseWindow(podPut)
+        await forceExpiration(podPut)
         await expect(podPut.connect(seller).withdraw())
         await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
 

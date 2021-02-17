@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const forceExpiration = require('../util/forceExpiration')
-const forceEndOfExerciseWindow = require('../util/forceEndOfExerciseWindow')
+const forceStartOfExerciseWindow = require('../util/forceStartOfExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const createConfigurationManager = require('../util/createConfigurationManager')
 
