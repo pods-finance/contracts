@@ -119,7 +119,7 @@ contract PodPut is PodOption {
      * @param amountOfOptions The amount option tokens to be issued
      * @param owner Which address will be the owner of the options
      */
-    function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
+    function mint(uint256 amountOfOptions, address owner) external override mintWindow {
         require(amountOfOptions > 0, "PodPut: you can not mint zero options");
 
         uint256 amountToTransfer = _strikeToTransfer(amountOfOptions);
@@ -142,7 +142,7 @@ contract PodPut is PodOption {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-    function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
+    function unmint(uint256 amountOfOptions) external virtual override mintWindow {
         (uint256 strikeToSend, uint256 underlyingToSend, , uint256 underlyingReserves) = _burnOptions(
             amountOfOptions,
             msg.sender

@@ -149,7 +149,7 @@ scenarios.forEach(scenario => {
       it('should not allow trade after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
-        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('OptionAMMPool: option has expired')
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('OptionAMMPool: exercise window has started')
       })
 
       it('should revert when trying to deploy a Pool with strikeAsset decimals > BS_RES_DECIMALS', async () => {
@@ -181,7 +181,7 @@ scenarios.forEach(scenario => {
       it('should not allow add liquidity after option expiration', async () => {
         const expiration = await podPut.expiration()
         await forceExpiration(podPut, parseInt(expiration.toString()))
-        await expect(optionAMMPool.connect(buyer).addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('OptionAMMPool: option has expired')
+        await expect(optionAMMPool.connect(buyer).addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('OptionAMMPool: exercise window has started')
       })
 
       it('should not create a pool with fee pools that are non-contracts', async () => {
@@ -267,6 +267,15 @@ scenarios.forEach(scenario => {
       })
 
       it('should revert if add liquidity when the option price is zero', async () => {
+        const podPut = await createMockOption({
+          underlyingAsset: mockUnderlyingAsset.address,
+          strikeAsset: mockStrikeAsset.address,
+          strikePrice: scenario.strikePrice,
+          configurationManager
+        })
+
+        optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, toBigNumber(0.261e18))
+
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
@@ -324,9 +333,9 @@ scenarios.forEach(scenario => {
           await fn()
         }
 
-        const expiration = await podPut.expiration()
+        const startOfExerciseWindow = await podPut.startOfExerciseWindow()
 
-        const nearExpiration = expiration - 60 * 60 * 2 // 2 hours before expiration
+        const nearExpiration = startOfExerciseWindow - 60 * 60 * 2 // 2 hours before expiration
         await ethers.provider.send('evm_mine', [nearExpiration])
         await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
@@ -707,6 +716,14 @@ scenarios.forEach(scenario => {
 
     describe('Price too low', async () => {
       it('should revert transactions if the option price is too low', async () => {
+        const podPut = await createMockOption({
+          underlyingAsset: mockUnderlyingAsset.address,
+          strikeAsset: mockStrikeAsset.address,
+          strikePrice: scenario.strikePrice,
+          configurationManager
+        })
+
+        optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, toBigNumber(0.161e18))
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
@@ -773,8 +790,8 @@ scenarios.forEach(scenario => {
           await fn()
         }
 
-        const expiration = await podPut.expiration()
-        await forceExpiration(podPut, parseInt((expiration - 60 * 1).toString()))
+        const startOfExerciseWindow = await podPut.startOfExerciseWindow()
+        await forceExpiration(podPut, parseInt((startOfExerciseWindow - 60 * 1).toString()))
         await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
         await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: invalid amountBIn')
