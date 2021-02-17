@@ -123,11 +123,11 @@ scenarios.forEach(scenario => {
 
     describe('Add Liquidity', () => {
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(amm.addLiquidity(0, 10000, userAAddress)).to.be.revertedWith('AMM: you should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(0, 10000, userAAddress)).to.be.revertedWith('AMM: invalid first liquidity')
 
-        await expect(amm.addLiquidity(100000, 0, userAAddress)).to.be.revertedWith('AMM: you should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(100000, 0, userAAddress)).to.be.revertedWith('AMM: invalid first liquidity')
 
-        await expect(amm.addLiquidity(0, 0, userAAddress)).to.be.revertedWith('AMM: you should add both tokens on the first liquidity')
+        await expect(amm.addLiquidity(0, 0, userAAddress)).to.be.revertedWith('AMM: invalid first liquidity')
       })
 
       it('should revert if user ask more assets than the user s balance', async () => {
@@ -205,7 +205,7 @@ scenarios.forEach(scenario => {
 
         const tx = amm.connect(userA).addLiquidity(amountTokenAToMint, amountTokenBToMint, ethers.constants.AddressZero)
 
-        await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+        await expect(tx).to.be.revertedWith('AMM: transfer to zero address')
       })
     })
 
@@ -1778,16 +1778,16 @@ scenarios.forEach(scenario => {
       let tx
 
       tx = amm.tradeExactAInput(1, 0, ethers.constants.AddressZero)
-      await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+      await expect(tx).to.be.revertedWith('AMM: transfer to zero address')
 
       tx = amm.tradeExactAOutput(1, ethers.constants.MaxUint256, ethers.constants.AddressZero)
-      await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+      await expect(tx).to.be.revertedWith('AMM: transfer to zero address')
 
       tx = amm.tradeExactBInput(1, 0, ethers.constants.AddressZero)
-      await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+      await expect(tx).to.be.revertedWith('AMM: transfer to zero address')
 
       tx = amm.tradeExactBOutput(1, ethers.constants.MaxUint256, ethers.constants.AddressZero)
-      await expect(tx).to.be.revertedWith('AMM: transfer to the zero address')
+      await expect(tx).to.be.revertedWith('AMM: transfer to zero address')
     })
 
     it('should not be able to trade inputting zero-amount', async () => {

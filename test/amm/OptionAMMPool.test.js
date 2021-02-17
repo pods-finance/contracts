@@ -87,7 +87,7 @@ scenarios.forEach(scenario => {
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory'),
-        ethers.getContractFactory('OptionAMMPool'),
+        ethers.getContractFactory('OptionAMMPool')
       ])
 
       ;[mockWETH, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
@@ -162,7 +162,7 @@ scenarios.forEach(scenario => {
         })
 
         optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockTokenB.address, scenario.initialSigma)
-        await expect(optionAMMPool).to.be.revertedWith('OptionAMMPool: not supported strikePrice unit')
+        await expect(optionAMMPool).to.be.revertedWith('OptionAMMPool: invalid strikePrice unit')
       })
 
       it('should revert when trying to deploy a Pool with tokenB decimals > BS_RES_DECIMALS', async () => {
@@ -174,7 +174,7 @@ scenarios.forEach(scenario => {
         })
         const mockTokenB = await MockERC20.deploy('TEST', 'TEST', '20')
         optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockTokenB.address, scenario.initialSigma)
-        await expect(optionAMMPool).to.be.revertedWith('OptionAMMPool: not supported tokenB unit')
+        await expect(optionAMMPool).to.be.revertedWith('OptionAMMPool: invalid tokenB unit')
       })
 
       it('should not allow add liquidity after option expiration', async () => {
@@ -204,7 +204,7 @@ scenarios.forEach(scenario => {
 
     describe('Add Liquidity', () => {
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(optionAMMPool.addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('AMM: you should add both tokens on the first liquidity')
+        await expect(optionAMMPool.addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('AMM: invalid first liquidity')
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
@@ -315,7 +315,7 @@ scenarios.forEach(scenario => {
         await ethers.provider.send('evm_mine', [nearExpiration])
         await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
-        await expect(optionAMMPool.addLiquidity(1000, 10000, lpAddress)).to.be.revertedWith('AMM: can not add liquidity when option price is zero')
+        await expect(optionAMMPool.addLiquidity(1000, 10000, lpAddress)).to.be.revertedWith('AMM: option price zero')
       })
     })
 
@@ -762,13 +762,13 @@ scenarios.forEach(scenario => {
         await forceExpiration(podPut, parseInt((expiration - 60 * 1).toString()))
         await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
-        await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+        await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: invalid amountBIn')
 
-        await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+        await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: invalid amountBOut')
 
-        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: invalid amountAIn')
 
-        await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: can not trade when option price is zero')
+        await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: invalid amountAOut')
       })
     })
 
