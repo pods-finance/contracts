@@ -110,7 +110,7 @@ contract WPodPut is PodPut {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-    function unmint(uint256 amountOfOptions) external override beforeExpiration {
+    function unmint(uint256 amountOfOptions) external override mintWindow {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "WPodPut: you do not have minted options");
 

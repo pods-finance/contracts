@@ -49,7 +49,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     uint8 private _strikePriceDecimals;
 
     uint256 private _expiration;
-    uint256 private _endOfExerciseWindow;
+    uint256 private _startOfExerciseWindow;
 
     /**
      * @notice Reserve share balance
@@ -100,7 +100,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         _optionType = optionType;
         _exerciseType = exerciseType;
         _expiration = expiration;
-        _endOfExerciseWindow = expiration.add(exerciseWindowSize);
+        _startOfExerciseWindow = expiration.sub(exerciseWindowSize);
 
         _underlyingAsset = underlyingAsset;
         _underlyingAssetDecimals = tryDecimals(IERC20(_underlyingAsset));
@@ -149,8 +149,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     /**
      * @notice Checks if the options exercise window has closed.
      */
-    function isAfterEndOfExerciseWindow() external override view returns (bool) {
-        return _isAfterEndOfExerciseWindow();
+    function isAfterStartOfExerciseWindow() external override view returns (bool) {
+        return _isAfterStartOfExerciseWindow();
     }
 
     /**
@@ -228,8 +228,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     /**
      * @notice The UNIX timestamp that represents the end of exercise window
      */
-    function endOfExerciseWindow() public override view returns (uint256) {
-        return _endOfExerciseWindow;
+    function startOfExerciseWindow() public override view returns (uint256) {
+        return _startOfExerciseWindow;
     }
 
     /**
@@ -249,11 +249,16 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
-     * @dev Modifier for functions which are only allowed to be executed
-     * BEFORE series expiration.
+     * @dev Modifier with the conditions to be able to mint/unmint
+     * based on option exerciseType.
      */
-    modifier beforeExpiration() {
-        require(!_hasExpired(), "PodOption: option has expired");
+    modifier mintWindow() {
+        if (_exerciseType == ExerciseType.EUROPEAN) {
+            require(!_hasExpired(), "PodOption: option has expired");
+            require(!_isAfterStartOfExerciseWindow(), "PodOption: exercise window started");
+        } else {
+            require(!_hasExpired(), "PodOption: option has expired");
+        }
         _;
     }
 
@@ -263,8 +268,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      */
     modifier exerciseWindow() {
         if (_exerciseType == ExerciseType.EUROPEAN) {
-            require(_hasExpired(), "PodOption: option has not expired yet");
-            require(!_isAfterEndOfExerciseWindow(), "PodOption: window of exercise has closed already");
+            require(!_hasExpired(), "PodOption: option has expired");
+            require(_isAfterStartOfExerciseWindow(), "PodOption: window of exercise has not started");
         } else {
             require(!_hasExpired(), "PodOption: option has expired");
         }
@@ -276,11 +281,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * based on exerciseType.
      */
     modifier withdrawWindow() {
-        if (_exerciseType == ExerciseType.EUROPEAN) {
-            require(_isAfterEndOfExerciseWindow(), "PodOption: window of exercise has not ended yet");
-        } else {
-            require(_hasExpired(), "PodOption: option has not expired yet");
-        }
+        require(_hasExpired(), "PodOption: option has not expired yet");
         _;
     }
 
@@ -292,10 +293,10 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
-     * @dev Internal function to check window exercise ended
+     * @dev Internal function to check window exercise started
      */
-    function _isAfterEndOfExerciseWindow() internal view returns (bool) {
-        return block.timestamp >= _endOfExerciseWindow;
+    function _isAfterStartOfExerciseWindow() internal view returns (bool) {
+        return block.timestamp >= _startOfExerciseWindow;
     }
 
     /**

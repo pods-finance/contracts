@@ -122,7 +122,7 @@ contract PodCall is PodOption {
      * @param amountOfOptions The amount option tokens to be issued
      * @param owner Which address will be the owner of the options
      */
-    function mint(uint256 amountOfOptions, address owner) external override beforeExpiration {
+    function mint(uint256 amountOfOptions, address owner) external override mintWindow {
         require(amountOfOptions > 0, "PodCall: you can not mint zero options");
         _mintOptions(amountOfOptions, amountOfOptions, owner);
 
@@ -143,7 +143,7 @@ contract PodCall is PodOption {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-    function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
+    function unmint(uint256 amountOfOptions) external virtual override mintWindow {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "PodCall: you do not have minted options");
 

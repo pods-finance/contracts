@@ -38,6 +38,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     /**
      * @notice store globally accessed configurations
      */
+    IPodOption public option;
+
+    // External Contracts
+    /**
+     * @notice store globally accessed configurations
+     */
     IConfigurationManager public configurationManager;
 
     /**
@@ -95,14 +101,16 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         feePoolA = IFeePool(_feePoolA);
         feePoolB = IFeePool(_feePoolB);
         configurationManager = IConfigurationManager(_configurationManager);
+        option = IPodOption(_optionAddress);
     }
 
     /**
      * Modifier for functions which are only allowed to be executed
-     * BEFORE series expiration.
+     * BEFORE start of exercise window.
      */
-    modifier beforeExpiration() {
-        require(!_hasExpired(), "OptionAMMPool: option has expired");
+    modifier beforeStartOfExerciseWindow() {
+        require(!option.hasExpired(), "OptionAMMPool: option has expired");
+        require(!option.isAfterStartOfExerciseWindow(), "OptionAMMPool: exercise window started");
         _;
     }
 
@@ -119,7 +127,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external override beforeExpiration capped(tokenB(), amountOfB) {
+    ) external override beforeStartOfExerciseWindow capped(tokenB(), amountOfB) {
         _emergencyStopCheck();
         _addLiquidity(amountOfA, amountOfB, owner);
     }
@@ -154,7 +162,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 minAmountBOut,
         address owner,
         uint256 sigmaInitialGuess
-    ) external override beforeExpiration returns (uint256) {
+    ) external override beforeStartOfExerciseWindow returns (uint256) {
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
@@ -179,7 +187,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 maxAmountBIn,
         address owner,
         uint256 sigmaInitialGuess
-    ) external override beforeExpiration returns (uint256) {
+    ) external override beforeStartOfExerciseWindow returns (uint256) {
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
@@ -203,7 +211,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 minAmountAOut,
         address owner,
         uint256 sigmaInitialGuess
-    ) external override beforeExpiration returns (uint256) {
+    ) external override beforeStartOfExerciseWindow returns (uint256) {
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
@@ -228,7 +236,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 maxAmountAIn,
         address owner,
         uint256 sigmaInitialGuess
-    ) external override beforeExpiration returns (uint256) {
+    ) external override beforeStartOfExerciseWindow returns (uint256) {
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
@@ -360,13 +368,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
     function getSpotPrice(address asset, uint256 decimalsOutput) external override view returns (uint256 spotPrice) {
         return _getSpotPrice(asset, decimalsOutput);
-    }
-
-    /**
-     * @dev Internal function to check expiration
-     */
-    function _hasExpired() internal view returns (bool) {
-        return block.timestamp >= priceProperties.expiration;
     }
 
     function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
