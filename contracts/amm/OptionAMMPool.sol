@@ -301,7 +301,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
     /**
      * @notice getOptionTradeDetailsExactBInput view function that simulates a trade, in order the preview
-     * the amountBIn, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * the amountAOut, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
      * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
      *
      * @param exactAmountBIn amount of token B that will by transfer from msg.sender to the pool
