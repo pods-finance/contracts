@@ -841,7 +841,7 @@ scenarios.forEach(scenario => {
         await podPut.deployed()
 
         await podPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
-        await forceEndOfExerciseWindow(podPut)
+        await forceExpiration(podPut)
 
         await mockModERC20.mock.transfer.returns(false)
         await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: could not transfer strike tokens back to caller')
