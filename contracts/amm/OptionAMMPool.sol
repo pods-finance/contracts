@@ -670,12 +670,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         uint256 amountOfQuotesAToAdd = _userDepositSnapshot
             .tokenABalance
-            .mul(10**FIMP_PRECISION)
+            .mul(10**FIMP_DECIMALS)
             .div(_userDepositSnapshot.fImp)
             .sub(currentQuotesA);
         uint256 amountOfQuotesBToAdd = _userDepositSnapshot
             .tokenBBalance
-            .mul(10**FIMP_PRECISION)
+            .mul(10**FIMP_DECIMALS)
             .div(_userDepositSnapshot.fImp)
             .sub(currentQuotesB);
 
@@ -688,10 +688,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
         uint256 amountOfQuotesAToRemove = currentQuotesA.sub(
-            _userDepositSnapshot.tokenABalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
+            _userDepositSnapshot.tokenABalance.mul(10**FIMP_DECIMALS).div(_userDepositSnapshot.fImp)
         );
         uint256 amountOfQuotesBToRemove = currentQuotesB.sub(
-            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
+            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_DECIMALS).div(_userDepositSnapshot.fImp)
         );
 
         if (amountOfQuotesAToRemove > 0) {

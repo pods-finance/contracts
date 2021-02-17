@@ -66,7 +66,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     /**
      * @notice The Fimp's precision (aka number of decimals)
      */
-    uint256 public constant FIMP_PRECISION = 27;
+    uint256 public constant FIMP_DECIMALS = 27;
 
     /**
      * @notice The percent's precision
@@ -304,8 +304,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
             );
 
             // Update Deamortized Balance of the pool for each token;
-            deamortizedTokenABalance = deamortizedTokenABalance.add(amountOfA.mul(10**FIMP_PRECISION).div(fImpOpening));
-            deamortizedTokenBBalance = deamortizedTokenBBalance.add(amountOfB.mul(10**FIMP_PRECISION).div(fImpOpening));
+            deamortizedTokenABalance = deamortizedTokenABalance.add(amountOfA.mul(10**FIMP_DECIMALS).div(fImpOpening));
+            deamortizedTokenBBalance = deamortizedTokenBBalance.add(amountOfB.mul(10**FIMP_DECIMALS).div(fImpOpening));
         }
 
         // Update the User Balances for each token and with the Pool Factor previously calculated
@@ -364,10 +364,10 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         // Update deamortized balance
         deamortizedTokenABalance = deamortizedTokenABalance.sub(
-            originalBalanceAToReduce.mul(10**FIMP_PRECISION).div(userFImp)
+            originalBalanceAToReduce.mul(10**FIMP_DECIMALS).div(userFImp)
         );
         deamortizedTokenBBalance = deamortizedTokenBBalance.sub(
-            originalBalanceBToReduce.mul(10**FIMP_PRECISION).div(userFImp)
+            originalBalanceBToReduce.mul(10**FIMP_DECIMALS).div(userFImp)
         );
 
         // Calculate amount to send
@@ -546,7 +546,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 denominator;
         {
             numerator = _totalTokenA.mul(_ABPrice).div(10**uint256(_tokenADecimals)).add(_totalTokenB).mul(
-                10**FIMP_PRECISION
+                10**FIMP_DECIMALS
             );
         }
         {
@@ -616,8 +616,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 totalTokenB,
         uint256 fImpOpening
     ) internal view returns (Mult memory multipliers) {
-        uint256 totalTokenAWithPrecision = totalTokenA.mul(10**FIMP_PRECISION);
-        uint256 totalTokenBWithPrecision = totalTokenB.mul(10**FIMP_PRECISION);
+        uint256 totalTokenAWithPrecision = totalTokenA.mul(10**FIMP_DECIMALS);
+        uint256 totalTokenBWithPrecision = totalTokenB.mul(10**FIMP_DECIMALS);
         uint256 mAA = 0;
         uint256 mBB = 0;
         uint256 mAB = 0;
