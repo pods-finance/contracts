@@ -73,27 +73,27 @@ contract WPodCall is PodCall {
     event Received(address indexed sender, uint256 value);
 
     constructor(
-        string memory _name,
-        string memory _symbol,
-        IPodOption.ExerciseType _exerciseType,
-        address _underlyingAsset,
-        address _strikeAsset,
-        uint256 _strikePrice,
-        uint256 _expiration,
-        uint256 _exerciseWindowSize,
-        IConfigurationManager _configurationManager
+        string memory name,
+        string memory symbol,
+        IPodOption.ExerciseType exerciseType,
+        address underlyingAsset,
+        address strikeAsset,
+        uint256 strikePrice,
+        uint256 expiration,
+        uint256 exerciseWindowSize,
+        IConfigurationManager configurationManager
     )
         public
         PodCall(
-            _name,
-            _symbol,
-            _exerciseType,
-            _underlyingAsset,
-            _strikeAsset,
-            _strikePrice,
-            _expiration,
-            _exerciseWindowSize,
-            _configurationManager
+            name,
+            symbol,
+            exerciseType,
+            underlyingAsset,
+            strikeAsset,
+            strikePrice,
+            expiration,
+            exerciseWindowSize,
+            configurationManager
         )
     {} // solhint-disable-line no-empty-blocks
 
