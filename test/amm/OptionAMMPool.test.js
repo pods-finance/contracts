@@ -14,6 +14,7 @@ const getTimestamp = require('../util/getTimestamp')
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
 const EXERCISE_TYPE_EUROPEAN = 0
+const EXERCISE_TYPE_AMERICAN = 1
 
 const scenarios = [
   {
@@ -193,6 +194,20 @@ scenarios.forEach(scenario => {
           configurationManager.address
         )
         await expect(tx).to.be.revertedWith('OptionAMMPool: Invalid fee pools')
+      })
+
+      it('should not create a pool with American options', async () => {
+        const americanOption = await createMockOption({
+          underlyingAsset: mockUnderlyingAsset.address,
+          strikeAsset: mockStrikeAsset.address,
+          strikePrice: scenario.strikePrice,
+          exerciseType: EXERCISE_TYPE_AMERICAN,
+          exerciseWindow: 0,
+          configurationManager
+        })
+
+        const tx = createNewPool(deployerAddress, optionAMMFactory, americanOption.address, mockStrikeAsset.address, scenario.initialSigma)
+        await expect(tx).to.be.revertedWith('OptionAMMPool: invalid exercise type')
       })
     })
 
