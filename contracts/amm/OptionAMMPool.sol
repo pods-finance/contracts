@@ -38,12 +38,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     /**
      * @notice store globally accessed configurations
      */
-    IPodOption public option;
-
-    // External Contracts
-    /**
-     * @notice store globally accessed configurations
-     */
     IConfigurationManager public configurationManager;
 
     /**
@@ -59,6 +53,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     // Option Info
     struct PriceProperties {
         uint256 expiration;
+        uint256 startOfExerciseWindow;
         uint256 strikePrice;
         address underlyingAsset;
         IPodOption.OptionType optionType;
@@ -91,6 +86,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         priceProperties.sigmaInitialGuess = _initialSigma;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
         priceProperties.expiration = IPodOption(_optionAddress).expiration();
+        priceProperties.startOfExerciseWindow = IPodOption(_optionAddress).startOfExerciseWindow();
         priceProperties.optionType = IPodOption(_optionAddress).optionType();
 
         uint256 strikePrice = IPodOption(_optionAddress).strikePrice();
@@ -105,17 +101,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         feePoolA = IFeePool(_feePoolA);
         feePoolB = IFeePool(_feePoolB);
         configurationManager = IConfigurationManager(_configurationManager);
-        option = IPodOption(_optionAddress);
-    }
-
-    /**
-     * Modifier for functions which are only allowed to be executed
-     * BEFORE start of exercise window.
-     */
-    modifier beforeStartOfExerciseWindow() {
-        require(!option.hasExpired(), "OptionAMMPool: option has expired");
-        require(!option.isAfterStartOfExerciseWindow(), "OptionAMMPool: exercise window started");
-        _;
     }
 
     /**
@@ -131,7 +116,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external override beforeStartOfExerciseWindow capped(tokenB(), amountOfB) {
+    ) external override capped(tokenB(), amountOfB) {
+        _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         _addLiquidity(amountOfA, amountOfB, owner);
     }
@@ -166,7 +152,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 minAmountBOut,
         address owner,
         uint256 sigmaInitialGuess
-    ) external override beforeStartOfExerciseWindow returns (uint256) {
+    ) external override returns (uint256) {
+        _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
@@ -191,7 +178,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 maxAmountBIn,
         address owner,
         uint256 sigmaInitialGuess
-    ) external override beforeStartOfExerciseWindow returns (uint256) {
+    ) external override returns (uint256) {
+        _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
@@ -215,7 +203,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 minAmountAOut,
         address owner,
         uint256 sigmaInitialGuess
-    ) external override beforeStartOfExerciseWindow returns (uint256) {
+    ) external override returns (uint256) {
+        _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
@@ -240,7 +229,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 maxAmountAIn,
         address owner,
         uint256 sigmaInitialGuess
-    ) external override beforeStartOfExerciseWindow returns (uint256) {
+    ) external override returns (uint256) {
+        _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
         return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
@@ -403,6 +393,14 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         }
         uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals())));
         return newABPriceWithDecimals;
+    }
+
+    /**
+     * @dev Check for functions which are only allowed to be executed
+     * BEFORE start of exercise window.
+     */
+    function _beforeStartOfExerciseWindow() internal view {
+        require(block.timestamp < priceProperties.startOfExerciseWindow, "OptionAMMPool: exercise window has started");
     }
 
     /**
