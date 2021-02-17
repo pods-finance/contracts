@@ -82,6 +82,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         IConfigurationManager _configurationManager
     ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
         require(Address.isContract(_feePoolA) && Address.isContract(_feePoolB), "OptionAMMPool: Invalid fee pools");
+        require(
+            IPodOption(_optionAddress).exerciseType() == IPodOption.ExerciseType.EUROPEAN,
+            "OptionAMMPool: invalid exercise type"
+        );
 
         priceProperties.currentSigma = _initialSigma;
         priceProperties.sigmaInitialGuess = _initialSigma;

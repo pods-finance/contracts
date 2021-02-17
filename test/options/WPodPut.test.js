@@ -6,7 +6,11 @@ const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const getTimestamp = require('../util/getTimestamp')
 const createConfigurationManager = require('../util/createConfigurationManager')
 
-const EXERCISE_TYPE_EUROPEAN = 0 // European
+const MockERC20ABI = require('../../abi/ERC20.json')
+const { deployMockContract } = waffle
+
+const EXERCISE_TYPE_EUROPEAN = 0
+const EXERCISE_TYPE_AMERICAN = 1
 
 const scenarios = [
   {
@@ -49,6 +53,9 @@ scenarios.forEach(scenario => {
     let buyer
     let buyerAddress
     let snapshotId
+    let WPodPut
+    let wPodPutAmerican
+    let MockInterestBearingERC20
 
     before(async function () {
       [deployer, seller, buyer, another] = await ethers.getSigners()
@@ -57,19 +64,18 @@ scenarios.forEach(scenario => {
       buyerAddress = await buyer.getAddress()
       anotherAddress = await another.getAddress()
 
-      const MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
+      MockInterestBearingERC20 = await ethers.getContractFactory('MintableInterestBearing')
       const MockWETH = await ethers.getContractFactory('WETH')
 
       mockUnderlyingAsset = await MockWETH.deploy()
       mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
 
       configurationManager = await createConfigurationManager()
+      WPodPut = await ethers.getContractFactory('WPodPut')
     })
 
     beforeEach(async function () {
       snapshotId = await takeSnapshot()
-      const WPodPut = await ethers.getContractFactory('WPodPut')
-
       wPodPut = await WPodPut.deploy(
         scenario.name,
         scenario.name,
@@ -262,6 +268,39 @@ scenarios.forEach(scenario => {
         await expect(wPodPut.connect(buyer).exerciseEth({ value: 0 }))
           .to.be.revertedWith('WPodPut: you can not exercise zero options')
       })
+      it('should revert if transfer fail from ERC20', async () => {
+        // deploy option with mock function
+        const mockModERC20 = await deployMockContract(deployer, MockERC20ABI)
+
+        await mockModERC20.mock.decimals.returns(6)
+        await mockModERC20.mock.transferFrom.returns(true)
+        await mockModERC20.mock.transfer.returns(true)
+
+        const specificScenario = {
+          strikePrice: ethers.BigNumber.from(1500e6.toString()),
+          amountToMint: ethers.BigNumber.from(1e18.toString())
+        }
+
+        wPodPut = await WPodPut.deploy(
+          'pod:BRL:USDC:0.21',
+          'pod:BRL:USDC:0.21',
+          EXERCISE_TYPE_EUROPEAN,
+          mockUnderlyingAsset.address,
+          mockModERC20.address,
+          specificScenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          24 * 60 * 60, // 24h
+          configurationManager.address
+        )
+        await wPodPut.deployed()
+
+        await wPodPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
+
+        await forceExpiration(wPodPut)
+
+        await mockModERC20.mock.transfer.returns(false)
+        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('WPodPut: could not transfer strike tokens to caller')
+      })
     })
 
     describe('Unminting options', () => {
@@ -362,6 +401,37 @@ scenarios.forEach(scenario => {
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(wPodPut)
         await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: option has expired')
+      })
+      it('should revert if transfer fail from ERC20', async () => {
+        const mockModERC20 = await deployMockContract(deployer, MockERC20ABI)
+
+        await mockModERC20.mock.decimals.returns(6)
+        await mockModERC20.mock.transferFrom.returns(true)
+        await mockModERC20.mock.transfer.returns(true)
+        await mockModERC20.mock.balanceOf.returns(1000)
+
+        const specificScenario = {
+          strikePrice: ethers.BigNumber.from(1500e6.toString()),
+          amountToMint: ethers.BigNumber.from(1e18.toString())
+        }
+
+        wPodPut = await WPodPut.deploy(
+          'pod:BRL:USDC:0.21',
+          'pod:BRL:USDC:0.21',
+          EXERCISE_TYPE_EUROPEAN,
+          mockUnderlyingAsset.address,
+          mockModERC20.address,
+          specificScenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          24 * 60 * 60, // 24h
+          configurationManager.address
+        )
+        await wPodPut.deployed()
+
+        await wPodPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
+
+        await mockModERC20.mock.transfer.returns(false)
+        await expect(wPodPut.connect(seller).unmint(specificScenario.amountToMint)).to.be.revertedWith('WPodPut: could not transfer strike tokens back to caller')
       })
     })
 
@@ -502,6 +572,96 @@ scenarios.forEach(scenario => {
         const initialBuyerStriked = await wPodPut.strikeToTransfer(scenario.amountToMint)
 
         expect(totalEarnedBuyer).to.gte(initialBuyerStriked)
+      })
+      it('Withdraw - should revert if transfer fail from ERC20', async () => {
+        // deploy option with mock function
+        const mockModERC20 = await deployMockContract(deployer, MockERC20ABI)
+
+        await mockModERC20.mock.decimals.returns(18)
+        await mockModERC20.mock.transferFrom.returns(true)
+        await mockModERC20.mock.transfer.returns(true)
+
+        const specificScenario = {
+          strikePrice: ethers.BigNumber.from(1500e6.toString()),
+          amountToMint: ethers.BigNumber.from(1).mul(ethers.BigNumber.from(10).pow(18))
+        }
+
+        await mockModERC20.mock.balanceOf.returns(specificScenario.strikePrice)
+
+        wPodPut = await WPodPut.deploy(
+          'pod:BRL:USDC:0.21',
+          'pod:BRL:USDC:0.21',
+          EXERCISE_TYPE_AMERICAN,
+          mockUnderlyingAsset.address,
+          mockModERC20.address,
+          specificScenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          0, // 24h
+          configurationManager.address
+        )
+
+        await wPodPut.deployed()
+        await wPodPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
+
+        await mockModERC20.mock.transfer.returns(false)
+        await forceExpiration(wPodPut)
+        await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('WPodPut: could not transfer strike tokens back to caller')
+      })
+    })
+    describe('American Options', () => {
+      beforeEach(async function () {
+        snapshotId = await takeSnapshot()
+
+        wPodPutAmerican = await WPodPut.deploy(
+          scenario.name,
+          scenario.name,
+          EXERCISE_TYPE_AMERICAN,
+          mockUnderlyingAsset.address,
+          mockStrikeAsset.address,
+          scenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          0, // 24h
+          configurationManager.address
+        )
+      })
+
+      it('should unmint american options partially', async () => {
+        await mockStrikeAsset.connect(seller).approve(wPodPutAmerican.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
+
+        await wPodPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
+        await wPodPutAmerican.connect(seller).exerciseEth({ value: scenario.amountToMint.div(2) })
+
+        await expect(wPodPutAmerican.connect(seller).unmint(scenario.amountToMint.div(2))).to.not.be.reverted
+      })
+
+      it('should revert if unmint amount is too low - underlying', async () => {
+        mockStrikeAsset = await MockInterestBearingERC20.deploy('test token', 'TEST', 19)
+
+        const specificScenario = {
+          amountToMint: ethers.BigNumber.from(10).pow(18),
+          strikePrice: ethers.BigNumber.from(10).pow(19)
+        }
+        wPodPutAmerican = await WPodPut.deploy(
+          scenario.name,
+          scenario.name,
+          EXERCISE_TYPE_AMERICAN,
+          mockUnderlyingAsset.address,
+          mockStrikeAsset.address,
+          specificScenario.strikePrice,
+          await getTimestamp() + 24 * 60 * 60 * 7,
+          0, // 24h
+          configurationManager.address
+        )
+
+        await mockStrikeAsset.connect(seller).approve(wPodPutAmerican.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(seller).mint(specificScenario.strikePrice.mul(2))
+
+        await wPodPutAmerican.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
+
+        await wPodPutAmerican.connect(seller).exerciseEth({ value: '1' })
+
+        await expect(wPodPutAmerican.connect(seller).unmint('1')).to.be.revertedWith('WPodPut: amount of options is too low')
       })
     })
   })
