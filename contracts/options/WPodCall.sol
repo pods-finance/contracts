@@ -122,7 +122,7 @@ contract WPodCall is PodCall {
      *
      * @param owner Which address will be the owner of the options
      */
-    function mintEth(address owner) external payable beforeExpiration {
+    function mintEth(address owner) external payable mintWindow {
         uint256 amountOfOptions = msg.value;
         require(amountOfOptions > 0, "WPodCall: you can not mint zero options");
         _mintOptions(amountOfOptions, amountOfOptions, owner);
@@ -142,7 +142,7 @@ contract WPodCall is PodCall {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-    function unmint(uint256 amountOfOptions) external virtual override beforeExpiration {
+    function unmint(uint256 amountOfOptions) external virtual override mintWindow {
         uint256 ownerShares = shares[msg.sender];
         require(ownerShares > 0, "WPodCall: you do not have minted options");
 
