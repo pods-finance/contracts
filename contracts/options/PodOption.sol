@@ -33,15 +33,15 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      */
     uint256 public constant MIN_EXERCISE_WINDOW_SIZE = 86400;
 
-    OptionType private _optionType;
-    ExerciseType private _exerciseType;
-    IConfigurationManager private _configurationManager;
+    OptionType private immutable _optionType;
+    ExerciseType private immutable _exerciseType;
+    IConfigurationManager private immutable _configurationManager;
 
-    address private _underlyingAsset;
-    address private _strikeAsset;
-    uint256 private _strikePrice;
-    uint256 private _expiration;
-    uint256 private _endOfExerciseWindow;
+    address private immutable _underlyingAsset;
+    address private immutable _strikeAsset;
+    uint256 private immutable _strikePrice;
+    uint256 private immutable _expiration;
+    uint256 private immutable _endOfExerciseWindow;
 
     /**
      * @notice Reserve share balance
@@ -97,8 +97,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         _underlyingAsset = underlyingAsset;
         _strikeAsset = strikeAsset;
 
-        uint8 underlyingDecimals = tryDecimals(IERC20(_underlyingAsset));
-        tryDecimals(IERC20(_strikeAsset));
+        uint8 underlyingDecimals = tryDecimals(IERC20(underlyingAsset));
+        tryDecimals(IERC20(strikeAsset));
 
         _strikePrice = strikePrice;
         _setupDecimals(underlyingDecimals);

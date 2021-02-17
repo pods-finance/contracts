@@ -9,7 +9,7 @@ import "../interfaces/ISigma.sol";
 
 contract Sigma is ISigma {
     using SafeMath for uint256;
-    IBlackScholes private _blackScholes;
+    IBlackScholes private immutable _blackScholes;
     uint256 public constant ACCEPTABLE_ERROR = 10; // < 3%
 
     struct Boundaries {

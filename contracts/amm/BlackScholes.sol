@@ -19,7 +19,7 @@ contract BlackScholes is IBlackScholes {
     using FixidityLib for int256;
     using LogarithmLib for int256;
 
-    INormalDistribution public normalDistribution;
+    INormalDistribution public immutable normalDistribution;
 
     uint8 public constant decimals = 18; // solhint-disable-line const-name-snakecase
     uint8 public constant precisionDecimals = 24; // solhint-disable-line const-name-snakecase

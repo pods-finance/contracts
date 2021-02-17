@@ -22,7 +22,7 @@ contract FeePool is IFeePool, Ownable {
 
     uint256 private _feeValue;
     uint8 private _feeDecimals;
-    address private _token;
+    address private immutable _token;
 
     event FeeUpdated(address token, uint256 newFee, uint8 newFeeDecimals);
     event FeeWithdrawn(address token, address to, uint256 amountWithdrawn, uint256 sharesBurned);
