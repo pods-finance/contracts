@@ -276,7 +276,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         if (hasNoLiquidity) {
             // In the first liquidity, is necessary add both tokens
             bool bothTokensHigherThanZero = amountOfA > 0 && amountOfB > 0;
-            require(bothTokensHigherThanZero, "AMM: you should add both tokens on the first liquidity");
+            require(bothTokensHigherThanZero, "AMM: invalid first liquidity");
 
             fImpOpening = INITIAL_FIMP;
 
@@ -285,7 +285,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         } else {
             // Get ABPrice
             uint256 ABPrice = _getABPrice();
-            require(ABPrice > 0, "AMM: can not add liquidity when option price is zero");
+            require(ABPrice > 0, "AMM: option price zero");
 
             // Calculate the Pool's Value Factor (Fimp)
             fImpOpening = _getFImpOpening(
@@ -319,15 +319,9 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _onAddLiquidity(usersSnapshot[owner], owner);
 
         // Update Total Balance of the pool for each token
-        require(
-            IERC20(_tokenA).transferFrom(msg.sender, address(this), amountOfA),
-            "AMM: could not transfer option tokens from caller"
-        );
+        require(IERC20(_tokenA).transferFrom(msg.sender, address(this), amountOfA), "AMM: transfer error/tokenA");
 
-        require(
-            IERC20(_tokenB).transferFrom(msg.sender, address(this), amountOfB),
-            "AMM: could not transfer stable tokens from caller"
-        );
+        require(IERC20(_tokenB).transferFrom(msg.sender, address(this), amountOfB), "AMM: transfer error/tokenB");
 
         emit AddLiquidity(msg.sender, owner, amountOfA, amountOfB);
     }
@@ -341,7 +335,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
      */
     function _removeLiquidity(uint256 percentA, uint256 percentB) internal {
         (uint256 userTokenABalance, uint256 userTokenBBalance, uint256 userFImp) = _getUserDepositSnapshot(msg.sender);
-        require(percentA <= 100 && percentB <= 100, "AMM: forbidden removal percent");
+        require(percentA <= 100 && percentB <= 100, "AMM: forbidden percent");
 
         uint256 originalBalanceAToReduce = percentA.mul(userTokenABalance).div(PERCENT_PRECISION);
         uint256 originalBalanceBToReduce = percentB.mul(userTokenBBalance).div(PERCENT_PRECISION);
@@ -390,11 +384,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         // Transfers / Update
         if (amountToSendA > 0) {
-            require(IERC20(_tokenA).transfer(msg.sender, amountToSendA), "AMM: could not transfer token A from caller");
+            require(IERC20(_tokenA).transfer(msg.sender, amountToSendA), "AMM: transfer error/tokenA");
         }
 
         if (amountToSendB > 0) {
-            require(IERC20(_tokenB).transfer(msg.sender, amountToSendB), "AMM: could not transfer token B from caller");
+            require(IERC20(_tokenB).transfer(msg.sender, amountToSendB), "AMM: transfer error/tokenB");
         }
 
         emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
@@ -419,17 +413,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactAInput(exactAmountAIn);
         uint256 amountBOut = tradeDetails.amount;
-        require(amountBOut > 0, "AMM: can not trade when option price is zero");
+        require(amountBOut > 0, "AMM: invalid amountBOut");
 
         _onTradeExactAInput(tradeDetails);
 
-        require(amountBOut >= minAmountBOut, "AMM: amount tokens out lower than minimum asked");
-        require(
-            IERC20(_tokenA).transferFrom(msg.sender, address(this), exactAmountAIn),
-            "AMM: could not transfer token A from caller"
-        );
+        require(amountBOut >= minAmountBOut, "AMM: slippage requirement");
+        require(IERC20(_tokenA).transferFrom(msg.sender, address(this), exactAmountAIn), "AMM: transfer error/tokenA");
 
-        require(IERC20(_tokenB).transfer(owner, amountBOut), "AMM: could not transfer token B to caller");
+        require(IERC20(_tokenB).transfer(owner, amountBOut), "AMM: transfer error/tokenB");
 
         emit TradeExactAInput(msg.sender, owner, exactAmountAIn, amountBOut);
         return amountBOut;
@@ -455,17 +446,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactAOutput(exactAmountAOut);
         uint256 amountBIn = tradeDetails.amount;
-        require(amountBIn > 0, "AMM: can not trade when option price is zero");
+        require(amountBIn > 0, "AMM: invalid amountBIn");
 
         _onTradeExactAOutput(tradeDetails);
 
-        require(amountBIn <= maxAmountBIn, "AMM: amount tokens out higher than maximum asked");
-        require(
-            IERC20(_tokenB).transferFrom(msg.sender, address(this), amountBIn),
-            "AMM: could not transfer token A from caller"
-        );
+        require(amountBIn <= maxAmountBIn, "AMM: slippage requirement");
+        require(IERC20(_tokenB).transferFrom(msg.sender, address(this), amountBIn), "AMM: transfer error/tokenB");
 
-        require(IERC20(_tokenA).transfer(owner, exactAmountAOut), "AMM: could not transfer token B to caller");
+        require(IERC20(_tokenA).transfer(owner, exactAmountAOut), "AMM: transfer error/tokenA");
 
         emit TradeExactAOutput(msg.sender, owner, amountBIn, exactAmountAOut);
         return amountBIn;
@@ -491,17 +479,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactBInput(exactAmountBIn);
         uint256 amountAOut = tradeDetails.amount;
-        require(amountAOut > 0, "AMM: can not trade when option price is zero");
+        require(amountAOut > 0, "AMM: invalid amountAOut");
 
         _onTradeExactBInput(tradeDetails);
 
-        require(amountAOut >= minAmountAOut, "AMM: amount tokens out lower than minimum asked");
-        require(
-            IERC20(_tokenB).transferFrom(msg.sender, address(this), exactAmountBIn),
-            "AMM: could not transfer token A from caller"
-        );
+        require(amountAOut >= minAmountAOut, "AMM: slippage requirement");
+        require(IERC20(_tokenB).transferFrom(msg.sender, address(this), exactAmountBIn), "AMM: transfer error/tokenB");
 
-        require(IERC20(_tokenA).transfer(owner, amountAOut), "AMM: could not transfer token B to caller");
+        require(IERC20(_tokenA).transfer(owner, amountAOut), "AMM: transfer error/tokenA");
 
         emit TradeExactBInput(msg.sender, owner, exactAmountBIn, amountAOut);
         return amountAOut;
@@ -527,17 +512,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _isRecipient(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactBOutput(exactAmountBOut);
         uint256 amountAIn = tradeDetails.amount;
-        require(amountAIn > 0, "AMM: can not trade when option price is zero");
+        require(amountAIn > 0, "AMM: invalid amountAIn");
 
         _onTradeExactBInput(tradeDetails);
 
-        require(amountAIn <= maxAmountAIn, "AMM: amount tokens out higher than maximum asked");
-        require(
-            IERC20(_tokenA).transferFrom(msg.sender, address(this), amountAIn),
-            "AMM: could not transfer token A from caller"
-        );
+        require(amountAIn <= maxAmountAIn, "AMM: maximum asked");
+        require(IERC20(_tokenA).transferFrom(msg.sender, address(this), amountAIn), "AMM: transfer error/tokenA");
 
-        require(IERC20(_tokenB).transfer(owner, exactAmountBOut), "AMM: could not transfer token B to caller");
+        require(IERC20(_tokenB).transfer(owner, exactAmountBOut), "AMM: transfer error/tokenB");
 
         emit TradeExactBOutput(msg.sender, owner, amountAIn, exactAmountBOut);
         return amountAIn;
@@ -803,7 +785,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     function _onAddLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
 
     function _isRecipient(address recipient) private pure {
-        require(recipient != address(0), "AMM: transfer to the zero address");
+        require(recipient != address(0), "AMM: transfer to zero address");
     }
 
     function _isValidInput(uint256 input) private pure {
