@@ -11,11 +11,14 @@ import "../interfaces/IConfigurationManager.sol";
  * @notice Allows contracts to read protocol-wide configuration modules
  */
 contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
+    /* solhint-disable private-vars-leading-underscore */
     bytes32 private constant EMERGENCY_STOP = "EMERGENCY_STOP";
     bytes32 private constant PRICING_METHOD = "PRICING_METHOD";
     bytes32 private constant IMPLIED_VOLATILITY = "IMPLIED_VOLATILITY";
     bytes32 private constant PRICE_PROVIDER = "PRICE_PROVIDER";
     bytes32 private constant CAP_PROVIDER = "CAP_PROVIDER";
+
+    /* solhint-enable private-vars-leading-underscore */
 
     function setEmergencyStop(address emergencyStop) external override onlyOwner {
         _setModule(EMERGENCY_STOP, emergencyStop);

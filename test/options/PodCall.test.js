@@ -481,11 +481,11 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodCall: you do not have minted options')
+        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodOption: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodCall: not enough minted options')
+        await expect(podCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
       })
       it('should revert if transfer fail from ERC20 - underlying', async () => {
         // deploy option with mock function
@@ -606,7 +606,7 @@ scenarios.forEach(scenario => {
       it('should revert if user try to withdraw without balance after expiration', async () => {
         await forceExpiration(podCall)
 
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset', async () => {
@@ -639,7 +639,7 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractUnderlyingReserves).to.equal(0)
         // Cant withdraw two times in a row
-        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodCall: you do not have balance to withdraw')
+        await expect(podCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should withdraw Underlying Asset balance plus interest earned proportional (Ma-Mb-Wa-Wb)', async () => {

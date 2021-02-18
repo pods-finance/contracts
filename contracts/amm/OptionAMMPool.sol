@@ -76,10 +76,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         address _feePoolB,
         IConfigurationManager _configurationManager
     ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
-        require(Address.isContract(_feePoolA) && Address.isContract(_feePoolB), "OptionAMMPool: Invalid fee pools");
+        require(Address.isContract(_feePoolA) && Address.isContract(_feePoolB), "Pool: Invalid fee pools");
         require(
             IPodOption(_optionAddress).exerciseType() == IPodOption.ExerciseType.EUROPEAN,
-            "OptionAMMPool: invalid exercise type"
+            "Pool: invalid exercise type"
         );
 
         priceProperties.currentSigma = _initialSigma;
@@ -92,8 +92,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 strikePrice = IPodOption(_optionAddress).strikePrice();
         uint256 strikePriceDecimals = IPodOption(_optionAddress).strikePriceDecimals();
 
-        require(strikePriceDecimals <= BS_RES_DECIMALS, "OptionAMMPool: invalid strikePrice unit");
-        require(tokenBDecimals() <= BS_RES_DECIMALS, "OptionAMMPool: invalid tokenB unit");
+        require(strikePriceDecimals <= BS_RES_DECIMALS, "Pool: invalid strikePrice unit");
+        require(tokenBDecimals() <= BS_RES_DECIMALS, "Pool: invalid tokenB unit");
         uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
@@ -400,7 +400,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
      * BEFORE start of exercise window.
      */
     function _beforeStartOfExerciseWindow() internal view {
-        require(block.timestamp < priceProperties.startOfExerciseWindow, "OptionAMMPool: exercise window has started");
+        require(block.timestamp < priceProperties.startOfExerciseWindow, "Pool: exercise window has started");
     }
 
     /**
@@ -673,12 +673,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         uint256 amountOfQuotesAToAdd = _userDepositSnapshot
             .tokenABalance
-            .mul(10**FIMP_PRECISION)
+            .mul(10**FIMP_DECIMALS)
             .div(_userDepositSnapshot.fImp)
             .sub(currentQuotesA);
         uint256 amountOfQuotesBToAdd = _userDepositSnapshot
             .tokenBBalance
-            .mul(10**FIMP_PRECISION)
+            .mul(10**FIMP_DECIMALS)
             .div(_userDepositSnapshot.fImp)
             .sub(currentQuotesB);
 
@@ -691,10 +691,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
 
         uint256 amountOfQuotesAToRemove = currentQuotesA.sub(
-            _userDepositSnapshot.tokenABalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
+            _userDepositSnapshot.tokenABalance.mul(10**FIMP_DECIMALS).div(_userDepositSnapshot.fImp)
         );
         uint256 amountOfQuotesBToRemove = currentQuotesB.sub(
-            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_PRECISION).div(_userDepositSnapshot.fImp)
+            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_DECIMALS).div(_userDepositSnapshot.fImp)
         );
 
         if (amountOfQuotesAToRemove > 0) {
@@ -711,12 +711,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         require(
             IERC20(tokenB()).transfer(address(feePoolA), tradeDetails.feesTokenA),
-            "OptionAMMPool: transfer error - feePoolA"
+            "Pool: transfer error - feePoolA"
         );
 
         require(
             IERC20(tokenB()).transfer(address(feePoolB), tradeDetails.feesTokenB),
-            "OptionAMMPool: transfer error - feePoolB"
+            "Pool: transfer error - feePoolB"
         );
     }
 
@@ -742,7 +742,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
             !emergencyStop.isStopped(configurationManager.getPriceProvider()) &&
                 !emergencyStop.isStopped(configurationManager.getPricingMethod()) &&
                 !emergencyStop.isStopped(configurationManager.getImpliedVolatility()),
-            "OptionAMMPool: Pool is stopped"
+            "Pool: Pool is stopped"
         );
     }
 }

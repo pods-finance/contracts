@@ -66,7 +66,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
     /**
      * @notice The Fimp's precision (aka number of decimals)
      */
-    uint256 public constant FIMP_PRECISION = 27;
+    uint256 public constant FIMP_DECIMALS = 27;
 
     /**
      * @notice The percent's precision
@@ -304,8 +304,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
             );
 
             // Update Deamortized Balance of the pool for each token;
-            deamortizedTokenABalance = deamortizedTokenABalance.add(amountOfA.mul(10**FIMP_PRECISION).div(fImpOpening));
-            deamortizedTokenBBalance = deamortizedTokenBBalance.add(amountOfB.mul(10**FIMP_PRECISION).div(fImpOpening));
+            deamortizedTokenABalance = deamortizedTokenABalance.add(amountOfA.mul(10**FIMP_DECIMALS).div(fImpOpening));
+            deamortizedTokenBBalance = deamortizedTokenBBalance.add(amountOfB.mul(10**FIMP_DECIMALS).div(fImpOpening));
         }
 
         // Update the User Balances for each token and with the Pool Factor previously calculated
@@ -334,7 +334,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @param percentB proportion of the exposition of the original tokenB that want to be removed
      */
     function _removeLiquidity(uint256 percentA, uint256 percentB) internal {
-        (uint256 userTokenABalance, uint256 userTokenBBalance, ) = _getUserDepositSnapshot(msg.sender);
+        (uint256 userTokenABalance, uint256 userTokenBBalance, uint256 userFImp) = _getUserDepositSnapshot(msg.sender);
         require(percentA <= 100 && percentB <= 100, "AMM: forbidden percent");
 
         uint256 originalBalanceAToReduce = percentA.mul(userTokenABalance).div(PERCENT_PRECISION);
@@ -364,21 +364,21 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         // Update deamortized balance
         deamortizedTokenABalance = deamortizedTokenABalance.sub(
-            originalBalanceAToReduce.mul(10**FIMP_PRECISION).div(usersSnapshot[msg.sender].fImp)
+            originalBalanceAToReduce.mul(10**FIMP_DECIMALS).div(userFImp)
         );
         deamortizedTokenBBalance = deamortizedTokenBBalance.sub(
-            originalBalanceBToReduce.mul(10**FIMP_PRECISION).div(usersSnapshot[msg.sender].fImp)
+            originalBalanceBToReduce.mul(10**FIMP_DECIMALS).div(userFImp)
         );
 
         // Calculate amount to send
         uint256 amountToSendA = originalBalanceAToReduce
             .mul(multipliers.AA)
             .add(originalBalanceBToReduce.mul(multipliers.BA))
-            .div(usersSnapshot[msg.sender].fImp);
+            .div(userFImp);
         uint256 amountToSendB = originalBalanceBToReduce
             .mul(multipliers.BB)
             .add(originalBalanceAToReduce.mul(multipliers.AB))
-            .div(usersSnapshot[msg.sender].fImp);
+            .div(userFImp);
 
         _onRemoveLiquidity(usersSnapshot[msg.sender], msg.sender);
 
@@ -541,12 +541,12 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 _ABPrice,
         uint256 _deamortizedTokenABalance,
         uint256 _deamortizedTokenBBalance
-    ) internal view returns (uint256 fImpOpening) {
+    ) internal view returns (uint256) {
         uint256 numerator;
         uint256 denominator;
         {
             numerator = _totalTokenA.mul(_ABPrice).div(10**uint256(_tokenADecimals)).add(_totalTokenB).mul(
-                10**FIMP_PRECISION
+                10**FIMP_DECIMALS
             );
         }
         {
@@ -555,8 +555,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
             );
         }
 
-        fImpOpening = numerator.div(denominator);
-        return fImpOpening;
+        return numerator.div(denominator);
     }
 
     /**
@@ -568,8 +567,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
     function _getPoolBalances() internal view returns (uint256 totalTokenA, uint256 totalTokenB) {
         totalTokenA = IERC20(_tokenA).balanceOf(address(this));
         totalTokenB = IERC20(_tokenB).balanceOf(address(this));
-
-        return (totalTokenA, totalTokenB);
     }
 
     /**
@@ -594,8 +591,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
         tokenAOriginalBalance = usersSnapshot[user].tokenABalance;
         tokenBOriginalBalance = usersSnapshot[user].tokenBBalance;
         fImpOriginal = usersSnapshot[user].fImp;
-
-        return (tokenAOriginalBalance, tokenBOriginalBalance, fImpOriginal);
     }
 
     /**
@@ -616,8 +611,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 totalTokenB,
         uint256 fImpOpening
     ) internal view returns (Mult memory multipliers) {
-        uint256 totalTokenAWithPrecision = totalTokenA.mul(10**FIMP_PRECISION);
-        uint256 totalTokenBWithPrecision = totalTokenB.mul(10**FIMP_PRECISION);
+        uint256 totalTokenAWithPrecision = totalTokenA.mul(10**FIMP_DECIMALS);
+        uint256 totalTokenBWithPrecision = totalTokenB.mul(10**FIMP_DECIMALS);
         uint256 mAA = 0;
         uint256 mBB = 0;
         uint256 mAB = 0;
@@ -643,7 +638,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
         }
 
         multipliers = Mult(mAA, mAB, mBA, mBB);
-        return multipliers;
     }
 
     /**
@@ -691,7 +685,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
             fImpOriginal,
             multipliers
         );
-        return (withdrawAmountA, withdrawAmountB);
     }
 
     /**
@@ -751,8 +744,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
                 amountOfB
             );
         }
-
-        return (userToStoreTokenA, userToStoreTokenB);
     }
 
     /**

@@ -33,70 +33,70 @@ contract OptionFactory {
 
     constructor(
         address wethAddress,
-        address _PodPutBuilder,
-        address _WPodPutBuilder,
-        address _PodCallBuilder,
-        address _WPodCallBuilder,
-        address _configurationManager
+        address PodPutBuilder,
+        address WPodPutBuilder,
+        address PodCallBuilder,
+        address WPodCallBuilder,
+        address ConfigurationManager
     ) public {
         WETH_ADDRESS = wethAddress;
-        configurationManager = IConfigurationManager(_configurationManager);
-        podPutBuilder = IOptionBuilder(_PodPutBuilder);
-        wPodPutBuilder = IOptionBuilder(_WPodPutBuilder);
-        podCallBuilder = IOptionBuilder(_PodCallBuilder);
-        wPodCallBuilder = IOptionBuilder(_WPodCallBuilder);
+        configurationManager = IConfigurationManager(ConfigurationManager);
+        podPutBuilder = IOptionBuilder(PodPutBuilder);
+        wPodPutBuilder = IOptionBuilder(WPodPutBuilder);
+        podCallBuilder = IOptionBuilder(PodCallBuilder);
+        wPodCallBuilder = IOptionBuilder(WPodCallBuilder);
     }
 
     /**
      * @notice Creates a new Option Series
-     * @param _name The option token name. Eg. "Pods Put WBTC-USDC 5000 2020-02-23"
-     * @param _symbol The option token symbol. Eg. "podWBTC:20AA"
-     * @param _optionType The option type. Eg. "0 for Put / 1 for Calls"
-     * @param _exerciseType The option exercise type. Eg. "0 for European, 1 for American"
-     * @param _underlyingAsset The underlying asset. Eg. "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-     * @param _strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
-     * @param _strikePrice The option strike price including decimals. e.g. 5000000000
-     * @param _expiration The Expiration Option date in UNIX timestamp. e.g. 1600178324
-     * @param _exerciseWindowSize The Expiration Window Size duration in UNIX timestamp. E.g 24*60*60 (24h)
+     * @param name The option token name. Eg. "Pods Put WBTC-USDC 5000 2020-02-23"
+     * @param symbol The option token symbol. Eg. "podWBTC:20AA"
+     * @param optionType The option type. Eg. "0 for Put / 1 for Calls"
+     * @param exerciseType The option exercise type. Eg. "0 for European, 1 for American"
+     * @param underlyingAsset The underlying asset. Eg. "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+     * @param strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+     * @param strikePrice The option strike price including decimals. e.g. 5000000000
+     * @param expiration The Expiration Option date in UNIX timestamp. e.g. 1600178324
+     * @param exerciseWindowSize The Expiration Window Size duration in UNIX timestamp. E.g 24*60*60 (24h)
      * @return option The address for the newly created option
      */
     function createOption(
-        string memory _name,
-        string memory _symbol,
-        IPodOption.OptionType _optionType,
-        IPodOption.ExerciseType _exerciseType,
-        address _underlyingAsset,
-        address _strikeAsset,
-        uint256 _strikePrice,
-        uint256 _expiration,
-        uint256 _exerciseWindowSize
-    ) public returns (address option) {
+        string memory name,
+        string memory symbol,
+        IPodOption.OptionType optionType,
+        IPodOption.ExerciseType exerciseType,
+        address underlyingAsset,
+        address strikeAsset,
+        uint256 strikePrice,
+        uint256 expiration,
+        uint256 exerciseWindowSize
+    ) external returns (address) {
         IOptionBuilder builder;
 
-        if (_optionType == IPodOption.OptionType.PUT) {
-            if (_underlyingAsset == WETH_ADDRESS) {
+        if (optionType == IPodOption.OptionType.PUT) {
+            if (underlyingAsset == WETH_ADDRESS) {
                 builder = wPodPutBuilder;
             } else {
                 builder = podPutBuilder;
             }
         } else {
-            if (_underlyingAsset == WETH_ADDRESS) {
+            if (underlyingAsset == WETH_ADDRESS) {
                 builder = wPodCallBuilder;
             } else {
                 builder = podCallBuilder;
             }
         }
 
-        option = address(
+        address option = address(
             builder.buildOption(
-                _name,
-                _symbol,
-                _exerciseType,
-                _underlyingAsset,
-                _strikeAsset,
-                _strikePrice,
-                _expiration,
-                _exerciseWindowSize,
+                name,
+                symbol,
+                exerciseType,
+                underlyingAsset,
+                strikeAsset,
+                strikePrice,
+                expiration,
+                exerciseWindowSize,
                 configurationManager
             )
         );
@@ -106,14 +106,15 @@ contract OptionFactory {
         emit OptionCreated(
             msg.sender,
             option,
-            _optionType,
-            _exerciseType,
-            _underlyingAsset,
-            _strikeAsset,
-            _strikePrice,
-            _expiration,
-            _exerciseWindowSize
+            optionType,
+            exerciseType,
+            underlyingAsset,
+            strikeAsset,
+            strikePrice,
+            expiration,
+            exerciseWindowSize
         );
+
         return option;
     }
 }

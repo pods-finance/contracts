@@ -255,11 +255,13 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(wPodCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('WPodCall: you do not have minted options')
+        await expect(
+          wPodCall.connect(seller).unmint(scenario.amountToMint)
+        ).to.be.revertedWith('PodOption: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(wPodCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('WPodCall: not enough minted options')
+        await expect(wPodCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
       })
       it('should unmint, destroy sender option, reduce its balance and send underlying back - European', async () => {
         await MintPhase(scenario.amountToMint)
@@ -330,7 +332,7 @@ scenarios.forEach(scenario => {
       it('should not unmint if there is not enough options', async () => {
         await MintPhase(scenario.amountToMint)
         await expect(wPodCall.connect(seller).unmint(scenario.amountToMint.add(1)))
-          .to.be.revertedWith('WPodCall: not enough minted options')
+          .to.be.revertedWith('PodOption: not enough minted options')
       })
     })
 
@@ -341,7 +343,7 @@ scenarios.forEach(scenario => {
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         await forceExpiration(wPodCall)
-        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('WPodCall: you do not have balance to withdraw')
+        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should seller withdraw Underlying Asset balance', async () => {
@@ -379,7 +381,7 @@ scenarios.forEach(scenario => {
         expect(finalContractOptionSupply).to.equal(scenario.amountToMint)
         expect(finalContractUnderlyingReserves).to.equal(0)
         // Trying to re-withdraw
-        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('WPodCall: you do not have balance to withdraw')
+        await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should withdraw Strike Asset balance plus interest earned proportional (Ma-Mb-Wa-Wb)', async () => {

@@ -73,31 +73,29 @@ import "./PodOption.sol";
  *
  */
 contract PodCall is PodOption {
-    using SafeMath for uint8;
-
     constructor(
-        string memory _name,
-        string memory _symbol,
-        IPodOption.ExerciseType _exerciseType,
-        address _underlyingAsset,
-        address _strikeAsset,
-        uint256 _strikePrice,
-        uint256 _expiration,
-        uint256 _exerciseWindowSize,
-        IConfigurationManager _configurationManager
+        string memory name,
+        string memory symbol,
+        IPodOption.ExerciseType exerciseType,
+        address underlyingAsset,
+        address strikeAsset,
+        uint256 strikePrice,
+        uint256 expiration,
+        uint256 exerciseWindowSize,
+        IConfigurationManager configurationManager
     )
         public
         PodOption(
-            _name,
-            _symbol,
+            name,
+            symbol,
             IPodOption.OptionType.CALL,
-            _exerciseType,
-            _underlyingAsset,
-            _strikeAsset,
-            _strikePrice,
-            _expiration,
-            _exerciseWindowSize,
-            _configurationManager
+            exerciseType,
+            underlyingAsset,
+            strikeAsset,
+            strikePrice,
+            expiration,
+            exerciseWindowSize,
+            configurationManager
         )
     {} // solhint-disable-line no-empty-blocks
 
@@ -144,34 +142,19 @@ contract PodCall is PodOption {
      * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external virtual override mintWindow {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "PodCall: you do not have minted options");
-
-        uint256 ownerMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= ownerMintedOptions, "PodCall: not enough minted options");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
-
-        uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
-
+        (uint256 strikeToSend, uint256 underlyingToSend, uint256 strikeReserves, ) = _burnOptions(
+            amountOfOptions,
+            msg.sender
+        );
         require(underlyingToSend > 0, "PodCall: amount of options is too low");
 
-        shares[msg.sender] = shares[msg.sender].sub(sharesToDeduce);
-        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
-        totalShares = totalShares.sub(sharesToDeduce);
-
-        _burn(msg.sender, amountOfOptions);
-
-        // Unlocks the strike token
+        // Sends underlying asset
         require(
             IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),
             "PodCall: could not transfer underlying tokens back to caller"
         );
 
+        // Sends the strike asset if the option was exercised
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "PodCall: amount of options is too low");
             require(
@@ -179,6 +162,7 @@ contract PodCall is PodOption {
                 "PodCall: could not transfer strike tokens back to caller"
             );
         }
+
         emit Unmint(msg.sender, amountOfOptions);
     }
 
@@ -233,17 +217,7 @@ contract PodCall is PodOption {
      * the exercised assets or a combination of exercised and underlying asset tokens.
      */
     function withdraw() external virtual override withdrawWindow {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "PodCall: you do not have balance to withdraw");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
-
-        totalShares = totalShares.sub(ownerShares);
-        shares[msg.sender] = 0;
+        (uint256 strikeToSend, uint256 underlyingToSend) = _withdraw();
 
         require(
             IERC20(underlyingAsset()).transfer(msg.sender, underlyingToSend),

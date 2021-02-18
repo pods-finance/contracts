@@ -69,36 +69,32 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  */
 contract WPodPut is PodPut {
-    IWETH public weth;
-
     event Received(address indexed sender, uint256 value);
 
     constructor(
-        string memory _name,
-        string memory _symbol,
-        IPodOption.ExerciseType _exerciseType,
-        address _underlyingAsset,
-        address _strikeAsset,
-        uint256 _strikePrice,
-        uint256 _expiration,
-        uint256 _exerciseWindowSize,
-        IConfigurationManager _configurationManager
+        string memory name,
+        string memory symbol,
+        IPodOption.ExerciseType exerciseType,
+        address underlyingAsset,
+        address strikeAsset,
+        uint256 strikePrice,
+        uint256 expiration,
+        uint256 exerciseWindowSize,
+        IConfigurationManager configurationManager
     )
         public
         PodPut(
-            _name,
-            _symbol,
-            _exerciseType,
-            _underlyingAsset,
-            _strikeAsset,
-            _strikePrice,
-            _expiration,
-            _exerciseWindowSize,
-            _configurationManager
+            name,
+            symbol,
+            exerciseType,
+            underlyingAsset,
+            strikeAsset,
+            strikePrice,
+            expiration,
+            exerciseWindowSize,
+            configurationManager
         )
-    {
-        weth = IWETH(underlyingAsset());
-    }
+    {} // solhint-disable-line no-empty-blocks
 
     /**
      * @notice Unlocks collateral by burning option tokens.
@@ -111,37 +107,25 @@ contract WPodPut is PodPut {
      * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external override mintWindow {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "WPodPut: you do not have minted options");
-
-        uint256 userMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= userMintedOptions, "WPodPut: not enough minted options");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 ownerSharesToReduce = ownerShares.mul(amountOfOptions).div(userMintedOptions);
-        uint256 strikeToSend = ownerSharesToReduce.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = ownerSharesToReduce.mul(underlyingReserves).div(totalShares);
+        (uint256 strikeToSend, uint256 underlyingToSend, , uint256 underlyingReserves) = _burnOptions(
+            amountOfOptions,
+            msg.sender
+        );
         require(strikeToSend > 0, "WPodPut: amount of options is too low");
 
-        shares[msg.sender] = shares[msg.sender].sub(ownerSharesToReduce);
-        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
-        totalShares = totalShares.sub(ownerSharesToReduce);
-
-        _burn(msg.sender, amountOfOptions);
-
-        // Unlocks the strike token
+        // Sends strike asset
         require(
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens back to caller"
         );
 
+        // Sends the underlying asset if the option was exercised
         if (underlyingReserves > 0) {
             require(underlyingToSend > 0, "WPodPut: amount of options is too low");
-            weth.withdraw(underlyingToSend);
+            IWETH(underlyingAsset()).withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }
+
         emit Unmint(msg.sender, amountOfOptions);
     }
 
@@ -172,12 +156,14 @@ contract WPodPut is PodPut {
         _burn(msg.sender, amountOfOptions);
 
         // Retrieve the underlying asset from caller
-        weth.deposit{ value: msg.value }();
+        IWETH(underlyingAsset()).deposit{ value: msg.value }();
+
         // Releases the strike asset to caller, completing the exchange
         require(
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens to caller"
         );
+
         emit Exercise(msg.sender, amountOfOptions);
     }
 
@@ -189,31 +175,23 @@ contract WPodPut is PodPut {
      * the exercised assets or a combination of exercised and strike asset tokens.
      */
     function withdraw() external override withdrawWindow {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "WPodPut: you do not have balance to withdraw");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
-
-        shares[msg.sender] = shares[msg.sender].sub(ownerShares);
-        totalShares = totalShares.sub(ownerShares);
+        (uint256 strikeToSend, uint256 underlyingToSend) = _withdraw();
 
         require(
             IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
             "WPodPut: could not transfer strike tokens back to caller"
         );
-        if (underlyingReserves > 0) {
-            weth.withdraw(underlyingToSend);
+
+        if (underlyingToSend > 0) {
+            IWETH(underlyingAsset()).withdraw(underlyingToSend);
             Address.sendValue(msg.sender, underlyingToSend);
         }
+
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
     }
 
     receive() external payable {
-        require(msg.sender == address(weth), "WPodPut: Only deposits from WETH are allowed");
+        require(msg.sender == this.underlyingAsset(), "WPodPut: Only deposits from WETH are allowed");
         emit Received(msg.sender, msg.value);
     }
 }
