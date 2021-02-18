@@ -75,7 +75,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         require(Address.isContract(underlyingAsset), "PodOption: underlying asset is not a contract");
         require(Address.isContract(strikeAsset), "PodOption: strike asset is not a contract");
         require(underlyingAsset != strikeAsset, "PodOption: underlying asset and strike asset must differ");
-        require(expiration > block.timestamp, "PodOption: expiration should be in a future timestamp");
+        require(expiration > block.timestamp, "PodOption: expiration should be in the future");
         require(strikePrice > 0, "PodOption: strike price must be greater than zero");
 
         if (exerciseType == ExerciseType.EUROPEAN) {

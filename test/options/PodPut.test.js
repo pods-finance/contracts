@@ -216,7 +216,7 @@ scenarios.forEach(scenario => {
           24 * 60 * 60, // 24h
           configurationManager.address
         )
-        await expect(podPut).to.revertedWith('PodOption: expiration should be in a future timestamp')
+        await expect(podPut).to.revertedWith('PodOption: expiration should be in the future')
       })
 
       it('should not allow strikePrice lesser than or equal 0', async () => {
