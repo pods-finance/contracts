@@ -143,6 +143,7 @@ contract BlackScholes is IBlackScholes {
 
     /**
      * @dev Square root
+     * @dev See the following for reference https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method
      *
      * @param x The value
      * @return y The square root of x
