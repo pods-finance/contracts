@@ -28,28 +28,20 @@ import "../interfaces/IConfigurationManager.sol";
  * different behave and should be override accordingly.
  */
 abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption {
-    using SafeMath for uint8;
-
     /**
      * @dev Minimum allowed exercise window: 24 hours
      */
     uint256 public constant MIN_EXERCISE_WINDOW_SIZE = 86400;
 
-    OptionType private _optionType;
-    ExerciseType private _exerciseType;
-    IConfigurationManager private _configurationManager;
+    OptionType private immutable _optionType;
+    ExerciseType private immutable _exerciseType;
+    IConfigurationManager private immutable _configurationManager;
 
-    address private _underlyingAsset;
-    uint8 private _underlyingAssetDecimals;
-
-    address private _strikeAsset;
-    uint8 private _strikeAssetDecimals;
-
-    uint256 private _strikePrice;
-    uint8 private _strikePriceDecimals;
-
-    uint256 private _expiration;
-    uint256 private _startOfExerciseWindow;
+    address private immutable _underlyingAsset;
+    address private immutable _strikeAsset;
+    uint256 private immutable _strikePrice;
+    uint256 private immutable _expiration;
+    uint256 private immutable _startOfExerciseWindow;
 
     /**
      * @notice Reserve share balance
@@ -103,14 +95,99 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         _startOfExerciseWindow = expiration.sub(exerciseWindowSize);
 
         _underlyingAsset = underlyingAsset;
-        _underlyingAssetDecimals = tryDecimals(IERC20(_underlyingAsset));
-        _setupDecimals(_underlyingAssetDecimals);
-
         _strikeAsset = strikeAsset;
-        _strikeAssetDecimals = tryDecimals(IERC20(_strikeAsset));
+
+        uint8 underlyingDecimals = tryDecimals(IERC20(underlyingAsset));
+        tryDecimals(IERC20(strikeAsset));
 
         _strikePrice = strikePrice;
-        _strikePriceDecimals = _strikeAssetDecimals;
+        _setupDecimals(underlyingDecimals);
+    }
+
+    /**
+     * @notice Checks if the options series has already expired.
+     */
+    function hasExpired() external override view returns (bool) {
+        return _hasExpired();
+    }
+
+    /**
+     * @notice External function to calculate the amount of strike asset
+     * needed given the option amount
+     */
+    function strikeToTransfer(uint256 amountOfOptions) external override view returns (uint256) {
+        return _strikeToTransfer(amountOfOptions);
+    }
+
+    /**
+     * @notice Checks if the options exercise window has opened.
+     */
+    function isAfterStartOfExerciseWindow() external override view returns (bool) {
+        return _isAfterStartOfExerciseWindow();
+    }
+
+    /**
+     * @notice The option type. eg: CALL, PUT
+     */
+    function optionType() external override view returns (OptionType) {
+        return _optionType;
+    }
+
+    /**
+     * @notice Exercise type. eg: AMERICAN, EUROPEAN
+     */
+    function exerciseType() external override view returns (ExerciseType) {
+        return _exerciseType;
+    }
+
+    /**
+     * @notice The sell price of each unit of underlyingAsset; given in units
+     * of strikeAsset, e.g. 0.99 USDC
+     */
+    function strikePrice() external override view returns (uint256) {
+        return _strikePrice;
+    }
+
+    /**
+     * @notice The number of decimals of strikePrice
+     */
+    function strikePriceDecimals() external override view returns (uint8) {
+        return ERC20(_strikeAsset).decimals();
+    }
+
+    /**
+     * @notice The UNIX timestamp that represents the series expiration
+     */
+    function expiration() external override view returns (uint256) {
+        return _expiration;
+    }
+
+    /**
+     * @notice How many decimals does the strike token have? E.g.: 18
+     */
+    function strikeAssetDecimals() external override view returns (uint8) {
+        return ERC20(_strikeAsset).decimals();
+    }
+
+    /**
+     * @notice The asset used as the strike asset, e.g. USDC, DAI
+     */
+    function strikeAsset() public override view returns (address) {
+        return _strikeAsset;
+    }
+
+    /**
+     * @notice How many decimals does the underlying token have? E.g.: 18
+     */
+    function underlyingAssetDecimals() public override view returns (uint8) {
+        return ERC20(_underlyingAsset).decimals();
+    }
+
+    /**
+     * @notice The asset used as the underlying token, e.g. WETH, WBTC, UNI
+     */
+    function underlyingAsset() public override view returns (address) {
+        return _underlyingAsset;
     }
 
     /**
@@ -123,110 +200,21 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @return underlyingAmount current amount of underlying the user will receive. It may change until maturity
      */
     function getSellerWithdrawAmounts(address owner)
-        external
+        public
         override
         view
         returns (uint256 strikeAmount, uint256 underlyingAmount)
     {
         uint256 ownerShares = shares[owner];
 
-        uint256 strikeReserves = IERC20(_strikeAsset).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(_underlyingAsset).balanceOf(address(this));
-
-        strikeAmount = ownerShares.mul(strikeReserves).div(totalShares);
-        underlyingAmount = ownerShares.mul(underlyingReserves).div(totalShares);
+        strikeAmount = ownerShares.mul(strikeReserves()).div(totalShares);
+        underlyingAmount = ownerShares.mul(underlyingReserves()).div(totalShares);
 
         return (strikeAmount, underlyingAmount);
     }
 
     /**
-     * @notice Checks if the options series has already expired.
-     */
-    function hasExpired() external override view returns (bool) {
-        return _hasExpired();
-    }
-
-    /**
-     * @notice Checks if the options exercise window has closed.
-     */
-    function isAfterStartOfExerciseWindow() external override view returns (bool) {
-        return _isAfterStartOfExerciseWindow();
-    }
-
-    /**
-     * @notice External function to calculate the amount of strike asset
-     * needed given the option amount
-     */
-    function strikeToTransfer(uint256 amountOfOptions) external override view returns (uint256) {
-        return _strikeToTransfer(amountOfOptions);
-    }
-
-    /**
-     * @notice The option type. eg: CALL, PUT
-     */
-    function optionType() public override view returns (OptionType) {
-        return _optionType;
-    }
-
-    /**
-     * @notice Exercise type. eg: AMERICAN, EUROPEAN
-     */
-    function exerciseType() public override view returns (ExerciseType) {
-        return _exerciseType;
-    }
-
-    /**
-     * @notice The asset used as the underlying token, e.g. WETH, WBTC, UNI
-     */
-    function underlyingAsset() public override view returns (address) {
-        return _underlyingAsset;
-    }
-
-    /**
-     * @notice How many decimals does the underlying token have? E.g.: 18
-     */
-    function underlyingAssetDecimals() public override view returns (uint8) {
-        return _underlyingAssetDecimals;
-    }
-
-    /**
-     * @notice The asset used as the strike asset, e.g. USDC, DAI
-     */
-    function strikeAsset() public override view returns (address) {
-        return _strikeAsset;
-    }
-
-    /**
-     * @notice How many decimals does the strike token have? E.g.: 18
-     */
-    function strikeAssetDecimals() public override view returns (uint8) {
-        return _strikeAssetDecimals;
-    }
-
-    /**
-     * @notice The sell price of each unit of underlyingAsset; given in units
-     * of strikeAsset, e.g. 0.99 USDC
-     */
-    function strikePrice() public override view returns (uint256) {
-        return _strikePrice;
-    }
-
-    /**
-     * @notice The number of decimals of strikePrice
-     */
-    function strikePriceDecimals() public override view returns (uint8) {
-        return _strikePriceDecimals;
-    }
-
-    /**
-     * @notice The UNIX timestamp that represents the series expiration
-     */
-    function expiration() public override view returns (uint256) {
-        return _expiration;
-    }
-
-    /**
-     * @notice The UNIX timestamp that represents the end of exercise window
+     * @notice The UNIX timestamp that represents the start of exercise window
      */
     function startOfExerciseWindow() public override view returns (uint256) {
         return _startOfExerciseWindow;
@@ -304,7 +292,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @param amountOfOptions Intended amount to options to mint
      */
     function _strikeToTransfer(uint256 amountOfOptions) internal view returns (uint256) {
-        uint256 strikeAmount = amountOfOptions.mul(_strikePrice).div(10**uint256(_underlyingAssetDecimals));
+        uint256 strikeAmount = amountOfOptions.mul(_strikePrice).div(10**uint256(underlyingAssetDecimals()));
         require(strikeAmount > 0, "PodOption: amount of options is too low");
         return strikeAmount;
     }
@@ -313,19 +301,19 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @dev Calculate number of reserve shares based on the amount of collateral locked by the minter
      */
     function _calculatedShares(uint256 amountOfCollateral) internal view returns (uint256 ownerShares) {
-        uint256 _strikeReserves = strikeReserves();
-        uint256 _underlyingReserves = underlyingReserves();
+        uint256 currentStrikeReserves = strikeReserves();
+        uint256 currentUnderlyingReserves = underlyingReserves();
 
         uint256 numerator = amountOfCollateral.mul(totalShares);
         uint256 denominator;
 
         if (_optionType == OptionType.PUT) {
-            denominator = _strikeReserves.add(
-                _underlyingReserves.mul(_strikePrice).div((uint256(10)**_underlyingAssetDecimals))
+            denominator = currentStrikeReserves.add(
+                currentUnderlyingReserves.mul(_strikePrice).div(uint256(10)**underlyingAssetDecimals())
             );
         } else {
-            denominator = _underlyingReserves.add(
-                _strikeReserves.mul(uint256(10)**_underlyingAssetDecimals).div(_strikePrice)
+            denominator = currentUnderlyingReserves.add(
+                currentStrikeReserves.mul(uint256(10)**underlyingAssetDecimals()).div(_strikePrice)
             );
         }
         ownerShares = numerator.div(denominator);
@@ -358,5 +346,54 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         mintedOptions[owner] = mintedOptions[owner].add(amountOfOptions);
 
         _mint(msg.sender, amountOfOptions);
+    }
+
+    /**
+     * @dev Burns options, removing shares accordingly and releasing a certain amount of collateral.
+     * In case of American options where exercise can happen before the expiration, the caller may receive a
+     * mix of underlying asset and strike asset.
+     * @param amountOfOptions The amount option tokens to be burned
+     * @param owner Which address options will be burned from
+     */
+    function _burnOptions(uint256 amountOfOptions, address owner)
+        internal
+        returns (
+            uint256 strikeToSend,
+            uint256 underlyingToSend,
+            uint256 currentStrikeReserves,
+            uint256 currentUnderlyingReserves
+        )
+    {
+        uint256 ownerShares = shares[owner];
+        require(ownerShares > 0, "PodOption: you do not have minted options");
+
+        uint256 ownerMintedOptions = mintedOptions[owner];
+        require(amountOfOptions <= ownerMintedOptions, "PodOption: not enough minted options");
+
+        currentStrikeReserves = strikeReserves();
+        currentUnderlyingReserves = underlyingReserves();
+
+        uint256 burnedShares = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
+        strikeToSend = burnedShares.mul(currentStrikeReserves).div(totalShares);
+        underlyingToSend = burnedShares.mul(currentUnderlyingReserves).div(totalShares);
+
+        shares[owner] = shares[owner].sub(burnedShares);
+        mintedOptions[owner] = mintedOptions[owner].sub(amountOfOptions);
+        totalShares = totalShares.sub(burnedShares);
+
+        _burn(owner, amountOfOptions);
+    }
+
+    /**
+     * @dev Removes all shares, returning the amounts that would be withdrawable
+     */
+    function _withdraw() internal returns (uint256 strikeToSend, uint256 underlyingToSend) {
+        uint256 ownerShares = shares[msg.sender];
+        require(ownerShares > 0, "PodOption: you do not have balance to withdraw");
+
+        (strikeToSend, underlyingToSend) = getSellerWithdrawAmounts(msg.sender);
+
+        shares[msg.sender] = 0;
+        totalShares = totalShares.sub(ownerShares);
     }
 }

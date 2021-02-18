@@ -74,36 +74,32 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *
  */
 contract WPodCall is PodCall {
-    IWETH public weth;
-
     event Received(address indexed sender, uint256 value);
 
     constructor(
-        string memory _name,
-        string memory _symbol,
-        IPodOption.ExerciseType _exerciseType,
-        address _underlyingAsset,
-        address _strikeAsset,
-        uint256 _strikePrice,
-        uint256 _expiration,
-        uint256 _exerciseWindowSize,
-        IConfigurationManager _configurationManager
+        string memory name,
+        string memory symbol,
+        IPodOption.ExerciseType exerciseType,
+        address underlyingAsset,
+        address strikeAsset,
+        uint256 strikePrice,
+        uint256 expiration,
+        uint256 exerciseWindowSize,
+        IConfigurationManager configurationManager
     )
         public
         PodCall(
-            _name,
-            _symbol,
-            _exerciseType,
-            _underlyingAsset,
-            _strikeAsset,
-            _strikePrice,
-            _expiration,
-            _exerciseWindowSize,
-            _configurationManager
+            name,
+            symbol,
+            exerciseType,
+            underlyingAsset,
+            strikeAsset,
+            strikePrice,
+            expiration,
+            exerciseWindowSize,
+            configurationManager
         )
-    {
-        weth = IWETH(underlyingAsset());
-    }
+    {} // solhint-disable-line no-empty-blocks
 
     /**
      * @notice Locks underlying asset (ETH) and write option tokens.
@@ -127,7 +123,7 @@ contract WPodCall is PodCall {
         require(amountOfOptions > 0, "WPodCall: you can not mint zero options");
         _mintOptions(amountOfOptions, amountOfOptions, owner);
 
-        weth.deposit{ value: amountOfOptions }();
+        IWETH(underlyingAsset()).deposit{ value: amountOfOptions }();
 
         emit Mint(owner, amountOfOptions);
     }
@@ -143,31 +139,13 @@ contract WPodCall is PodCall {
      * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external virtual override mintWindow {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "WPodCall: you do not have minted options");
-
-        uint256 ownerMintedOptions = mintedOptions[msg.sender];
-        require(amountOfOptions <= ownerMintedOptions, "WPodCall: not enough minted options");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 sharesToDeduce = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
-
-        uint256 strikeToSend = sharesToDeduce.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = sharesToDeduce.mul(underlyingReserves).div(totalShares);
+        (uint256 strikeToSend, uint256 underlyingToSend, uint256 strikeReserves, ) = _burnOptions(
+            amountOfOptions,
+            msg.sender
+        );
         require(underlyingToSend > 0, "WPodCall: amount of options is too low");
 
-        shares[msg.sender] = shares[msg.sender].sub(sharesToDeduce);
-        mintedOptions[msg.sender] = mintedOptions[msg.sender].sub(amountOfOptions);
-        totalShares = totalShares.sub(sharesToDeduce);
-
-        _burn(msg.sender, amountOfOptions);
-
-        // Unlocks the strike token
-        weth.withdraw(underlyingToSend);
-        Address.sendValue(msg.sender, underlyingToSend);
-
+        // Sends the strike asset if the option was exercised
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "WPodCall: amount of options is too low");
             require(
@@ -175,6 +153,11 @@ contract WPodCall is PodCall {
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
+
+        // Sends underlying asset
+        IWETH(underlyingAsset()).withdraw(underlyingToSend);
+        Address.sendValue(msg.sender, underlyingToSend);
+
         emit Unmint(msg.sender, amountOfOptions);
     }
 
@@ -212,7 +195,8 @@ contract WPodCall is PodCall {
             "WPodCall: could not transfer strike tokens from caller"
         );
 
-        weth.withdraw(amountOfOptions);
+        // Sends underlying asset
+        IWETH(underlyingAsset()).withdraw(amountOfOptions);
         Address.sendValue(msg.sender, amountOfOptions);
 
         emit Exercise(msg.sender, amountOfOptions);
@@ -226,20 +210,7 @@ contract WPodCall is PodCall {
      * the exercised assets or a combination of exercised and underlying asset tokens.
      */
     function withdraw() external virtual override withdrawWindow {
-        uint256 ownerShares = shares[msg.sender];
-        require(ownerShares > 0, "WPodCall: you do not have balance to withdraw");
-
-        uint256 strikeReserves = IERC20(strikeAsset()).balanceOf(address(this));
-        uint256 underlyingReserves = IERC20(underlyingAsset()).balanceOf(address(this));
-
-        uint256 strikeToSend = ownerShares.mul(strikeReserves).div(totalShares);
-        uint256 underlyingToSend = ownerShares.mul(underlyingReserves).div(totalShares);
-
-        totalShares = totalShares.sub(ownerShares);
-        shares[msg.sender] = 0;
-
-        weth.withdraw(underlyingToSend);
-        Address.sendValue(msg.sender, underlyingToSend);
+        (uint256 strikeToSend, uint256 underlyingToSend) = _withdraw();
 
         if (strikeToSend > 0) {
             require(
@@ -247,11 +218,16 @@ contract WPodCall is PodCall {
                 "WPodCall: could not transfer strike tokens back to caller"
             );
         }
+
+        // Sends underlying asset
+        IWETH(underlyingAsset()).withdraw(underlyingToSend);
+        Address.sendValue(msg.sender, underlyingToSend);
+
         emit Withdraw(msg.sender, mintedOptions[msg.sender]);
     }
 
     receive() external payable {
-        require(msg.sender == address(weth), "WPodCall: Only deposits from WETH are allowed");
+        require(msg.sender == this.underlyingAsset(), "WPodCall: Only deposits from WETH are allowed");
         emit Received(msg.sender, msg.value);
     }
 }

@@ -646,11 +646,11 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodPut: you do not have minted options')
+        await expect(podPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodOption: you do not have minted options')
       })
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podPut.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodPut: not enough minted options')
+        await expect(podPut.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
       })
       it('should revert if unmint amount is too low', async () => {
         await MintPhase(scenario.amountToMint)
@@ -791,7 +791,7 @@ scenarios.forEach(scenario => {
         // Set Expiration
         await forceExpiration(podPut)
 
-        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should get withdraw amounts correctly in a mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {
@@ -907,7 +907,7 @@ scenarios.forEach(scenario => {
         expect(finalSellerStrikegBalance).to.gt(scenario.strikePrice)
         expect(finalSellerStrikegBalance).to.lt(scenario.strikePrice.mul(twoTimesAmountToMint).div(ethers.BigNumber.from(10).pow(optionDecimals)))
         // Cant withdraw two times in a row
-        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
 
         await podPut.connect(buyer).withdraw()
 
@@ -917,7 +917,7 @@ scenarios.forEach(scenario => {
         expect(finalBuyerStrikeBalance).to.gt(scenario.strikePrice.mul(twoTimesAmountToMint).div(ethers.BigNumber.from(10).pow(optionDecimals)))
         expect(finalContractStrikeReserves).to.equal(0)
 
-        await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should withdraw mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {
@@ -938,7 +938,7 @@ scenarios.forEach(scenario => {
 
         await forceExpiration(podPut)
         await expect(podPut.connect(seller).withdraw())
-        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
 
         const finalSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -956,7 +956,7 @@ scenarios.forEach(scenario => {
         const initialBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await expect(podPut.connect(buyer).withdraw())
-        await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(buyer).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
 
         const finalBuyerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(buyerAddress)
         const finalBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)

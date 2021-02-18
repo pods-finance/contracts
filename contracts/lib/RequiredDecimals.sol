@@ -11,11 +11,12 @@ contract RequiredDecimals {
      * @return The decimals of a token
      */
     function tryDecimals(IERC20 token) internal view returns (uint8) {
+        // solhint-disable-line private-vars-leading-underscore
         bytes memory payload = abi.encodeWithSignature("decimals()");
         // solhint-disable avoid-low-level-calls
         (bool success, bytes memory returnData) = address(token).staticcall(payload);
 
-        require(success, "OptionalDecimals: required decimals");
+        require(success, "RequiredDecimals: required decimals");
         uint8 decimals = abi.decode(returnData, (uint8));
         require(decimals < 77, "RequiredDecimals: token decimals should be lower than 77");
 

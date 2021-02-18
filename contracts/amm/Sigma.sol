@@ -4,12 +4,12 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBlackScholes.sol";
+import "../interfaces/IPodOption.sol";
 import "../interfaces/ISigma.sol";
 
 contract Sigma is ISigma {
     using SafeMath for uint256;
-    IBlackScholes private _blackScholes;
-    enum OptionType { PUT, CALL }
+    IBlackScholes private immutable _blackScholes;
     uint256 public constant ACCEPTABLE_ERROR = 10; // < 3%
 
     struct Boundaries {
@@ -43,7 +43,7 @@ contract Sigma is ISigma {
             _strikePrice,
             _timeToMaturity,
             _riskFree,
-            OptionType.PUT
+            IPodOption.OptionType.PUT
         );
         return (calculatedSigma, calculatedPrice);
     }
@@ -63,7 +63,7 @@ contract Sigma is ISigma {
             _strikePrice,
             _timeToMaturity,
             _riskFree,
-            OptionType.CALL
+            IPodOption.OptionType.CALL
         );
         return (calculatedSigma, calculatedPrice);
     }
@@ -93,7 +93,7 @@ contract Sigma is ISigma {
         uint256 _strikePrice,
         uint256 _timeToMaturity,
         int256 _riskFree,
-        OptionType _optionType
+        IPodOption.OptionType _optionType
     ) public view returns (uint256 calculatedSigma, uint256 calculatedPrice) {
         require(_sigmaInitialGuess > 0, "Sigma: initial guess should be greater than zero");
         uint256 calculatedInitialPrice = _getPrice(
@@ -178,9 +178,9 @@ contract Sigma is ISigma {
         uint256 calculatedSigma,
         uint256 _timeToMaturity,
         int256 _riskFree,
-        OptionType _optionType
+        IPodOption.OptionType _optionType
     ) internal view returns (uint256 price) {
-        if (_optionType == OptionType.PUT) {
+        if (_optionType == IPodOption.OptionType.PUT) {
             price = _blackScholes.getPutPrice(_spotPrice, _strikePrice, calculatedSigma, _timeToMaturity, _riskFree);
         } else {
             price = _blackScholes.getCallPrice(_spotPrice, _strikePrice, calculatedSigma, _timeToMaturity, _riskFree);
@@ -211,7 +211,7 @@ contract Sigma is ISigma {
         uint256 _strikePrice,
         uint256 _timeToMaturity,
         int256 _riskFree,
-        OptionType _optionType
+        IPodOption.OptionType _optionType
     ) internal view returns (Boundaries memory b) {
         b.sigmaLower = 0;
         b.priceLower = 0;
