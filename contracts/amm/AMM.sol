@@ -369,27 +369,25 @@ abstract contract AMM is IAMM, RequiredDecimals {
         );
 
         // Calculate amount to send
-        uint256 amountToSendA = originalBalanceAToReduce
-            .mul(multipliers.AA)
-            .add(originalBalanceBToReduce.mul(multipliers.BA))
-            .div(userFImp);
-        uint256 amountToSendB = originalBalanceBToReduce
-            .mul(multipliers.BB)
-            .add(originalBalanceAToReduce.mul(multipliers.AB))
-            .div(userFImp);
+        (uint256 withdrawAmountA, uint256 withdrawAmountB) = _getWithdrawAmounts(
+            originalBalanceAToReduce,
+            originalBalanceBToReduce,
+            userFImp,
+            multipliers
+        );
 
         _onRemoveLiquidity(userSnapshots[msg.sender], msg.sender);
 
         // Transfers / Update
-        if (amountToSendA > 0) {
-            require(IERC20(_tokenA).transfer(msg.sender, amountToSendA), "AMM: transfer error/tokenA");
+        if (withdrawAmountA > 0) {
+            require(IERC20(_tokenA).transfer(msg.sender, withdrawAmountA), "AMM: transfer error/tokenA");
         }
 
-        if (amountToSendB > 0) {
-            require(IERC20(_tokenB).transfer(msg.sender, amountToSendB), "AMM: transfer error/tokenB");
+        if (withdrawAmountB > 0) {
+            require(IERC20(_tokenB).transfer(msg.sender, withdrawAmountB), "AMM: transfer error/tokenB");
         }
 
-        emit RemoveLiquidity(msg.sender, amountToSendA, amountToSendB);
+        emit RemoveLiquidity(msg.sender, withdrawAmountA, withdrawAmountB);
     }
 
     /**
@@ -658,8 +656,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
             user
         );
 
-        uint256 balanceTokenA = percentA.mul(originalBalanceTokenA).div(PERCENT_PRECISION);
-        uint256 balanceTokenB = percentB.mul(originalBalanceTokenB).div(PERCENT_PRECISION);
+        uint256 originalBalanceAToReduce = percentA.mul(originalBalanceTokenA).div(PERCENT_PRECISION);
+        uint256 originalBalanceBToReduce = percentB.mul(originalBalanceTokenB).div(PERCENT_PRECISION);
 
         bool hasNoLiquidity = totalTokenA == 0 && totalTokenB == 0;
         if (hasNoLiquidity) {
@@ -677,40 +675,41 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         Mult memory multipliers = _getMultipliers(totalTokenA, totalTokenB, fImpOpening);
 
-        (withdrawAmountA, withdrawAmountB) = _getAvailableForRescueAmounts(
-            balanceTokenA,
-            balanceTokenB,
+        (withdrawAmountA, withdrawAmountB) = _getWithdrawAmounts(
+            originalBalanceAToReduce,
+            originalBalanceBToReduce,
             fImpOriginal,
             multipliers
         );
     }
 
     /**
-     * @notice _getAvailableForRescueAmounts internal function of getRemoveLiquidityAmounts
+     * @notice _getWithdrawAmounts internal function of getRemoveLiquidityAmounts
      *
-     * @param _balanceTokenA amount of original deposit of the token A
-     * @param _balanceTokenB amount of original deposit of the token B
-     * @param _fImpOriginal Opening Value Factor by the moment of the deposit
+     * @param _originalBalanceAToReduce amount of original deposit of the token A
+     * @param _originalBalanceBToReduce amount of original deposit of the token B
+     * @param _userFImp Opening Value Factor by the moment of the deposit
      *
-     * @return tokenAAvailableForRescue amount of token A that will be rescued
-     * @return tokenBAvailableForRescue amount of token B that will be rescued
+     * @return withdrawAmountA amount of token A that will be rescued
+     * @return withdrawAmountB amount of token B that will be rescued
      */
-    function _getAvailableForRescueAmounts(
-        uint256 _balanceTokenA,
-        uint256 _balanceTokenB,
-        uint256 _fImpOriginal,
-        Mult memory m
-    ) internal pure returns (uint256 tokenAAvailableForRescue, uint256 tokenBAvailableForRescue) {
-        if (_fImpOriginal > 0) {
-            uint256 userMAB = _balanceTokenB.mul(m.AB).div(_fImpOriginal);
-            uint256 userMBB = _balanceTokenB.mul(m.BB).div(_fImpOriginal);
-            uint256 userMAA = _balanceTokenA.mul(m.AA).div(_fImpOriginal);
-            uint256 userMBA = _balanceTokenA.mul(m.BA).div(_fImpOriginal);
-
-            tokenAAvailableForRescue = userMAA.add(userMBA);
-            tokenBAvailableForRescue = userMBB.add(userMAB);
+    function _getWithdrawAmounts(
+        uint256 _originalBalanceAToReduce,
+        uint256 _originalBalanceBToReduce,
+        uint256 _userFImp,
+        Mult memory multipliers
+    ) internal pure returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
+        if (_userFImp > 0) {
+            withdrawAmountA = _originalBalanceAToReduce
+                .mul(multipliers.AA)
+                .add(_originalBalanceBToReduce.mul(multipliers.BA))
+                .div(_userFImp);
+            withdrawAmountB = _originalBalanceBToReduce
+                .mul(multipliers.BB)
+                .add(_originalBalanceAToReduce.mul(multipliers.AB))
+                .div(_userFImp);
         }
-        return (tokenAAvailableForRescue, tokenBAvailableForRescue);
+        return (withdrawAmountA, withdrawAmountB);
     }
 
     /**
