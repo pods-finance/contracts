@@ -51,7 +51,7 @@ contract BlackScholes is IBlackScholes {
         uint256 time,
         int256 riskFree
     ) public override view returns (uint256) {
-        (int256 d1, int256 d2) = _getProbabilities(uintToInt(spotPrice), uintToInt(strikePrice), sigma, time, riskFree);
+        (int256 d1, int256 d2) = _getZScores(uintToInt(spotPrice), uintToInt(strikePrice), sigma, time, riskFree);
 
         uint256 Nd1 = normalDistribution.getProbability(d1, precisionDecimals);
         uint256 Nd2 = normalDistribution.getProbability(d2, precisionDecimals);
@@ -84,7 +84,7 @@ contract BlackScholes is IBlackScholes {
         uint256 time,
         int256 riskFree
     ) public override view returns (uint256) {
-        (int256 d1, int256 d2) = _getProbabilities(uintToInt(spotPrice), uintToInt(strikePrice), sigma, time, riskFree);
+        (int256 d1, int256 d2) = _getZScores(uintToInt(spotPrice), uintToInt(strikePrice), sigma, time, riskFree);
 
         uint256 Nd1 = normalDistribution.getProbability(-d1, precisionDecimals);
         uint256 Nd2 = normalDistribution.getProbability(-d2, precisionDecimals);
@@ -101,7 +101,7 @@ contract BlackScholes is IBlackScholes {
     }
 
     /**
-     * @dev Get probabilities d1 and d2
+     * @dev Get z-scores d1 and d2
      *
      ***********************************************************************************************
      * So = spotPrice                                                                             //
@@ -118,7 +118,7 @@ contract BlackScholes is IBlackScholes {
      * @param time Annualized time until maturity
      * @param riskFree The risk-free rate
      */
-    function _getProbabilities(
+    function _getZScores(
         int256 spotPrice,
         int256 strikePrice,
         uint256 sigma,
