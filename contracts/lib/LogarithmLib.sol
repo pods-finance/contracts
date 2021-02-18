@@ -7,6 +7,7 @@ import "./FixidityLib.sol";
  * @title LogarithmLib
  * @author Gadi Guy, Alberto Cuesta Canada
  * @notice This library extends FixidityLib with logarithm operations.
+ * @dev Extracted from https://github.com/CementDAO/Fixidity/blob/master/contracts/LogarithmLib.sol
  */
 library LogarithmLib {
     /**

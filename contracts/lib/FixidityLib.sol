@@ -6,6 +6,7 @@ pragma solidity 0.6.12;
  * @author Gadi Guy, Alberto Cuesta Canada
  * @notice This library provides fixed point arithmetic with protection against
  * overflow.
+ * @dev Extracted from https://github.com/CementDAO/Fixidity/blob/master/contracts/FixidityLib.sol
  * All operations are done with int256 and the operands must have been created
  * with any of the newFrom* functions, which shift the comma digits() to the
  * right and check for limits.

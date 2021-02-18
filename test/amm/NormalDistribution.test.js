@@ -12,9 +12,14 @@ describe('NormalDistribution', () => {
     nd = await NormalDistribution.deploy()
   })
 
-  it('fails when the decimals is less than 4', async () => {
-    const tx = nd.getProbability('2839918236000000000000000', 3)
-    await expect(tx).to.be.revertedWith('NormalDistribution: z too small')
+  it('fails when decimals is less than 4 and greater than 76', async () => {
+    await expect(
+      nd.getProbability('2839918236000000000000000', 3)
+    ).to.be.revertedWith('NormalDistribution: invalid decimals')
+
+    await expect(
+      nd.getProbability('-2839918236000000000000000', 77)
+    ).to.be.revertedWith('NormalDistribution: invalid decimals')
   })
 
   it('gets cached normal distribution', async () => {
@@ -27,10 +32,6 @@ describe('NormalDistribution', () => {
     expect(result).to.equal(
       ethers.BigNumber.from('1000000000000000000000000').sub('997700000000000000000000')
     )
-  })
-
-  it('should revert if decimals input probabilty is higher than 76', async () => {
-    await expect(nd.getProbability('-2839918236000000000000000', 77)).to.be.revertedWith('NormalDistribution: decimals too big')
   })
 
   it('gets concentrated probabilities', async () => {

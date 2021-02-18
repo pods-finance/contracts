@@ -89,9 +89,10 @@ contract OptionExchange {
 
         _mint(option, optionAmount);
 
-        // Approving Option transfer to Exchange
+        // Approve pool transfer
         IERC20(address(option)).safeApprove(address(pool), optionAmount);
 
+        // Sells options to pool
         uint256 tokensBought = pool.tradeExactAInput(optionAmount, minTokenAmount, msg.sender, sigma);
 
         emit OptionsSold(msg.sender, address(option), optionAmount, pool.tokenB(), tokensBought);
@@ -118,12 +119,11 @@ contract OptionExchange {
         // Take stable token from caller
         tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
 
-        // Approving Option transfer to pool
+        // Approve pool transfer
         IERC20(address(option)).safeApprove(address(pool), optionAmount);
-
-        // Approving Token transfer to pool
         tokenB.safeApprove(address(pool), tokenAmount);
 
+        // Adds options and tokens to pool as liquidity
         pool.addLiquidity(optionAmount, tokenAmount, msg.sender);
 
         emit LiquidityAdded(msg.sender, address(option), optionAmount, pool.tokenB(), tokenAmount);
@@ -152,9 +152,10 @@ contract OptionExchange {
         // Take input amount from caller
         tokenB.safeTransferFrom(msg.sender, address(this), maxTokenAmount);
 
-        // Approve pool usage
+        // Approve pool transfer
         tokenB.safeApprove(address(pool), maxTokenAmount);
 
+        // Buys options from pool
         uint256 tokensSold = pool.tradeExactAOutput(optionAmount, maxTokenAmount, msg.sender, sigma);
         uint256 unusedFunds = maxTokenAmount.sub(tokensSold);
 
@@ -188,9 +189,10 @@ contract OptionExchange {
         // Take input amount from caller
         tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
 
-        // Approve pool usage
+        // Approve pool transfer
         tokenB.safeApprove(address(pool), tokenAmount);
 
+        // Buys options from pool
         uint256 optionsBought = pool.tradeExactBInput(tokenAmount, minOptionAmount, msg.sender, sigma);
 
         emit OptionsBought(msg.sender, address(option), optionsBought, pool.tokenB(), tokenAmount);

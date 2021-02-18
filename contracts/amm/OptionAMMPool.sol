@@ -31,7 +31,7 @@ import "../interfaces/IEmergencyStop.sol";
 
 contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     using SafeMath for uint256;
-    uint256 public constant BS_RES_DECIMALS = 18;
+    uint256 public constant PRICING_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
 
     // External Contracts
@@ -92,9 +92,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 strikePrice = IPodOption(_optionAddress).strikePrice();
         uint256 strikePriceDecimals = IPodOption(_optionAddress).strikePriceDecimals();
 
-        require(strikePriceDecimals <= BS_RES_DECIMALS, "Pool: invalid strikePrice unit");
-        require(tokenBDecimals() <= BS_RES_DECIMALS, "Pool: invalid tokenB unit");
-        uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(BS_RES_DECIMALS - strikePriceDecimals));
+        require(strikePriceDecimals <= PRICING_DECIMALS, "Pool: invalid strikePrice unit");
+        require(tokenBDecimals() <= PRICING_DECIMALS, "Pool: invalid tokenB unit");
+        uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(PRICING_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
 
@@ -301,7 +301,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
     /**
      * @notice getOptionTradeDetailsExactBInput view function that simulates a trade, in order the preview
-     * the amountBIn, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * the amountAOut, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
      * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
      *
      * @param exactAmountBIn amount of token B that will by transfer from msg.sender to the pool
@@ -391,7 +391,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         if (newABPrice == 0) {
             return 0;
         }
-        uint256 newABPriceWithDecimals = newABPrice.div(10**(BS_RES_DECIMALS.sub(tokenBDecimals())));
+        uint256 newABPriceWithDecimals = newABPrice.div(10**(PRICING_DECIMALS.sub(tokenBDecimals())));
         return newABPriceWithDecimals;
     }
 
@@ -410,7 +410,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         if (block.timestamp >= priceProperties.expiration) {
             return 0;
         }
-        return ((priceProperties.expiration - block.timestamp) * (10**BS_RES_DECIMALS)) / (_SECONDS_IN_A_YEAR);
+        return ((priceProperties.expiration - block.timestamp) * (10**PRICING_DECIMALS)) / (_SECONDS_IN_A_YEAR);
     }
 
     function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256 poolAmountA, uint256 poolAmountB) {
@@ -423,7 +423,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     }
 
     function _getABPrice() internal override view returns (uint256) {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
@@ -453,7 +453,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 timeToMaturity,
         PriceProperties memory properties
     ) internal view returns (uint256) {
-        uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(BS_RES_DECIMALS.sub(tokenBDecimals())));
+        uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(PRICING_DECIMALS.sub(tokenBDecimals())));
         uint256 newIV;
         ISigma impliedVolatility = ISigma(configurationManager.getImpliedVolatility());
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
@@ -488,7 +488,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
         if (newABPrice == 0) {
@@ -525,7 +525,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
@@ -563,7 +563,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
@@ -600,7 +600,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, BS_RES_DECIMALS);
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
 
         uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);

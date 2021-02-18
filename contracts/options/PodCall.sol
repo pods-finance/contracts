@@ -19,7 +19,7 @@ import "./PodOption.sol";
  * of underlying asset until expiration. Buyers can exercise their call, meaning
  * buying the locked underlying asset for strike price units of strike asset.
  * At the end, seller can retrieve back its collateral, that could be the underlying asset
- * AND/OR strike based on its initial position.
+ * AND/OR strike based on the contract's current ratio of underlying and strike assets.
  *
  * There are many option's style, but the most usual are: American and European.
  * The difference between them are the moments that the buyer is allowed to exercise and
@@ -34,11 +34,11 @@ import "./PodOption.sol";
  *  European -> after end of exercise window
  *
  * Let's take an example: there is such an European call option series where buyers
- * may buy 1 WETH for 300 USDC until Dec 31, 2020.
+ * may buy 1 WETH for 300 USDC until Dec 31, 2021.
  *
  * In this case:
  *
- * - Expiration date: Dec 31, 2020
+ * - Expiration date: Dec 31, 2021
  * - Underlying asset: WETH
  * - Strike asset: USDC
  * - Strike price: 300 USDC
@@ -115,7 +115,9 @@ contract PodCall is PodOption {
      *
      * It is also important to notice that options will be sent back
      * to `msg.sender` and not the `owner`. This behavior is designed to allow
-     * proxy contracts to mint on others behalf
+     * proxy contracts to mint on others behalf. The `owner` will be able to remove
+     * the deposited collateral after series expiration or by calling unmint(), even
+     * if a third-party minted options on its behalf.
      *
      * @param amountOfOptions The amount option tokens to be issued
      * @param owner Which address will be the owner of the options
@@ -210,8 +212,9 @@ contract PodCall is PodOption {
     }
 
     /**
-     * @notice After series expiration, allow minters who have locked their
-     * underlying asset tokens to withdraw them proportionally to their minted options.
+     * @notice After series expiration in case of American or after exercise window for European,
+     * allow minters who have locked their underlying asset tokens to withdraw them proportionally
+     * to their minted options.
      *
      * @dev If assets had been exercised during the option series the minter may withdraw
      * the exercised assets or a combination of exercised and underlying asset tokens.

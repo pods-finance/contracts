@@ -75,7 +75,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         require(Address.isContract(underlyingAsset), "PodOption: underlying asset is not a contract");
         require(Address.isContract(strikeAsset), "PodOption: strike asset is not a contract");
         require(underlyingAsset != strikeAsset, "PodOption: underlying asset and strike asset must differ");
-        require(expiration > block.timestamp, "PodOption: expiration should be in a future timestamp");
+        require(expiration > block.timestamp, "PodOption: expiration should be in the future");
         require(strikePrice > 0, "PodOption: strike price must be greater than zero");
 
         if (exerciseType == ExerciseType.EUROPEAN) {
@@ -156,7 +156,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
-     * @notice The UNIX timestamp that represents the series expiration
+     * @notice The timestamp in seconds that represents the series expiration
      */
     function expiration() external override view returns (uint256) {
         return _expiration;
@@ -214,7 +214,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
-     * @notice The UNIX timestamp that represents the start of exercise window
+     * @notice The timestamp in seconds that represents the start of exercise window
      */
     function startOfExerciseWindow() public override view returns (uint256) {
         return _startOfExerciseWindow;

@@ -134,7 +134,7 @@ scenarios.forEach(scenario => {
         const optionStrikePrice = await podPut.strikePrice()
         const optionStrikePriceDecimals = await podPut.strikePriceDecimals()
         const priceProperties = await optionAMMPool.priceProperties()
-        const bsDecimals = await optionAMMPool.BS_RES_DECIMALS()
+        const bsDecimals = await optionAMMPool.PRICING_DECIMALS()
 
         expect(priceProperties.expiration).to.equal(optionExpiration)
         expect(priceProperties.strikePrice).to.equal(optionStrikePrice.mul(toBigNumber(10).pow(bsDecimals.sub(optionStrikePriceDecimals))))
@@ -142,7 +142,7 @@ scenarios.forEach(scenario => {
 
       it('should return spotPrice accordingly', async () => {
         const spotPrice = await optionAMMPool.getSpotPrice(mockUnderlyingAsset.address, 18)
-        const bsDecimals = await optionAMMPool.BS_RES_DECIMALS()
+        const bsDecimals = await optionAMMPool.PRICING_DECIMALS()
         expect(spotPrice).to.equal(scenario.initialSpotPrice.mul(toBigNumber(10).pow(bsDecimals.sub(scenario.spotPriceDecimals))))
       })
 
