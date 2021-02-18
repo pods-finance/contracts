@@ -13,7 +13,7 @@ import "../interfaces/IOptionBuilder.sol";
 contract PodCallBuilder is IOptionBuilder {
     /**
      * @notice creates a new PodCall Contract
-     * @param name The option token name. Eg. "Pods Put WBTC-USDC 5000 2020-02-23"
+     * @param name The option token name. Eg. "Pods Call WBTC-USDC 5000 2020-02-23"
      * @param symbol The option token symbol. Eg. "podWBTC:20AA"
      * @param exerciseType The option exercise type. Eg. "0 for European, 1 for American"
      * @param underlyingAsset The underlying asset. Eg. "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
