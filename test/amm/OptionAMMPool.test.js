@@ -344,7 +344,7 @@ scenarios.forEach(scenario => {
     })
 
     describe('Remove Liquidity', () => {
-      it.only('should remove all amount after simple addition', async () => {
+      it('should remove all amount after simple addition', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
