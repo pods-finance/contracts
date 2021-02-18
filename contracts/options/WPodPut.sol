@@ -36,12 +36,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
  *  European -> after end of exercise window
  *
  * Let's take an example: there is such a put option series where buyers
- * may sell 1 ETH for 300 USDC until Dec 31, 2019.
+ * may sell 1 ETH for 300 USDC until Dec 31, 2021.
  *
  * In this case:
  *
- * - Expiration date: Dec 31, 2019
- * - Underlying asset: DAI
+ * - Expiration date: Dec 31, 2021
+ * - Underlying asset: ETH
  * - Strike asset: USDC
  * - Strike price: 300 USDC
  *

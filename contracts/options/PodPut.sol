@@ -33,11 +33,11 @@ import "./PodOption.sol";
  *  European -> after end of exercise window
  *
  * Let's take an example: there is such an European Put option series where buyers
- * may buy 1 WETH for 300 USDC until Dec 31, 2020.
+ * may sell 1 WETH for 300 USDC until Dec 31, 2021.
  *
  * In this case:
  *
- * - Expiration date: Dec 31, 2020
+ * - Expiration date: Dec 31, 2021
  * - Underlying asset: WETH
  * - Strike asset: USDC
  * - Strike price: 300 USDC
