@@ -330,7 +330,7 @@ contract NormalDistribution is INormalDistribution {
      * @dev For Z > ±0.307 the curve response gets more concentrated
      * @param z A point in the normal distribution
      * @param decimals Amount of decimals of z
-     * @return The probability of z
+     * @return The probability of a z variable in a normal distribution
      */
     function getProbability(int256 z, uint256 decimals) external override view returns (uint256) {
         require(decimals >= 4 && decimals < 77, "NormalDistribution: invalid decimals");
