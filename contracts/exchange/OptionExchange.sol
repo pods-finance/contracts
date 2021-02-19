@@ -159,6 +159,9 @@ contract OptionExchange {
         uint256 tokensSold = pool.tradeExactAOutput(optionAmount, maxTokenAmount, msg.sender, sigma);
         uint256 unusedFunds = maxTokenAmount.sub(tokensSold);
 
+        // Reset allowance
+        tokenB.safeApprove(address(pool), 0);
+
         // Transfer back unused funds
         if (unusedFunds > 0) {
             tokenB.safeTransfer(msg.sender, unusedFunds);

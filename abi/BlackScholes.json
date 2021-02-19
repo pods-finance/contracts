@@ -65,14 +65,14 @@
   {
     "inputs": [
       {
-        "internalType": "int256",
+        "internalType": "uint256",
         "name": "spotPrice",
-        "type": "int256"
+        "type": "uint256"
       },
       {
-        "internalType": "int256",
+        "internalType": "uint256",
         "name": "strikePrice",
-        "type": "int256"
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -104,14 +104,14 @@
   {
     "inputs": [
       {
-        "internalType": "int256",
+        "internalType": "uint256",
         "name": "spotPrice",
-        "type": "int256"
+        "type": "uint256"
       },
       {
-        "internalType": "int256",
+        "internalType": "uint256",
         "name": "strikePrice",
-        "type": "int256"
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
