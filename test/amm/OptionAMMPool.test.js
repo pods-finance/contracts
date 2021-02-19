@@ -405,15 +405,20 @@ scenarios.forEach(scenario => {
         const feeAddressA = await optionAMMPool.feePoolA()
         const feeAddressB = await optionAMMPool.feePoolB()
 
-        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
         const lpOptionBeforeTrade = await podPut.balanceOf(lpAddress)
+        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
 
         const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+
+        const withdrawObj = await optionAMMPool.connect(lp).getRemoveLiquidityAmounts(100, 100, lpAddress)
 
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
         const lpOptionAfterBuyer = await podPut.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
+
+        expect(lpOptionAfterBuyer.sub(lpOptionBeforeTrade)).to.eq(withdrawObj.withdrawAmountA)
+        expect(lpStrikeAfterBuyer.sub(lpStrikeBeforeTrade)).to.eq(withdrawObj.withdrawAmountB)
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
 
