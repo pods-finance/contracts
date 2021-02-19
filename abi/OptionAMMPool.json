@@ -12,21 +12,6 @@
         "type": "address"
       },
       {
-        "internalType": "address",
-        "name": "_priceProvider",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_priceMethod",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_sigma",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "_initialSigma",
         "type": "uint256"
@@ -39,6 +24,11 @@
       {
         "internalType": "address",
         "name": "_feePoolB",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "_configurationManager",
         "type": "address"
       }
     ],
@@ -63,13 +53,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amountOfStable",
+        "name": "amountA",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amountOfOptions",
+        "name": "amountB",
         "type": "uint256"
       }
     ],
@@ -88,13 +78,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amountOfStable",
+        "name": "amountA",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amountOfOptions",
+        "name": "amountB",
         "type": "uint256"
       }
     ],
@@ -227,20 +217,7 @@
   },
   {
     "inputs": [],
-    "name": "BS_RES_DECIMALS",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "FIMP_PRECISION",
+    "name": "FIMP_DECIMALS",
     "outputs": [
       {
         "internalType": "uint256",
@@ -278,6 +255,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "PRICING_DECIMALS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -298,6 +288,32 @@
     "name": "addLiquidity",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "capSize",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "configurationManager",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -632,37 +648,16 @@
   },
   {
     "inputs": [],
-    "name": "impliedVolatility",
-    "outputs": [
-      {
-        "internalType": "contract ISigma",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "priceMethod",
-    "outputs": [
-      {
-        "internalType": "contract IBlackScholes",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "priceProperties",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "expiration",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startOfExerciseWindow",
         "type": "uint256"
       },
       {
@@ -686,27 +681,14 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
+        "internalType": "int256",
         "name": "riskFree",
-        "type": "uint256"
+        "type": "int256"
       },
       {
         "internalType": "uint256",
         "name": "sigmaInitialGuess",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "priceProvider",
-    "outputs": [
-      {
-        "internalType": "contract IPriceProvider",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -926,7 +908,7 @@
         "type": "address"
       }
     ],
-    "name": "usersSnapshot",
+    "name": "userSnapshots",
     "outputs": [
       {
         "internalType": "uint256",
