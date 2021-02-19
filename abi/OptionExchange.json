@@ -134,11 +134,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "maxTokenAmount",
         "type": "uint256"
@@ -170,11 +165,6 @@
         "internalType": "uint256",
         "name": "minOptionAmount",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
       },
       {
         "internalType": "uint256",
@@ -241,11 +231,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "tokenAmount",
         "type": "uint256"
@@ -267,11 +252,6 @@
         "internalType": "uint256",
         "name": "optionAmount",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
       },
       {
         "internalType": "uint256",

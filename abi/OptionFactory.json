@@ -8,22 +8,27 @@
       },
       {
         "internalType": "address",
-        "name": "_PodPutBuilder",
+        "name": "PodPutBuilder",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_WPodPutBuilder",
+        "name": "WPodPutBuilder",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_PodCallBuilder",
+        "name": "PodCallBuilder",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_WPodCallBuilder",
+        "name": "WPodCallBuilder",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ConfigurationManager",
         "type": "address"
       }
     ],
@@ -105,50 +110,63 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "configurationManager",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "string",
-        "name": "_name",
+        "name": "name",
         "type": "string"
       },
       {
         "internalType": "string",
-        "name": "_symbol",
+        "name": "symbol",
         "type": "string"
       },
       {
         "internalType": "enum IPodOption.OptionType",
-        "name": "_optionType",
+        "name": "optionType",
         "type": "uint8"
       },
       {
         "internalType": "enum IPodOption.ExerciseType",
-        "name": "_exerciseType",
+        "name": "exerciseType",
         "type": "uint8"
       },
       {
         "internalType": "address",
-        "name": "_underlyingAsset",
+        "name": "underlyingAsset",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_strikeAsset",
+        "name": "strikeAsset",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_strikePrice",
+        "name": "strikePrice",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "_expiration",
+        "name": "expiration",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "_exerciseWindowSize",
+        "name": "exerciseWindowSize",
         "type": "uint256"
       }
     ],
@@ -156,7 +174,7 @@
     "outputs": [
       {
         "internalType": "address",
-        "name": "option",
+        "name": "",
         "type": "address"
       }
     ],

@@ -1,5 +1,16 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "configurationManager",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -10,7 +21,7 @@
       },
       {
         "indexed": false,
-        "internalType": "contract OptionAMMPool",
+        "internalType": "address",
         "name": "pool",
         "type": "address"
       }
@@ -28,21 +39,6 @@
       {
         "internalType": "address",
         "name": "_stableAsset",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_priceProvider",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_priceMethod",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_sigma",
         "type": "address"
       },
       {
