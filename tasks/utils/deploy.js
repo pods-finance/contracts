@@ -1,6 +1,6 @@
 
 task('deploy', 'Deploy a generic contract given artifact name')
-  .addParam('name', 'token symbol')
+  .addParam('name', 'name of the contract artifact')
   .setAction(async ({ name }) => {
     console.log('----Start Deploy Contract----')
     const Contract = await ethers.getContractFactory(name)
