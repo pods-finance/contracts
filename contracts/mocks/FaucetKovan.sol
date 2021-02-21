@@ -23,16 +23,20 @@ contract FaucetKovan {
     IERC20Mintable private _wbtc = IERC20Mintable(0x351a448d49C8011D293e81fD53ce5ED09F433E4c);
     IERC20Mintable private _ausdc = IERC20Mintable(0x02F626c6ccb6D2ebC071c068DC1f02Bf5693416a);
     IERC20Mintable private _adai = IERC20Mintable(0x58AD4cB396411B691A9AAb6F74545b2C5217FE6a);
+    IERC20Mintable private _link = IERC20Mintable(0xbA74882beEe5482EbBA7475A0C5A51589d4ed5De);
 
     function getFaucet() external {
         uint256 askedAmount = 30000;
         uint8 usdcDecimals = _usdc.decimals();
         uint8 daiDecimals = _dai.decimals();
+        uint8 linkDecimals = _link.decimals();
         uint256 mintedUsdcAmount = askedAmount.mul(10**uint256(usdcDecimals));
         uint256 mintedDaiAmount = askedAmount.mul(10**uint256(daiDecimals));
+        uint256 mintedLinkAmount = askedAmount.mul(10**uint256(linkDecimals));
         // Mint USDC
         _usdc.mint(mintedUsdcAmount);
         _dai.mint(mintedDaiAmount);
+
         _usdc.transfer(msg.sender, mintedUsdcAmount.div(2));
         _dai.transfer(msg.sender, mintedDaiAmount.div(2));
 
@@ -52,5 +56,8 @@ contract FaucetKovan {
         // Mint WBTC
         _wbtc.mint(mintedWbtcAmount);
         _wbtc.transfer(msg.sender, mintedWbtcAmount);
+
+        _link.mint(mintedLinkAmount);
+        _link.transfer(msg.sender, mintedLinkAmount);
     }
 }
