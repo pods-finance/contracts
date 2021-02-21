@@ -19,23 +19,18 @@ task('deployWeek', 'Deploy a whole local test environment')
 
     const options = [
       {
-        strike: 'USDC',
+        strike: 'ADAI',
         underlying: 'WETH',
-        price: '1400'
-      },
-      {
-        strike: 'DAI',
-        underlying: 'WETH',
-        price: '1500'
+        price: '1800'
       },
       {
         strike: 'USDC',
-        underlying: 'WBTC',
-        price: '33000'
+        underlying: 'LINK',
+        price: '25'
       }
     ]
 
-    const intervals = [4]
+    const intervals = [7]
     const oneDayInSeconds = 24 * 60 * 60
 
     for (const optionObj of options) {
@@ -53,20 +48,20 @@ task('deployWeek', 'Deploy a whole local test environment')
         const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
-          initialsigma: '2000000000000000000'
+          initialsigma: '11500000000000000000'
         })
 
         console.log('start Flag: ', start)
 
         if (start) {
           // 7) Mint Options
-          await run('mintOptions', { option: optionAddress, amount: '10' })
+          await run('mintOptions', { option: optionAddress, amount: '5' })
 
           // 8) Add Liquidity
           await run('addLiquidityAMM', {
             pooladdress: poolAddress,
-            amounta: '10',
-            amountb: '50000'
+            amounta: '5',
+            amountb: '10000'
           })
         }
       }
