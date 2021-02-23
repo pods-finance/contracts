@@ -265,17 +265,17 @@ scenarios.forEach(scenario => {
       })
 
       it('should return right booleans if the option is expired or not', async () => {
-        expect(await podPut.isAfterStartOfExerciseWindow()).to.be.false
+        expect(await podPut.isExerciseWindow()).to.be.false
         expect(await podPut.hasExpired()).to.be.false
 
         await forceStartOfExerciseWindow(podPut)
 
-        expect(await podPut.isAfterStartOfExerciseWindow()).to.be.true
+        expect(await podPut.isExerciseWindow()).to.be.true
         expect(await podPut.hasExpired()).to.be.false
 
         await forceExpiration(podPut)
 
-        expect(await podPut.isAfterStartOfExerciseWindow()).to.be.true
+        expect(await podPut.isExerciseWindow()).to.be.true
         expect(await podPut.hasExpired()).to.be.true
       })
 
