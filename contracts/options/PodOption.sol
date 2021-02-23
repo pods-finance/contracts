@@ -122,8 +122,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     /**
      * @notice Checks if the options exercise window has opened.
      */
-    function isAfterStartOfExerciseWindow() external override view returns (bool) {
-        return _isAfterStartOfExerciseWindow();
+    function isExerciseWindow() external override view returns (bool) {
+        return _isExerciseWindow();
     }
 
     /**
@@ -240,12 +240,11 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @dev Modifier with the conditions to be able to mint/unmint
      * based on option exerciseType.
      */
-    modifier mintWindow() {
+    modifier tradeWindow() {
+        require(!_hasExpired(), "PodOption: option has expired");
+
         if (_exerciseType == ExerciseType.EUROPEAN) {
-            require(!_hasExpired(), "PodOption: option has expired");
-            require(!_isAfterStartOfExerciseWindow(), "PodOption: exercise window has started");
-        } else {
-            require(!_hasExpired(), "PodOption: option has expired");
+            require(!_isExerciseWindow(), "PodOption: exercise window has started");
         }
         _;
     }
@@ -255,11 +254,10 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * based on option exerciseType.
      */
     modifier exerciseWindow() {
+        require(!_hasExpired(), "PodOption: option has expired");
+
         if (_exerciseType == ExerciseType.EUROPEAN) {
-            require(!_hasExpired(), "PodOption: option has expired");
-            require(_isAfterStartOfExerciseWindow(), "PodOption: window of exercise has not started");
-        } else {
-            require(!_hasExpired(), "PodOption: option has expired");
+            require(_isExerciseWindow(), "PodOption: window of exercise has not started");
         }
         _;
     }
@@ -283,7 +281,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     /**
      * @dev Internal function to check window exercise started
      */
-    function _isAfterStartOfExerciseWindow() internal view returns (bool) {
+    function _isExerciseWindow() internal view returns (bool) {
         return block.timestamp >= _startOfExerciseWindow;
     }
 

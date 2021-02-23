@@ -106,7 +106,7 @@ contract WPodPut is PodPut {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-    function unmint(uint256 amountOfOptions) external override mintWindow {
+    function unmint(uint256 amountOfOptions) external override tradeWindow {
         (uint256 strikeToSend, uint256 underlyingToSend, , uint256 underlyingReserves) = _burnOptions(
             amountOfOptions,
             msg.sender
