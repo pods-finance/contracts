@@ -413,7 +413,7 @@
     },
     {
       "inputs": [],
-      "name": "isAfterStartOfExerciseWindow",
+      "name": "isExerciseWindow",
       "outputs": [
         {
           "internalType": "bool",
