@@ -196,7 +196,7 @@ contract BlackScholes is IBlackScholes {
 
     function _uintToInt(uint256 input) internal pure returns (int256) {
         int256 output = int256(input);
-        require(output > 0, "BlackScholes: casting overflow");
+        require(output >= 0, "BlackScholes: casting overflow");
         return output;
     }
 }
