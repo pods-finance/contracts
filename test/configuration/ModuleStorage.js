@@ -30,4 +30,9 @@ describe('ModuleStorage', () => {
     expect(await moduleStorageUser.getModule(moduleName))
       .to.equal(tokenBurnerAddress)
   })
+
+  it('cannot set a zero address as module', async () => {
+    await expect(moduleStorageUser.setTokenBurner(ethers.constants.AddressZero))
+      .to.be.revertedWith('ModuleStorage: Invalid module')
+  })
 })
