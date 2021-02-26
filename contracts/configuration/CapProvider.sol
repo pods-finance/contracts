@@ -21,6 +21,7 @@ contract CapProvider is ICapProvider, Ownable {
      * @param value Cap amount
      */
     function setCap(address target, uint256 value) external override onlyOwner {
+        require(target != address(0), "CapProvider: Invalid target");
         _addresses[target] = value;
         emit SetCap(target, value);
     }
