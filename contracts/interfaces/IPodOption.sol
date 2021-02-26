@@ -101,7 +101,11 @@ interface IPodOption is IERC20 {
 
     function hasExpired() external view returns (bool);
 
+    function isTradeWindow() external view returns (bool);
+
     function isExerciseWindow() external view returns (bool);
+
+    function isWithdrawWindow() external view returns (bool);
 
     function strikeToTransfer(uint256 amountOfOptions) external view returns (uint256);
 

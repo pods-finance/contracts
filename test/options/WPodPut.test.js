@@ -198,10 +198,10 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
 
         await forceStartOfExerciseWindow(wPodPut)
-        await expect(wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: exercise window has started')
+        await expect(wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: trade window has closed')
 
         await forceExpiration(wPodPut)
-        await expect(wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: option has expired')
+        await expect(wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: trade window has closed')
       })
 
       it('should not mint for the zero address behalf', async () => {
@@ -218,7 +218,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         // Transfer mint to Buyer address => This will happen through Uniswap
         await wPodPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
-        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('PodOption: window of exercise has not started')
+        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('PodOption: not in exercise window')
       })
       it('should revert if user have underlying enough, but dont have enough options', async () => {
         expect(await ethers.provider.getBalance(buyerAddress)).to.gte(scenario.amountToMint)
@@ -264,7 +264,7 @@ scenarios.forEach(scenario => {
         // Transfer mint to Buyer address => This will happen through Uniswap
         await wPodPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         await forceExpiration(wPodPut)
-        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('PodOption: option has expired')
+        await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('PodOption: not in exercise window')
       })
       it('should not be able to exercise zero options', async () => {
         await forceStartOfExerciseWindow(wPodPut)
@@ -405,12 +405,12 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(wPodPut)
-        await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: option has expired')
+        await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
       })
 
       it('should revert if user try to unmint after start of exercise window', async () => {
         await forceStartOfExerciseWindow(wPodPut)
-        await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: exercise window has started')
+        await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
       })
 
       it('should revert if transfer fail from ERC20', async () => {

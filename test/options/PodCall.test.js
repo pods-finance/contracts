@@ -336,7 +336,7 @@ scenarios.forEach(scenario => {
 
         expect(await mockUnderlyingAsset.balanceOf(sellerAddress)).to.equal(scenario.amountToMint)
         await forceExpiration(podCall)
-        await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: option has expired')
+        await expect(podCall.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: trade window has closed')
       })
 
       it('should not mint for the zero address behalf', async () => {
@@ -361,7 +361,7 @@ scenarios.forEach(scenario => {
         // Mint Underlying Asset
         await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice)
         expect(await mockStrikeAsset.balanceOf(buyerAddress)).to.equal(scenario.strikePrice)
-        await expect(podCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: window of exercise has not started')
+        await expect(podCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: not in exercise window')
       })
       it('should revert if user have strike approved, but do not have enough options', async () => {
         // Mint underlying
@@ -590,11 +590,11 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to unmint after expiration - European', async () => {
         await forceExpiration(podCall)
-        await expect(podCall.connect(seller).unmint(1)).to.be.revertedWith('PodOption: option has expired')
+        await expect(podCall.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
       })
       it('should revert if user try to unmint after start of exercise window - European', async () => {
         await forceStartOfExerciseWindow(podCall)
-        await expect(podCall.connect(seller).unmint(1)).to.be.revertedWith('PodOption: exercise window has started')
+        await expect(podCall.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
       })
     })
 
