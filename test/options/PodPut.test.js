@@ -266,16 +266,22 @@ scenarios.forEach(scenario => {
 
       it('should return right booleans if the option is expired or not', async () => {
         expect(await podPut.isExerciseWindow()).to.be.false
+        expect(await podPut.isTradeWindow()).to.be.true
         expect(await podPut.hasExpired()).to.be.false
+        expect(await podPut.isWithdrawWindow()).to.be.false
 
         await forceStartOfExerciseWindow(podPut)
 
         expect(await podPut.isExerciseWindow()).to.be.true
+        expect(await podPut.isTradeWindow()).to.be.false
+        expect(await podPut.isWithdrawWindow()).to.be.false
         expect(await podPut.hasExpired()).to.be.false
 
         await forceExpiration(podPut)
 
-        expect(await podPut.isExerciseWindow()).to.be.true
+        expect(await podPut.isExerciseWindow()).to.be.false
+        expect(await podPut.isTradeWindow()).to.be.false
+        expect(await podPut.isWithdrawWindow()).to.be.true
         expect(await podPut.hasExpired()).to.be.true
       })
 
@@ -504,7 +510,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(seller).mint('1000000000000000000')
 
         await forceExpiration(podPut)
-        await expect(podPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: option has expired')
+        await expect(podPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: trade window has closed')
       })
 
       it('should not mint for the zero address behalf', async () => {
@@ -572,7 +578,7 @@ scenarios.forEach(scenario => {
         await podPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         // Mint Underlying Asset
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
-        await expect(podPut.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: window of exercise has not started')
+        await expect(podPut.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: not in exercise window')
       })
 
       it('should revert if user have underlying approved, but do not have enough options', async () => {
@@ -778,7 +784,7 @@ scenarios.forEach(scenario => {
       })
       it('should revert if user try to unmint after expiration', async () => {
         await forceExpiration(podPut)
-        await expect(podPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: option has expired')
+        await expect(podPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
       })
     })
 
@@ -1069,7 +1075,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(seller).mint(scenario.strikePrice)
 
         await forceExpiration(podPutAmerican)
-        await expect(podPutAmerican.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has expired')
+        await expect(podPutAmerican.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: not in exercise window')
       })
 
       it('should withdraw american options correctly', async () => {
@@ -1083,7 +1089,7 @@ scenarios.forEach(scenario => {
 
         await forceExpiration(podPutAmerican)
         await expect(podPutAmerican.connect(seller).withdraw()).to.not.be.reverted
-        await expect(podPutAmerican.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has expired')
+        await expect(podPutAmerican.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: not in exercise window')
       })
 
       it('should revert if trying to withdraw before expiration', async () => {

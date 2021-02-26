@@ -152,12 +152,12 @@ scenarios.forEach(scenario => {
 
       it('should revert if user try to mint after expiration', async () => {
         await forceExpiration(wPodCall)
-        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: option has expired')
+        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: trade window has closed')
       })
 
       it('should revert if user try to mint after start of exercise window', async () => {
         await forceStartOfExerciseWindow(wPodCall)
-        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: exercise window has started')
+        await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: trade window has closed')
       })
 
       it('should not mint for the zero address behalf', async () => {
@@ -174,7 +174,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).approve(wPodCall.address, ethers.constants.MaxUint256)
         await mockStrikeAsset.connect(buyer).mint(scenario.strikePrice)
 
-        await expect(wPodCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: window of exercise has not started')
+        await expect(wPodCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: not in exercise window')
       })
       it('should revert if transfer fail from ERC20', async () => {
         // deploy option with mock function
@@ -244,7 +244,7 @@ scenarios.forEach(scenario => {
         await wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint })
         await wPodCall.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         await forceExpiration(wPodCall)
-        await expect(wPodCall.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: option has expired')
+        await expect(wPodCall.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: not in exercise window')
       })
       it('should not be able to exercise zero options', async () => {
         await forceStartOfExerciseWindow(wPodCall)

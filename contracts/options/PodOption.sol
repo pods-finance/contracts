@@ -41,7 +41,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     address private immutable _strikeAsset;
     uint256 private immutable _strikePrice;
     uint256 private immutable _expiration;
-    uint256 private immutable _startOfExerciseWindow;
+    uint256 private _startOfExerciseWindow;
 
     /**
      * @notice Reserve share balance
@@ -83,8 +83,10 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
                 exerciseWindowSize >= MIN_EXERCISE_WINDOW_SIZE,
                 "PodOption: exercise window must be greater than or equal 86400"
             );
+            _startOfExerciseWindow = expiration.sub(exerciseWindowSize);
         } else {
             require(exerciseWindowSize == 0, "PodOption: exercise window size must be equal to zero");
+            _startOfExerciseWindow = block.timestamp;
         }
 
         _configurationManager = configurationManager;
@@ -92,7 +94,6 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         _optionType = optionType;
         _exerciseType = exerciseType;
         _expiration = expiration;
-        _startOfExerciseWindow = expiration.sub(exerciseWindowSize);
 
         _underlyingAsset = underlyingAsset;
         _strikeAsset = strikeAsset;
@@ -120,10 +121,24 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
+     * @notice Checks if the options trade window has opened.
+     */
+    function isTradeWindow() external override view returns (bool) {
+        return _isTradeWindow();
+    }
+
+    /**
      * @notice Checks if the options exercise window has opened.
      */
     function isExerciseWindow() external override view returns (bool) {
         return _isExerciseWindow();
+    }
+
+    /**
+     * @notice Checks if the options withdraw window has opened.
+     */
+    function isWithdrawWindow() external override view returns (bool) {
+        return _isWithdrawWindow();
     }
 
     /**
@@ -241,11 +256,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * based on option exerciseType.
      */
     modifier tradeWindow() {
-        require(!_hasExpired(), "PodOption: option has expired");
-
-        if (_exerciseType == ExerciseType.EUROPEAN) {
-            require(!_isExerciseWindow(), "PodOption: exercise window has started");
-        }
+        require(_isTradeWindow(), "PodOption: trade window has closed");
         _;
     }
 
@@ -254,11 +265,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * based on option exerciseType.
      */
     modifier exerciseWindow() {
-        require(!_hasExpired(), "PodOption: option has expired");
-
-        if (_exerciseType == ExerciseType.EUROPEAN) {
-            require(_isExerciseWindow(), "PodOption: window of exercise has not started");
-        }
+        require(_isExerciseWindow(), "PodOption: not in exercise window");
         _;
     }
 
@@ -267,7 +274,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * based on exerciseType.
      */
     modifier withdrawWindow() {
-        require(_hasExpired(), "PodOption: option has not expired yet");
+        require(_isWithdrawWindow(), "PodOption: option has not expired yet");
         _;
     }
 
@@ -279,10 +286,29 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
+     * @dev Internal function to check trade window
+     */
+    function _isTradeWindow() internal view returns (bool) {
+        if (_hasExpired()) {
+            return false;
+        } else if (_exerciseType == ExerciseType.EUROPEAN) {
+            return !_isExerciseWindow();
+        }
+        return true;
+    }
+
+    /**
      * @dev Internal function to check window exercise started
      */
     function _isExerciseWindow() internal view returns (bool) {
-        return block.timestamp >= _startOfExerciseWindow;
+        return !_hasExpired() && block.timestamp >= _startOfExerciseWindow;
+    }
+
+    /**
+     * @dev Internal function to check withdraw started
+     */
+    function _isWithdrawWindow() internal view returns (bool) {
+        return _hasExpired();
     }
 
     /**
