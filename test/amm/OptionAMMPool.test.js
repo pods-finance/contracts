@@ -152,7 +152,7 @@ scenarios.forEach(scenario => {
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('Pool: exercise window has started')
       })
 
-      it('should revert when trying to deploy a Pool with strikeAsset decimals > BS_RES_DECIMALS', async () => {
+      it('should revert when trying to deploy a Pool with strikeAsset decimals > PRICING_DECIMALS', async () => {
         const mockTokenB = await MockERC20.deploy('TEST', 'TEST', '16')
         const mockStrikeAssetB = await MockERC20.deploy('TEST', 'TEST', '20')
         podPut = await createMockOption({
@@ -166,7 +166,7 @@ scenarios.forEach(scenario => {
         await expect(optionAMMPool).to.be.revertedWith('Pool: invalid strikePrice unit')
       })
 
-      it('should revert when trying to deploy a Pool with tokenB decimals > BS_RES_DECIMALS', async () => {
+      it('should revert when trying to deploy a Pool with tokenB decimals > PRICING_DECIMALS', async () => {
         podPut = await createMockOption({
           underlyingAsset: mockUnderlyingAsset.address,
           strikeAsset: mockStrikeAsset.address,

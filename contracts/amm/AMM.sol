@@ -492,7 +492,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
      * @notice _tradeExactBOutput owner is able to receive exact amount of token B from the contract in exchange of a
      * max acceptable amount of token A sent by the msg.sender to the contract.
      *
-     * @dev The inheritor contract should implement _getTradeDetailsExactBOutput and _tradeExactBOutput functions
+     * @dev The inheritor contract should implement _getTradeDetailsExactBOutput and _onTradeExactBOutput functions
      * _getTradeDetailsExactBOutput should return tradeDetails struct format
      *
      * @param exactAmountBOut exact amount of token B that will be transfer to owner
@@ -510,7 +510,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 amountAIn = tradeDetails.amount;
         require(amountAIn > 0, "AMM: invalid amountAIn");
 
-        _onTradeExactBInput(tradeDetails);
+        _onTradeExactBOutput(tradeDetails);
 
         require(amountAIn <= maxAmountAIn, "AMM: maximum asked");
         require(IERC20(_tokenA).transferFrom(msg.sender, address(this), amountAIn), "AMM: transfer error/tokenA");

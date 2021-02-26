@@ -15,7 +15,7 @@ import "../interfaces/ICapProvider.sol";
 abstract contract CappedOption is IERC20 {
     using SafeMath for uint256;
 
-    IConfigurationManager private _configurationManager;
+    IConfigurationManager private immutable _configurationManager;
 
     constructor(IConfigurationManager configurationManager) public {
         _configurationManager = configurationManager;

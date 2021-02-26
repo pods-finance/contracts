@@ -25,6 +25,7 @@ contract ModuleStorage {
      * @param module The module address
      */
     function _setModule(bytes32 name, address module) internal {
+        require(module != address(0), "ModuleStorage: Invalid module");
         _addresses[name] = module;
         emit ModuleSet(name, module);
     }
