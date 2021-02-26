@@ -1,4 +1,5 @@
 const { expect } = require('chai')
+const { ethers } = require('hardhat')
 const createMockOption = require('../util/createMockOption')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
@@ -45,6 +46,11 @@ describe('OptionAMMFactory', () => {
     await expect(tx)
       .to.emit(factory, 'PoolCreated')
       .withArgs(await caller.getAddress(), pool)
+  })
+
+  it('should not deploy a factory without a proper ConfigurationManager', async () => {
+    const tx = OptionAMMFactory.deploy(ethers.constants.AddressZero)
+    await expect(tx).to.be.revertedWith('OptionAMMFactory: Configuration Manager is not a contract')
   })
 
   it('should not create the same pool twice', async () => {
