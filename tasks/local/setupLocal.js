@@ -21,7 +21,7 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     const mockWBTC = await run('deployToken', { name: 'Wrappeed BTC', symbol: 'WBTC', decimals: '8' })
 
-    const mockMKR = await run('deployToken', { name: 'MKR Address', symbol: 'MKR', decimals: '18' })
+    const mockLINK = await run('deployToken', { name: 'LINK Address', symbol: 'LINK', decimals: '18' })
 
     const tokensObj = {
       WETH: mockWETH.address,
@@ -29,7 +29,7 @@ task('setupLocal', 'Deploy a whole local test environment')
       AUSDC: mockAUSDC.address,
       DAI: mockDAI.address,
       WBTC: mockWBTC.address,
-      MKR: mockMKR.address
+      LINK: mockLINK.address
 
     }
     await saveJSON(path, tokensObj)
@@ -45,6 +45,7 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     const chainlinkWBTCFeed = await ChainlinkWBTCFeed.deploy(mockWBTC.address, '8', '37170000000000')
     const chainlinkWETHFeed = await ChainlinkWBTCFeed.deploy(mockWETH.address, '8', '1270000000000')
+    const chainlinkLINKFeed = await ChainlinkWBTCFeed.deploy(mockLINK.address, '8', '2429201073')
 
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
@@ -56,15 +57,17 @@ task('setupLocal', 'Deploy a whole local test environment')
     const content = await fsPromises.readFile(_filePath)
 
     // Set WETH price Provider
-    const WETHPriceProvider = await ethers.getContractAt('PriceProvider', content.priceProvider)
+    const priceProvider = await ethers.getContractAt('PriceProvider', JSON.parse(content).priceProvider)
+    console.log('content.priceProvider', JSON.parse(content).priceProvider)
 
-    await WETHPriceProvider.setAssetFeeds([mockWETH.address], [chainlinkWETHFeed.address])
+    await priceProvider.setAssetFeeds([mockWETH.address], [chainlinkWETHFeed.address])
+    await priceProvider.setAssetFeeds([mockLINK.address], [chainlinkLINKFeed.address])
+
     const optionAMMFactory = JSON.parse(content).optionAMMFactory
-
-    await run('deployOptionExchange', { factory: optionAMMFactory })
 
     // 4) Deploy Test Option
     const currentBlockTimestamp = await getTimestamp()
+
     const optionWBTCAddress = await run('deployNewOption', {
       strike: 'USDC',
       underlying: 'WBTC',
@@ -78,6 +81,13 @@ task('setupLocal', 'Deploy a whole local test environment')
       underlying: 'WETH',
       price: '1500',
       expiration: (currentBlockTimestamp + 48 * 60 * 60).toString()
+    })
+
+    const optionLINKAddress = await run('deployNewOption', {
+      strike: 'USDC',
+      underlying: 'LINK',
+      price: '20',
+      expiration: (currentBlockTimestamp + 24 * 60 * 60 * 24).toString()
     })
 
     // 5) Create AMMPool test with this asset
@@ -94,17 +104,23 @@ task('setupLocal', 'Deploy a whole local test environment')
       initialsigma: '2000000000000000000' // 0.77%
     })
 
+    const optionLINKPoolAddress = await run('deployNewOptionAMMPool', {
+      option: optionLINKAddress,
+      tokenb: mockUSDC.address,
+      initialsigma: '1230000000000000000' // 0.77%
+    })
+
     // 6) Mint Strike Asset
     console.log('Minting USDC strike asset')
     await mockUSDC.mint('10000000000000000')
 
     // 7) Mint Options
-    await run('mintOptions', { option: optionWBTCAddress, amount: '100' })
+    await run('mintOptions', { option: optionLINKAddress, amount: '600' })
 
     // 8) Add Liquidity
     await run('addLiquidityAMM', {
-      pooladdress: optionAMMPoolAddress,
-      amounta: '100',
-      amountb: '10000'
+      pooladdress: optionLINKPoolAddress,
+      amounta: '500',
+      amountb: '11000'
     })
   })
