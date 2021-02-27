@@ -16,6 +16,7 @@ task('deployNewOption', 'Deploy New Option')
   .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american }, hre) => {
     console.log('----Start Deploy New Option----')
     const pathFile = `../../deployments/${hre.network.name}.json`
+    const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
 
     const strikeAsset = strike.toUpperCase()
     const underlyingAsset = underlying.toUpperCase()
@@ -66,7 +67,7 @@ task('deployNewOption', 'Deploy New Option')
 
     const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
     const txIdNewOption = await FactoryContract.createOption(...funcParameters)
-    await txIdNewOption.wait(2)
+    await txIdNewOption.wait(numberOfConfirmations)
 
     const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
     console.log('txIdNewOption.blockNumber', txIdNewOption.blockNumber)
@@ -89,7 +90,7 @@ task('deployNewOption', 'Deploy New Option')
 
         const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await underlyingAssetContract.decimals()))
         const tx = await capProvider.setCap(option, capValue)
-        await tx.wait(2)
+        await tx.wait(numberOfConfirmations)
         console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
       }
 
