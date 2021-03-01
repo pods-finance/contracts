@@ -317,9 +317,13 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _onAddLiquidity(userSnapshots[owner], owner);
 
         // Update Total Balance of the pool for each token
-        require(IERC20(_tokenA).transferFrom(msg.sender, address(this), amountOfA), "AMM: transfer error/tokenA");
+        if (amountOfA > 0) {
+            require(IERC20(_tokenA).transferFrom(msg.sender, address(this), amountOfA), "AMM: transfer error/tokenA");
+        }
 
-        require(IERC20(_tokenB).transferFrom(msg.sender, address(this), amountOfB), "AMM: transfer error/tokenB");
+        if (amountOfB > 0) {
+            require(IERC20(_tokenB).transferFrom(msg.sender, address(this), amountOfB), "AMM: transfer error/tokenB");
+        }
 
         emit AddLiquidity(msg.sender, owner, amountOfA, amountOfB);
     }
