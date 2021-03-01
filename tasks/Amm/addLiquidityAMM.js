@@ -5,9 +5,10 @@ internalTask('addLiquidityAMM', 'addLiquidityAMM')
   .addParam('amounta', 'Amount of tokens A')
   .addParam('amountb', 'Amount of tokens B')
   .addOptionalParam('owner', 'Liquidity owner')
-  .setAction(async ({ amounta, amountb, pooladdress, owner }) => {
+  .setAction(async ({ amounta, amountb, pooladdress, owner }, hre) => {
     const [caller] = await ethers.getSigners()
     const callerAddress = await caller.getAddress()
+    const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
 
     if (!owner) {
       owner = callerAddress
@@ -21,9 +22,9 @@ internalTask('addLiquidityAMM', 'addLiquidityAMM')
     const amountB = ethers.BigNumber.from(amountb).mul(ethers.BigNumber.from(10).pow(await tokenB.decimals()))
 
     // Approve tokens to be added
-    await approveTransferERC20(tokenA, pooladdress, amountA)
+    await approveTransferERC20(tokenA, pooladdress, amountA, numberOfConfirmations)
 
-    await approveTransferERC20(tokenB, pooladdress, amountB)
+    await approveTransferERC20(tokenB, pooladdress, amountB, numberOfConfirmations)
 
     // Add liquidity per se
     await pool.addLiquidity(amountA, amountB, owner)

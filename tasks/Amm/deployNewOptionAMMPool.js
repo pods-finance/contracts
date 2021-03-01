@@ -13,6 +13,8 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .setAction(async ({ option, tokenb, initialsigma, cap }, hre) => {
     console.log('----Start Deploy New Pool----')
     const pathFile = `../../deployments/${hre.network.name}.json`
+    const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
+
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()
 
@@ -27,7 +29,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const tokenBContract = await ethers.getContractAt('MintableERC20', tokenb)
 
     const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialsigma)
-    await txIdNewPool.wait(2)
+    await txIdNewPool.wait(numberOfConfirmations)
 
     console.log('txId: ', txIdNewPool.hash)
 
@@ -54,7 +56,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
         const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await tokenBContract.decimals()))
         const tx = await capProvider.setCap(poolAddress, capValue)
-        await tx.wait(1)
+        await tx.wait(numberOfConfirmations)
         console.log(`Pool cap set to: ${capValue} ${await tokenBContract.symbol()}`)
       }
 
