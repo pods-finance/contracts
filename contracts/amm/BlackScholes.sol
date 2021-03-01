@@ -86,8 +86,8 @@ contract BlackScholes is IBlackScholes {
     ) public override view returns (uint256) {
         (int256 d1, int256 d2) = _getZScores(_uintToInt(spotPrice), _uintToInt(strikePrice), sigma, time, riskFree);
 
-        uint256 Nd1 = normalDistribution.getProbability(-d1, precisionDecimals);
-        uint256 Nd2 = normalDistribution.getProbability(-d2, precisionDecimals);
+        uint256 Nd1 = normalDistribution.getProbability(_additiveInverse(d1), precisionDecimals);
+        uint256 Nd2 = normalDistribution.getProbability(_additiveInverse(d2), precisionDecimals);
 
         uint256 get = strikePrice.mul(Nd2).div(PRECISION_UNIT);
         uint256 pay = spotPrice.mul(Nd1).div(PRECISION_UNIT);
@@ -193,10 +193,19 @@ contract BlackScholes is IBlackScholes {
     /**
      * Convert uint256 to int256 taking in account overflow.
      */
-
     function _uintToInt(uint256 input) internal pure returns (int256) {
         int256 output = int256(input);
         require(output >= 0, "BlackScholes: casting overflow");
         return output;
+    }
+
+    /**
+     * Return the additive inverse b of a number a
+     */
+    function _additiveInverse(int256 a) internal pure returns (int256 b) {
+        b = -a;
+        bool isAPositive = a > 0;
+        bool isBPositive = b > 0;
+        require(isBPositive != isAPositive, "BlackScholes: additiveInverse overflow");
     }
 }
