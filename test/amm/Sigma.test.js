@@ -14,6 +14,7 @@ const scenarioNextSigma = {
 const scenarioNewSigma = [
   {
     name: 'using pre-calculated initial guess',
+    type: 'put',
     targetPrice: toBigNumber(1275.126573 * 1e18),
     sigmaInitialGuess: toBigNumber(1.2 * 1e18),
     spotPrice: toBigNumber(10500 * 1e18),
@@ -24,6 +25,7 @@ const scenarioNewSigma = [
   },
   {
     name: 'using initial guess > target price (1 iteration)',
+    type: 'put',
     targetPrice: toBigNumber(1275.126573 * 1e18),
     sigmaInitialGuess: toBigNumber(1.8 * 1e18),
     spotPrice: toBigNumber(10500 * 1e18),
@@ -34,6 +36,7 @@ const scenarioNewSigma = [
   },
   {
     name: 'using initial guess > target price (n+1 iterations)',
+    type: 'put',
     targetPrice: toBigNumber(1275.126573 * 1e18),
     sigmaInitialGuess: toBigNumber(3.8 * 1e18),
     spotPrice: toBigNumber(10500 * 1e18),
@@ -44,6 +47,7 @@ const scenarioNewSigma = [
   },
   {
     name: 'using initial guess < target price (1 iteration)',
+    type: 'put',
     targetPrice: toBigNumber(1275.126573 * 1e18),
     sigmaInitialGuess: toBigNumber(1 * 1e18),
     spotPrice: toBigNumber(10500 * 1e18),
@@ -54,11 +58,23 @@ const scenarioNewSigma = [
   },
   {
     name: 'using initial guess < target price (n+1 iterations)',
+    type: 'put',
     targetPrice: toBigNumber(1275.126573 * 1e18),
     sigmaInitialGuess: toBigNumber(0.2 * 1e18),
     spotPrice: toBigNumber(10500 * 1e18),
     strikePrice: toBigNumber(11000 * 1e18),
     timeToMaturity: toBigNumber(0.03835616438 * 1e18),
+    riskFree: toBigNumber(0),
+    expectedNewSigma: toBigNumber(1.2 * 1e18)
+  },
+  {
+    name: 'using call option',
+    type: 'call',
+    targetPrice: toBigNumber(1275.126573 * 1e18),
+    sigmaInitialGuess: toBigNumber(200 * 1e18),
+    spotPrice: toBigNumber(28994.01 * 1e18),
+    strikePrice: toBigNumber(60000 * 1e18),
+    timeToMaturity: toBigNumber(0.1483516483516 * 1e18),
     riskFree: toBigNumber(0),
     expectedNewSigma: toBigNumber(1.2 * 1e18)
   }
@@ -107,10 +123,12 @@ describe('Sigma', () => {
       expect(nextSigma).to.equal(scenarioNextSigma.expectedNextSigma)
     })
   })
+
   describe('FindNewSigma', () => {
     scenarioNewSigma.forEach(scenario => {
       it('Should find the new sigma ' + scenario.name, async () => {
-        const res = await sigma.getPutSigma(
+        const method = scenario.type === 'put' ? sigma.getPutSigma : sigma.getCallSigma
+        const res = await method(
           scenario.targetPrice,
           scenario.sigmaInitialGuess,
           scenario.spotPrice,
@@ -125,6 +143,7 @@ describe('Sigma', () => {
         expect(approximately(newPrice, scenario.targetPrice)).to.equal(true)
       })
     })
+
     it('Should revert if initial sigma is 0', async () => {
       await expect(sigma.getPutSigma(
         initialSigmaNull.targetPrice,
