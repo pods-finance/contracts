@@ -410,7 +410,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         if (block.timestamp >= priceProperties.expiration) {
             return 0;
         }
-        return ((priceProperties.expiration - block.timestamp) * (10**PRICING_DECIMALS)) / (_SECONDS_IN_A_YEAR);
+        return priceProperties.expiration.sub(block.timestamp).mul(10**PRICING_DECIMALS).div(_SECONDS_IN_A_YEAR);
     }
 
     function _getPoolAmounts(uint256 newABPrice) internal view returns (uint256 poolAmountA, uint256 poolAmountB) {
@@ -670,17 +670,20 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     function _onAddLiquidity(UserDepositSnapshot memory _userDepositSnapshot, address owner) internal override {
         uint256 currentQuotesA = feePoolA.sharesOf(owner);
         uint256 currentQuotesB = feePoolB.sharesOf(owner);
+        uint256 amountOfQuotesAToAdd = 0;
+        uint256 amountOfQuotesBToAdd = 0;
 
-        uint256 amountOfQuotesAToAdd = _userDepositSnapshot
-            .tokenABalance
-            .mul(10**FIMP_DECIMALS)
-            .div(_userDepositSnapshot.fImp)
-            .sub(currentQuotesA);
-        uint256 amountOfQuotesBToAdd = _userDepositSnapshot
-            .tokenBBalance
-            .mul(10**FIMP_DECIMALS)
-            .div(_userDepositSnapshot.fImp)
-            .sub(currentQuotesB);
+        uint256 totalQuotesA = _userDepositSnapshot.tokenABalance.mul(10**FIMP_DECIMALS).div(_userDepositSnapshot.fImp);
+
+        if (totalQuotesA > currentQuotesA) {
+            amountOfQuotesAToAdd = totalQuotesA.sub(currentQuotesA);
+        }
+
+        uint256 totalQuotesB = _userDepositSnapshot.tokenBBalance.mul(10**FIMP_DECIMALS).div(_userDepositSnapshot.fImp);
+
+        if (totalQuotesB > currentQuotesB) {
+            amountOfQuotesBToAdd = totalQuotesB.sub(currentQuotesB);
+        }
 
         feePoolA.mint(owner, amountOfQuotesAToAdd);
         feePoolB.mint(owner, amountOfQuotesBToAdd);
