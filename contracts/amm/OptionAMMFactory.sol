@@ -20,7 +20,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
      */
     IConfigurationManager private _configurationManager;
 
-    event PoolCreated(address indexed deployer, address pool);
+    event PoolCreated(address indexed deployer, address pool, address option);
 
     constructor(address configurationManager) public {
         require(Address.isContract(configurationManager), "OptionAMMFactory: Configuration Manager is not a contract");
@@ -60,7 +60,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
         feePoolTokenB.transferOwnership(poolAddress);
 
         _pools[_optionAddress] = poolAddress;
-        emit PoolCreated(msg.sender, poolAddress);
+        emit PoolCreated(msg.sender, poolAddress, _optionAddress);
 
         return poolAddress;
     }
