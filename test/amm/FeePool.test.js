@@ -1,8 +1,6 @@
 const { expect } = require('chai')
-const { ethers, waffle } = require('hardhat')
-const { deployMockContract } = waffle
+const { ethers } = require('hardhat')
 const { toBigNumber } = require('../../utils/utils')
-const MockERC20ABI = require('../../abi/ERC20.json')
 
 describe('FeePool', () => {
   let FeePool, pool
@@ -202,37 +200,6 @@ describe('FeePool', () => {
 
       await expect(neverMintedTransaction)
         .to.be.revertedWith('Burn exceeds balance')
-    })
-
-    it('should not withdraw if ERC20 transfer fails', async () => {
-      const mockModERC20 = await deployMockContract(poolOwner, MockERC20ABI)
-      await mockModERC20.mock.decimals.returns(6)
-      await mockModERC20.mock.transferFrom.returns(true)
-      await mockModERC20.mock.transfer.returns(true)
-
-      pool = await FeePool.connect(poolOwner).deploy(mockModERC20.address, initialFee, initialDecimals)
-
-      const owner0Shares = toBigNumber(50)
-      await pool.connect(poolOwner).mint(owner0Address, owner0Shares)
-
-      let totalFees = toBigNumber(0)
-
-      const collectFrom = async amount => {
-        const collection = toBigNumber(amount)
-        const expectedFees = await pool.getCollectable(collection)
-        totalFees = totalFees.add(expectedFees)
-      }
-
-      // Collect some fees
-      await collectFrom(100 * 1e18)
-      await collectFrom(50 * 1e18)
-      await collectFrom(43.333 * 1e18)
-
-      await mockModERC20.mock.balanceOf.returns(totalFees)
-      await mockModERC20.mock.transfer.returns(false)
-
-      const tx =  pool.connect(poolOwner).withdraw(owner0Address, owner0Shares)
-      await expect(tx).to.be.revertedWith('Could not withdraw fees')
     })
   })
 })
