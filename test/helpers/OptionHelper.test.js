@@ -10,9 +10,9 @@ const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
 
-describe('OptionExchange', () => {
-  let OptionExchange, OptionAMMFactory, MintableERC20
-  let exchange, configurationManager
+describe('OptionHelper', () => {
+  let OptionHelper, OptionAMMFactory, MintableERC20
+  let helper, configurationManager
   let stableAsset, strikeAsset, underlyingAsset
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
@@ -25,8 +25,8 @@ describe('OptionExchange', () => {
       caller.getAddress()
     ])
 
-    ;[OptionExchange, OptionAMMFactory, MintableERC20] = await Promise.all([
-      ethers.getContractFactory('OptionExchange'),
+    ;[OptionHelper, OptionAMMFactory, MintableERC20] = await Promise.all([
+      ethers.getContractFactory('OptionHelper'),
       ethers.getContractFactory('OptionAMMFactory'),
       ethers.getContractFactory('MintableERC20')
     ])
@@ -56,10 +56,10 @@ describe('OptionExchange', () => {
 
     await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
 
-    exchange = await OptionExchange.deploy(optionAMMFactory.address)
+    helper = await OptionHelper.deploy(optionAMMFactory.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
-    await stableAsset.connect(caller).approve(exchange.address, ethers.constants.MaxUint256)
+    await stableAsset.connect(caller).approve(helper.address, ethers.constants.MaxUint256)
   })
 
   afterEach(async () => {
@@ -69,12 +69,12 @@ describe('OptionExchange', () => {
   })
 
   it('assigns the factory address correctly', async () => {
-    expect(await exchange.factory()).to.equal(optionAMMFactory.address)
+    expect(await helper.factory()).to.equal(optionAMMFactory.address)
   })
 
   it('cannot be deployed with a zero-address factory', async () => {
-    const tx = OptionExchange.deploy(ethers.constants.AddressZero)
-    await expect(tx).to.be.revertedWith('OptionExchange: Invalid factory')
+    const tx = OptionHelper.deploy(ethers.constants.AddressZero)
+    await expect(tx).to.be.revertedWith('OptionHelper: Invalid factory')
   })
 
   describe('Mint', () => {
@@ -85,7 +85,7 @@ describe('OptionExchange', () => {
       await stableAsset.connect(caller).mint(collateralAmount)
       expect(await stableAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
 
-      await exchange.connect(caller).mint(
+      await helper.connect(caller).mint(
         option.address,
         amountToMint
       )
@@ -105,9 +105,9 @@ describe('OptionExchange', () => {
 
       const strikeToTransfer = await putOption.strikeToTransfer(amountToMint)
       await stableAsset.connect(caller).mint(strikeToTransfer)
-      await stableAsset.connect(caller).approve(exchange.address, strikeToTransfer)
+      await stableAsset.connect(caller).approve(helper.address, strikeToTransfer)
 
-      await exchange.connect(caller).mint(
+      await helper.connect(caller).mint(
         putOption.address,
         amountToMint
       )
@@ -122,9 +122,9 @@ describe('OptionExchange', () => {
       })
 
       await underlyingAsset.connect(caller).mint(amountToMint)
-      await underlyingAsset.connect(caller).approve(exchange.address, amountToMint)
+      await underlyingAsset.connect(caller).approve(helper.address, amountToMint)
 
-      await exchange.connect(caller).mint(
+      await helper.connect(caller).mint(
         callOption.address,
         amountToMint
       )
@@ -142,14 +142,14 @@ describe('OptionExchange', () => {
       await strikeAsset.connect(caller).mint(collateralAmount)
       await stableAsset.connect(caller).mint(stableToAdd)
 
-      const tx = exchange.connect(caller).mintAndAddLiquidity(
+      const tx = helper.connect(caller).mintAndAddLiquidity(
         option.address,
         amountToMint,
         stableToAdd
       )
 
       await expect(tx)
-        .to.emit(exchange, 'LiquidityAdded')
+        .to.emit(helper, 'LiquidityAdded')
         .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, stableToAdd)
     })
 
@@ -161,13 +161,13 @@ describe('OptionExchange', () => {
       await strikeAsset.connect(caller).mint(collateralAmount)
       await stableAsset.connect(caller).mint(stableToAdd)
 
-      const tx = exchange.connect(caller).mintAndAddLiquidity(
+      const tx = helper.connect(caller).mintAndAddLiquidity(
         ethers.constants.AddressZero,
         amountToMint,
         stableToAdd
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange: pool not found')
+      await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
     })
   })
 
@@ -181,7 +181,7 @@ describe('OptionExchange', () => {
 
       const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
-      const tx = await exchange.connect(caller).mintAndSellOptions(
+      const tx = await helper.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
         0,
@@ -192,7 +192,7 @@ describe('OptionExchange', () => {
       const premium = await stableAsset.balanceOf(callerAddress)
 
       await expect(Promise.resolve(tx))
-        .to.emit(exchange, 'OptionsSold')
+        .to.emit(helper, 'OptionsSold')
         .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, premium)
     })
 
@@ -206,7 +206,7 @@ describe('OptionExchange', () => {
 
       const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
-      const tx = exchange.connect(caller).mintAndSellOptions(
+      const tx = helper.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
         minOutputAmount,
@@ -214,7 +214,7 @@ describe('OptionExchange', () => {
         sigma
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange: deadline expired')
+      await expect(tx).to.be.revertedWith('OptionHelper: deadline expired')
     })
 
     it('fails to sell when the pool do not exist', async () => {
@@ -227,7 +227,7 @@ describe('OptionExchange', () => {
 
       const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
-      const tx = exchange.connect(caller).mintAndSellOptions(
+      const tx = helper.connect(caller).mintAndSellOptions(
         ethers.constants.AddressZero,
         amountToMint,
         minOutputAmount,
@@ -235,7 +235,7 @@ describe('OptionExchange', () => {
         sigma
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange: pool not found')
+      await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
     })
   })
 
@@ -249,7 +249,7 @@ describe('OptionExchange', () => {
 
       await stableAsset.connect(caller).mint(maxAcceptedCost)
 
-      const tx = await exchange.connect(caller).buyExactOptions(
+      const tx = await helper.connect(caller).buyExactOptions(
         option.address,
         amountToBuy,
         maxAcceptedCost,
@@ -261,7 +261,7 @@ describe('OptionExchange', () => {
       const spentAmount = maxAcceptedCost.sub(balanceAfterTrade)
 
       await expect(Promise.resolve(tx))
-        .to.emit(exchange, 'OptionsBought')
+        .to.emit(helper, 'OptionsBought')
         .withArgs(callerAddress, option.address, amountToBuy, stableAsset.address, spentAmount)
     })
 
@@ -274,7 +274,7 @@ describe('OptionExchange', () => {
 
       await stableAsset.connect(caller).mint(inputAmount)
 
-      const tx = await exchange.connect(caller).buyOptionsWithExactTokens(
+      const tx = await helper.connect(caller).buyOptionsWithExactTokens(
         option.address,
         minAcceptedOptions,
         inputAmount,
@@ -287,7 +287,7 @@ describe('OptionExchange', () => {
       const boughtOptions = await option.balanceOf(callerAddress)
 
       await expect(Promise.resolve(tx))
-        .to.emit(exchange, 'OptionsBought')
+        .to.emit(helper, 'OptionsBought')
         .withArgs(callerAddress, option.address, boughtOptions, stableAsset.address, inputAmount)
     })
 
@@ -300,7 +300,7 @@ describe('OptionExchange', () => {
 
       await stableAsset.connect(caller).mint(minAcceptedCost)
 
-      const tx = exchange.connect(caller).buyExactOptions(
+      const tx = helper.connect(caller).buyExactOptions(
         ethers.constants.AddressZero,
         amountToBuy,
         minAcceptedCost,
@@ -308,7 +308,7 @@ describe('OptionExchange', () => {
         sigma
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange: pool not found')
+      await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
     })
 
     it('fails when the deadline has passed', async () => {
@@ -320,7 +320,7 @@ describe('OptionExchange', () => {
 
       await stableAsset.connect(caller).mint(minAcceptedCost)
 
-      const tx = exchange.connect(caller).buyExactOptions(
+      const tx = helper.connect(caller).buyExactOptions(
         ethers.constants.AddressZero,
         amountToBuy,
         minAcceptedCost,
@@ -328,7 +328,7 @@ describe('OptionExchange', () => {
         sigma
       )
 
-      await expect(tx).to.be.revertedWith('OptionExchange: deadline expired')
+      await expect(tx).to.be.revertedWith('OptionHelper: deadline expired')
     })
   })
 })
