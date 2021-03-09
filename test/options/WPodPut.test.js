@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat')
 const { expect } = require('chai')
 const getTxCost = require('../util/getTxCost')
-const forceExpiration = require('../util/forceExpiration')
+const skipToWithdrawWindow = require('../util/skipToWithdrawWindow')
 const skipToExerciseWindow = require('../util/skipToExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const getTimestamp = require('../util/getTimestamp')
@@ -201,7 +201,7 @@ scenarios.forEach(scenario => {
         await skipToExerciseWindow(wPodPut)
         await expect(wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: trade window has closed')
 
-        await forceExpiration(wPodPut)
+        await skipToWithdrawWindow(wPodPut)
         await expect(wPodPut.connect(seller).mint(scenario.amountToMint, sellerAddress)).to.be.revertedWith('PodOption: trade window has closed')
       })
 
@@ -264,7 +264,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         // Transfer mint to Buyer address => This will happen through Uniswap
         await wPodPut.connect(seller).transfer(buyerAddress, scenario.amountToMint)
-        await forceExpiration(wPodPut)
+        await skipToWithdrawWindow(wPodPut)
         await expect(wPodPut.connect(seller).exerciseEth({ value: scenario.amountToMint })).to.be.revertedWith('PodOption: not in exercise window')
       })
       it('should not be able to exercise zero options', async () => {
@@ -405,7 +405,7 @@ scenarios.forEach(scenario => {
           .to.be.revertedWith('PodOption: not enough minted options')
       })
       it('should revert if user try to unmint after expiration', async () => {
-        await forceExpiration(wPodPut)
+        await skipToWithdrawWindow(wPodPut)
         await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
       })
 
@@ -454,7 +454,7 @@ scenarios.forEach(scenario => {
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
         // Set Expiration
-        await forceExpiration(wPodPut)
+        await skipToWithdrawWindow(wPodPut)
         await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
@@ -472,7 +472,7 @@ scenarios.forEach(scenario => {
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialContractStrikeReserves).to.equal(scenario.strikePrice.add(earnedInterest))
 
-        await forceExpiration(wPodPut)
+        await skipToWithdrawWindow(wPodPut)
         await wPodPut.connect(seller).withdraw()
 
         const finalSellerOptionBalance = await wPodPut.balanceOf(sellerAddress)
@@ -509,7 +509,7 @@ scenarios.forEach(scenario => {
         expect(initialSellerStrikeBalance).to.equal(0)
         expect(initialContractStrikeReserves).to.gt(twoTimesAmountOfCollateral)
 
-        await forceExpiration(wPodPut)
+        await skipToWithdrawWindow(wPodPut)
         await wPodPut.connect(seller).withdraw()
 
         const finalSellerOptionBalance = await wPodPut.balanceOf(sellerAddress)
@@ -549,7 +549,7 @@ scenarios.forEach(scenario => {
         const initialSellerUnderlyingBalance = await ethers.provider.getBalance(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
 
-        await forceExpiration(wPodPut)
+        await skipToWithdrawWindow(wPodPut)
         const txWithdraw = await wPodPut.connect(seller).withdraw()
         const txCost = await getTxCost(txWithdraw)
         await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
@@ -616,7 +616,7 @@ scenarios.forEach(scenario => {
         await wPodPut.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
 
         await mockModERC20.mock.transfer.returns(false)
-        await forceExpiration(wPodPut)
+        await skipToWithdrawWindow(wPodPut)
         await expect(wPodPut.connect(seller).withdraw()).to.be.revertedWith('WPodPut: could not transfer strike tokens back to caller')
       })
     })

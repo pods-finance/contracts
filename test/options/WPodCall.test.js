@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat')
 const { expect } = require('chai')
 const getTxCost = require('../util/getTxCost')
-const forceExpiration = require('../util/forceExpiration')
+const skipToWithdrawWindow = require('../util/skipToWithdrawWindow')
 const skipToExerciseWindow = require('../util/skipToExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const getTimestamp = require('../util/getTimestamp')
@@ -152,7 +152,7 @@ scenarios.forEach(scenario => {
       })
 
       it('should revert if user try to mint after expiration', async () => {
-        await forceExpiration(wPodCall)
+        await skipToWithdrawWindow(wPodCall)
         await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: trade window has closed')
       })
 
@@ -244,7 +244,7 @@ scenarios.forEach(scenario => {
       it('should revert if user try to exercise after exercise window closed', async () => {
         await wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint })
         await wPodCall.connect(seller).transfer(buyerAddress, scenario.amountToMint)
-        await forceExpiration(wPodCall)
+        await skipToWithdrawWindow(wPodCall)
         await expect(wPodCall.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: not in exercise window')
       })
       it('should not be able to exercise zero options', async () => {
@@ -343,7 +343,7 @@ scenarios.forEach(scenario => {
       })
 
       it('should revert if user try to withdraw without balance after expiration', async () => {
-        await forceExpiration(wPodCall)
+        await skipToWithdrawWindow(wPodCall)
         await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
@@ -364,7 +364,7 @@ scenarios.forEach(scenario => {
         expect(initialContractStrikeReserves).to.equal(0)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
 
-        await forceExpiration(wPodCall)
+        await skipToWithdrawWindow(wPodCall)
         const txWithdraw = await wPodCall.connect(seller).withdraw()
         const txCost = await getTxCost(txWithdraw)
 
@@ -404,7 +404,7 @@ scenarios.forEach(scenario => {
         expect(initialContractStrikeReserves).to.equal(0)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint.mul(2))
 
-        await forceExpiration(wPodCall)
+        await skipToWithdrawWindow(wPodCall)
         const txUnmint = await wPodCall.connect(buyer).withdraw()
         const txCost = await getTxCost(txUnmint)
 
@@ -448,7 +448,7 @@ scenarios.forEach(scenario => {
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
         const initialSellerUnderlyingBalance = await ethers.provider.getBalance(sellerAddress)
 
-        await forceExpiration(wPodCall)
+        await skipToWithdrawWindow(wPodCall)
         const txUnmint = await wPodCall.connect(buyer).withdraw()
         const txCost = await getTxCost(txUnmint)
 
@@ -504,7 +504,7 @@ scenarios.forEach(scenario => {
 
         await wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })
 
-        await forceExpiration(wPodCall)
+        await skipToWithdrawWindow(wPodCall)
 
         await mockModERC20.mock.transfer.returns(false)
         await mockModERC20.mock.balanceOf.returns(1000)
