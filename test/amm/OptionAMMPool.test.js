@@ -221,16 +221,9 @@ scenarios.forEach(scenario => {
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
-        await expect(optionAMMPool.addLiquidity(1000, 10000, buyerAddress)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
-      })
-
-      it('should revert if user do not approved one of assets to be spent by OptionAMMPool', async () => {
-        // Mint option and Stable asset to the liquidity adder
-        await MintPhase(1)
-        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity.add(1))
-        const optionBalance = await podPut.balanceOf(deployerAddress)
-        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString(), buyerAddress))
-          .to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+        await expect(
+          optionAMMPool.addLiquidity(1000, 10000, buyerAddress)
+        ).to.be.reverted
       })
 
       it('should not be able to add more liquidity than the cap', async () => {
