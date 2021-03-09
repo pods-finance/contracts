@@ -114,10 +114,7 @@ contract WPodPut is PodPut {
         require(strikeToSend > 0, "WPodPut: amount of options is too low");
 
         // Sends strike asset
-        require(
-            IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
-            "WPodPut: could not transfer strike tokens back to caller"
-        );
+        IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
 
         // Sends the underlying asset if the option was exercised
         if (underlyingReserves > 0) {
@@ -159,10 +156,7 @@ contract WPodPut is PodPut {
         IWETH(underlyingAsset()).deposit{ value: msg.value }();
 
         // Releases the strike asset to caller, completing the exchange
-        require(
-            IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
-            "WPodPut: could not transfer strike tokens to caller"
-        );
+        IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
 
         emit Exercise(msg.sender, amountOfOptions);
     }
@@ -178,10 +172,7 @@ contract WPodPut is PodPut {
     function withdraw() external override withdrawWindow {
         (uint256 strikeToSend, uint256 underlyingToSend) = _withdraw();
 
-        require(
-            IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
-            "WPodPut: could not transfer strike tokens back to caller"
-        );
+        IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
 
         if (underlyingToSend > 0) {
             IWETH(underlyingAsset()).withdraw(underlyingToSend);
