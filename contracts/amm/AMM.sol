@@ -320,11 +320,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         // Update Total Balance of the pool for each token
         if (amountOfA > 0) {
-            require(IERC20(_tokenA).transferFrom(msg.sender, address(this), amountOfA), "AMM: transfer error/tokenA");
+            IERC20(_tokenA).safeTransferFrom(msg.sender, address(this), amountOfA);
         }
 
         if (amountOfB > 0) {
-            require(IERC20(_tokenB).transferFrom(msg.sender, address(this), amountOfB), "AMM: transfer error/tokenB");
+            IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), amountOfB);
         }
 
         emit AddLiquidity(msg.sender, owner, amountOfA, amountOfB);
@@ -386,11 +386,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         // Transfers / Update
         if (withdrawAmountA > 0) {
-            require(IERC20(_tokenA).transfer(msg.sender, withdrawAmountA), "AMM: transfer error/tokenA");
+            IERC20(_tokenA).safeTransfer(msg.sender, withdrawAmountA);
         }
 
         if (withdrawAmountB > 0) {
-            require(IERC20(_tokenB).transfer(msg.sender, withdrawAmountB), "AMM: transfer error/tokenB");
+            IERC20(_tokenB).safeTransfer(msg.sender, withdrawAmountB);
         }
 
         emit RemoveLiquidity(msg.sender, withdrawAmountA, withdrawAmountB);
@@ -420,9 +420,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _onTradeExactAInput(tradeDetails);
 
         require(amountBOut >= minAmountBOut, "AMM: slippage requirement");
-        require(IERC20(_tokenA).transferFrom(msg.sender, address(this), exactAmountAIn), "AMM: transfer error/tokenA");
-
-        require(IERC20(_tokenB).transfer(owner, amountBOut), "AMM: transfer error/tokenB");
+        IERC20(_tokenA).safeTransferFrom(msg.sender, address(this), exactAmountAIn);
+        IERC20(_tokenB).safeTransfer(owner, amountBOut);
 
         emit TradeExactAInput(msg.sender, owner, exactAmountAIn, amountBOut);
         return amountBOut;
@@ -453,9 +452,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _onTradeExactAOutput(tradeDetails);
 
         require(amountBIn <= maxAmountBIn, "AMM: slippage requirement");
-        require(IERC20(_tokenB).transferFrom(msg.sender, address(this), amountBIn), "AMM: transfer error/tokenB");
-
-        require(IERC20(_tokenA).transfer(owner, exactAmountAOut), "AMM: transfer error/tokenA");
+        IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), amountBIn);
+        IERC20(_tokenA).safeTransfer(owner, exactAmountAOut);
 
         emit TradeExactAOutput(msg.sender, owner, amountBIn, exactAmountAOut);
         return amountBIn;
@@ -486,9 +484,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _onTradeExactBInput(tradeDetails);
 
         require(amountAOut >= minAmountAOut, "AMM: slippage requirement");
-        require(IERC20(_tokenB).transferFrom(msg.sender, address(this), exactAmountBIn), "AMM: transfer error/tokenB");
-
-        require(IERC20(_tokenA).transfer(owner, amountAOut), "AMM: transfer error/tokenA");
+        IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), exactAmountBIn);
+        IERC20(_tokenA).safeTransfer(owner, amountAOut);
 
         emit TradeExactBInput(msg.sender, owner, exactAmountBIn, amountAOut);
         return amountAOut;
@@ -519,9 +516,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
         _onTradeExactBOutput(tradeDetails);
 
         require(amountAIn <= maxAmountAIn, "AMM: maximum asked");
-        require(IERC20(_tokenA).transferFrom(msg.sender, address(this), amountAIn), "AMM: transfer error/tokenA");
-
-        require(IERC20(_tokenB).transfer(owner, exactAmountBOut), "AMM: transfer error/tokenB");
+        IERC20(_tokenA).safeTransferFrom(msg.sender, address(this), amountAIn);
+        IERC20(_tokenB).safeTransfer(owner, exactAmountBOut);
 
         emit TradeExactBOutput(msg.sender, owner, amountAIn, exactAmountBOut);
         return amountAIn;

@@ -40,7 +40,7 @@ const scenarios = [
 ]
 
 scenarios.forEach(scenario => {
-  describe.only('OptionAMMPool.sol - ' + scenario.name, () => {
+  describe('OptionAMMPool.sol - ' + scenario.name, () => {
     let MockERC20, MockWETH, OptionAMMFactory, OptionAMMPool
     let mockWETH
     let configurationManager
