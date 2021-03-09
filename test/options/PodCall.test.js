@@ -1,7 +1,8 @@
+const { ethers } = require('hardhat')
 const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const forceExpiration = require('../util/forceExpiration')
-const forceStartOfExerciseWindow = require('../util/forceStartOfExerciseWindow')
+const skipToExerciseWindow = require('../util/skipToExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const createConfigurationManager = require('../util/createConfigurationManager')
 
@@ -339,7 +340,7 @@ scenarios.forEach(scenario => {
 
     describe('Exercising options', () => {
       it('should revert if amount of options asked is zero', async () => {
-        await forceStartOfExerciseWindow(podCall)
+        await skipToExerciseWindow(podCall)
         await expect(podCall.connect(seller).exercise(ethers.BigNumber.from(0)))
           .to.be.revertedWith('PodCall: you can not exercise zero options')
       })
@@ -362,7 +363,7 @@ scenarios.forEach(scenario => {
         // Approve PodPut spend underlying asset
         await mockStrikeAsset.connect(buyer).approve(podCall.address, ethers.constants.MaxUint256)
         expect(await mockStrikeAsset.balanceOf(buyerAddress)).to.equal(scenario.strikePrice)
-        await forceStartOfExerciseWindow(podCall)
+        await skipToExerciseWindow(podCall)
 
         await expect(
           podCall.connect(buyer).exercise(scenario.amountToMint)
@@ -375,7 +376,7 @@ scenarios.forEach(scenario => {
         await podCall.connect(seller).transfer(buyerAddress, scenario.amountToMint)
         // Approve PodPut spend underlying asset
         await mockStrikeAsset.connect(buyer).approve(podCall.address, ethers.constants.MaxUint256)
-        await forceStartOfExerciseWindow(podCall)
+        await skipToExerciseWindow(podCall)
         await expect(
           podCall.connect(buyer).exercise(scenario.amountToMint)
         ).to.be.reverted
@@ -405,7 +406,7 @@ scenarios.forEach(scenario => {
         expect(initialContractStrikeReserves).to.equal(0)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
 
-        await forceStartOfExerciseWindow(podCall)
+        await skipToExerciseWindow(podCall)
         await expect(podCall.connect(buyer).exercise(scenario.amountToMint)).to.not.be.reverted
 
         const finalBuyerOptionBalance = await podCall.balanceOf(buyerAddress)
@@ -528,7 +529,7 @@ scenarios.forEach(scenario => {
       })
 
       it('should revert if user try to unmint after start of exercise window - European', async () => {
-        await forceStartOfExerciseWindow(podCall)
+        await skipToExerciseWindow(podCall)
         await expect(podCall.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
       })
     })
@@ -548,7 +549,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
 
-        await forceStartOfExerciseWindow(podCall)
+        await skipToExerciseWindow(podCall)
         await ExercisePhase(scenario.amountToMint, seller, another, anotherAddress)
 
         const funds = await podCall.connect(seller).getSellerWithdrawAmounts(sellerAddress)
@@ -606,7 +607,7 @@ scenarios.forEach(scenario => {
         await mockUnderlyingAsset.earnInterest(podCall.address)
 
         const halfAmountMint = ethers.BigNumber.from(scenario.amountToMint).div(2)
-        await forceStartOfExerciseWindow(podCall)
+        await skipToExerciseWindow(podCall)
         await ExercisePhase(halfAmountMint, seller, another, anotherAddress)
 
         await forceExpiration(podCall)

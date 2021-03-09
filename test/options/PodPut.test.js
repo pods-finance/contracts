@@ -1,7 +1,8 @@
+const { ethers } = require('hardhat')
 const { expect } = require('chai')
 const getTimestamp = require('../util/getTimestamp')
 const forceExpiration = require('../util/forceExpiration')
-const forceStartOfExerciseWindow = require('../util/forceStartOfExerciseWindow')
+const skipToExerciseWindow = require('../util/skipToExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const MockERC20ABI = require('../../abi/ERC20.json')
 const createConfigurationManager = require('../util/createConfigurationManager')
@@ -270,7 +271,7 @@ scenarios.forEach(scenario => {
         expect(await podPut.hasExpired()).to.be.false
         expect(await podPut.isWithdrawWindow()).to.be.false
 
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
 
         expect(await podPut.isExerciseWindow()).to.be.true
         expect(await podPut.isTradeWindow()).to.be.false
@@ -524,7 +525,7 @@ scenarios.forEach(scenario => {
 
     describe('Exercising options', () => {
       it('should revert if amount of options asked is zero', async () => {
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
         await expect(podPut.connect(seller).exercise(ethers.BigNumber.from(0)))
           .to.be.revertedWith('PodPut: you can not exercise zero options')
       })
@@ -566,7 +567,7 @@ scenarios.forEach(scenario => {
         // Approve PodPut spend underlying asset
         await mockUnderlyingAsset.connect(seller).approve(podPut.address, ethers.constants.MaxUint256)
 
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
 
         await mockModERC20.mock.transfer.returns(false)
         await expect(podPut.connect(seller).exercise(specificScenario.amountToMint)).to.be.revertedWith('PodPut: could not transfer strike tokens to caller')
@@ -586,7 +587,7 @@ scenarios.forEach(scenario => {
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
         // Approve PodPut spend underlying asset
         await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
         await expect(podPut.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('ERC20: burn amount exceeds balance')
       })
 
@@ -597,7 +598,7 @@ scenarios.forEach(scenario => {
         expect(await podPut.balanceOf(buyerAddress)).to.equal(scenario.amountToMint)
         // Approve PodPut spend underlying asset
         await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
         await expect(podPut.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
       })
 
@@ -609,7 +610,7 @@ scenarios.forEach(scenario => {
         // Mint Underlying Asset
         await mockUnderlyingAsset.connect(buyer).mint(scenario.amountToMint)
 
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
         await expect(podPut.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('ERC20: transfer amount exceeds allowance')
       })
 
@@ -623,7 +624,7 @@ scenarios.forEach(scenario => {
         // Approve Underlying to be spent by contract
         await mockUnderlyingAsset.connect(buyer).approve(podPut.address, ethers.constants.MaxUint256)
 
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
         await podPut.connect(buyer).exercise(scenario.amountToMint)
 
         const finalBuyerOptionBalance = await podPut.balanceOf(buyerAddress)
@@ -804,7 +805,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint)
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
 
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
         await ExercisePhase(scenario.amountToMint, seller, another, anotherAddress)
 
         const funds = await podPut.connect(seller).getSellerWithdrawAmounts(sellerAddress)
@@ -934,7 +935,7 @@ scenarios.forEach(scenario => {
         await MintPhase(scenario.amountToMint, buyer, buyerAddress)
         await mockStrikeAsset.earnInterest(podPut.address)
 
-        await forceStartOfExerciseWindow(podPut)
+        await skipToExerciseWindow(podPut)
         await ExercisePhase(halfAmountMint, seller, another, anotherAddress)
 
         const underlyingDecimals = await mockUnderlyingAsset.decimals()

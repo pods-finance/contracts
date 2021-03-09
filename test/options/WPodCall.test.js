@@ -1,7 +1,8 @@
+const { ethers } = require('hardhat')
 const { expect } = require('chai')
 const getTxCost = require('../util/getTxCost')
 const forceExpiration = require('../util/forceExpiration')
-const forceStartOfExerciseWindow = require('../util/forceStartOfExerciseWindow')
+const skipToExerciseWindow = require('../util/skipToExerciseWindow')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const getTimestamp = require('../util/getTimestamp')
 const createConfigurationManager = require('../util/createConfigurationManager')
@@ -156,7 +157,7 @@ scenarios.forEach(scenario => {
       })
 
       it('should revert if user try to mint after start of exercise window', async () => {
-        await forceStartOfExerciseWindow(wPodCall)
+        await skipToExerciseWindow(wPodCall)
         await expect(wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint.toString() })).to.be.revertedWith('PodOption: trade window has closed')
       })
 
@@ -199,13 +200,13 @@ scenarios.forEach(scenario => {
 
         await wPodCall.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint })
 
-        await forceStartOfExerciseWindow(wPodCall)
+        await skipToExerciseWindow(wPodCall)
 
         await mockModERC20.mock.transferFrom.returns(false)
         await expect(wPodCall.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('WPodCall: could not transfer strike tokens from caller')
       })
       it('should revert if user have underlying enough (ETH), but do not have enough options', async () => {
-        await forceStartOfExerciseWindow(wPodCall)
+        await skipToExerciseWindow(wPodCall)
         await expect(wPodCall.connect(buyer).exercise(scenario.amountToMint)).to.be.revertedWith('ERC20: burn amount exceeds balance')
       })
       it('should exercise and have all final balances matched', async () => {
@@ -224,7 +225,7 @@ scenarios.forEach(scenario => {
         expect(initialContractUnderlyingReserves).to.equal(scenario.amountToMint)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
 
-        await forceStartOfExerciseWindow(wPodCall)
+        await skipToExerciseWindow(wPodCall)
         const txExercise = await wPodCall.connect(buyer).exercise(scenario.amountToMint)
         const txCost = await getTxCost(txExercise)
 
@@ -247,7 +248,7 @@ scenarios.forEach(scenario => {
         await expect(wPodCall.connect(seller).exercise(scenario.amountToMint)).to.be.revertedWith('PodOption: not in exercise window')
       })
       it('should not be able to exercise zero options', async () => {
-        await forceStartOfExerciseWindow(wPodCall)
+        await skipToExerciseWindow(wPodCall)
         await expect(wPodCall.connect(buyer).exercise(0))
           .to.be.revertedWith('WPodCall: you can not exercise zero options')
       })
@@ -438,7 +439,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(another).approve(wPodCall.address, ethers.constants.MaxUint256)
         await mockStrikeAsset.connect(another).mint(scenario.amountToMint.mul(scenario.strikePrice).div(2))
 
-        await forceStartOfExerciseWindow(wPodCall)
+        await skipToExerciseWindow(wPodCall)
         await wPodCall.connect(another).exercise(halfAmountMint)
 
         const initialBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
