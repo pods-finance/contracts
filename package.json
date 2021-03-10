@@ -76,7 +76,8 @@
       "usePlugin",
       "ethers",
       "artifacts",
-      "web3"
+      "web3",
+      "hre"
     ]
   }
 }
