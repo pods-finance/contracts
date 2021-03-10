@@ -11,7 +11,6 @@ import "../interfaces/IPodOption.sol";
  * @dev Uses IOptionBuilder to create the different types of Options
  */
 contract OptionFactory {
-    address[] public options;
     IConfigurationManager public configurationManager;
     IOptionBuilder public podPutBuilder;
     IOptionBuilder public wPodPutBuilder;
@@ -100,8 +99,6 @@ contract OptionFactory {
                 configurationManager
             )
         );
-
-        options.push(option);
 
         emit OptionCreated(
             msg.sender,
