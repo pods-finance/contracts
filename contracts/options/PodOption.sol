@@ -3,6 +3,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IPodOption.sol";
 import "../lib/CappedOption.sol";
@@ -28,6 +29,8 @@ import "../interfaces/IConfigurationManager.sol";
  * different behave and should be override accordingly.
  */
 abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption {
+    using SafeERC20 for IERC20;
+
     /**
      * @dev Minimum allowed exercise window: 24 hours
      */
