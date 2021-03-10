@@ -17,6 +17,7 @@ require('@nomiclabs/hardhat-web3')
 require('@nomiclabs/hardhat-solhint')
 require('hardhat-gas-reporter')
 require('solidity-coverage')
+require('hardhat-contract-sizer')
 
 module.exports = {
   networks: {
