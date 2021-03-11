@@ -12,7 +12,7 @@ const OPTION_TYPE_CALL = 1
 
 describe('OptionHelper', () => {
   let OptionHelper, OptionAMMFactory, MintableERC20
-  let helper, configurationManager
+  let optionHelper, configurationManager
   let stableAsset, strikeAsset, underlyingAsset
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
@@ -56,10 +56,10 @@ describe('OptionHelper', () => {
 
     await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
 
-    helper = await OptionHelper.deploy(optionAMMFactory.address)
+    optionHelper = await OptionHelper.deploy(optionAMMFactory.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
-    await stableAsset.connect(caller).approve(helper.address, ethers.constants.MaxUint256)
+    await stableAsset.connect(caller).approve(optionHelper.address, ethers.constants.MaxUint256)
   })
 
   afterEach(async () => {
@@ -69,7 +69,7 @@ describe('OptionHelper', () => {
   })
 
   it('assigns the factory address correctly', async () => {
-    expect(await helper.factory()).to.equal(optionAMMFactory.address)
+    expect(await optionHelper.factory()).to.equal(optionAMMFactory.address)
   })
 
   it('cannot be deployed with a zero-address factory', async () => {
@@ -85,7 +85,7 @@ describe('OptionHelper', () => {
       await stableAsset.connect(caller).mint(collateralAmount)
       expect(await stableAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
 
-      await helper.connect(caller).mint(
+      await optionHelper.connect(caller).mint(
         option.address,
         amountToMint
       )
@@ -105,9 +105,9 @@ describe('OptionHelper', () => {
 
       const strikeToTransfer = await putOption.strikeToTransfer(amountToMint)
       await stableAsset.connect(caller).mint(strikeToTransfer)
-      await stableAsset.connect(caller).approve(helper.address, strikeToTransfer)
+      await stableAsset.connect(caller).approve(optionHelper.address, strikeToTransfer)
 
-      await helper.connect(caller).mint(
+      await optionHelper.connect(caller).mint(
         putOption.address,
         amountToMint
       )
@@ -122,9 +122,9 @@ describe('OptionHelper', () => {
       })
 
       await underlyingAsset.connect(caller).mint(amountToMint)
-      await underlyingAsset.connect(caller).approve(helper.address, amountToMint)
+      await underlyingAsset.connect(caller).approve(optionHelper.address, amountToMint)
 
-      await helper.connect(caller).mint(
+      await optionHelper.connect(caller).mint(
         callOption.address,
         amountToMint
       )
@@ -142,14 +142,14 @@ describe('OptionHelper', () => {
       await strikeAsset.connect(caller).mint(collateralAmount)
       await stableAsset.connect(caller).mint(stableToAdd)
 
-      const tx = helper.connect(caller).mintAndAddLiquidity(
+      const tx = optionHelper.connect(caller).mintAndAddLiquidity(
         option.address,
         amountToMint,
         stableToAdd
       )
 
       await expect(tx)
-        .to.emit(helper, 'LiquidityAdded')
+        .to.emit(optionHelper, 'LiquidityAdded')
         .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, stableToAdd)
     })
 
@@ -161,7 +161,7 @@ describe('OptionHelper', () => {
       await strikeAsset.connect(caller).mint(collateralAmount)
       await stableAsset.connect(caller).mint(stableToAdd)
 
-      const tx = helper.connect(caller).mintAndAddLiquidity(
+      const tx = optionHelper.connect(caller).mintAndAddLiquidity(
         ethers.constants.AddressZero,
         amountToMint,
         stableToAdd
@@ -181,7 +181,7 @@ describe('OptionHelper', () => {
 
       const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
-      const tx = await helper.connect(caller).mintAndSellOptions(
+      const tx = await optionHelper.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
         0,
@@ -192,7 +192,7 @@ describe('OptionHelper', () => {
       const premium = await stableAsset.balanceOf(callerAddress)
 
       await expect(Promise.resolve(tx))
-        .to.emit(helper, 'OptionsSold')
+        .to.emit(optionHelper, 'OptionsSold')
         .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, premium)
     })
 
@@ -206,7 +206,7 @@ describe('OptionHelper', () => {
 
       const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
-      const tx = helper.connect(caller).mintAndSellOptions(
+      const tx = optionHelper.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
         minOutputAmount,
@@ -227,7 +227,7 @@ describe('OptionHelper', () => {
 
       const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
-      const tx = helper.connect(caller).mintAndSellOptions(
+      const tx = optionHelper.connect(caller).mintAndSellOptions(
         ethers.constants.AddressZero,
         amountToMint,
         minOutputAmount,
@@ -249,7 +249,7 @@ describe('OptionHelper', () => {
 
       await stableAsset.connect(caller).mint(maxAcceptedCost)
 
-      const tx = await helper.connect(caller).buyExactOptions(
+      const tx = await optionHelper.connect(caller).buyExactOptions(
         option.address,
         amountToBuy,
         maxAcceptedCost,
@@ -261,7 +261,7 @@ describe('OptionHelper', () => {
       const spentAmount = maxAcceptedCost.sub(balanceAfterTrade)
 
       await expect(Promise.resolve(tx))
-        .to.emit(helper, 'OptionsBought')
+        .to.emit(optionHelper, 'OptionsBought')
         .withArgs(callerAddress, option.address, amountToBuy, stableAsset.address, spentAmount)
     })
 
@@ -274,7 +274,7 @@ describe('OptionHelper', () => {
 
       await stableAsset.connect(caller).mint(inputAmount)
 
-      const tx = await helper.connect(caller).buyOptionsWithExactTokens(
+      const tx = await optionHelper.connect(caller).buyOptionsWithExactTokens(
         option.address,
         minAcceptedOptions,
         inputAmount,
@@ -287,7 +287,7 @@ describe('OptionHelper', () => {
       const boughtOptions = await option.balanceOf(callerAddress)
 
       await expect(Promise.resolve(tx))
-        .to.emit(helper, 'OptionsBought')
+        .to.emit(optionHelper, 'OptionsBought')
         .withArgs(callerAddress, option.address, boughtOptions, stableAsset.address, inputAmount)
     })
 
@@ -300,7 +300,7 @@ describe('OptionHelper', () => {
 
       await stableAsset.connect(caller).mint(minAcceptedCost)
 
-      const tx = helper.connect(caller).buyExactOptions(
+      const tx = optionHelper.connect(caller).buyExactOptions(
         ethers.constants.AddressZero,
         amountToBuy,
         minAcceptedCost,
@@ -320,7 +320,7 @@ describe('OptionHelper', () => {
 
       await stableAsset.connect(caller).mint(minAcceptedCost)
 
-      const tx = helper.connect(caller).buyExactOptions(
+      const tx = optionHelper.connect(caller).buyExactOptions(
         ethers.constants.AddressZero,
         amountToBuy,
         minAcceptedCost,

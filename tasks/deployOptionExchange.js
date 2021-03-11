@@ -6,9 +6,9 @@ task('deployOptionHelper', 'Deploy new option helper using provider')
     console.log('----Start Deploy OptionHelper----')
     const path = `../../deployments/${bre.network.name}.json`
     const OptionHelper = await ethers.getContractFactory('OptionHelper')
-    const helper = await OptionHelper.deploy(factory)
-    console.log('Option Helper Address: ', helper.address)
+    const optionHelper = await OptionHelper.deploy(factory)
+    console.log('Option Helper Address: ', optionHelper.address)
 
-    await saveJSON(path, { helper: helper.address })
-    return helper.address
+    await saveJSON(path, { optionHelper: optionHelper.address })
+    return optionHelper.address
   })
