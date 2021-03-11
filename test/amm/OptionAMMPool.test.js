@@ -1,6 +1,6 @@
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
-const forceExpiration = require('../util/forceExpiration')
+const skipToWithdrawWindow = require('../util/skipToWithdrawWindow')
 const createPriceFeedMock = require('../util/createPriceFeedMock')
 const createMockOption = require('../util/createMockOption')
 const createNewPool = require('../util/createNewPool')
@@ -147,8 +147,7 @@ scenarios.forEach(scenario => {
       })
 
       it('should not allow trade after option expiration', async () => {
-        const expiration = await podPut.expiration()
-        await forceExpiration(podPut, parseInt(expiration.toString()))
+        await skipToWithdrawWindow(podPut)
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(0, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('Pool: exercise window has started')
       })
 
@@ -179,8 +178,7 @@ scenarios.forEach(scenario => {
       })
 
       it('should not allow add liquidity after option expiration', async () => {
-        const expiration = await podPut.expiration()
-        await forceExpiration(podPut, parseInt(expiration.toString()))
+        await skipToWithdrawWindow(podPut)
         await expect(optionAMMPool.connect(buyer).addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('Pool: exercise window has started')
       })
 
@@ -223,16 +221,9 @@ scenarios.forEach(scenario => {
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
-        await expect(optionAMMPool.addLiquidity(1000, 10000, buyerAddress)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
-      })
-
-      it('should revert if user do not approved one of assets to be spent by OptionAMMPool', async () => {
-        // Mint option and Stable asset to the liquidity adder
-        await MintPhase(1)
-        await mockStrikeAsset.mint(scenario.amountOfStableToAddLiquidity.add(1))
-        const optionBalance = await podPut.balanceOf(deployerAddress)
-        await expect(optionAMMPool.addLiquidity(scenario.amountOfStableToAddLiquidity, optionBalance.toString(), buyerAddress))
-          .to.be.revertedWith('ERC20: transfer amount exceeds allowance')
+        await expect(
+          optionAMMPool.addLiquidity(1000, 10000, buyerAddress)
+        ).to.be.reverted
       })
 
       it('should not be able to add more liquidity than the cap', async () => {
@@ -611,7 +602,7 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
-        await forceExpiration(podPut)
+        await skipToWithdrawWindow(podPut)
         await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
@@ -795,8 +786,9 @@ scenarios.forEach(scenario => {
           await fn()
         }
 
+        // skip to 60 seconds before exercise window
         const startOfExerciseWindow = await podPut.startOfExerciseWindow()
-        await forceExpiration(podPut, parseInt((startOfExerciseWindow - 60 * 1).toString()))
+        await ethers.provider.send('evm_mine', [parseInt((startOfExerciseWindow - 60 * 1).toString())])
         await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
         await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: invalid amountBIn')
