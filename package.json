@@ -38,6 +38,7 @@
     "ethereum-waffle": "3.2.2",
     "ethers": "5.0.26",
     "hardhat": "2.0.8",
+    "hardhat-contract-sizer": "2.0.3",
     "hardhat-gas-reporter": "1.0.4",
     "husky": "4.2.5",
     "mocha": "7.2.0",
