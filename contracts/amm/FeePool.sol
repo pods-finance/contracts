@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IFeePool.sol";
 
@@ -14,6 +15,7 @@ import "../interfaces/IFeePool.sol";
  * Shares can be created to redeem the collected fees between participants proportionally.
  */
 contract FeePool is IFeePool, Ownable {
+    using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
     mapping(address => Balance) private _balances;
@@ -74,7 +76,7 @@ contract FeePool is IFeePool, Ownable {
         _totalLiability = _totalLiability.sub(amortizedLiability);
 
         if (withdrawAmount > 0) {
-            require(IERC20(_token).transfer(to, withdrawAmount), "Could not withdraw fees");
+            IERC20(_token).safeTransfer(to, withdrawAmount);
             emit FeeWithdrawn(_token, to, withdrawAmount, amountOfShares);
         }
     }

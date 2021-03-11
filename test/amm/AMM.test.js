@@ -130,8 +130,10 @@ scenarios.forEach(scenario => {
         await expect(amm.addLiquidity(0, 0, userAAddress)).to.be.revertedWith('AMM: invalid first liquidity')
       })
 
-      it('should revert if user ask more assets than the user s balance', async () => {
-        await expect(amm.addLiquidity(1000, 10000, userAAddress)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
+      it('should revert if user ask more assets than the users balance', async () => {
+        await expect(
+          amm.addLiquidity(1000, 10000, userAAddress)
+        ).to.be.reverted
       })
 
       it('should match balances accordingly', async () => {

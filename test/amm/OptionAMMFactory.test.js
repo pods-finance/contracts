@@ -45,7 +45,7 @@ describe('OptionAMMFactory', () => {
 
     await expect(tx)
       .to.emit(factory, 'PoolCreated')
-      .withArgs(await caller.getAddress(), pool)
+      .withArgs(await caller.getAddress(), pool, option.address)
   })
 
   it('should not deploy a factory without a proper ConfigurationManager', async () => {

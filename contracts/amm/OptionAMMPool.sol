@@ -712,15 +712,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 newSigma = abi.decode(tradeDetails.params, (uint256));
         priceProperties.currentSigma = newSigma;
 
-        require(
-            IERC20(tokenB()).transfer(address(feePoolA), tradeDetails.feesTokenA),
-            "Pool: transfer error - feePoolA"
-        );
+        IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
 
-        require(
-            IERC20(tokenB()).transfer(address(feePoolB), tradeDetails.feesTokenB),
-            "Pool: transfer error - feePoolB"
-        );
+        IERC20(tokenB()).safeTransfer(address(feePoolB), tradeDetails.feesTokenB);
     }
 
     function _onTradeExactAInput(TradeDetails memory tradeDetails) internal override {
