@@ -123,7 +123,7 @@ contract WPodPut is PodPut {
             Address.sendValue(msg.sender, underlyingToSend);
         }
 
-        emit Unmint(msg.sender, amountOfOptions);
+        emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
     }
 
     /**
@@ -179,7 +179,7 @@ contract WPodPut is PodPut {
             Address.sendValue(msg.sender, underlyingToSend);
         }
 
-        emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+        emit Withdraw(msg.sender, strikeToSend, underlyingToSend);
     }
 
     receive() external payable {

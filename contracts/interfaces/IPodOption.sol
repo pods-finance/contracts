@@ -12,9 +12,9 @@ interface IPodOption is IERC20 {
 
     /** Events */
     event Mint(address indexed minter, uint256 amount);
-    event Unmint(address indexed minter, uint256 amount);
+    event Unmint(address indexed minter, uint256 optionAmount, uint256 strikeAmount, uint256 underlyingAmount);
     event Exercise(address indexed exerciser, uint256 amount);
-    event Withdraw(address indexed minter, uint256 amount);
+    event Withdraw(address indexed minter, uint256 strikeAmount, uint256 underlyingAmount);
 
     /** Functions */
 
