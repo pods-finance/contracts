@@ -20,7 +20,7 @@
   "chainlinkPriceFeed": "0x40AD0A3B8B9783FDd82Cd4Ff21061e2b7fA12879",
   "priceProvider": "0xF33A2Be76d047149f5A10d995aAfD32185f8673a",
   "optionAMMFactory": "0xAFE8FBa237811804C5c6501fE316819B9545B1Ec",
-  "optionExchange": "0x4AbB08C611955F41f2f7Bfca22d95e6AaB43713a",
+  "optionHelper": "0x4AbB08C611955F41f2f7Bfca22d95e6AaB43713a",
   "options": {
     "0xdcC1396cEBbB6b4944175EAc177BC25f32cdB29f": {
       "name": "Pods Put WETH:ADAI 1300 2021-03-15",
