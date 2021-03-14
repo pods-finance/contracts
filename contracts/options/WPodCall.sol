@@ -150,17 +150,14 @@ contract WPodCall is PodCall {
         // Sends the strike asset if the option was exercised
         if (strikeReserves > 0) {
             require(strikeToSend > 0, "WPodCall: amount of options is too low");
-            require(
-                IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
-                "WPodCall: could not transfer strike tokens back to caller"
-            );
+            IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
         }
 
         // Sends underlying asset
         IWETH(underlyingAsset()).withdraw(underlyingToSend);
         Address.sendValue(msg.sender, underlyingToSend);
 
-        emit Unmint(msg.sender, amountOfOptions);
+        emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
     }
 
     /**
@@ -192,10 +189,7 @@ contract WPodCall is PodCall {
         _burn(msg.sender, amountOfOptions);
 
         // Retrieve the strike asset from caller
-        require(
-            IERC20(strikeAsset()).transferFrom(msg.sender, address(this), amountStrikeToReceive),
-            "WPodCall: could not transfer strike tokens from caller"
-        );
+        IERC20(strikeAsset()).safeTransferFrom(msg.sender, address(this), amountStrikeToReceive);
 
         // Sends underlying asset
         IWETH(underlyingAsset()).withdraw(amountOfOptions);
@@ -216,17 +210,14 @@ contract WPodCall is PodCall {
         (uint256 strikeToSend, uint256 underlyingToSend) = _withdraw();
 
         if (strikeToSend > 0) {
-            require(
-                IERC20(strikeAsset()).transfer(msg.sender, strikeToSend),
-                "WPodCall: could not transfer strike tokens back to caller"
-            );
+            IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
         }
 
         // Sends underlying asset
         IWETH(underlyingAsset()).withdraw(underlyingToSend);
         Address.sendValue(msg.sender, underlyingToSend);
 
-        emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+        emit Withdraw(msg.sender, strikeToSend, underlyingToSend);
     }
 
     receive() external payable {

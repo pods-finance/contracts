@@ -8,6 +8,7 @@ require('@nomiclabs/hardhat-etherscan')
 
 require('hardhat-gas-reporter')
 require('solidity-coverage')
+require('hardhat-contract-sizer')
 
 require('./tasks/option/deployOptionFactory')
 require('./tasks/deployOptionExchange')
