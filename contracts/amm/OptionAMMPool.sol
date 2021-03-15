@@ -495,24 +495,27 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
             return (0, 0, 0, 0);
         }
 
-        uint256 amountBOutPool = _getAmountBOutPool(newABPrice, exactAmountAIn);
+        (uint256 amountBOutPool, uint256 newTargetABPrice) = _getAmountBOutPool(newABPrice, exactAmountAIn);
 
         uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool);
         uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool);
 
         uint256 amountBOutUser = amountBOutPool.sub(feesTokenA).sub(feesTokenB);
 
-        uint256 newTargetABPrice = amountBOutPool.mul(10**uint256(tokenADecimals())).div(exactAmountAIn);
-
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
         return (amountBOutUser, newIV, feesTokenA, feesTokenB);
     }
 
-    function _getAmountBOutPool(uint256 newABPrice, uint256 exactAmountAIn) internal view returns (uint256) {
+    function _getAmountBOutPool(uint256 newABPrice, uint256 exactAmountAIn)
+        internal
+        view
+        returns (uint256 amountBOut, uint256 newPrice)
+    {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
-        return poolAmountB.sub(productConstant.div(poolAmountA.add(exactAmountAIn)));
+        amountBOut = poolAmountB.sub(productConstant.div(poolAmountA.add(exactAmountAIn)));
+        newPrice = poolAmountB.sub(amountBOut).mul(10**uint256(tokenADecimals())).div(poolAmountA.add(exactAmountAIn));
     }
 
     function _getOptionTradeDetailsExactAOutput(uint256 exactAmountAOut)
@@ -533,24 +536,27 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
             return (0, 0, 0, 0);
         }
 
-        uint256 amountBInPool = _getAmountBInPool(exactAmountAOut, newABPrice);
+        (uint256 amountBInPool, uint256 newTargetABPrice) = _getAmountBInPool(exactAmountAOut, newABPrice);
 
         uint256 feesTokenA = feePoolA.getCollectable(amountBInPool);
         uint256 feesTokenB = feePoolB.getCollectable(amountBInPool);
 
         uint256 amountBInUser = amountBInPool.add(feesTokenA).add(feesTokenB);
 
-        uint256 newTargetABPrice = amountBInPool.mul(10**uint256(tokenADecimals())).div(exactAmountAOut);
-
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
         return (amountBInUser, newIV, feesTokenA, feesTokenB);
     }
 
-    function _getAmountBInPool(uint256 exactAmountAOut, uint256 newABPrice) internal view returns (uint256) {
+    function _getAmountBInPool(uint256 exactAmountAOut, uint256 newABPrice)
+        internal
+        view
+        returns (uint256 amountBIn, uint256 newPrice)
+    {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
-        return productConstant.div(poolAmountA.sub(exactAmountAOut)).sub(poolAmountB);
+        amountBIn = productConstant.div(poolAmountA.sub(exactAmountAOut)).sub(poolAmountB);
+        newPrice = poolAmountB.add(amountBIn).mul(10**uint256(tokenADecimals())).div(poolAmountA.sub(exactAmountAOut));
     }
 
     function _getOptionTradeDetailsExactBInput(uint256 exactAmountBIn)
@@ -575,19 +581,22 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBIn);
         uint256 poolBIn = exactAmountBIn.sub(feesTokenA).sub(feesTokenB);
 
-        uint256 amountAOut = _getAmountAOut(newABPrice, poolBIn);
-
-        uint256 newTargetABPrice = poolBIn.mul(10**uint256(tokenADecimals())).div(amountAOut);
+        (uint256 amountAOut, uint256 newTargetABPrice) = _getAmountAOut(newABPrice, poolBIn);
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
         return (amountAOut, newIV, feesTokenA, feesTokenB);
     }
 
-    function _getAmountAOut(uint256 newABPrice, uint256 poolBIn) internal view returns (uint256) {
+    function _getAmountAOut(uint256 newABPrice, uint256 poolBIn)
+        internal
+        view
+        returns (uint256 amountAOut, uint256 newPrice)
+    {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
-        return poolAmountA.sub(productConstant.div(poolAmountB.add(poolBIn)));
+        amountAOut = poolAmountA.sub(productConstant.div(poolAmountB.add(poolBIn)));
+        newPrice = poolAmountB.add(poolBIn).mul(10**uint256(tokenADecimals())).div(poolAmountA.sub(amountAOut));
     }
 
     function _getOptionTradeDetailsExactBOutput(uint256 exactAmountBOut)
@@ -611,8 +620,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 feesTokenA = feePoolA.getCollectable(exactAmountBOut);
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut);
 
-        uint256 amountAInPool = _getAmountAIn(exactAmountBOut, feesTokenA, feesTokenB, newABPrice);
-        uint256 newTargetABPrice = exactAmountBOut.mul(10**uint256(tokenADecimals())).div(amountAInPool);
+        (uint256 amountAInPool, uint256 newTargetABPrice) = _getAmountAIn(
+            exactAmountBOut,
+            feesTokenA,
+            feesTokenB,
+            newABPrice
+        );
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
@@ -624,11 +637,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 feesTokenA,
         uint256 feesTokenB,
         uint256 newABPrice
-    ) internal view returns (uint256) {
+    ) internal view returns (uint256 amountAInPool, uint256 newPrice) {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
         uint256 poolBOut = exactAmountBOut.add(feesTokenA).add(feesTokenB);
-        return productConstant.div(poolAmountB.sub(poolBOut)).sub(poolAmountA);
+        amountAInPool = productConstant.div(poolAmountB.sub(poolBOut)).sub(poolAmountA);
+        newPrice = poolAmountB.sub(poolBOut).mul(10**uint256(tokenADecimals())).div(poolAmountA.add(amountAInPool));
     }
 
     function _getTradeDetailsExactAInput(uint256 exactAmountAIn) internal override returns (TradeDetails memory) {
