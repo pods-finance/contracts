@@ -5,6 +5,8 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
@@ -17,7 +19,11 @@ import "../interfaces/IOptionAMMPool.sol";
 contract OptionHelper {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
-    IOptionAMMFactory public factory;
+
+    /**
+     * @dev store globally accessed configurations
+     */
+    IConfigurationManager private _configurationManager;
 
     event OptionsBought(
         address indexed buyer,
@@ -43,9 +49,9 @@ contract OptionHelper {
         uint256 tokenAmount
     );
 
-    constructor(IOptionAMMFactory _factory) public {
-        require(address(_factory) != address(0), "OptionHelper: Invalid factory");
-        factory = _factory;
+    constructor(address configurationManager) public {
+        require(Address.isContract(configurationManager), "OptionHelper: Configuration Manager is not a contract");
+        _configurationManager = IConfigurationManager(configurationManager);
     }
 
     modifier withinDeadline(uint256 deadline) {
@@ -238,6 +244,7 @@ contract OptionHelper {
      * @return IOptionAMMPool
      */
     function _getPool(IPodOption option) internal view returns (IOptionAMMPool) {
+        IOptionAMMFactory factory = IOptionAMMFactory(_configurationManager.getAMMFactory());
         address exchangeOptionAddress = factory.getPool(address(option));
         require(exchangeOptionAddress != address(0), "OptionHelper: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);
