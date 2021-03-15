@@ -10,7 +10,7 @@ task('deployNewOption', 'Deploy New Option')
   .addParam('strike', 'symbol of strike asset. (E.G: usdc)')
   .addParam('price', 'Units of strikeAsset in order to trade for 1 unit of underlying. (E.G: 7000)')
   .addParam('expiration', 'Unix Timestamp of the expiration')
-  .addOptionalParam('cap', 'The cap of tokens to be minted')
+  .addParam('cap', 'The cap of tokens to be minted')
   .addFlag('call', 'Add this flag if the option is a Call')
   .addFlag('american', 'Add this flag if the option is american')
   .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american }, hre) => {
