@@ -5,8 +5,9 @@ const fsPromises = fs.promises
 
 task('deployWeek', 'Deploy a whole local test environment')
   .addFlag('start', 'add this flag if you want to start and mint the initial options and add liquidity')
-  .setAction(async ({ start }, bre) => {
-    const pathFile = `../deployments/${bre.network.name}.json`
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
+  .setAction(async ({ start, verify }, hre) => {
+    const pathFile = `../deployments/${hre.network.name}.json`
 
     // 4) Deploy Test Option
     const currentBlockTimestamp = await getTimestamp()
@@ -39,7 +40,8 @@ task('deployWeek', 'Deploy a whole local test environment')
           strike: optionObj.strike,
           underlying: optionObj.underlying,
           price: optionObj.price,
-          expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString()
+          expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString(),
+          verify
         })
         const tokenbAddress = contentJSON[optionObj.strike]
         deployedOptions.push(optionAddress)
@@ -48,7 +50,8 @@ task('deployWeek', 'Deploy a whole local test environment')
         const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
-          initialsigma: '11500000000000000000'
+          initialsigma: '11500000000000000000',
+          verify
         })
 
         console.log('start Flag: ', start)
