@@ -4,8 +4,7 @@ const createMockOption = require('../util/createMockOption')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
 const addLiquidity = require('../util/addLiquidity')
-
-const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD'
+const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
@@ -17,6 +16,7 @@ describe('OptionHelper', () => {
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
   let caller, callerAddress
+  let snapshotId
 
   before(async () => {
     ;[deployer, caller] = await ethers.getSigners()
@@ -50,31 +50,29 @@ describe('OptionHelper', () => {
       OptionAMMFactory.deploy(configurationManager.address)
     ])
 
+    await configurationManager.setAMMFactory(optionAMMFactory.address)
+
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
     const optionsLiquidity = ethers.BigNumber.from(10e8)
     const stableLiquidity = ethers.BigNumber.from(1000e6)
 
     await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
 
-    optionHelper = await OptionHelper.deploy(optionAMMFactory.address)
+    optionHelper = await OptionHelper.deploy(configurationManager.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
     await stableAsset.connect(caller).approve(optionHelper.address, ethers.constants.MaxUint256)
+
+    snapshotId = await takeSnapshot()
   })
 
   afterEach(async () => {
-    await option.connect(caller).transfer(BURN_ADDRESS, await option.balanceOf(callerAddress))
-    await stableAsset.connect(caller).burn(await stableAsset.balanceOf(callerAddress))
-    await strikeAsset.connect(caller).burn(await strikeAsset.balanceOf(callerAddress))
+    await revertToSnapshot(snapshotId)
   })
 
-  it('assigns the factory address correctly', async () => {
-    expect(await optionHelper.factory()).to.equal(optionAMMFactory.address)
-  })
-
-  it('cannot be deployed with a zero-address factory', async () => {
+  it('cannot be deployed with a zero-address configuration manager', async () => {
     const tx = OptionHelper.deploy(ethers.constants.AddressZero)
-    await expect(tx).to.be.revertedWith('OptionHelper: Invalid factory')
+    await expect(tx).to.be.revertedWith('OptionHelper: Configuration Manager is not a contract')
   })
 
   describe('Mint', () => {
