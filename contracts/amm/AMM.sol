@@ -416,10 +416,10 @@ abstract contract AMM is IAMM, RequiredDecimals {
         TradeDetails memory tradeDetails = _getTradeDetailsExactAInput(exactAmountAIn);
         uint256 amountBOut = tradeDetails.amount;
         require(amountBOut > 0, "AMM: invalid amountBOut");
+        require(amountBOut >= minAmountBOut, "AMM: slippage not acceptable");
 
         _onTradeExactAInput(tradeDetails);
 
-        require(amountBOut >= minAmountBOut, "AMM: slippage requirement");
         IERC20(_tokenA).safeTransferFrom(msg.sender, address(this), exactAmountAIn);
         IERC20(_tokenB).safeTransfer(owner, amountBOut);
 
@@ -448,10 +448,10 @@ abstract contract AMM is IAMM, RequiredDecimals {
         TradeDetails memory tradeDetails = _getTradeDetailsExactAOutput(exactAmountAOut);
         uint256 amountBIn = tradeDetails.amount;
         require(amountBIn > 0, "AMM: invalid amountBIn");
+        require(amountBIn <= maxAmountBIn, "AMM: slippage not acceptable");
 
         _onTradeExactAOutput(tradeDetails);
 
-        require(amountBIn <= maxAmountBIn, "AMM: slippage requirement");
         IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), amountBIn);
         IERC20(_tokenA).safeTransfer(owner, exactAmountAOut);
 
@@ -480,10 +480,10 @@ abstract contract AMM is IAMM, RequiredDecimals {
         TradeDetails memory tradeDetails = _getTradeDetailsExactBInput(exactAmountBIn);
         uint256 amountAOut = tradeDetails.amount;
         require(amountAOut > 0, "AMM: invalid amountAOut");
+        require(amountAOut >= minAmountAOut, "AMM: slippage not acceptable");
 
         _onTradeExactBInput(tradeDetails);
 
-        require(amountAOut >= minAmountAOut, "AMM: slippage requirement");
         IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), exactAmountBIn);
         IERC20(_tokenA).safeTransfer(owner, amountAOut);
 
@@ -512,10 +512,10 @@ abstract contract AMM is IAMM, RequiredDecimals {
         TradeDetails memory tradeDetails = _getTradeDetailsExactBOutput(exactAmountBOut);
         uint256 amountAIn = tradeDetails.amount;
         require(amountAIn > 0, "AMM: invalid amountAIn");
+        require(amountAIn <= maxAmountAIn, "AMM: slippage not acceptable");
 
         _onTradeExactBOutput(tradeDetails);
 
-        require(amountAIn <= maxAmountAIn, "AMM: maximum asked");
         IERC20(_tokenA).safeTransferFrom(msg.sender, address(this), amountAIn);
         IERC20(_tokenB).safeTransfer(owner, exactAmountBOut);
 
