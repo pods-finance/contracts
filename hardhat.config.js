@@ -1,5 +1,15 @@
 require('dotenv').config()
 
+require('@nomiclabs/hardhat-ethers')
+require('@nomiclabs/hardhat-waffle')
+require('@nomiclabs/hardhat-web3')
+require('@nomiclabs/hardhat-solhint')
+require('@nomiclabs/hardhat-etherscan')
+
+require('hardhat-gas-reporter')
+require('solidity-coverage')
+require('hardhat-contract-sizer')
+
 require('./tasks/option/deployOptionFactory')
 require('./tasks/deployOptionExchange')
 require('./tasks/deployWeek')
@@ -10,14 +20,6 @@ require('./tasks/configuration/index')
 require('./tasks/option/index')
 require('./tasks/local/index')
 require('./tasks/oracle/index')
-
-require('@nomiclabs/hardhat-ethers')
-require('@nomiclabs/hardhat-waffle')
-require('@nomiclabs/hardhat-web3')
-require('@nomiclabs/hardhat-solhint')
-require('hardhat-gas-reporter')
-require('solidity-coverage')
-require('hardhat-contract-sizer')
 
 module.exports = {
   networks: {
@@ -69,5 +71,8 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     enabled: !!(process.env.REPORT_GAS)
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_APIKEY
   }
 }
