@@ -6,7 +6,7 @@ task('deployChainlink', 'Deploy Chainlink Contract')
     const Chainlink = await ethers.getContractFactory('ChainlinkPriceFeed')
     const chainlink = await Chainlink.deploy(source)
 
-    await chainlink.deployed()
+    await chainlink.deployed(2)
     console.log('Chainlink', chainlink.address)
     return chainlink.address
   })
