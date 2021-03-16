@@ -32,7 +32,7 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
     })
 
     const optionAMMFactory = await hre.run('deployOptionAMMFactory', { configuration: configurationManagerAddress })
-    await hre.run('deployOptionExchange', { factory: optionAMMFactory })
+    await hre.run('deployOptionHelper', { factory: optionAMMFactory })
 
     console.log('End of amm environment configuration')
   })

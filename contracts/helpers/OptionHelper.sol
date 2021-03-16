@@ -12,10 +12,9 @@ import "../interfaces/IOptionAMMPool.sol";
 /**
  * @title PodOption
  * @author Pods Finance
- * @notice Represents a Proxy that can mint and sell on the behalf of a Option Seller,
- * alternatively it can buy to a Option Buyer
+ * @notice Represents a Proxy that can perform a set of operations on the behalf of an user
  */
-contract OptionExchange {
+contract OptionHelper {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     IOptionAMMFactory public factory;
@@ -45,12 +44,12 @@ contract OptionExchange {
     );
 
     constructor(IOptionAMMFactory _factory) public {
-        require(address(_factory) != address(0), "OptionExchange: Invalid factory");
+        require(address(_factory) != address(0), "OptionHelper: Invalid factory");
         factory = _factory;
     }
 
     modifier withinDeadline(uint256 deadline) {
-        require(deadline > block.timestamp, "OptionExchange: deadline expired");
+        require(deadline > block.timestamp, "OptionHelper: deadline expired");
         _;
     }
 
@@ -233,14 +232,14 @@ contract OptionExchange {
     }
 
     /**
-     * @dev Returns the AMM Exchange associated with the option
+     * @dev Returns the AMM Pool associated with the option
      *
      * @param option The option to search for
      * @return IOptionAMMPool
      */
     function _getPool(IPodOption option) internal view returns (IOptionAMMPool) {
         address exchangeOptionAddress = factory.getPool(address(option));
-        require(exchangeOptionAddress != address(0), "OptionExchange: pool not found");
+        require(exchangeOptionAddress != address(0), "OptionHelper: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);
     }
 }

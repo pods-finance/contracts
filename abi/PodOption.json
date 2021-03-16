@@ -12,6 +12,11 @@
         "type": "string"
       },
       {
+        "internalType": "enum IPodOption.OptionType",
+        "name": "optionType",
+        "type": "uint8"
+      },
+      {
         "internalType": "enum IPodOption.ExerciseType",
         "name": "exerciseType",
         "type": "uint8"
@@ -150,7 +155,19 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "optionAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strikeAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "underlyingAmount",
         "type": "uint256"
       }
     ],
@@ -169,7 +186,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "strikeAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "underlyingAmount",
         "type": "uint256"
       }
     ],
@@ -775,4 +798,4 @@
     "stateMutability": "nonpayable",
     "type": "function"
   }
-]
+],
