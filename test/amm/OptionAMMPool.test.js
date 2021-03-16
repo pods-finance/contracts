@@ -645,6 +645,8 @@ scenarios.forEach(scenario => {
         const buyerStrikeAmountBeforeTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(numberOfOptionsToBuy)
 
+        await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, 0, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
+
         await optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
 
         const buyerStrikeAmountAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
@@ -711,6 +713,8 @@ scenarios.forEach(scenario => {
         const [poolOptionAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
         // const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAInput(numberOfOptionsToSell)
 
+        await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
+
         await optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, 0, buyerAddress, scenario.initialSigma)
 
         const buyerOptionAfterBuyer = await option.balanceOf(buyerAddress)
@@ -772,6 +776,8 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactBOutput(numberOfTokensToReceive)
+
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, 0, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
         await optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
 
@@ -860,6 +866,8 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactBInput(numberOfTokensToSend)
+
+        await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
         await optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, 0, buyerAddress, scenario.initialSigma)
 
