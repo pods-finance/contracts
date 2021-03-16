@@ -537,7 +537,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         }
 
         (uint256 amountBInPool, uint256 newTargetABPrice) = _getAmountBInPool(exactAmountAOut, newABPrice);
-
         uint256 feesTokenA = feePoolA.getCollectable(amountBInPool);
         uint256 feesTokenB = feePoolB.getCollectable(amountBInPool);
 
@@ -727,7 +726,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         priceProperties.currentSigma = newSigma;
 
         IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
-
         IERC20(tokenB()).safeTransfer(address(feePoolB), tradeDetails.feesTokenB);
     }
 

@@ -1,7 +1,9 @@
 const saveJSON = require('../utils/saveJSON')
+const verifyContract = require('../utils/verify')
 
 task('deployConfigurationManager', 'Deploy a new instance of ConfigurationManager + Emergency + Cap and link them')
-  .setAction(async ({}, hre) => {
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
+  .setAction(async ({ verify }, hre) => {
     console.log('----Start Deploy ConfiguratorManager + Emergency + Cap----')
     const [ConfigurationManager, EmergencyStop, CapProvider] = await Promise.all([
       ethers.getContractFactory('ConfigurationManager'),
@@ -41,6 +43,13 @@ task('deployConfigurationManager', 'Deploy a new instance of ConfigurationManage
     }
 
     await saveJSON(`../../deployments/${hre.network.name}.json`, saveObj)
+
+    if (verify) {
+      await verifyContract(hre, configurationManager.address)
+      await verifyContract(hre, emergencyStop.address)
+      await verifyContract(hre, capProvider.address)
+    }
+
     console.log('----End Deploy ConfiguratorManager + Emergency + Cap----')
     return configurationManager.address
   })

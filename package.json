@@ -30,6 +30,7 @@
   "homepage": "https://github.com/pods-finance/contracts#readme",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "2.0.1",
+    "@nomiclabs/hardhat-etherscan": "2.1.1",
     "@nomiclabs/hardhat-solhint": "2.0.0",
     "@nomiclabs/hardhat-waffle": "2.0.1",
     "@nomiclabs/hardhat-web3": "2.0.0",
@@ -38,6 +39,7 @@
     "ethereum-waffle": "3.2.2",
     "ethers": "5.0.26",
     "hardhat": "2.0.8",
+    "hardhat-contract-sizer": "2.0.3",
     "hardhat-gas-reporter": "1.0.4",
     "husky": "4.2.5",
     "mocha": "7.2.0",
@@ -75,7 +77,8 @@
       "usePlugin",
       "ethers",
       "artifacts",
-      "web3"
+      "web3",
+      "hre"
     ]
   }
 }

@@ -5,6 +5,8 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
@@ -12,13 +14,16 @@ import "../interfaces/IOptionAMMPool.sol";
 /**
  * @title PodOption
  * @author Pods Finance
- * @notice Represents a Proxy that can mint and sell on the behalf of a Option Seller,
- * alternatively it can buy to a Option Buyer
+ * @notice Represents a Proxy that can perform a set of operations on the behalf of an user
  */
-contract OptionExchange {
+contract OptionHelper {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
-    IOptionAMMFactory public factory;
+
+    /**
+     * @dev store globally accessed configurations
+     */
+    IConfigurationManager private _configurationManager;
 
     event OptionsBought(
         address indexed buyer,
@@ -44,13 +49,13 @@ contract OptionExchange {
         uint256 tokenAmount
     );
 
-    constructor(IOptionAMMFactory _factory) public {
-        require(address(_factory) != address(0), "OptionExchange: Invalid factory");
-        factory = _factory;
+    constructor(address configurationManager) public {
+        require(Address.isContract(configurationManager), "OptionHelper: Configuration Manager is not a contract");
+        _configurationManager = IConfigurationManager(configurationManager);
     }
 
     modifier withinDeadline(uint256 deadline) {
-        require(deadline > block.timestamp, "OptionExchange: deadline expired");
+        require(deadline > block.timestamp, "OptionHelper: deadline expired");
         _;
     }
 
@@ -233,14 +238,15 @@ contract OptionExchange {
     }
 
     /**
-     * @dev Returns the AMM Exchange associated with the option
+     * @dev Returns the AMM Pool associated with the option
      *
      * @param option The option to search for
      * @return IOptionAMMPool
      */
     function _getPool(IPodOption option) internal view returns (IOptionAMMPool) {
+        IOptionAMMFactory factory = IOptionAMMFactory(_configurationManager.getAMMFactory());
         address exchangeOptionAddress = factory.getPool(address(option));
-        require(exchangeOptionAddress != address(0), "OptionExchange: pool not found");
+        require(exchangeOptionAddress != address(0), "OptionHelper: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);
     }
 }

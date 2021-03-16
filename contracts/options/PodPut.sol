@@ -158,7 +158,7 @@ contract PodPut is PodOption {
             IERC20(underlyingAsset()).safeTransfer(msg.sender, underlyingToSend);
         }
 
-        emit Unmint(msg.sender, amountOfOptions);
+        emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
     }
 
     /**
@@ -215,6 +215,6 @@ contract PodPut is PodOption {
         if (underlyingToSend > 0) {
             IERC20(underlyingAsset()).safeTransfer(msg.sender, underlyingToSend);
         }
-        emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+        emit Withdraw(msg.sender, strikeToSend, underlyingToSend);
     }
 }

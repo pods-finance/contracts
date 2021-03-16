@@ -4,13 +4,15 @@ const fs = require('fs')
 const path = require('path')
 const fsPromises = fs.promises
 const { toBigNumber } = require('../../utils/utils')
+const verifyContract = require('../utils/verify')
 
 task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
   .addParam('initialsigma', 'Initial Sigma to start the pool')
-  .addOptionalParam('cap', 'The cap of tokenB liquidity to be added')
-  .setAction(async ({ option, tokenb, initialsigma, cap }, hre) => {
+  .addParam('cap', 'The cap of tokenB liquidity to be added')
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
+  .setAction(async ({ option, tokenb, initialsigma, cap, verify }, hre) => {
     console.log('----Start Deploy New Pool----')
     const pathFile = `../../deployments/${hre.network.name}.json`
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
@@ -61,6 +63,11 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       }
 
       await saveJSON(pathFile, { pools: newPoolObj })
+
+      if (verify) {
+        await verifyContract(hre, poolAddress, [option, tokenb, initialsigma])
+      }
+
       console.log('----End Deploy New Pool----')
       return poolAddress
     } else {

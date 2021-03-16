@@ -169,7 +169,19 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "optionAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strikeAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "underlyingAmount",
         "type": "uint256"
       }
     ],
@@ -188,7 +200,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "strikeAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "underlyingAmount",
         "type": "uint256"
       }
     ],

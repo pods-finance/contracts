@@ -2,17 +2,19 @@ const saveJSON = require('../utils/saveJSON')
 const fs = require('fs')
 const pathJoin = require('path')
 const fsPromises = fs.promises
+const verifyContract = require('../utils/verify')
 
 task('deployOptionFactory', 'Deploy OptionFactory')
   .addFlag('builders', 'true if want to deploy all builders combined')
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addOptionalParam('podputbuilder', 'podputbuilder contract address')
   .addOptionalParam('wpodputbuilder', 'wpodputbuilder contract address')
   .addOptionalParam('podcallbuilder', 'podcallbuilder contract address')
   .addOptionalParam('wpodcallbuilder', 'wpodcallbuilder contract address')
 
-  .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, configuration, builders }, bre) => {
-    const path = `../../deployments/${bre.network.name}.json`
+  .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, configuration, builders, verify }, hre) => {
+    const path = `../../deployments/${hre.network.name}.json`
     const _filePath = pathJoin.join(__dirname, path)
     const content = await fsPromises.readFile(_filePath)
     const wethAddress = JSON.parse(content).WETH
@@ -30,18 +32,31 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     }
 
     const OptionFactory = await ethers.getContractFactory('OptionFactory')
-    const factory = await OptionFactory.deploy(
+    
+    const constructorElements = [
       wethAddress,
       podputbuilder,
       wpodputbuilder,
       podcallbuilder,
       wpodcallbuilder,
-      configurationManager
-    )
+      configurationManager]
+
+    const factory = await OptionFactory.deploy(...constructorElements)
 
     await factory.deployed()
 
     await saveJSON(path, { optionFactory: factory.address })
+
+    if (verify) {
+      await verifyContract(hre, factory.address, constructorElements)
+
+      if (builders) {
+        await verifyContract(hre, podputbuilder)
+        await verifyContract(hre, wpodputbuilder)
+        await verifyContract(hre, podcallbuilder)
+        await verifyContract(hre, wpodcallbuilder)
+      }
+    }
 
     console.log('OptionFactory deployed to: ', factory.address)
     return factory

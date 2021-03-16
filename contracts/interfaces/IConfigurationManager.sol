@@ -12,6 +12,8 @@ interface IConfigurationManager {
 
     function setCapProvider(address capProvider) external;
 
+    function setAMMFactory(address ammFactory) external;
+
     function getEmergencyStop() external view returns (address);
 
     function getPricingMethod() external view returns (address);
@@ -21,4 +23,6 @@ interface IConfigurationManager {
     function getPriceProvider() external view returns (address);
 
     function getCapProvider() external view returns (address);
+
+    function getAMMFactory() external view returns (address);
 }

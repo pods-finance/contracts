@@ -1,5 +1,6 @@
 const saveJSON = require('../utils/saveJSON')
 const { toBigNumber } = require('../../utils/utils')
+const verifyContract = require('../utils/verify')
 
 const fs = require('fs')
 const path = require('path')
@@ -10,10 +11,11 @@ task('deployNewOption', 'Deploy New Option')
   .addParam('strike', 'symbol of strike asset. (E.G: usdc)')
   .addParam('price', 'Units of strikeAsset in order to trade for 1 unit of underlying. (E.G: 7000)')
   .addParam('expiration', 'Unix Timestamp of the expiration')
-  .addOptionalParam('cap', 'The cap of tokens to be minted')
+  .addParam('cap', 'The cap of tokens to be minted')
   .addFlag('call', 'Add this flag if the option is a Call')
   .addFlag('american', 'Add this flag if the option is american')
-  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american }, hre) => {
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
+  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american, verify }, hre) => {
     console.log('----Start Deploy New Option----')
     const pathFile = `../../deployments/${hre.network.name}.json`
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
@@ -28,6 +30,7 @@ task('deployNewOption', 'Deploy New Option')
     const strikeAssetAddress = contentJSON[strikeAsset]
     const underlyingAssetAddress = contentJSON[underlyingAsset]
     const optionFactoryAddress = contentJSON.optionFactory
+    const configuratorManagerAddress = contentJSON.configurationManager
 
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()
@@ -95,6 +98,13 @@ task('deployNewOption', 'Deploy New Option')
       }
 
       await saveJSON(pathFile, { options: newOptionObj })
+
+      if (verify) {
+        const constructorElements = [...funcParameters]
+        constructorElements.splice(2) // remove option type
+        constructorElements.push(configuratorManagerAddress)
+        await verifyContract(hre, option, constructorElements)
+      }
 
       console.log('----Finish Deploy New Option----')
       return option
