@@ -10,11 +10,11 @@ internalTask('deployPriceProvider', 'Deploy PriceProvider Contract')
       assetArray = [asset]
       feedArray = [feed]
     }
-    
+
     const PriceProvider = await ethers.getContractFactory('PriceProvider')
     const priceProvider = await PriceProvider.deploy(assetArray, feedArray)
 
-    await priceProvider.deployed()
+    await priceProvider.deployed(2)
     console.log('PriceProvider Address', priceProvider.address)
     return priceProvider.address
   })
