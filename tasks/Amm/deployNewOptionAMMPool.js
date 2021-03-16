@@ -10,7 +10,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
   .addParam('initialsigma', 'Initial Sigma to start the pool')
-  .addOptionalParam('cap', 'The cap of tokenB liquidity to be added')
+  .addParam('cap', 'The cap of tokenB liquidity to be added')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .setAction(async ({ option, tokenb, initialsigma, cap, verify }, hre) => {
     console.log('----Start Deploy New Pool----')
