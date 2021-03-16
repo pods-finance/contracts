@@ -157,7 +157,7 @@ contract PodCall is PodOption {
             IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
         }
 
-        emit Unmint(msg.sender, amountOfOptions);
+        emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
     }
 
     /**
@@ -214,6 +214,6 @@ contract PodCall is PodOption {
         if (strikeToSend > 0) {
             IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
         }
-        emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+        emit Withdraw(msg.sender, strikeToSend, underlyingToSend);
     }
 }

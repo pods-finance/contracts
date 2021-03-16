@@ -157,7 +157,7 @@ contract WPodCall is PodCall {
         IWETH(underlyingAsset()).withdraw(underlyingToSend);
         Address.sendValue(msg.sender, underlyingToSend);
 
-        emit Unmint(msg.sender, amountOfOptions);
+        emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
     }
 
     /**
@@ -217,7 +217,7 @@ contract WPodCall is PodCall {
         IWETH(underlyingAsset()).withdraw(underlyingToSend);
         Address.sendValue(msg.sender, underlyingToSend);
 
-        emit Withdraw(msg.sender, mintedOptions[msg.sender]);
+        emit Withdraw(msg.sender, strikeToSend, underlyingToSend);
     }
 
     receive() external payable {
