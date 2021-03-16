@@ -154,7 +154,7 @@ describe('BlackScholes', () => {
         scenario.riskFree
       )
 
-      console.log(`\Call price: ${callPrice}`)
+      console.log(`\tCall price: ${callPrice}`)
 
       expect(approximately(scenario.expectedPrice, callPrice)).to.equal(true)
     })

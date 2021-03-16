@@ -189,6 +189,10 @@ scenarios.forEach(scenario => {
         const balanceAfterUserATokenA = await mockTokenA.balanceOf(userAAddress)
         const balanceAfterUserATokenB = await mockTokenB.balanceOf(userAAddress)
 
+        const userDepositSnapshot = await amm.getUserDepositSnapshot(userAAddress)
+        expect(userDepositSnapshot.tokenAOriginalBalance).to.be.equal(amountTokenAToMint)
+        expect(userDepositSnapshot.tokenBOriginalBalance).to.be.equal(amountTokenBToMint)
+
         expect(balanceAfterPoolTokenA).to.equal(amountTokenAToMint)
         expect(balanceAfterPoolTokenB).to.equal(amountTokenBToMint)
         expect(balanceAfterUserATokenA).to.equal(toBigNumber(0))
@@ -351,6 +355,18 @@ scenarios.forEach(scenario => {
 
         expect(balanceAfterUserATokenA).to.equal(amountTokenAToMint.add(amountTokenAToSendDirectly))
         expect(balanceAfterUserATokenB).to.equal(amountTokenBToMint.add(amountTokenBToSendDirectly))
+      })
+
+      it('should not remove liquidity when percentages dont match', async () => {
+        // Adding liquidity
+        await mockTokenA.connect(userB).mint(1e8)
+        await mockTokenB.connect(userB).mint(1e8)
+        await mockTokenA.connect(userB).approve(amm.address, 1e8)
+        await mockTokenB.connect(userB).approve(amm.address, 1e8)
+        await amm.connect(userB).addLiquidity(1e8, 1e8, userBAddress)
+
+        await expect(amm.connect(userB).removeLiquidity(101, 100)).to.be.revertedWith('AMM: forbidden percent')
+        await expect(amm.connect(userB).removeLiquidity(100, 101)).to.be.revertedWith('AMM: forbidden percent')
       })
 
       it('should show the position of users that did not add liquidity', async () => {

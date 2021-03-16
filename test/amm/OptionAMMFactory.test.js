@@ -49,8 +49,13 @@ describe('OptionAMMFactory', () => {
   })
 
   it('should not deploy a factory without a proper ConfigurationManager', async () => {
-    const tx = OptionAMMFactory.deploy(ethers.constants.AddressZero)
-    await expect(tx).to.be.revertedWith('OptionAMMFactory: Configuration Manager is not a contract')
+    await expect(
+      OptionAMMFactory.deploy(ethers.constants.AddressZero)
+    ).to.be.revertedWith('OptionAMMFactory: Configuration Manager is not a contract')
+
+    await expect(
+      OptionAMMFactory.deploy(await caller.getAddress())
+    ).to.be.revertedWith('OptionAMMFactory: Configuration Manager is not a contract')
   })
 
   it('should not create the same pool twice', async () => {
