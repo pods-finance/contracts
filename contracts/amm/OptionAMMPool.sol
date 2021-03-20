@@ -497,6 +497,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         (uint256 amountBOutPool, uint256 newTargetABPrice) = _getAmountBOutPool(newABPrice, exactAmountAIn);
 
+        if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
+            return (0, 0, 0, 0);
+        }
+
         uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool);
         uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool);
 
@@ -626,6 +630,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
             newABPrice
         );
 
+        if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
+            return (0, 0, 0, 0);
+        }
+
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
         return (amountAInPool, newIV, feesTokenA, feesTokenB);
@@ -678,6 +686,23 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         TradeDetails memory tradeDetails = TradeDetails(amountAIn, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
+    }
+
+    function _isValidTargetPrice(uint256 newTargetPrice, uint256 spotPrice) internal view returns (bool) {
+        if (priceProperties.optionType == IPodOption.OptionType.PUT) {
+            if (spotPrice < priceProperties.strikePrice) {
+                return
+                    newTargetPrice >
+                    priceProperties.strikePrice.sub(spotPrice).div(10**PRICING_DECIMALS.sub(tokenBDecimals()));
+            }
+        } else {
+            if (spotPrice > priceProperties.strikePrice) {
+                return
+                    newTargetPrice >
+                    spotPrice.sub(priceProperties.strikePrice).div(10**PRICING_DECIMALS.sub(tokenBDecimals()));
+            }
+        }
+        return true;
     }
 
     function _onAddLiquidity(UserDepositSnapshot memory _userDepositSnapshot, address owner) internal override {
