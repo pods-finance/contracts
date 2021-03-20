@@ -34,6 +34,18 @@ describe('NormalDistribution', () => {
     )
   })
 
+  it('sets a new data point in the ND curve', async () => {
+    const tx = nd.setDataPoint(30800, 9991);
+
+    await expect(tx)
+      .to.emit(nd, 'DataPointSet')
+      .withArgs(30800, 9991)
+
+    expect(
+      await nd.getProbability('3080000000000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('999100000000000000000000'))
+  })
+
   it('gets concentrated probabilities', async () => {
     expect(
       await nd.getProbability('3080000000000000000000000', 24)

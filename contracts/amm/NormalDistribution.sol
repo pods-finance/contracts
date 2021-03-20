@@ -2,6 +2,7 @@
 pragma solidity 0.6.12;
 
 import "../interfaces/INormalDistribution.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
@@ -10,9 +11,11 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  * @notice Calculates the Cumulative Distribution Function of
  * the standard normal distribution
  */
-contract NormalDistribution is INormalDistribution {
+contract NormalDistribution is INormalDistribution, Ownable {
     using SafeMath for uint256;
     mapping(uint256 => uint256) private _probabilities;
+
+    event DataPointSet(uint256 key, uint256 value);
 
     constructor() public {
         _probabilities[100] = 5040;
@@ -347,6 +350,16 @@ contract NormalDistribution is INormalDistribution {
     }
 
     /**
+     * @dev Defines a new probability point
+     * @param key A point in the normal distribution
+     * @param value The value
+     */
+    function setDataPoint(uint256 key, uint256 value) external override onlyOwner {
+        _probabilities[key] = value;
+        emit DataPointSet(key, value);
+    }
+
+    /**
      * @dev Returns the module of a number.
      */
     function _abs(int256 a) internal pure returns (uint256) {
@@ -357,7 +370,9 @@ contract NormalDistribution is INormalDistribution {
      * @dev Returns the nearest z value on the table
      */
     function _nearest(uint256 z) internal view returns (uint256) {
-        if (z >= 36300) {
+        if (_probabilities[z] != 0) {
+            return _probabilities[z];
+        } else if (z >= 36300) {
             return 9999;
         } else if (z >= 34900) {
             return 9998;
@@ -375,10 +390,8 @@ contract NormalDistribution is INormalDistribution {
             return 9992;
         } else if (z >= 31100) {
             return 9991;
-        } else if (z >= 30800) {
-            return 9990;
         } else {
-            return _probabilities[z];
+            return 9990;
         }
     }
 }
