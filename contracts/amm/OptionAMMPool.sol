@@ -509,7 +509,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     }
 
     /**
-     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
+     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
      * @param poolAIn The exact amount of tokenA(options) will enter the pool
@@ -553,7 +553,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     }
 
     /**
-     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
+     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
      * @param poolAOut The amount of tokenA(options) will leave the pool
@@ -596,7 +596,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     }
 
     /**
-     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
+     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
      * @param poolBIn The exact amount of tokenB will enter the pool
