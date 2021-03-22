@@ -53,7 +53,7 @@ const scenarios = [
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
     spotPriceDecimals: 8,
-    initialSigma: toBigNumber(200 * 1e18),
+    initialSigma: toBigNumber(2 * 1e18),
     expectedNewIV: toBigNumber(1.2 * 1e18),
     cap: ethers.BigNumber.from(2000000e6.toString())
   }
@@ -693,7 +693,7 @@ scenarios.forEach(scenario => {
 
     describe('tradeExactAInput', () => {
       it('should match values accordingly', async () => {
-        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpNeed = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
