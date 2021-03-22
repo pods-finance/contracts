@@ -5,8 +5,8 @@ import "./IAMM.sol";
 
 interface IOptionAMMPool is IAMM {
 
-    // @dev 0 for token A entering the pool, B leaving
-    // 1 for B entering, B leaving
+    // @dev 0 for when tokenA enter the pool and B leaving (A -> B)
+    // and 1 for the opposite direction
     enum TradeDirection { AB, BA }
 
     function tradeExactAInput(
