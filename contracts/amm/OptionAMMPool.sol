@@ -717,6 +717,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         return tradeDetails;
     }
 
+    /**
+     * @dev If a option is ITM, either PUTs or CALLs, the minimum price that it would cost is the difference between the spot price and strike price. If the target price after applying slippage is above this minimum, the function
+     * returns true.
+     * @param newTargetPrice the new ABPrice after slippage (how many units of tokenB, to buy 1 option)
+     * @param spotPrice current underlying asset spot price during this transaction
+     * @return true if is a valid target price (above the minimum)
+     */
     function _isValidTargetPrice(uint256 newTargetPrice, uint256 spotPrice) internal view returns (bool) {
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             if (spotPrice < priceProperties.strikePrice) {
