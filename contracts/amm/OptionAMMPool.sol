@@ -498,6 +498,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
         uint256 amountBOutPool = _getAmountBOutPool(newABPrice, exactAmountAIn);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, exactAmountAIn, amountBOutPool, TradeDirection.AB);
 
+        if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
+            return (0, 0, 0, 0);
+        }
+
         uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool);
         uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool);
 
@@ -509,6 +513,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     }
 
     /**
+
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
@@ -553,6 +558,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     }
 
     /**
+
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
@@ -596,6 +602,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
     }
 
     /**
+
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
@@ -632,6 +639,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         uint256 amountAInPool = _getAmountAIn(newABPrice, poolBOut);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAInPool, poolBOut, TradeDirection.AB);
+
+        if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
+            return (0, 0, 0, 0);
+        }
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
@@ -707,6 +718,30 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool {
 
         TradeDetails memory tradeDetails = TradeDetails(amountAIn, feesTokenA, feesTokenB, abi.encodePacked(newIV));
         return tradeDetails;
+    }
+
+    /**
+     * @dev If a option is ITM, either PUTs or CALLs, the minimum price that it would cost is the difference between the spot price and strike price. If the target price after applying slippage is above this minimum, the function
+     * returns true.
+     * @param newTargetPrice the new ABPrice after slippage (how many units of tokenB, to buy 1 option)
+     * @param spotPrice current underlying asset spot price during this transaction
+     * @return true if is a valid target price (above the minimum)
+     */
+    function _isValidTargetPrice(uint256 newTargetPrice, uint256 spotPrice) internal view returns (bool) {
+        if (priceProperties.optionType == IPodOption.OptionType.PUT) {
+            if (spotPrice < priceProperties.strikePrice) {
+                return
+                    newTargetPrice >
+                    priceProperties.strikePrice.sub(spotPrice).div(10**PRICING_DECIMALS.sub(tokenBDecimals()));
+            }
+        } else {
+            if (spotPrice > priceProperties.strikePrice) {
+                return
+                    newTargetPrice >
+                    spotPrice.sub(priceProperties.strikePrice).div(10**PRICING_DECIMALS.sub(tokenBDecimals()));
+            }
+        }
+        return true;
     }
 
     function _onAddLiquidity(UserDepositSnapshot memory _userDepositSnapshot, address owner) internal override {
