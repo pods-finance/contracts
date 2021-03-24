@@ -2,7 +2,6 @@ pragma solidity 0.6.12;
 
 import "../interfaces/IOptionAMMPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 contract AttackerOptionPool {
     function addLiquidityAndBuy(
