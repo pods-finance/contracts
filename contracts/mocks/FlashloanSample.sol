@@ -1,8 +1,8 @@
 pragma solidity 0.6.12;
 
-import "../lib/ReentrancyGuard.sol";
+import "../lib/FlashloanProtection.sol";
 
-contract ReentrancySample is ReentrancyGuard {
+contract FlashloanSample is FlashloanProtection {
     uint256 public interactions = 0;
 
     function one() public {

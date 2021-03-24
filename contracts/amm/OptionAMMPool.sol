@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./AMM.sol";
 import "../lib/CappedPool.sol";
-import "../lib/ReentrancyGuard.sol";
+import "../lib/FlashloanProtection.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/ISigma.sol";
@@ -30,7 +30,7 @@ import "../interfaces/IEmergencyStop.sol";
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
-contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, ReentrancyGuard {
+contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     using SafeMath for uint256;
     uint256 public constant PRICING_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;

@@ -2,12 +2,12 @@ const { ethers } = require('hardhat')
 const { expect } = require('chai')
 const { toBigNumber } = require('../../utils/utils')
 
-describe('ReentrancyGuard', () => {
+describe('FlashloanProtection', () => {
   let reentrancySample, reentrancyAttacker
 
   before(async () => {
-    const ReentrancySample = await ethers.getContractFactory('ReentrancySample')
-    const ReentrancyAttacker = await ethers.getContractFactory('ReentrancyAttacker')
+    const ReentrancySample = await ethers.getContractFactory('FlashloanSample')
+    const ReentrancyAttacker = await ethers.getContractFactory('CombinedAttacker')
 
     reentrancySample = await ReentrancySample.deploy()
     reentrancyAttacker = await ReentrancyAttacker.deploy()
@@ -17,7 +17,7 @@ describe('ReentrancyGuard', () => {
   })
 
   it('Should revert if an origin try to call function one and two at same block.number from the same origin', async () => {
-    await expect(reentrancyAttacker.zapper(reentrancySample.address)).to.be.revertedWith('ReentrancyGuard: reentrant call')
+    await expect(reentrancyAttacker.zapper(reentrancySample.address)).to.be.revertedWith('FlashloanProtection: reentrant call')
   })
 
   it('Should allow if the user tries to execute the same transaction, but in a sequence of blocks', async () => {

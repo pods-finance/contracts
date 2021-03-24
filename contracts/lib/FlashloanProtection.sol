@@ -1,6 +1,6 @@
 pragma solidity 0.6.12;
 
-contract ReentrancyGuard {
+contract FlashloanProtection {
     mapping(address => uint256) sessions;
 
     /**
@@ -9,7 +9,7 @@ contract ReentrancyGuard {
      */
     function _nonReentrant() internal {
         uint256 lastEnterBlock = sessions[tx.origin];
-        require(lastEnterBlock != block.number, "ReentrancyGuard: reentrant call");
+        require(lastEnterBlock != block.number, "FlashloanProtection: reentrant call");
         sessions[tx.origin] = block.number;
     }
 }
