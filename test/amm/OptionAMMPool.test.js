@@ -955,5 +955,37 @@ scenarios.forEach(scenario => {
         ).to.be.revertedWith('Pool: Pool is stopped')
       })
     })
+    describe('Flashloan protection', () => {
+      it('Should revert if an origin address tries to perform -add liquidity- and -trade- in the same block', async () => {
+        const AttackerContract = await ethers.getContractFactory('AttackerOptionPool')
+        const attackerContract = await AttackerContract.deploy()
+
+        const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const optionLiquidityToBuy = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        await mintOptions(option, optionLiquidityToBuy, buyer)
+        await option.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
+
+        await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(200))
+        await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
+
+        await expect(attackerContract.connect(buyer).addLiquidityAndBuy(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToBuy, buyerAddress)).to.be.revertedWith('ReentrancyGuard: reentrant call')
+      })
+      it('Should revert if an origin address tries to perform -add liquidity- and -remove liquidity- in the same block', async () => {
+        const AttackerContract = await ethers.getContractFactory('AttackerOptionPool')
+        const attackerContract = await AttackerContract.deploy()
+
+        const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        await mintOptions(option, optionLiquidityToAdd, buyer)
+        await option.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
+
+        await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(200))
+        await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
+
+        await expect(attackerContract.connect(buyer).addLiquidityAndRemove(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToAdd, buyerAddress)).to.be.revertedWith('ReentrancyGuard: reentrant call')
+      })
+    })
   })
 })
