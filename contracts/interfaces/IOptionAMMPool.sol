@@ -4,6 +4,11 @@ pragma solidity 0.6.12;
 import "./IAMM.sol";
 
 interface IOptionAMMPool is IAMM {
+
+    // @dev 0 for when tokenA enter the pool and B leaving (A -> B)
+    // and 1 for the opposite direction
+    enum TradeDirection { AB, BA }
+
     function tradeExactAInput(
         uint256 exactAmountAIn,
         uint256 minAmountBOut,

@@ -53,7 +53,7 @@ const scenarios = [
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
     spotPriceDecimals: 8,
-    initialSigma: toBigNumber(200 * 1e18),
+    initialSigma: toBigNumber(2 * 1e18),
     expectedNewIV: toBigNumber(1.2 * 1e18),
     cap: ethers.BigNumber.from(2000000e6.toString())
   }
@@ -693,7 +693,7 @@ scenarios.forEach(scenario => {
 
     describe('tradeExactAInput', () => {
       it('should match values accordingly', async () => {
-        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpNeed = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
@@ -713,9 +713,11 @@ scenarios.forEach(scenario => {
         const [poolOptionAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
         // const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAInput(numberOfOptionsToSell)
 
-        await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
+        const priceObj = await optionAMMPool.getOptionTradeDetailsExactAInput(numberOfOptionsToSell)
 
-        await optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, 0, buyerAddress, scenario.initialSigma)
+        await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, '1000000000000000000000000', buyerAddress, priceObj.newIV)).to.be.revertedWith('AMM: slippage not acceptable')
+
+        await optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, 0, buyerAddress, priceObj.newIV)
 
         const buyerOptionAfterBuyer = await option.balanceOf(buyerAddress)
         const tokenBAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
@@ -726,6 +728,30 @@ scenarios.forEach(scenario => {
 
         expect(buyerOptionAfterBuyer).to.eq(buyerOptionBeforeTrade.sub(numberOfOptionsToSell))
         expect(poolOptionAmountAfterTrade).to.eq(poolOptionAmountBeforeTrade.add(numberOfOptionsToSell))
+      })
+
+      it('should revert if trying to sell a lot of options (targetPrice < minimum acceptable', async () => {
+        if (scenario.optionType === OPTION_TYPE_PUT) {
+          await defaultPriceFeed.setRoundData({
+            roundId: 1,
+            answer: toBigNumber(16000e8),
+            startedAt: await getTimestamp(),
+            updatedAt: await getTimestamp() + 1,
+            answeredInRound: 1
+          })
+        }
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const numberOfOptionsToSell = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
+
+        // Creating options to sell
+        await mintOptions(option, numberOfOptionsToSell, buyer)
+        await option.connect(buyer).approve(optionAMMPool.address, numberOfOptionsToSell)
+
+        await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, '1000000000000000000000000', buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: invalid amountBOut')
       })
 
       it('should revert if any dependency contract is stopped', async () => {
@@ -796,6 +822,31 @@ scenarios.forEach(scenario => {
 
         // Testing Remove Liquidity
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
+      })
+
+      it('should revert if trying to sell a lot of options (targetPrice < minimum acceptable)', async () => {
+        if (scenario.optionType === OPTION_TYPE_PUT) {
+          await defaultPriceFeed.setRoundData({
+            roundId: 1,
+            answer: toBigNumber(16000e8),
+            startedAt: await getTimestamp(),
+            updatedAt: await getTimestamp() + 1,
+            answeredInRound: 1
+          })
+        }
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        const numberOfTokensToReceive = toBigNumber(4000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const numberOfOptionsToMint = toBigNumber(10).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
+
+        // Creating options to sell
+        await mintOptions(option, numberOfOptionsToMint, buyer)
+        await option.connect(buyer).approve(optionAMMPool.address, numberOfOptionsToMint)
+
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, '1000000000000000000000000', buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: invalid amountAIn')
       })
 
       it('should revert if any dependency contract is stopped', async () => {
