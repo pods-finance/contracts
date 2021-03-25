@@ -366,6 +366,7 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(scenario.amountToMint)
         expect(finalContractUnderlyingReserves).to.equal(0)
+        expect(await wPodCall.mintedOptions(sellerAddress)).to.be.equal(0)
         // Trying to re-withdraw
         await expect(wPodCall.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
@@ -412,6 +413,7 @@ scenarios.forEach(scenario => {
         expect(finalContractStrikeReserves).to.equal(0)
         expect(finalContractOptionSupply).to.equal(scenario.amountToMint.mul(2))
         expect(finalContractUnderlyingReserves).to.equal(0)
+        expect(await wPodCall.mintedOptions(sellerAddress)).to.be.equal(0)
       })
 
       it('should withdraw mixed amount of Strike Asset and Underlying Asset (Ma-Mb-Ec-Wa-Wb)', async () => {
@@ -440,6 +442,7 @@ scenarios.forEach(scenario => {
         const txUnmint2 = await wPodCall.connect(seller).withdraw()
         const txCost2 = await getTxCost(txUnmint2)
 
+        expect(await wPodCall.mintedOptions(sellerAddress)).to.be.equal(0)
         const finalBuyerStrikeBalance = await mockStrikeAsset.balanceOf(buyerAddress)
         const finalBuyerUnderlyingBalance = await ethers.provider.getBalance(buyerAddress)
 

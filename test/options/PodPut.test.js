@@ -742,8 +742,9 @@ scenarios.forEach(scenario => {
         expect(finalSellerOptionBalance).to.equal(scenario.amountToMint)
         expect(finalSellerStrikeBalance).to.equal(scenario.strikePrice.add(earnedInterest))
         expect(finalContractStrikeReserves).to.equal(0)
+        expect(await podPut.mintedOptions(sellerAddress)).to.be.equal(0)
         // Cant withdraw two times in a row
-        // await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodPut: you do not have balance to withdraw')
+        await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
       })
 
       it('should withdraw Strike Asset balance plus interest earned proportional (Ma-Mb-Wa-Wb)', async () => {
@@ -771,6 +772,7 @@ scenarios.forEach(scenario => {
         await skipToWithdrawWindow(podPut)
         await podPut.connect(seller).withdraw()
 
+        expect(await podPut.mintedOptions(sellerAddress)).to.be.equal(0)
         const finalSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const finalSellerStrikegBalance = await mockStrikeAsset.balanceOf(sellerAddress)
 
@@ -811,6 +813,7 @@ scenarios.forEach(scenario => {
         await expect(podPut.connect(seller).withdraw())
         await expect(podPut.connect(seller).withdraw()).to.be.revertedWith('PodOption: you do not have balance to withdraw')
 
+        expect(await podPut.mintedOptions(sellerAddress)).to.be.equal(0)
         const finalSellerUnderlyingBalance = await mockUnderlyingAsset.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
 
