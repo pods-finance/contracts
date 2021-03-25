@@ -4,16 +4,16 @@ const INT256_MAX = toBigNumber(2).pow(255)
 
 const scenarios = [
   {
-    type: 'PUT',
+    type: 'put',
     spotPrice: toBigNumber(368 * 1e18),
     strikePrice: toBigNumber(320 * 1e18),
     sigma: toBigNumber(0.8 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(0.009589041096 * 1e18), // 3.5 days
-    expectedPrice: toBigNumber(0.3991972191 * 1e18)
+    expectedPrice: toBigNumber(0.3391972191 * 1e18)
   },
   {
-    type: 'PUT',
+    type: 'put',
     spotPrice: toBigNumber(10500 * 1e18),
     strikePrice: toBigNumber(11000 * 1e18),
     sigma: toBigNumber(1.2 * 1e18),
@@ -22,16 +22,16 @@ const scenarios = [
     expectedPrice: toBigNumber(1275.126573 * 1e18)
   },
   {
-    type: 'PUT', // Call price should be 0
+    type: 'put', // Call price should be 0
     spotPrice: toBigNumber(320 * 1e18),
     strikePrice: toBigNumber(300 * 1e18),
     sigma: toBigNumber(0.6 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(11).mul(1e14), // 0.0011
-    expectedPrice: toBigNumber(0)
+    expectedPrice: toBigNumber(0.0004 * 1e18)
   },
   {
-    type: 'CALL',
+    type: 'call',
     spotPrice: toBigNumber(601 * 1e18),
     strikePrice: toBigNumber(580 * 1e18),
     sigma: toBigNumber(0.824 * 1e18),
@@ -40,7 +40,7 @@ const scenarios = [
     expectedPrice: toBigNumber(40.99782 * 1e18)
   },
   {
-    type: 'CALL',
+    type: 'call',
     spotPrice: toBigNumber(601 * 1e18),
     strikePrice: toBigNumber(660 * 1e18),
     sigma: toBigNumber(0.824 * 1e18),
@@ -49,13 +49,13 @@ const scenarios = [
     expectedPrice: toBigNumber(4.0835637054095 * 1e18)
   },
   {
-    type: 'CALL', // Call price should be 0
+    type: 'call', // Call price should be 0
     spotPrice: toBigNumber(300 * 1e18),
     strikePrice: toBigNumber(320 * 1e18),
     sigma: toBigNumber(0.6 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(11).mul(1e14), // 0.0011
-    expectedPrice: toBigNumber(0)
+    expectedPrice: toBigNumber(0.0004 * 1e18)
   }
 ]
 
@@ -127,9 +127,9 @@ describe('BlackScholes', () => {
     )).to.be.revertedWith('BlackScholes: casting overflow')
   })
 
-  scenarios.filter(scenario => scenario.type === 'PUT').forEach(scenario => {
-    it('Calculates the put price correctly', async () => {
-      const putPrice = await bs.getPutPrice(
+  scenarios.filter(scenario => scenario.type === 'put').forEach(scenario => {
+    it(`Calculates the ${scenario.type} price correctly`, async () => {
+      const price = await bs.getPutPrice(
         scenario.spotPrice,
         scenario.strikePrice,
         scenario.sigma,
@@ -137,16 +137,16 @@ describe('BlackScholes', () => {
         scenario.riskFree
       )
 
-      console.log(`\tPut price: ${putPrice}`)
+      console.log(`\t${scenario.type} price:              ${price}`)
       console.log(`\tscenario.expectedPrice: ${scenario.expectedPrice}`)
 
-      expect(approximately(scenario.expectedPrice, putPrice)).to.equal(true)
+      expect(approximately(scenario.expectedPrice, price)).to.equal(true)
     })
   })
 
-  scenarios.filter(scenario => scenario.type === 'CALL').forEach(scenario => {
-    it('Calculates the call price correctly', async () => {
-      const callPrice = await bs.getCallPrice(
+  scenarios.filter(scenario => scenario.type === 'call').forEach(scenario => {
+    it(`Calculates the ${scenario.type} price correctly`, async () => {
+      const price = await bs.getCallPrice(
         scenario.spotPrice,
         scenario.strikePrice,
         scenario.sigma,
@@ -154,9 +154,10 @@ describe('BlackScholes', () => {
         scenario.riskFree
       )
 
-      console.log(`\tCall price: ${callPrice}`)
+      console.log(`\t${scenario.type} price:             ${price}`)
+      console.log(`\tscenario.expectedPrice: ${scenario.expectedPrice}`)
 
-      expect(approximately(scenario.expectedPrice, callPrice)).to.equal(true)
+      expect(approximately(scenario.expectedPrice, price)).to.equal(true)
     })
   })
 })
