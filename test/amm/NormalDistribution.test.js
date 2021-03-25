@@ -23,23 +23,32 @@ describe('NormalDistribution', () => {
   })
 
   it('gets cached normal distribution', async () => {
-    const result = await nd.getProbability('2839918236000000000000000', 24)
-    expect(result).to.equal(ethers.BigNumber.from('997700000000000000000000'))
+    expect(
+      await nd.getProbability('2839918236000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('997740000000000000000000'))
+
+    expect(
+      await nd.getProbability('2836918236000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('997700000000000000000000'))
+
+    expect(
+      await nd.getProbability('2831918236000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('997670000000000000000000'))
   })
 
   it('gets negative normal distribution', async () => {
     const result = await nd.getProbability('-2839918236000000000000000', 24)
     expect(result).to.equal(
-      ethers.BigNumber.from('1000000000000000000000000').sub('997700000000000000000000')
+      ethers.BigNumber.from('1000000000000000000000000').sub('997740000000000000000000')
     )
   })
 
   it('sets a new data point in the ND curve', async () => {
-    const tx = nd.setDataPoint(30800, 9991);
+    const tx = nd.setDataPoint(30800, 99910);
 
     await expect(tx)
       .to.emit(nd, 'DataPointSet')
-      .withArgs(30800, 9991)
+      .withArgs(30800, 99910)
 
     expect(
       await nd.getProbability('3080000000000000000000000', 24)
@@ -48,43 +57,23 @@ describe('NormalDistribution', () => {
 
   it('gets concentrated probabilities', async () => {
     expect(
-      await nd.getProbability('3080000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999000000000000000000000'))
+      await nd.getProbability('4010000000000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('999970000000000000000000'))
 
     expect(
-      await nd.getProbability('3110000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999100000000000000000000'))
+      await nd.getProbability('4100000000000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('999970000000000000000000'))
 
     expect(
-      await nd.getProbability('3140000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999200000000000000000000'))
+      await nd.getProbability('4110000000000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('999980000000000000000000'))
 
     expect(
-      await nd.getProbability('3180000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999300000000000000000000'))
+      await nd.getProbability('4180000000000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('999980000000000000000000'))
 
     expect(
-      await nd.getProbability('3220000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999400000000000000000000'))
-
-    expect(
-      await nd.getProbability('3270000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999500000000000000000000'))
-
-    expect(
-      await nd.getProbability('3330000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999600000000000000000000'))
-
-    expect(
-      await nd.getProbability('3400000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999700000000000000000000'))
-
-    expect(
-      await nd.getProbability('3490000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999800000000000000000000'))
-
-    expect(
-      await nd.getProbability('3630000000000000000000000', 24)
-    ).to.equal(ethers.BigNumber.from('999900000000000000000000'))
+      await nd.getProbability('4190000000000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('999990000000000000000000'))
   })
 })
