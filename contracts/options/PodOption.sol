@@ -421,6 +421,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         (strikeToSend, underlyingToSend) = getSellerWithdrawAmounts(msg.sender);
 
         shares[msg.sender] = 0;
+        mintedOptions[msg.sender] = 0;
         totalShares = totalShares.sub(ownerShares);
     }
 }
