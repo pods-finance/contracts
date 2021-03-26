@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat')
 const createBlackScholes = require('./createBlackScholes')
 
-module.exports = async function createConfigurationManager (priceProvider) {
+module.exports = async function createConfigurationManager ({ priceProvider } = {}) {
   const [PriceProvider, ConfigurationManager, EmergencyStop, CapProvider, Sigma, blackScholes] = await Promise.all([
     ethers.getContractFactory('PriceProvider'),
     ethers.getContractFactory('ConfigurationManager'),
