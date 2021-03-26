@@ -37,7 +37,9 @@ describe('OptionHelper', () => {
   beforeEach(async () => {
     const mock = await getPriceProviderMock(caller, '8200000000', 6, underlyingAsset.address)
     const priceProviderMock = mock.priceProvider
-    configurationManager = await createConfigurationManager(priceProviderMock)
+    configurationManager = await createConfigurationManager({
+      priceProvider: priceProviderMock
+    })
 
     option = await createMockOption({
       configurationManager,
