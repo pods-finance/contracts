@@ -21,7 +21,6 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
     const configurationManager = await ethers.getContractAt('ConfigurationManager', address)
 
     let transaction
-    console.log('eta')
 
     switch (setter) {
       case 'setEmergencyStop':
