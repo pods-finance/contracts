@@ -6,8 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract AttackerOptionPool {
     function addLiquidityAndBuy(
         address poolAddress,
-        uint256 amountToAdd,
-        uint256 amountToBuy,
+        uint256 amountToAddA,
+        uint256 amountToAddB,
+        uint256 amountToBuyA,
+        uint256 sigmaInitialGuess,
         address owner
     ) public {
         IOptionAMMPool pool = IOptionAMMPool(poolAddress);
@@ -17,15 +19,14 @@ contract AttackerOptionPool {
         IERC20 tokenA = IERC20(tokenAAddress);
         IERC20 tokenB = IERC20(tokenBAddress);
 
-        tokenA.transferFrom(msg.sender, address(this), amountToBuy);
+        tokenA.transferFrom(msg.sender, address(this), amountToAddA);
         tokenA.approve(poolAddress, 2**255);
 
-        tokenB.transferFrom(msg.sender, address(this), amountToAdd);
+        tokenB.transferFrom(msg.sender, address(this), amountToAddB);
         tokenB.approve(poolAddress, 2**255);
 
-        pool.addLiquidity(amountToBuy, amountToAdd, owner);
-        (, uint256 sigmaInitialGuess, , ) = pool.getOptionTradeDetailsExactAOutput(amountToBuy / 100);
-        pool.tradeExactAOutput(amountToBuy / 100, 2**255, owner, sigmaInitialGuess);
+        pool.addLiquidity(amountToAddA, amountToAddB, owner);
+        pool.tradeExactAOutput(amountToBuyA, 2**255, owner, sigmaInitialGuess);
     }
 
     function addLiquidityAndRemove(
