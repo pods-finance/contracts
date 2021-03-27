@@ -25,7 +25,9 @@ describe('OptionAMMFactory', () => {
     const mock = await getPriceProviderMock(caller, '900000000000', 8, mockUnderlyingAsset.address)
     priceProviderMock = mock.priceProvider
 
-    configurationManager = await createConfigurationManager(priceProviderMock)
+    configurationManager = await createConfigurationManager({
+      priceProvider: priceProviderMock
+    })
   })
 
   beforeEach(async () => {

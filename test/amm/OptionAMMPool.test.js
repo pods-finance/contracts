@@ -113,7 +113,7 @@ scenarios.forEach(scenario => {
       })
       priceProvider = await PriceProvider.deploy([mockUnderlyingAsset.address], [defaultPriceFeed.contract.address])
 
-      configurationManager = await createConfigurationManager(priceProvider)
+      configurationManager = await createConfigurationManager({ priceProvider })
       factoryContract = await createOptionFactory(weth.address, configurationManager)
 
       option = await createMockOption({
@@ -960,16 +960,19 @@ scenarios.forEach(scenario => {
         const AttackerContract = await ethers.getContractFactory('AttackerOptionPool')
         const attackerContract = await AttackerContract.deploy()
 
-        const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const optionLiquidityToBuy = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const optionLiquidityToBuy = optionLiquidityToAdd.div(100)
 
-        await mintOptions(option, optionLiquidityToBuy, buyer)
+        await mintOptions(option, optionLiquidityToAdd, buyer)
         await option.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
 
         await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(200))
         await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
+        const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(optionLiquidityToBuy)
 
-        await expect(attackerContract.connect(buyer).addLiquidityAndBuy(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToBuy, buyerAddress)).to.be.revertedWith('FlashloanProtection: reentrant call')
+        await expect(attackerContract.connect(buyer).addLiquidityAndBuy(optionAMMPool.address, optionLiquidityToAdd, stableLiquidityToAdd, optionLiquidityToBuy, tradeDetails.newIV, buyerAddress)).to.be.revertedWith('FlashloanProtection: reentrant call')
       })
       it('Should revert if an origin address tries to perform -add liquidity- and -remove liquidity- in the same block', async () => {
         const AttackerContract = await ethers.getContractFactory('AttackerOptionPool')

@@ -14,6 +14,10 @@ interface IConfigurationManager {
 
     function setAMMFactory(address ammFactory) external;
 
+    function setOptionFactory(address optionFactory) external;
+
+    function setOptionHelper(address optionHelper) external;
+
     function getEmergencyStop() external view returns (address);
 
     function getPricingMethod() external view returns (address);
@@ -25,4 +29,8 @@ interface IConfigurationManager {
     function getCapProvider() external view returns (address);
 
     function getAMMFactory() external view returns (address);
+
+    function getOptionFactory() external view returns (address);
+
+    function getOptionHelper() external view returns (address);
 }
