@@ -5,6 +5,7 @@ require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-web3')
 require('@nomiclabs/hardhat-solhint')
 require('@nomiclabs/hardhat-etherscan')
+require('hardhat-spdx-license-identifier')
 
 require('hardhat-gas-reporter')
 require('solidity-coverage')
@@ -74,5 +75,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_APIKEY
+  },
+  spdxLicenseIdentifier: {
+    overwrite: true
   }
 }
