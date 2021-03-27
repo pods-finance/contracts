@@ -11,7 +11,7 @@ require('solidity-coverage')
 require('hardhat-contract-sizer')
 
 require('./tasks/option/deployOptionFactory')
-require('./tasks/deployOptionExchange')
+require('./tasks/deployOptionHelper')
 require('./tasks/deployWeek')
 
 require('./tasks/utils/index')
