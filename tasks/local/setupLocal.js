@@ -49,7 +49,7 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
-    // 3.2) Deploy BS + Sigma + AMMPoolFactory + Oracles
+    // 3.2) Deploy BS + SigmaGuesser + AMMPoolFactory + Oracles
     await run('setAMMEnvironment', { asset: mockWBTC.address, source: chainlinkWBTCFeed.address, configuration: configurationManagerAddress })
 
     // 3.3) Deploy Option Exchange

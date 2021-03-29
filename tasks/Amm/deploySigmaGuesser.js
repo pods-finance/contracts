@@ -8,16 +8,16 @@ internalTask('deploySigma', 'Deploy Sigma Contract')
   .setAction(async ({ bs, verify }, hre) => {
     console.log('----Start Deploy Sigma----')
     const path = `../../deployments/${hre.network.name}.json`
-    const SigmaContract = await ethers.getContractFactory('Sigma')
-    const sigma = await SigmaContract.deploy(bs)
+    const SigmaContract = await ethers.getContractFactory('SigmaGuesser')
+    const sigmaGuesser = await SigmaContract.deploy(bs)
 
-    await sigma.deployed()
-    await saveJSON(path, { sigma: sigma.address })
+    await sigmaGuesser.deployed()
+    await saveJSON(path, { sigmaGuesser: sigmaGuesser.address })
 
     if (verify) {
-      await verifyContract(hre, sigma.address, [bs])
+      await verifyContract(hre, sigmaGuesser.address, [bs])
     }
 
-    console.log('Sigma Address', sigma.address)
-    return sigma.address
+    console.log('Sigma Address', sigmaGuesser.address)
+    return sigmaGuesser.address
   })

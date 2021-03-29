@@ -8,7 +8,7 @@ import "../lib/CappedPool.sol";
 import "../lib/FlashloanProtection.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
-import "../interfaces/ISigma.sol";
+import "../interfaces/ISigmaGuesser.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMPool.sol";
 import "../interfaces/IFeePool.sol";
@@ -462,9 +462,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     ) internal view returns (uint256) {
         uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(PRICING_DECIMALS.sub(tokenBDecimals())));
         uint256 newIV;
-        ISigma impliedVolatility = ISigma(configurationManager.getImpliedVolatility());
+        ISigmaGuesser sigmaGuesser = ISigmaGuesser(configurationManager.getSigmaGuesser());
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
-            (newIV, ) = impliedVolatility.getPutSigma(
+            (newIV, ) = sigmaGuesser.getPutSigma(
                 newTargetABPriceWithDecimals,
                 properties.sigmaInitialGuess,
                 spotPrice,
@@ -473,7 +473,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
                 properties.riskFree
             );
         } else {
-            (newIV, ) = impliedVolatility.getCallSigma(
+            (newIV, ) = sigmaGuesser.getCallSigma(
                 newTargetABPriceWithDecimals,
                 properties.sigmaInitialGuess,
                 spotPrice,
@@ -821,7 +821,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         require(
             !emergencyStop.isStopped(configurationManager.getPriceProvider()) &&
                 !emergencyStop.isStopped(configurationManager.getPricingMethod()) &&
-                !emergencyStop.isStopped(configurationManager.getImpliedVolatility()),
+                !emergencyStop.isStopped(configurationManager.getSigmaGuesser()),
             "Pool: Pool is stopped"
         );
     }

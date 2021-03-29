@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-interface ISigma {
+interface ISigmaGuesser {
     function blackScholes() external view returns (address);
 
     function getPutSigma(

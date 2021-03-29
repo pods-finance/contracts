@@ -5,9 +5,9 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/IPodOption.sol";
-import "../interfaces/ISigma.sol";
+import "../interfaces/ISigmaGuesser.sol";
 
-contract Sigma is ISigma {
+contract SigmaGuesser is ISigmaGuesser {
     using SafeMath for uint256;
     IBlackScholes private immutable _blackScholes;
     uint256 public constant ACCEPTABLE_ERROR = 10; // < 3%
