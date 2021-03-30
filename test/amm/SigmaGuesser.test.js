@@ -90,31 +90,31 @@ const initialSigmaNull = {
   expectedNewSigma: toBigNumber(1.2 * 1e18)
 }
 
-describe('Sigma', () => {
-  let Sigma, sigma, blackScholes
+describe('SigmaGuesser', () => {
+  let SigmaGuesser, sigmaGuesser, blackScholes
 
   before(async () => {
-    Sigma = await ethers.getContractFactory('Sigma')
+    SigmaGuesser = await ethers.getContractFactory('SigmaGuesser')
     blackScholes = await createBlackScholes()
   })
 
   beforeEach(async () => {
-    sigma = await Sigma.deploy(blackScholes.address)
-    await sigma.deployed()
+    sigmaGuesser = await SigmaGuesser.deploy(blackScholes.address)
+    await sigmaGuesser.deployed()
   })
 
   it('should return the assigned sigma', async () => {
-    expect(await sigma.blackScholes()).to.be.equal(blackScholes.address)
+    expect(await sigmaGuesser.blackScholes()).to.be.equal(blackScholes.address)
   })
 
   it('cannot be deployed with a zero-address BlackScholes', async () => {
-    const tx = Sigma.deploy(ethers.constants.AddressZero)
+    const tx = SigmaGuesser.deploy(ethers.constants.AddressZero)
     await expect(tx).to.be.revertedWith('Sigma: Invalid blackScholes')
   })
 
   describe('FindNextSigma', () => {
     it('Should return the next sigma value correctly', async () => {
-      const nextSigma = await sigma.getCloserSigma([
+      const nextSigma = await sigmaGuesser.getCloserSigma([
         scenarioNextSigma.sigmaLower,
         scenarioNextSigma.priceLower,
         scenarioNextSigma.sigmaHigher,
@@ -127,7 +127,7 @@ describe('Sigma', () => {
   describe('FindNewSigma', () => {
     scenarioNewSigma.forEach(scenario => {
       it('Should find the new sigma ' + scenario.name, async () => {
-        const method = scenario.type === 'put' ? sigma.getPutSigma : sigma.getCallSigma
+        const method = scenario.type === 'put' ? sigmaGuesser.getPutSigma : sigmaGuesser.getCallSigma
         const res = await method(
           scenario.targetPrice,
           scenario.sigmaInitialGuess,
@@ -145,7 +145,7 @@ describe('Sigma', () => {
     })
 
     it('Should revert if initial sigma is 0', async () => {
-      await expect(sigma.getPutSigma(
+      await expect(sigmaGuesser.getPutSigma(
         initialSigmaNull.targetPrice,
         initialSigmaNull.sigmaInitialGuess,
         initialSigmaNull.spotPrice,

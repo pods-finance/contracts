@@ -7,7 +7,7 @@
     "Guilherme Viana <rob@pods.com>",
     "Robson Silva <gui@pods.com>"
   ],
-  "license": "agpl-3.0",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "prettier": "./node_modules/.bin/prettier contracts/**/*.sol",

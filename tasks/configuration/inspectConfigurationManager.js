@@ -17,7 +17,7 @@ task('inspectConfigurationManager', 'Checks the contracts associated with a Conf
     console.log(`ConfigurationManager deployed at: ${configurationManager.address}`)
     console.log(`EmergencyStop: ${await configurationManager.getEmergencyStop()}`)
     console.log(`BlackScholes: ${await configurationManager.getPricingMethod()}`)
-    console.log(`Sigma: ${await configurationManager.getImpliedVolatility()}`)
+    console.log(`SigmaGuesser: ${await configurationManager.getSigmaGuesser()}`)
     console.log(`PriceProvider: ${await configurationManager.getPriceProvider()}`)
     console.log(`CapProvider: ${await configurationManager.getCapProvider()}`)
   })

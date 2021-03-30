@@ -34,7 +34,7 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
         console.log(`PricingMethod set to ${newContract}`)
         break
       case 'setImpliedVolatility':
-        transaction = await configurationManager.setImpliedVolatility(newContract)
+        transaction = await configurationManager.setSigmaGuesser(newContract)
         await transaction.wait(1)
         console.log(`ImpliedVolatility set to ${newContract}`)
         break

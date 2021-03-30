@@ -6,9 +6,7 @@ task('setupKovan', 'Deploy a whole local Kovan environment')
     // Erasing local.json file
     const configurationManagerAddress = await run('deployConfigurationManager', { verify })
 
-    // 2) Deploy Option Builders + Option Factory
     await run('deployOptionFactory', { builders: true, configuration: configurationManagerAddress, verify })
 
-    // 3) Deploy BS + Sigma + AMMPoolFactory + Oracles
     await run('setAMMEnvironment', { asset: asset, source: source, configuration: configurationManagerAddress, verify })
   })
