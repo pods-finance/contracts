@@ -36,21 +36,17 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     const configurationManagerAddress = await run('deployConfigurationManager')
 
-    // 2) Deploy Option Builders + Option Factory
-    await run('deployOptionFactory', { builders: true, configuration: configurationManagerAddress })
-
-    // 3) Start deploying all Option Pool contracts
-    // 3.1) Chainlink Mock
+    // 2) Setup Chainlink (Oracle) Mock
     const ChainlinkWBTCFeed = await ethers.getContractFactory('MockChainlinkFeed')
 
     const chainlinkWBTCFeed = await ChainlinkWBTCFeed.deploy(mockWBTC.address, '8', '37170000000000')
     const chainlinkWETHFeed = await ChainlinkWBTCFeed.deploy(mockWETH.address, '8', '1270000000000')
-    const chainlinkLINKFeed = await ChainlinkWBTCFeed.deploy(mockLINK.address, '8', '2429201073')
+    const chainlinkLINKFeed = await ChainlinkWBTCFeed.deploy(mockLINK.address, '8', '2496201073')
 
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
     // 3.2) Deploy BS + Sigma + AMMPoolFactory + Oracles
-    await run('setAMMEnvironment', { asset: mockWBTC.address, source: chainlinkWBTCFeed.address, configuration: configurationManagerAddress })
+    await run('setAMMEnvironment', { asset: mockWBTC.address, source: chainlinkWBTCFeed.address, configuration: configurationManagerAddress, builders: true })
 
     // 3.3) Deploy Option Exchange
     const _filePath = pathJoin.join(__dirname, path)
@@ -73,21 +69,23 @@ task('setupLocal', 'Deploy a whole local test environment')
       underlying: 'WBTC',
       price: '18000',
       expiration: (currentBlockTimestamp + 48 * 60 * 60).toString(),
-      cap: '200'
+      cap: '2000'
     })
 
     const optionWETHAddress = await run('deployNewOption', {
       strike: 'USDC',
       underlying: 'WETH',
       price: '1500',
-      expiration: (currentBlockTimestamp + 48 * 60 * 60).toString()
+      expiration: (currentBlockTimestamp + 48 * 60 * 60).toString(),
+      cap: '2000'
     })
 
     const optionLINKAddress = await run('deployNewOption', {
       strike: 'USDC',
       underlying: 'LINK',
-      price: '20',
-      expiration: (currentBlockTimestamp + 24 * 60 * 60 * 24).toString()
+      price: '25',
+      expiration: (currentBlockTimestamp + 24 * 60 * 60 * 4).toString(),
+      cap: '2000'
     })
 
     // 5) Create AMMPool test with this asset
@@ -95,19 +93,21 @@ task('setupLocal', 'Deploy a whole local test environment')
       option: optionWBTCAddress,
       tokenb: mockUSDC.address,
       initialsigma: '770000000000000000', // 0.77%
-      cap: '50000'
+      cap: '500000'
     })
 
     const optionAMMETHPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWETHAddress,
       tokenb: mockUSDC.address,
-      initialsigma: '2000000000000000000' // 0.77%
+      initialsigma: '2000000000000000000',
+      cap: '500000'
     })
 
     const optionLINKPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionLINKAddress,
       tokenb: mockUSDC.address,
-      initialsigma: '1230000000000000000' // 0.77%
+      initialsigma: '2311200000000000000',
+      cap: '500000'
     })
 
     // 6) Mint Strike Asset
