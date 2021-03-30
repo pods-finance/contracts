@@ -20,14 +20,9 @@ task('deployWeek', 'Deploy a whole local test environment')
 
     const options = [
       {
-        strike: 'ADAI',
+        strike: 'DAI',
         underlying: 'WETH',
-        price: '1800'
-      },
-      {
-        strike: 'USDC',
-        underlying: 'LINK',
-        price: '25'
+        price: '1200'
       }
     ]
 
@@ -41,6 +36,7 @@ task('deployWeek', 'Deploy a whole local test environment')
           underlying: optionObj.underlying,
           price: optionObj.price,
           expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString(),
+          cap: '1000',
           verify
         })
         const tokenbAddress = contentJSON[optionObj.strike]
@@ -50,7 +46,8 @@ task('deployWeek', 'Deploy a whole local test environment')
         const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
-          initialsigma: '11500000000000000000',
+          initialsigma: '1150000000000000000',
+          cap: '10000000',
           verify
         })
 

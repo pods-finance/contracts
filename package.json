@@ -1,8 +1,13 @@
 {
-  "name": "contracts",
+  "name": "@pods/contracts-v1",
   "version": "1.0.0",
-  "description": "Limitless Options on Ethereum",
-  "main": "networks.js",
+  "description": "Pods Protocol V1 smart contracts",
+  "author": "Pods Finance",
+  "contributors": [
+    "Guilherme Viana <rob@pods.com>",
+    "Robson Silva <gui@pods.com>"
+  ],
+  "license": "agpl-3.0",
   "scripts": {
     "lint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "prettier": "./node_modules/.bin/prettier contracts/**/*.sol",
@@ -22,8 +27,6 @@
     "erc20",
     "defi"
   ],
-  "author": "@robsonsjre @ggviana",
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/pods-finance/contracts/issues"
   },
@@ -41,6 +44,7 @@
     "hardhat": "2.0.8",
     "hardhat-contract-sizer": "2.0.3",
     "hardhat-gas-reporter": "1.0.4",
+    "hardhat-spdx-license-identifier": "2.0.3",
     "husky": "4.2.5",
     "mocha": "7.2.0",
     "prettier": "2.0.5",

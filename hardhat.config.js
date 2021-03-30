@@ -5,13 +5,14 @@ require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-web3')
 require('@nomiclabs/hardhat-solhint')
 require('@nomiclabs/hardhat-etherscan')
+require('hardhat-spdx-license-identifier')
 
 require('hardhat-gas-reporter')
 require('solidity-coverage')
 require('hardhat-contract-sizer')
 
 require('./tasks/option/deployOptionFactory')
-require('./tasks/deployOptionExchange')
+require('./tasks/deployOptionHelper')
 require('./tasks/deployWeek')
 
 require('./tasks/utils/index')
@@ -53,6 +54,15 @@ module.exports = {
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       network_id: 42
     },
+    mumbai: {
+      accounts: {
+        mnemonic: process.env.DEV_MNEMONIC,
+        initialIndex: parseInt(process.env.ADDRESS_INDEX),
+        count: 1
+      },
+      url: 'https://rpc-mumbai.maticvigil.com',
+      network_id: 80001
+    },
     coverage: {
       url: 'http://localhost:8555'
     }
@@ -74,5 +84,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_APIKEY
+  },
+  spdxLicenseIdentifier: {
+    overwrite: true
   }
 }
