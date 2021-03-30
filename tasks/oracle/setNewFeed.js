@@ -23,7 +23,7 @@ task('setNewFeed', 'Deploy Chainlink w/ source + set source and asset to price p
     const chainlinkFeedAddress = await run('deployChainlink', { source })
     console.log('Setting feed to Price Provider')
     const priceProvider = await ethers.getContractAt('PriceProvider', priceProviderAddress)
-    await priceProvider.setAssetFeeds([assetAddress], [chainlinkFeedAddress])
+    await priceProvider.setAssetFeeds([assetAddress], [chainlinkFeedAddress], { gasLimit: '2100000' })
 
     console.log('----End of Setting new Feed----')
   })
