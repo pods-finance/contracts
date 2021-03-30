@@ -31,12 +31,12 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const tokenBContract = await ethers.getContractAt('MintableERC20', tokenb)
 
     const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialsigma)
-    await txIdNewPool.wait(numberOfConfirmations)
+    const txReceipt = await txIdNewPool.wait(numberOfConfirmations)
 
     console.log('txId: ', txIdNewPool.hash)
 
     const filterFrom = await OptionAMMFactory.filters.PoolCreated(deployerAddress)
-    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txIdNewPool.blockNumber, 'latest')
+    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txReceipt.blockNumber, 'latest')
     if (eventDetails.length) {
       const { deployer, pool: poolAddress } = eventDetails[0].args
       console.log('blockNumber: ', eventDetails[0].blockNumber)
