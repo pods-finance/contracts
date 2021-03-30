@@ -2,20 +2,20 @@ const { ethers } = require('hardhat')
 const createBlackScholes = require('./createBlackScholes')
 
 module.exports = async function createConfigurationManager ({ priceProvider } = {}) {
-  const [PriceProvider, ConfigurationManager, EmergencyStop, CapProvider, Sigma, blackScholes] = await Promise.all([
+  const [PriceProvider, ConfigurationManager, EmergencyStop, CapProvider, SigmaGuesser, blackScholes] = await Promise.all([
     ethers.getContractFactory('PriceProvider'),
     ethers.getContractFactory('ConfigurationManager'),
     ethers.getContractFactory('EmergencyStop'),
     ethers.getContractFactory('CapProvider'),
-    ethers.getContractFactory('Sigma'),
+    ethers.getContractFactory('SigmaGuesser'),
     createBlackScholes()
   ])
 
-  const [configurationManager, emergencyStop, cap, sigma] = await Promise.all([
+  const [configurationManager, emergencyStop, cap, sigmaGuesser] = await Promise.all([
     ConfigurationManager.deploy(),
     EmergencyStop.deploy(),
     CapProvider.deploy(),
-    Sigma.deploy(blackScholes.address)
+    SigmaGuesser.deploy(blackScholes.address)
   ])
 
   if (!priceProvider) {
@@ -24,7 +24,7 @@ module.exports = async function createConfigurationManager ({ priceProvider } = 
 
   await configurationManager.setPricingMethod(blackScholes.address)
   await configurationManager.setPriceProvider(priceProvider.address)
-  await configurationManager.setImpliedVolatility(sigma.address)
+  await configurationManager.setSigmaGuesser(sigmaGuesser.address)
   await configurationManager.setEmergencyStop(emergencyStop.address)
   await configurationManager.setCapProvider(cap.address)
 

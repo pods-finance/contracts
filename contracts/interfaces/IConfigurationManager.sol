@@ -7,7 +7,7 @@ interface IConfigurationManager {
 
     function setPricingMethod(address pricingMethod) external;
 
-    function setImpliedVolatility(address impliedVolatility) external;
+    function setSigmaGuesser(address sigmaGuesser) external;
 
     function setPriceProvider(address priceProvider) external;
 
@@ -23,7 +23,7 @@ interface IConfigurationManager {
 
     function getPricingMethod() external view returns (address);
 
-    function getImpliedVolatility() external view returns (address);
+    function getSigmaGuesser() external view returns (address);
 
     function getPriceProvider() external view returns (address);
 
