@@ -39,6 +39,14 @@ contract OptionHelper {
         address indexed optionAddress,
         uint256 optionsSold,
         address outputToken,
+        uint256 outputReceived
+    );
+
+    event OptionsMintedAndSold(
+        address indexed seller,
+        address indexed optionAddress,
+        uint256 optionsMintedAndSold,
+        address outputToken,
         uint256 outputBought
     );
 
@@ -101,7 +109,7 @@ contract OptionHelper {
         // Sells options to pool
         uint256 tokensBought = pool.tradeExactAInput(optionAmount, minTokenAmount, msg.sender, sigma);
 
-        emit OptionsSold(msg.sender, address(option), optionAmount, pool.tokenB(), tokensBought);
+        emit OptionsMintedAndSold(msg.sender, address(option), optionAmount, pool.tokenB(), tokensBought);
     }
 
     /**
@@ -133,6 +141,90 @@ contract OptionHelper {
         pool.addLiquidity(optionAmount, tokenAmount, msg.sender);
 
         emit LiquidityAdded(msg.sender, address(option), optionAmount, pool.tokenB(), tokenAmount);
+    }
+
+    /**
+     * @notice Sell exact amount of options
+     * @dev Sell an amount of options from pool
+     *
+     * @param option The option contract to sell
+     * @param optionAmount Amount of options to sell
+     * @param minTokenReceived Min amount of input tokens to receive
+     * @param deadline The deadline in unix-timestamp that limits the transaction from happening
+     * @param sigmaInitialGuess The initial sigma guess (IV)
+     */
+    function sellExactOptions(
+        IPodOption option,
+        uint256 optionAmount,
+        uint256 minTokenReceived,
+        uint256 deadline,
+        uint256 sigmaInitialGuess
+    ) external withinDeadline(deadline) {
+        IOptionAMMPool pool = _getPool(option);
+        IERC20 tokenA = IERC20(pool.tokenA());
+
+        // Take input amount from caller
+        tokenA.safeTransferFrom(msg.sender, address(this), optionAmount);
+
+        // Approve pool transfer
+        tokenA.safeApprove(address(pool), optionAmount);
+
+        // Buys options from pool
+        uint256 tokenAmountReceived = pool.tradeExactAInput(
+            optionAmount,
+            minTokenReceived,
+            msg.sender,
+            sigmaInitialGuess
+        );
+
+        emit OptionsSold(msg.sender, address(option), optionAmount, pool.tokenB(), tokenAmountReceived);
+    }
+
+    /**
+     * @notice Sell estimated amount of options
+     * @dev Sell an estimated amount of options to the pool
+     *
+     * @param option The option contract to sell
+     * @param maxOptionAmount max Amount of options to sell
+     * @param exactTokenReceived exact amount of input tokens to receive
+     * @param deadline The deadline in unix-timestamp that limits the transaction from happening
+     * @param sigmaInitialGuess The initial sigma guess (IV)
+     */
+    function sellOptionsAndReceiveExactTokens(
+        IPodOption option,
+        uint256 maxOptionAmount,
+        uint256 exactTokenReceived,
+        uint256 deadline,
+        uint256 sigmaInitialGuess
+    ) external withinDeadline(deadline) {
+        IOptionAMMPool pool = _getPool(option);
+        IERC20 tokenA = IERC20(pool.tokenA());
+
+        // Take input amount from caller
+        tokenA.safeTransferFrom(msg.sender, address(this), maxOptionAmount);
+
+        // Approve pool transfer
+        tokenA.safeApprove(address(pool), maxOptionAmount);
+
+        // Buys options from pool
+        uint256 optionsSold = pool.tradeExactBOutput(
+            exactTokenReceived,
+            maxOptionAmount,
+            msg.sender,
+            sigmaInitialGuess
+        );
+
+        uint256 unusedFunds = maxOptionAmount.sub(optionsSold);
+
+        // Reset allowance
+        tokenA.safeApprove(address(pool), 0);
+
+        // Transfer back unused funds
+        if (unusedFunds > 0) {
+            tokenA.safeTransfer(msg.sender, unusedFunds);
+        }
+
+        emit OptionsSold(msg.sender, address(option), optionsSold, pool.tokenB(), exactTokenReceived);
     }
 
     /**

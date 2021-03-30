@@ -56,7 +56,7 @@ describe('OptionHelper', () => {
 
     pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
     const optionsLiquidity = ethers.BigNumber.from(10e8)
-    const stableLiquidity = ethers.BigNumber.from(1000e6)
+    const stableLiquidity = ethers.BigNumber.from(100000e6)
 
     await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
 
@@ -64,6 +64,7 @@ describe('OptionHelper', () => {
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
     await stableAsset.connect(caller).approve(optionHelper.address, ethers.constants.MaxUint256)
+    await option.connect(caller).approve(optionHelper.address, ethers.constants.MaxUint256)
 
     snapshotId = await takeSnapshot()
   })
@@ -192,7 +193,7 @@ describe('OptionHelper', () => {
       const premium = await stableAsset.balanceOf(callerAddress)
 
       await expect(Promise.resolve(tx))
-        .to.emit(optionHelper, 'OptionsSold')
+        .to.emit(optionHelper, 'OptionsMintedAndSold')
         .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, premium)
     })
 
@@ -329,6 +330,75 @@ describe('OptionHelper', () => {
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: deadline expired')
+    })
+  })
+
+  describe('Sell', () => {
+    it('sells the exact amount of options', async () => {
+      const amountToSell = ethers.BigNumber.from(1e8.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToSell)
+      const minAcceptedToReceive = ethers.BigNumber.from(200e6.toString())
+      const deadline = await getTimestamp() + 6000
+
+      await stableAsset.connect(caller).mint(collateralAmount)
+
+      await optionHelper.connect(caller).mint(
+        option.address,
+        amountToSell
+      )
+
+      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToSell)
+
+      const balanceBeforeTrade = await stableAsset.balanceOf(callerAddress)
+
+      const tx = await optionHelper.connect(caller).sellExactOptions(
+        option.address,
+        amountToSell,
+        minAcceptedToReceive,
+        deadline,
+        sigma
+      )
+
+      const balanceAfterTrade = await stableAsset.balanceOf(callerAddress)
+      const amountReceived = balanceAfterTrade.sub(balanceBeforeTrade)
+
+      await expect(Promise.resolve(tx))
+        .to.emit(optionHelper, 'OptionsSold')
+        .withArgs(callerAddress, option.address, amountToSell, stableAsset.address, amountReceived)
+    })
+    it('sells the estimated amount of options and receive exact tokens', async () => {
+      const maxAcceptedOptionsToSell = ethers.BigNumber.from(10e8.toString())
+      const collateralAmount = await option.strikeToTransfer(maxAcceptedOptionsToSell)
+      const tokenBAmountToReceive = ethers.BigNumber.from('354849710')
+      const deadline = await getTimestamp() + 6000
+
+      await stableAsset.connect(caller).mint(collateralAmount)
+
+      await optionHelper.connect(caller).mint(
+        option.address,
+        maxAcceptedOptionsToSell
+      )
+
+      const { 0: estimatedOptionsToSell, 1: sigma } = await pool.getOptionTradeDetailsExactBOutput(tokenBAmountToReceive)
+
+      const balanceStableBeforeTrade = await stableAsset.balanceOf(callerAddress)
+
+      const tx = await optionHelper.connect(caller).sellOptionsAndReceiveExactTokens(
+        option.address,
+        maxAcceptedOptionsToSell,
+        tokenBAmountToReceive,
+        deadline,
+        sigma
+      )
+
+      const balanceStableAfterTrade = await stableAsset.balanceOf(callerAddress)
+
+      const amountStableReceived = balanceStableAfterTrade.sub(balanceStableBeforeTrade)
+      expect(amountStableReceived).to.be.equal(tokenBAmountToReceive)
+
+      await expect(Promise.resolve(tx))
+        .to.emit(optionHelper, 'OptionsSold')
+        .withArgs(callerAddress, option.address, estimatedOptionsToSell, stableAsset.address, tokenBAmountToReceive)
     })
   })
 })
