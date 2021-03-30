@@ -69,12 +69,14 @@ task('deployNewOption', 'Deploy New Option')
     ]
 
     const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
-    const txIdNewOption = await FactoryContract.createOption(...funcParameters)
-    await txIdNewOption.wait(numberOfConfirmations)
+    const txIdNewOption = await FactoryContract.createOption(...funcParameters, { gasLimit: 9100000 })
+    const txReceipt = await txIdNewOption.wait(numberOfConfirmations)
+    console.log('txId: ', txIdNewOption.hash)
 
     const filterFrom = await FactoryContract.filters.OptionCreated(deployerAddress)
-    console.log('txIdNewOption.blockNumber', txIdNewOption.blockNumber)
-    const eventDetails = await FactoryContract.queryFilter(filterFrom, txIdNewOption.blockNumber, 'latest')
+
+    console.log('txReceipt.blockNumber', txReceipt.blockNumber)
+    const eventDetails = await FactoryContract.queryFilter(filterFrom, txReceipt.blockNumber, 'latest')
     console.log('txId: ', txIdNewOption.hash)
     console.log('timestamp: ', new Date())
 
