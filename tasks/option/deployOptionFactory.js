@@ -32,7 +32,7 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     }
 
     const OptionFactory = await ethers.getContractFactory('OptionFactory')
-    
+
     const constructorElements = [
       wethAddress,
       podputbuilder,
@@ -59,5 +59,5 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     }
 
     console.log('OptionFactory deployed to: ', factory.address)
-    return factory
+    return factory.address
   })

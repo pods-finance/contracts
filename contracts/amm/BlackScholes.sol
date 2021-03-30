@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: agpl-3.0
+
 // solhint-disable var-name-mixedcase
 pragma solidity 0.6.12;
 
