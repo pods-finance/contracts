@@ -2,7 +2,7 @@
 const saveJSON = require('../utils/saveJSON')
 const verifyContract = require('../utils/verify')
 
-internalTask('deploySigma', 'Deploy Sigma Contract')
+internalTask('deploySigmaGuesser', 'Deploy Sigma Contract')
   .addParam('bs', 'Black Scholes Address')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .setAction(async ({ bs, verify }, hre) => {

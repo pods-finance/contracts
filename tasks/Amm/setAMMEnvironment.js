@@ -18,7 +18,7 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
       newContract: bsAddress
     })
 
-    const sigmaGuesseraAddress = await hre.run('deploySigma', { bs: bsAddress, verify })
+    const sigmaGuesseraAddress = await hre.run('deploySigmaGuesser', { bs: bsAddress, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
       setter: 'setImpliedVolatility',
