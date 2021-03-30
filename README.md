@@ -6,10 +6,7 @@
     <img src="https://img.shields.io/circleci/project/github/.svg" alt='CI' />
   </a> -->
   <a href="https://docs.openzeppelin.com/">
-    <img src="https://img.shields.io/badge/build with-Buidler-f9c937" alt="Build with buidler">
-  </a>
-  <a href="https://docs.openzeppelin.com/">
-    <img src="https://img.shields.io/badge/using-OpenZeppelin-3677FF" alt="Using OpenZeppelin">
+    <img src="https://img.shields.io/badge/build with-Buidler-f9c937" alt="Build with Hardhat">
   </a>
 
   <a href="https://github.com/pods-finance/contracts/actions?query=workflow:test">
@@ -33,7 +30,7 @@
 
 ---
 
-**Full Documentation at [pods-finance.gitbook](https://pods-finance.gitbook.io/documentation/)**
+**Full Documentation at [docs.pods.finance](https://docs.pods.finance)**
 
 ## Table of Contents
 
@@ -41,7 +38,6 @@
  - [Compile](#compile)
  - [Contracts](#contracts)
  - [Development](#development)
- - [Enviroment](#enviroment)
  - [Testing](#testing)
  - [Maintainers](#maintainers)
  - [Contributing](#contributing)
@@ -61,36 +57,10 @@ $ yarn compile
 
 Checkout our full addresses list [here](https://pods-finance.gitbook.io/documentation/integrating-pods/smart-contracts)
 
-## Enviroment
-
-Our development environment consists of the following:
-
--   Open Zeppelin Contracts - external contracts dependency
--   Buidler - Development Framework
--   Ethers plugins for Buidler
--   Waffle (using Mocha/Chai) - unit testing
--   Solhint - linter
--   Prettier-solidity-plugin - formatter
--   Solidity - Version ^0.6.8
 
 ## Development
 
 
-### Lint
-
-To lint all packages:
-
-```bash
-$ yarn lint
-```
-
-### Prettier
-
-To run prettier on all packages:
-
-```bash
-$ yarn prettier
-```
 
 ## Testing
 
@@ -98,13 +68,33 @@ $ yarn prettier
 yarn test
 ```
 
+## Coverage
+
+```
+yarn coverage
+```
+
+## Running Locally
+
+You will first need to run a local node in your machine. You can do that with Hardhat using:
+
+```
+npx hardhat node
+```
+
+After that, you can run our script responsible for deploying all our contracts with a default configuration. It will be created some initial options and pools with liquidity there.
+
+```
+npx hardhat setupLocal --network local
+```
+
 ## Contributing
 
 We highly encourage participation from the community to help shape the development of Pods. If you are interested in
 contributing or have any questions, ping us on [Twitter](https://twitter.com/pods-finance) or [Discord](https://discord.com/channels/713910672525754459/725468404139556874);
 
-We use [Yarn](https://yarnpkg.com/) as a dependency manager and [Buidler](https://github.com/nomiclabs/buidler)
-as a development environment for compiling, testing, and deploying our contracts. The contracts were written in [Solidity v0.6.8](https://github.com/ethereum/solidity).
+We use [Yarn](https://yarnpkg.com/) as a dependency manager and [Hardhat](https://hardhat.org/)
+as a development environment for compiling, testing, and deploying our contracts. The contracts were written in [Solidity v0.6.12](https://github.com/ethereum/solidity).
 
 ## Maintainers
 
@@ -118,4 +108,4 @@ as a development environment for compiling, testing, and deploying our contracts
 
 ## License
 
-[MIT](./blob/master/LICENSE)
+[AGPL-3](./blob/master/LICENSE)
