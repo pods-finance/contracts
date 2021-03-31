@@ -24,6 +24,12 @@
         "internalType": "address",
         "name": "pool",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "option",
+        "type": "address"
       }
     ],
     "name": "PoolCreated",
