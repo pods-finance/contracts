@@ -55,7 +55,7 @@ $ yarn compile
 
 ## Contracts
 
-Checkout our full addresses list [here](https://pods-finance.gitbook.io/documentation/integrating-pods/smart-contracts)
+Checkout our full addresses list [here](https://docs.pods.finance/developers/deployed-contracts)
 
 
 ## Development
