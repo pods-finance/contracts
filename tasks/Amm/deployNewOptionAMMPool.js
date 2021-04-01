@@ -66,8 +66,8 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
       if (verify) {
         const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
-        const addressFeelTokenA = await pool.tokenA()
-        const addressFeelTokenB = await pool.tokenB()
+        const addressFeelTokenA = await pool.feePoolA()
+        const addressFeelTokenB = await pool.feePoolB()
         const configuratorManager = await pool.configurationManager()
 
         const constructorArguments = [
