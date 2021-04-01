@@ -5,9 +5,6 @@
 <!-- <a href="https://circleci.com/gh/tree/master" style="text-decoration:none;">
     <img src="https://img.shields.io/circleci/project/github/.svg" alt='CI' />
   </a> -->
-  <a href="https://docs.openzeppelin.com/">
-    <img src="https://img.shields.io/badge/build with-Buidler-f9c937" alt="Build with Hardhat">
-  </a>
 
   <a href="https://github.com/pods-finance/contracts/actions?query=workflow:test">
     <img src="https://github.com/pods-finance/contracts/workflows/test/badge.svg" alt="test"/>
@@ -45,7 +42,7 @@
 
 ## Documentation
 
-Check out our full documentation at [pods-finance.gitbook](https://pods-finance.gitbook.io/documentation/)
+Check out our full documentation at [docs.pods.finance](https://docs.pods.finance)
 
 ## Compile
 
