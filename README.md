@@ -6,15 +6,15 @@
     <img src="https://img.shields.io/circleci/project/github/.svg" alt='CI' />
   </a> -->
   <a href="https://hardhat.org">
-    <img src="https://img.shields.io/badge/build with-Hardhat-f9c937" alt="Build with Hardhat">
+    <img src="https://img.shields.io/badge/built with-Hardhat-f9c937" alt="Build with Hardhat">
   </a>
 
   <a href="https://github.com/pods-finance/contracts/actions?query=workflow:test">
     <img src="https://github.com/pods-finance/contracts/workflows/test/badge.svg" alt="test"/>
   </a>
   
-  <a href='https://coveralls.io/github/pods-finance/contracts-v2'>
-    <img src='https://coveralls.io/repos/github/pods-finance/contracts-v2/badge.svg?t=1pF1aS' alt='Coverage Status' />
+  <a href='https://coveralls.io/github/pods-finance/contracts?branch=develop'>
+    <img src='https://coveralls.io/repos/github/pods-finance/contracts/badge.svg?branch=develop' alt='Coverage Status' />
   </a>
 
   <a href="https://discord.com/channels/713910672525754459/713910672525754462">
@@ -23,6 +23,11 @@
   <a href="https://twitter.com/podsfinance">
     <img src="https://badgen.net/twitter/follow/podsfinance?icon=twitter" alt="twitter Badge">
   </a>
+  <a href="http://gplv3.fsf.org/">
+    <img src="https://img.shields.io/badge/license-AGPL--3-blue" alt="License AGPL-3">
+  </a>
+  
+  
   
   
 </p>
