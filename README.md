@@ -10,7 +10,7 @@
   </a>
 
   <a href="https://github.com/pods-finance/contracts/actions?query=workflow:test">
-    <img src="https://github.com/pods-finance/contracts/workflows/test/badge.svg" alt="test"/>
+    <img src="https://github.com/pods-finance/contracts/workflows/lint+compile+test/badge.svg" alt="test"/>
   </a>
   
   <a href='https://coveralls.io/github/pods-finance/contracts?branch=develop'>
