@@ -17,12 +17,6 @@
     <img src='https://coveralls.io/repos/github/pods-finance/contracts/badge.svg?branch=develop' alt='Coverage Status' />
   </a>
 
-  <a href="https://discord.com/channels/713910672525754459/713910672525754462">
-    <img src="https://img.shields.io/discord/713910672525754459?logo=Discord" alt="discord Badge">
-  </a>
-  <a href="https://twitter.com/podsfinance">
-    <img src="https://badgen.net/twitter/follow/podsfinance?icon=twitter" alt="twitter Badge">
-  </a>
   <a href="http://gplv3.fsf.org/">
     <img src="https://img.shields.io/badge/license-AGPL--3-blue" alt="License AGPL-3">
   </a>
