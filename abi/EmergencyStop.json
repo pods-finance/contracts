@@ -1,29 +1,5 @@
 [
   {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "key",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "DataPointSet",
-    "type": "event"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
@@ -43,24 +19,45 @@
     "type": "event"
   },
   {
+    "anonymous": false,
     "inputs": [
       {
-        "internalType": "int256",
-        "name": "z",
-        "type": "int256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "decimals",
-        "type": "uint256"
+        "indexed": true,
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
       }
     ],
-    "name": "getProbability",
+    "name": "Resumed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "Stopped",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "isStopped",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bool",
         "name": "",
-        "type": "uint256"
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -89,17 +86,25 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "key",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
       }
     ],
-    "name": "setDataPoint",
+    "name": "resume",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "stop",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

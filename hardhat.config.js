@@ -1,4 +1,8 @@
-require('dotenv').config()
+const path = require('path')
+
+require('dotenv').config({
+  path: path.resolve(__dirname, '.env')
+})
 
 require('@nomiclabs/hardhat-ethers')
 require('@nomiclabs/hardhat-waffle')
@@ -14,6 +18,7 @@ require('hardhat-contract-sizer')
 require('./tasks/option/deployOptionFactory')
 require('./tasks/deployOptionHelper')
 require('./tasks/deployWeek')
+require('./tasks/exportABI')
 
 require('./tasks/utils/index')
 require('./tasks/Amm/index')
