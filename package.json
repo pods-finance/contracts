@@ -14,7 +14,8 @@
     "prettier:fix": "./node_modules/.bin/prettier --write contracts/**/*.sol",
     "test": "hardhat test",
     "compile": "hardhat compile",
-    "coverage": "hardhat coverage --network coverage"
+    "coverage": "hardhat coverage --network coverage",
+    "exportABI": "hardhat exportABI"
   },
   "repository": {
     "type": "git",
@@ -61,7 +62,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn lint && yarn prettier:fix && yarn compile",
+      "pre-commit": "yarn lint && yarn prettier:fix && yarn compile && yarn exportABI",
       "pre-push": "./pre-push-check.sh"
     }
   },

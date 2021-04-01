@@ -1,29 +1,5 @@
 [
   {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "key",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "DataPointSet",
-    "type": "event"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
@@ -43,19 +19,33 @@
     "type": "event"
   },
   {
+    "anonymous": false,
     "inputs": [
       {
-        "internalType": "int256",
-        "name": "z",
-        "type": "int256"
+        "indexed": true,
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
       },
       {
+        "indexed": false,
         "internalType": "uint256",
-        "name": "decimals",
+        "name": "value",
         "type": "uint256"
       }
     ],
-    "name": "getProbability",
+    "name": "SetCap",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "getCap",
     "outputs": [
       {
         "internalType": "uint256",
@@ -89,9 +79,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "key",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
       },
       {
         "internalType": "uint256",
@@ -99,7 +89,7 @@
         "type": "uint256"
       }
     ],
-    "name": "setDataPoint",
+    "name": "setCap",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
