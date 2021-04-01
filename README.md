@@ -1,4 +1,4 @@
-<p align="center"><img src="https://rob-myfiles.s3.amazonaws.com/Logo+Pill.png" width="280px"/></p>
+<p align="center"><img src="https://github.com/pods-finance/contracts/blob/develop/podslogo.png" width="280px"/></p>
 <p align="center">Pods is a decentralized non-custodial options protocol on Ethereum. Read this <a href="https://medium.com/podsfinance/understanding-options-5c47004f4c4" target="_blank">article</a> if you want to learn more!.</p>
 
 <p align="center">
