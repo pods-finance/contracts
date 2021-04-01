@@ -103,8 +103,9 @@ task('deployNewOption', 'Deploy New Option')
 
       if (verify) {
         const constructorElements = [...funcParameters]
-        constructorElements.splice(2) // remove option type
+        constructorElements.splice(2, 1)
         constructorElements.push(configuratorManagerAddress)
+        console.log('constructorElements', constructorElements)
         await verifyContract(hre, option, constructorElements)
       }
 

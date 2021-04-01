@@ -20,4 +20,7 @@ task('inspectConfigurationManager', 'Checks the contracts associated with a Conf
     console.log(`SigmaGuesser: ${await configurationManager.getSigmaGuesser()}`)
     console.log(`PriceProvider: ${await configurationManager.getPriceProvider()}`)
     console.log(`CapProvider: ${await configurationManager.getCapProvider()}`)
+    console.log(`OptionFactory: ${await configurationManager.getOptionFactory()}`)
+    console.log(`OptionAMMFactory: ${await configurationManager.getAMMFactory()}`)
+    console.log(`OptionHelper: ${await configurationManager.getOptionHelper()}`)
   })
