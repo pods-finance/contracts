@@ -5,6 +5,9 @@
 <!-- <a href="https://circleci.com/gh/tree/master" style="text-decoration:none;">
     <img src="https://img.shields.io/circleci/project/github/.svg" alt='CI' />
   </a> -->
+  <a href="https://hardhat.org">
+    <img src="https://img.shields.io/badge/build with-Hardhat-f9c937" alt="Build with Hardhat">
+  </a>
 
   <a href="https://github.com/pods-finance/contracts/actions?query=workflow:test">
     <img src="https://github.com/pods-finance/contracts/workflows/test/badge.svg" alt="test"/>
