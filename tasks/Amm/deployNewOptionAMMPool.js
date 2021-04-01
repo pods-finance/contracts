@@ -65,7 +65,21 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       await saveJSON(pathFile, { pools: newPoolObj })
 
       if (verify) {
-        await verifyContract(hre, poolAddress, [option, tokenb, initialsigma])
+        const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
+        const addressFeelTokenA = await pool.tokenA()
+        const addressFeelTokenB = await pool.tokenB()
+        const configuratorManager = await pool.configurationManager()
+
+        const constructorArguments = [
+          option,
+          tokenb,
+          initialsigma,
+          addressFeelTokenA,
+          addressFeelTokenB,
+          configuratorManager
+        ]
+        console.log('constructorArguments', constructorArguments)
+        await verifyContract(hre, poolAddress, constructorArguments)
       }
 
       console.log('----End Deploy New Pool----')
