@@ -1,6 +1,6 @@
 const approveTransferERC20 = require('../utils/approveTransferERC20')
 
-internalTask('mintOptions', 'Mint options')
+task('mintOptions', 'Mint options')
   .addParam('option', 'Option address')
   .addParam('amount', 'Amount of Options to mint')
   .addOptionalParam('contract', 'Option Contract type to use')

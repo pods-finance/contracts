@@ -1,5 +1,5 @@
 task('inspectConfigurationManager', 'Checks the contracts associated with a ConfigurationManager instance')
-  .addPositionalParam('address', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
+  .addOptionalPositionalParam('address', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .setAction(async ({ address }, bre) => {
     const filePath = `../../deployments/${bre.network.name}.json`
 
