@@ -26,6 +26,8 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
 
     /* solhint-enable private-vars-leading-underscore */
 
+    event ParameterSet(bytes32 name, uint256 value);
+
     constructor() public {
         /**
          * Minimum price interval to accept a price feed
@@ -36,6 +38,7 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
 
     function setParameter(bytes32 name, uint256 value) external override onlyOwner {
         _parameters[name] = value;
+        emit ParameterSet(name, value);
     }
 
     function setEmergencyStop(address emergencyStop) external override onlyOwner {
