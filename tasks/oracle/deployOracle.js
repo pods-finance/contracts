@@ -1,7 +1,7 @@
 const saveJSON = require('../utils/saveJSON')
 const verifyContract = require('../utils/verify')
 
-internalTask('deployOracle', 'Deploy full Oracle (Chainlink + PriceFeed)')
+task('deployOracle', 'Deploy full Oracle (Chainlink + PriceFeed)')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addParam('asset', 'address of initial asset of the feed (WETH: 0xD7FDf2747A855AC20b96A5cEDeA84b2138cEd280')
   .addParam('source', 'address of the asset price feed (Chainlink WETH/USD: ')

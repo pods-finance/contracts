@@ -74,7 +74,9 @@ module.exports = {
         count: 1
       },
       url: 'https://rpc-mumbai.maticvigil.com',
-      network_id: 80001
+      network_id: 80001,
+      gasPrice: 1e9,
+      gasLimit: 2100000
     },
     coverage: {
       url: 'http://localhost:8555'

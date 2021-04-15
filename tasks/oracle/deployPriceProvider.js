@@ -2,7 +2,7 @@ const fs = require('fs')
 const pathJoin = require('path')
 const fsPromises = fs.promises
 
-internalTask('deployPriceProvider', 'Deploy PriceProvider Contract')
+task('deployPriceProvider', 'Deploy PriceProvider Contract')
   .addOptionalParam('asset', 'address of asset')
   .addOptionalParam('feed', 'address of priceFeed asset')
   .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')

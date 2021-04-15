@@ -4,7 +4,9 @@ const verifyContract = require('../utils/verify')
 task('deployConfigurationManager', 'Deploy a new instance of ConfigurationManager + Emergency + Cap and link them')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .setAction(async ({ verify }, hre) => {
+    hre.run('compile')
     console.log('----Start Deploy ConfiguratorManager + Emergency + Cap----')
+
     const [ConfigurationManager, EmergencyStop, CapProvider] = await Promise.all([
       ethers.getContractFactory('ConfigurationManager'),
       ethers.getContractFactory('EmergencyStop'),
