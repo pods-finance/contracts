@@ -1,4 +1,4 @@
-internalTask('deployPriceProvider', 'Deploy PriceProvider Contract')
+task('deployPriceProvider', 'Deploy PriceProvider Contract')
   .addOptionalParam('asset', 'address of asset')
   .addOptionalParam('feed', 'address of priceFeed asset')
   .setAction(async ({ asset, feed }) => {

@@ -59,6 +59,14 @@ module.exports = {
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       network_id: 42
     },
+    goerli: {
+      accounts: {
+        mnemonic: process.env.DEV_MNEMONIC,
+        initialIndex: parseInt(process.env.ADDRESS_INDEX)
+      },
+      url: 'https://goerli.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
+      network_id: 5
+    },
     mumbai: {
       accounts: {
         mnemonic: process.env.DEV_MNEMONIC,
@@ -66,7 +74,9 @@ module.exports = {
         count: 1
       },
       url: 'https://rpc-mumbai.maticvigil.com',
-      network_id: 80001
+      network_id: 80001,
+      gasPrice: 1e9,
+      gasLimit: 2100000
     },
     coverage: {
       url: 'http://localhost:8555'

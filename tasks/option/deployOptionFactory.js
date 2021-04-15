@@ -12,12 +12,13 @@ task('deployOptionFactory', 'Deploy OptionFactory')
   .addOptionalParam('wpodputbuilder', 'wpodputbuilder contract address')
   .addOptionalParam('podcallbuilder', 'podcallbuilder contract address')
   .addOptionalParam('wpodcallbuilder', 'wpodcallbuilder contract address')
+  .addOptionalParam('wethadapt', 'alternative weth address in case of other networks')
 
-  .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, configuration, builders, verify }, hre) => {
+  .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, configuration, builders, wethadapt, verify }, hre) => {
     const path = `../../deployments/${hre.network.name}.json`
     const _filePath = pathJoin.join(__dirname, path)
     const content = await fsPromises.readFile(_filePath)
-    const wethAddress = JSON.parse(content).WETH
+    const wethAddress = wethadapt || JSON.parse(content).WETH
     const configurationManager = configuration || JSON.parse(content).configurationManager
 
     if (!configurationManager) {

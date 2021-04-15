@@ -69,7 +69,7 @@ task('deployNewOption', 'Deploy New Option')
     ]
 
     const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
-    const txIdNewOption = await FactoryContract.createOption(...funcParameters, { gasLimit: 9100000 })
+    const txIdNewOption = await FactoryContract.createOption(...funcParameters)
     const txReceipt = await txIdNewOption.wait(numberOfConfirmations)
     console.log('txId: ', txIdNewOption.hash)
 
