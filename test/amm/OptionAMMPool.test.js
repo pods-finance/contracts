@@ -103,6 +103,7 @@ scenarios.forEach(scenario => {
     })
 
     beforeEach(async function () {
+      configurationManager = await createConfigurationManager()
       await defaultPriceFeed.setDecimals(scenario.spotPriceDecimals)
       await defaultPriceFeed.setRoundData({
         roundId: 1,
@@ -111,9 +112,9 @@ scenarios.forEach(scenario => {
         updatedAt: await getTimestamp() + 1,
         answeredInRound: 1
       })
-      priceProvider = await PriceProvider.deploy([mockUnderlyingAsset.address], [defaultPriceFeed.contract.address])
-
-      configurationManager = await createConfigurationManager({ priceProvider })
+      priceProvider = await PriceProvider.deploy(configurationManager.address, [mockUnderlyingAsset.address], [defaultPriceFeed.contract.address])
+      configurationManager.setPriceProvider(priceProvider.address)
+      
       factoryContract = await createOptionFactory(weth.address, configurationManager)
 
       option = await createMockOption({

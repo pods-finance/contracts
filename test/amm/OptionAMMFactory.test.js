@@ -22,12 +22,11 @@ describe('OptionAMMFactory', () => {
     mockUnderlyingAsset = await MockERC20.deploy('USDC', 'USDC', 6)
     await mockUnderlyingAsset.deployed()
 
-    const mock = await getPriceProviderMock(caller, '900000000000', 8, mockUnderlyingAsset.address)
-    priceProviderMock = mock.priceProvider
+    configurationManager = await createConfigurationManager()
 
-    configurationManager = await createConfigurationManager({
-      priceProvider: priceProviderMock
-    })
+    const mock = await getPriceProviderMock(caller, '900000000000', 8, mockUnderlyingAsset.address, configurationManager)
+    priceProviderMock = mock.priceProvider
+    configurationManager.setPriceProvider(priceProviderMock.address)
   })
 
   beforeEach(async () => {
