@@ -39,7 +39,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
 
     OptionType private immutable _optionType;
     ExerciseType private immutable _exerciseType;
-    IConfigurationManager private immutable _configurationManager;
+    IConfigurationManager public immutable configurationManager;
 
     address private immutable _underlyingAsset;
     address private immutable _strikeAsset;
@@ -74,8 +74,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         uint256 strikePrice,
         uint256 expiration,
         uint256 exerciseWindowSize,
-        IConfigurationManager configurationManager
-    ) public ERC20(name, symbol) CappedOption(configurationManager) {
+        IConfigurationManager _configurationManager
+    ) public ERC20(name, symbol) CappedOption(_configurationManager) {
         require(Address.isContract(underlyingAsset), "PodOption: underlying asset is not a contract");
         require(Address.isContract(strikeAsset), "PodOption: strike asset is not a contract");
         require(underlyingAsset != strikeAsset, "PodOption: underlying asset and strike asset must differ");
@@ -93,7 +93,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
             _startOfExerciseWindow = block.timestamp;
         }
 
-        _configurationManager = configurationManager;
+        configurationManager = _configurationManager;
 
         _optionType = optionType;
         _exerciseType = exerciseType;

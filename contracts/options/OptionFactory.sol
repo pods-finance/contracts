@@ -12,7 +12,7 @@ import "../interfaces/IPodOption.sol";
  * @dev Uses IOptionBuilder to create the different types of Options
  */
 contract OptionFactory {
-    IConfigurationManager public configurationManager;
+    IConfigurationManager public immutable configurationManager;
     IOptionBuilder public podPutBuilder;
     IOptionBuilder public wPodPutBuilder;
     IOptionBuilder public podCallBuilder;

@@ -2,8 +2,8 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "configurationManager",
+        "internalType": "contract IConfigurationManager",
+        "name": "_configurationManager",
         "type": "address"
       }
     ],
@@ -34,6 +34,19 @@
     ],
     "name": "PoolCreated",
     "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "configurationManager",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [
