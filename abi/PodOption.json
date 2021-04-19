@@ -48,7 +48,7 @@
       },
       {
         "internalType": "contract IConfigurationManager",
-        "name": "configurationManager",
+        "name": "_configurationManager",
         "type": "address"
       }
     ],
@@ -287,6 +287,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "configurationManager",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

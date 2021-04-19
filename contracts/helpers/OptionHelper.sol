@@ -24,7 +24,7 @@ contract OptionHelper {
     /**
      * @dev store globally accessed configurations
      */
-    IConfigurationManager private _configurationManager;
+    IConfigurationManager public immutable configurationManager;
 
     event OptionsBought(
         address indexed buyer,
@@ -58,9 +58,12 @@ contract OptionHelper {
         uint256 tokenAmount
     );
 
-    constructor(address configurationManager) public {
-        require(Address.isContract(configurationManager), "OptionHelper: Configuration Manager is not a contract");
-        _configurationManager = IConfigurationManager(configurationManager);
+    constructor(IConfigurationManager _configurationManager) public {
+        require(
+            Address.isContract(address(_configurationManager)),
+            "OptionHelper: Configuration Manager is not a contract"
+        );
+        configurationManager = _configurationManager;
     }
 
     modifier withinDeadline(uint256 deadline) {
@@ -337,7 +340,7 @@ contract OptionHelper {
      * @return IOptionAMMPool
      */
     function _getPool(IPodOption option) internal view returns (IOptionAMMPool) {
-        IOptionAMMFactory factory = IOptionAMMFactory(_configurationManager.getAMMFactory());
+        IOptionAMMFactory factory = IOptionAMMFactory(configurationManager.getAMMFactory());
         address exchangeOptionAddress = factory.getPool(address(option));
         require(exchangeOptionAddress != address(0), "OptionHelper: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);

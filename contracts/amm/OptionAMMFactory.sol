@@ -19,13 +19,16 @@ contract OptionAMMFactory is IOptionAMMFactory {
     /**
      * @dev store globally accessed configurations
      */
-    IConfigurationManager private _configurationManager;
+    IConfigurationManager public immutable configurationManager;
 
     event PoolCreated(address indexed deployer, address pool, address option);
 
-    constructor(address configurationManager) public {
-        require(Address.isContract(configurationManager), "OptionAMMFactory: Configuration Manager is not a contract");
-        _configurationManager = IConfigurationManager(configurationManager);
+    constructor(IConfigurationManager _configurationManager) public {
+        require(
+            Address.isContract(address(_configurationManager)),
+            "OptionAMMFactory: Configuration Manager is not a contract"
+        );
+        configurationManager = _configurationManager;
     }
 
     /**
@@ -52,7 +55,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
             _initialSigma,
             address(feePoolTokenA),
             address(feePoolTokenB),
-            _configurationManager
+            configurationManager
         );
 
         address poolAddress = address(pool);
