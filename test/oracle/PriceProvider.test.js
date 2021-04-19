@@ -1,6 +1,6 @@
 const { expect } = require('chai')
-const { deployMockContract } = waffle
 const createPriceFeedMock = require('../util/createPriceFeedMock')
+const createConfigurationManager = require('../util/createConfigurationManager')
 const getTimestamp = require('../util/getTimestamp')
 
 describe('PriceProvider', () => {
@@ -11,9 +11,11 @@ describe('PriceProvider', () => {
   const price = ethers.BigNumber.from(450e6)
   const asset0 = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF'
   const asset1 = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+  let configurationManager
 
   before(async () => {
     PriceProvider = await ethers.getContractFactory('PriceProvider')
+    configurationManager = await createConfigurationManager()
     startedAt = await getTimestamp()
     updatedAt = startedAt + 1
     ;[deployer] = await ethers.getSigners()
@@ -29,7 +31,8 @@ describe('PriceProvider', () => {
       updatedAt,
       answeredInRound: 1
     })
-    provider = await PriceProvider.deploy([asset0], [defaultPriceFeed.contract.address])
+    provider = await PriceProvider.deploy(configurationManager.address, [asset0], [defaultPriceFeed.contract.address])
+    await configurationManager.setPriceProvider(provider.address)
   })
 
   describe('PriceFeed management', () => {

@@ -40,7 +40,8 @@ task('deployOptionFactory', 'Deploy OptionFactory')
       wpodputbuilder,
       podcallbuilder,
       wpodcallbuilder,
-      configurationManager]
+      configurationManager
+    ]
 
     const factory = await OptionFactory.deploy(...constructorElements)
 

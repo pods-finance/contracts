@@ -3,6 +3,8 @@
 pragma solidity 0.6.12;
 
 interface IConfigurationManager {
+    function setParameter(bytes32 name, uint256 value) external;
+
     function setEmergencyStop(address emergencyStop) external;
 
     function setPricingMethod(address pricingMethod) external;
@@ -18,6 +20,8 @@ interface IConfigurationManager {
     function setOptionFactory(address optionFactory) external;
 
     function setOptionHelper(address optionHelper) external;
+
+    function getParameter(bytes32 name) external view returns (uint256);
 
     function getEmergencyStop() external view returns (address);
 
