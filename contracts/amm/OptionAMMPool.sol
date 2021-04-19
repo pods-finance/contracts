@@ -40,17 +40,17 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     /**
      * @notice store globally accessed configurations
      */
-    IConfigurationManager public configurationManager;
+    IConfigurationManager public immutable configurationManager;
 
     /**
      * @notice responsible for handling Liquidity providers fees of the token A
      */
-    IFeePool public feePoolA;
+    IFeePool public immutable feePoolA;
 
     /**
      * @notice responsible for handling Liquidity providers fees of the token B
      */
-    IFeePool public feePoolB;
+    IFeePool public immutable feePoolB;
 
     // Option Info
     struct PriceProperties {
