@@ -117,11 +117,11 @@ contract OptionHelper {
 
     /**
      * @notice Mint and add liquidity
-     * @dev Mint options and add them as liquidity providing
+     * @dev Mint options and provide them as liquidity to the pool
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
-     * @param tokenAmount Amount of output tokens accepted
+     * @param tokenAmount Amount of tokens to provide as liquidity
      */
     function mintAndAddLiquidity(
         IPodOption option,
