@@ -12,6 +12,8 @@ import "../interfaces/IConfigurationManager.sol";
  * @notice Allows contracts to read protocol-wide configuration modules
  */
 contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
+    mapping(bytes32 => uint256) private _parameters;
+
     /* solhint-disable private-vars-leading-underscore */
     bytes32 private constant EMERGENCY_STOP = "EMERGENCY_STOP";
     bytes32 private constant PRICING_METHOD = "PRICING_METHOD";
@@ -23,6 +25,21 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     bytes32 private constant OPTION_HELPER = "OPTION_HELPER";
 
     /* solhint-enable private-vars-leading-underscore */
+
+    event ParameterSet(bytes32 name, uint256 value);
+
+    constructor() public {
+        /**
+         * Minimum price interval to accept a price feed
+         * Defaulted to 3 hours and 10 minutes
+         */
+        _parameters["MIN_UPDATE_INTERVAL"] = 11100;
+    }
+
+    function setParameter(bytes32 name, uint256 value) external override onlyOwner {
+        _parameters[name] = value;
+        emit ParameterSet(name, value);
+    }
 
     function setEmergencyStop(address emergencyStop) external override onlyOwner {
         _setModule(EMERGENCY_STOP, emergencyStop);
@@ -54,6 +71,10 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
 
     function setOptionHelper(address optionHelper) external override onlyOwner {
         _setModule(OPTION_HELPER, optionHelper);
+    }
+
+    function getParameter(bytes32 name) external override view returns (uint256) {
+        return _parameters[name];
     }
 
     function getEmergencyStop() external override view returns (address) {

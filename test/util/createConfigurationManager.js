@@ -19,7 +19,7 @@ module.exports = async function createConfigurationManager ({ priceProvider } = 
   ])
 
   if (!priceProvider) {
-    priceProvider = await PriceProvider.deploy([], [])
+    priceProvider = await PriceProvider.deploy(configurationManager.address, [], [])
   }
 
   await configurationManager.setPricingMethod(blackScholes.address)

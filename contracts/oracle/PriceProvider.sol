@@ -5,6 +5,7 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IPriceFeed.sol";
 import "../interfaces/IPriceProvider.sol";
+import "../interfaces/IConfigurationManager.sol";
 
 /**
  * @title PriceProvider
@@ -13,10 +14,14 @@ import "../interfaces/IPriceProvider.sol";
  */
 contract PriceProvider is IPriceProvider, Ownable {
     /**
-     * @dev Minimum price interval to accept a price feed
-     * Defaulted to 3 hours and 10 minutes
+     * @dev store globally accessed configurations
      */
-    uint256 public constant MIN_UPDATE_INTERVAL = 11100;
+    IConfigurationManager public immutable configurationManager;
+
+    /**
+     * @dev Minimum price interval to accept a price feed
+     */
+    uint256 public MIN_UPDATE_INTERVAL;
 
     /**
      * @dev Stores PriceFeed by asset address
@@ -26,7 +31,13 @@ contract PriceProvider is IPriceProvider, Ownable {
     event AssetFeedUpdated(address indexed asset, address indexed feed);
     event AssetFeedRemoved(address indexed asset, address indexed feed);
 
-    constructor(address[] memory _assets, address[] memory _feeds) public {
+    constructor(
+        IConfigurationManager _configurationManager,
+        address[] memory _assets,
+        address[] memory _feeds
+    ) public {
+        configurationManager = _configurationManager;
+        MIN_UPDATE_INTERVAL = _configurationManager.getParameter("MIN_UPDATE_INTERVAL");
         _setAssetFeeds(_assets, _feeds);
     }
 

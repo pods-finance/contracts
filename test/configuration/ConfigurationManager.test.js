@@ -45,4 +45,20 @@ describe('ConfigurationManager', () => {
     expect(await configurationManager.getOptionHelper())
       .to.equal(randomAddress)
   })
+
+  it('can set and get parameters', async () => {
+    const parameterName = ethers.utils.formatBytes32String('CUSTOM_PARAMETER')
+    const parameterValue = ethers.BigNumber.from(42)
+
+    const tx = configurationManager.setParameter(parameterName, parameterValue)
+    await expect(tx).to.emit(configurationManager, 'ParameterSet')
+      .withArgs(parameterName, 42)
+
+    expect(await configurationManager.getParameter(parameterName)).to.be.equal(parameterValue)
+  })
+
+  it('sets parameters by default', async () => {
+    const parameterName = ethers.utils.formatBytes32String('MIN_UPDATE_INTERVAL')
+    expect(await configurationManager.getParameter(parameterName)).to.be.equal(11100)
+  })
 })
