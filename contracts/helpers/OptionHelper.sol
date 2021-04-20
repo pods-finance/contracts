@@ -133,8 +133,10 @@ contract OptionHelper {
 
         _mint(option, optionAmount);
 
-        // Take stable token from caller
-        tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        if (tokenAmount > 0) {
+            // Take stable token from caller
+            tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        }
 
         // Approve pool transfer
         IERC20(address(option)).safeApprove(address(pool), optionAmount);
