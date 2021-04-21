@@ -19,8 +19,7 @@ task('increaseCap', 'Increase an option or pool cap')
     const configurationManager = await ethers.getContractAt('ConfigurationManager', configurator)
     const capProviderAddress = await configurationManager.getCapProvider()
     const capContract = await ethers.getContractAt('CapProvider', capProviderAddress)
-    const maxUint256 = ethers.BigNumber.from('2').pow(255)
-    const valueToSend = max ? maxUint256 : value
+    const valueToSend = max ? 0 : value
 
     const tx = await capContract.setCap(contract, valueToSend)
     const txReceipt = tx.wait()
