@@ -172,6 +172,29 @@
       },
       {
         "internalType": "uint256",
+        "name": "tokenAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "addLiquidity",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IPodOption",
+        "name": "option",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "optionAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "maxTokenAmount",
         "type": "uint256"
       },
