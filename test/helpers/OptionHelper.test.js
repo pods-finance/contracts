@@ -5,6 +5,7 @@ const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
 const addLiquidity = require('../util/addLiquidity')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
+const mintOptions = require('../util/mintOptions')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
@@ -139,13 +140,31 @@ describe('OptionHelper', () => {
   })
 
   describe('Mint and Add Liquidity', () => {
-    it('mints and add the options to the pool as liquidity', async () => {
+    it('mints and add the options and stable tokens to the pool as liquidity', async () => {
       const amountToMint = ethers.BigNumber.from(1e7.toString())
       const collateralAmount = await option.strikeToTransfer(amountToMint)
       const stableToAdd = ethers.BigNumber.from(200e6.toString())
 
       await strikeAsset.connect(caller).mint(collateralAmount)
       await stableAsset.connect(caller).mint(stableToAdd)
+
+      const tx = optionHelper.connect(caller).mintAndAddLiquidity(
+        option.address,
+        amountToMint,
+        stableToAdd
+      )
+
+      await expect(tx)
+        .to.emit(optionHelper, 'LiquidityAdded')
+        .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, stableToAdd)
+    })
+
+    it('mints and add the options to the pool as liquidity. Single-sided', async () => {
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+      const stableToAdd = ethers.BigNumber.from(0)
+
+      await strikeAsset.connect(caller).mint(collateralAmount)
 
       const tx = optionHelper.connect(caller).mintAndAddLiquidity(
         option.address,
@@ -238,6 +257,92 @@ describe('OptionHelper', () => {
         minOutputAmount,
         deadline,
         sigma
+      )
+
+      await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
+    })
+  })
+
+  describe('Add Liquidity', () => {
+    it('add the options and stable tokens to the pool as liquidity', async () => {
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const stableToAdd = ethers.BigNumber.from(200e6.toString())
+
+      // Minting options
+      await mintOptions(option, amountToMint, caller)
+      await option.connect(caller).approve(optionHelper.address, amountToMint)
+
+      // Minting stable
+      await stableAsset.connect(caller).mint(stableToAdd)
+
+      const tx = optionHelper.connect(caller).addLiquidity(
+        option.address,
+        amountToMint,
+        stableToAdd
+      )
+
+      await expect(tx)
+        .to.emit(optionHelper, 'LiquidityAdded')
+        .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, stableToAdd)
+    })
+
+    it('add the options to the pool as liquidity. Single-sided', async () => {
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const stableToAdd = ethers.BigNumber.from(0)
+
+      // Minting options
+      await mintOptions(option, amountToMint, caller)
+      await option.connect(caller).approve(optionHelper.address, amountToMint)
+
+      // Minting stable
+      await stableAsset.connect(caller).mint(stableToAdd)
+
+      const tx = optionHelper.connect(caller).addLiquidity(
+        option.address,
+        amountToMint,
+        stableToAdd
+      )
+
+      await expect(tx)
+        .to.emit(optionHelper, 'LiquidityAdded')
+        .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, stableToAdd)
+    })
+
+    it('add stable tokens to the pool as liquidity. Single-sided', async () => {
+      const amountToMint = ethers.BigNumber.from(0)
+      const stableToAdd = ethers.BigNumber.from(200e6.toString())
+
+      // Minting stable
+      await stableAsset.connect(caller).mint(stableToAdd)
+
+      const tx = optionHelper.connect(caller).addLiquidity(
+        option.address,
+        amountToMint,
+        stableToAdd
+      )
+
+      await expect(tx)
+        .to.emit(optionHelper, 'LiquidityAdded')
+        .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, stableToAdd)
+    })
+
+    it('fails to add liquidity when the pool do not exist', async () => {
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+      const stableToAdd = ethers.BigNumber.from(200e6.toString())
+
+      // Minting options
+      await mintOptions(option, amountToMint, caller)
+      await option.connect(caller).approve(optionHelper.address, amountToMint)
+
+      // Minting stable
+      await strikeAsset.connect(caller).mint(collateralAmount)
+      await stableAsset.connect(caller).mint(stableToAdd)
+
+      const tx = optionHelper.connect(caller).addLiquidity(
+        ethers.constants.AddressZero,
+        amountToMint,
+        stableToAdd
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: pool not found')

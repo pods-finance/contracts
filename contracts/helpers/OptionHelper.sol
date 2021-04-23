@@ -117,11 +117,11 @@ contract OptionHelper {
 
     /**
      * @notice Mint and add liquidity
-     * @dev Mint options and add them as liquidity providing
+     * @dev Mint options and provide them as liquidity to the pool
      *
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
-     * @param tokenAmount Amount of output tokens accepted
+     * @param tokenAmount Amount of tokens to provide as liquidity
      */
     function mintAndAddLiquidity(
         IPodOption option,
@@ -133,8 +133,46 @@ contract OptionHelper {
 
         _mint(option, optionAmount);
 
-        // Take stable token from caller
-        tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        if (tokenAmount > 0) {
+            // Take stable token from caller
+            tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        }
+
+        // Approve pool transfer
+        IERC20(address(option)).safeApprove(address(pool), optionAmount);
+        tokenB.safeApprove(address(pool), tokenAmount);
+
+        // Adds options and tokens to pool as liquidity
+        pool.addLiquidity(optionAmount, tokenAmount, msg.sender);
+
+        emit LiquidityAdded(msg.sender, address(option), optionAmount, pool.tokenB(), tokenAmount);
+    }
+
+    /**
+     * @notice Add liquidity
+     * @dev Provide options as liquidity to the pool
+     *
+     * @param option The option contract to mint
+     * @param optionAmount Amount of options to provide
+     * @param tokenAmount Amount of tokens to provide as liquidity
+     */
+    function addLiquidity(
+        IPodOption option,
+        uint256 optionAmount,
+        uint256 tokenAmount
+    ) external {
+        IOptionAMMPool pool = _getPool(option);
+        IERC20 tokenB = IERC20(pool.tokenB());
+
+        if (optionAmount > 0) {
+            // Take options from caller
+            IERC20(address(option)).safeTransferFrom(msg.sender, address(this), optionAmount);
+        }
+
+        if (tokenAmount > 0) {
+            // Take stable token from caller
+            tokenB.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        }
 
         // Approve pool transfer
         IERC20(address(option)).safeApprove(address(pool), optionAmount);
