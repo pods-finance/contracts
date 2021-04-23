@@ -9,6 +9,9 @@ require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-web3')
 require('@nomiclabs/hardhat-solhint')
 require('@nomiclabs/hardhat-etherscan')
+
+require('@tenderly/hardhat-tenderly')
+
 require('hardhat-spdx-license-identifier')
 
 require('hardhat-gas-reporter')
