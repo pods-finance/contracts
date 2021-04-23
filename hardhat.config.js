@@ -9,6 +9,9 @@ require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-web3')
 require('@nomiclabs/hardhat-solhint')
 require('@nomiclabs/hardhat-etherscan')
+
+require('@tenderly/hardhat-tenderly')
+
 require('hardhat-spdx-license-identifier')
 
 require('hardhat-gas-reporter')
@@ -66,6 +69,15 @@ module.exports = {
       },
       url: 'https://goerli.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       network_id: 5
+    },
+    matic: {
+      accounts: {
+        mnemonic: process.env.DEV_MNEMONIC,
+        initialIndex: parseInt(process.env.ADDRESS_INDEX),
+        count: 1
+      },
+      url: 'https://rpc-mainnet.matic.network',
+      network_id: 137
     },
     mumbai: {
       accounts: {
