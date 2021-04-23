@@ -74,7 +74,7 @@ module.exports = {
         count: 1
       },
       url: 'https://rpc-mainnet.matic.network',
-      network_id: 80001
+      network_id: 137
     },
     mumbai: {
       accounts: {
