@@ -70,6 +70,15 @@ module.exports = {
       url: 'https://goerli.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       network_id: 5
     },
+    matic: {
+      accounts: {
+        mnemonic: process.env.DEV_MNEMONIC,
+        initialIndex: parseInt(process.env.ADDRESS_INDEX),
+        count: 1
+      },
+      url: 'https://rpc-mainnet.matic.network',
+      network_id: 137
+    },
     mumbai: {
       accounts: {
         mnemonic: process.env.DEV_MNEMONIC,
