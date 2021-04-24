@@ -67,9 +67,13 @@ contract FeePool is IFeePool, Ownable {
         uint256 feesCollected = IERC20(_token).balanceOf(address(this));
 
         uint256 amortizedLiability = amountOfShares.mul(_balances[to].liability).div(_balances[to].shares);
-        uint256 withdrawAmount = feesCollected.add(_totalLiability).mul(amountOfShares).div(_shares).sub(
-            amortizedLiability
-        );
+        uint256 collectedGross = feesCollected.add(_totalLiability).mul(amountOfShares).div(_shares);
+        uint256 withdrawAmount = 0;
+
+        // Prevents negative payouts
+        if (collectedGross > amortizedLiability) {
+            withdrawAmount = collectedGross.sub(amortizedLiability);
+        }
 
         _balances[to].shares = _balances[to].shares.sub(amountOfShares);
         _balances[to].liability = _balances[to].liability.sub(amortizedLiability);
