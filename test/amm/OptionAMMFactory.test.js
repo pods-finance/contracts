@@ -32,7 +32,7 @@ describe('OptionAMMFactory', () => {
       configurationManager
     })
     priceProviderMock = mock.priceProvider
-    configurationManager.setPriceProvider(priceProviderMock.address)
+    await configurationManager.setPriceProvider(priceProviderMock.address)
   })
 
   beforeEach(async () => {
