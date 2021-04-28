@@ -18,11 +18,7 @@ require('hardhat-gas-reporter')
 require('solidity-coverage')
 require('hardhat-contract-sizer')
 
-require('./tasks/option/deployOptionFactory')
-require('./tasks/deployOptionHelper')
-require('./tasks/deployWeek')
-require('./tasks/exportABI')
-
+require('./tasks/index')
 require('./tasks/utils/index')
 require('./tasks/Amm/index')
 require('./tasks/configuration/index')

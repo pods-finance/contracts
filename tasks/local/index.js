@@ -1,3 +1,2 @@
 require('./setupLocal')
-require('./setupKovan')
-require('./deployToken')
+require('./deployERC20')
