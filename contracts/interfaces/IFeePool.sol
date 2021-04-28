@@ -14,6 +14,8 @@ interface IFeePool {
 
     function mint(address to, uint256 amount) external;
 
+    function feeToken() external view returns (address);
+
     function feeValue() external view returns (uint256);
 
     function feeDecimals() external view returns (uint8);
