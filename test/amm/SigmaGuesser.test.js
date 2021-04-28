@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const createBlackScholes = require('../util/createBlackScholes')
+const createConfigurationManager = require('../util/createConfigurationManager')
 const { toBigNumber, approximately } = require('../../utils/utils')
 
 const scenarioNextSigma = {
@@ -90,16 +91,21 @@ const initialSigmaNull = {
   expectedNewSigma: toBigNumber(1.2 * 1e18)
 }
 
-describe('SigmaGuesser', () => {
-  let SigmaGuesser, sigmaGuesser, blackScholes
+describe.only('SigmaGuesser', () => {
+  let SigmaGuesser, sigmaGuesser, blackScholes, configurationManager
 
   before(async () => {
     SigmaGuesser = await ethers.getContractFactory('SigmaGuesser')
     blackScholes = await createBlackScholes()
+    configurationManager = await createConfigurationManager()
   })
 
   beforeEach(async () => {
-    sigmaGuesser = await SigmaGuesser.deploy(blackScholes.address)
+    const parameterName = ethers.utils.formatBytes32String('GUESSER_ACCEPTABLE_RANGE')
+    const parameterValue = ethers.BigNumber.from(10)
+    await configurationManager.setParameter(parameterName, parameterValue)
+
+    sigmaGuesser = await SigmaGuesser.deploy(configurationManager.address, blackScholes.address)
     await sigmaGuesser.deployed()
   })
 
@@ -108,8 +114,25 @@ describe('SigmaGuesser', () => {
   })
 
   it('cannot be deployed with a zero-address BlackScholes', async () => {
-    const tx = SigmaGuesser.deploy(ethers.constants.AddressZero)
+    const tx = SigmaGuesser.deploy(configurationManager.address, ethers.constants.AddressZero)
     await expect(tx).to.be.revertedWith('Sigma: Invalid blackScholes')
+  })
+
+  it('should update the acceptableError correctly from configuratorManager', async () => {
+    const parameterName = ethers.utils.formatBytes32String('GUESSER_ACCEPTABLE_RANGE')
+    const parameterValue = ethers.BigNumber.from(15)
+    await configurationManager.setParameter(parameterName, parameterValue)
+
+    await sigmaGuesser.updateAcceptableRange()
+    expect(await sigmaGuesser.acceptableRange()).to.be.equal(parameterValue)
+  })
+
+  it('should not update the acceptableError if invalid value came from configuratorManager', async () => {
+    const parameterName = ethers.utils.formatBytes32String('GUESSER_ACCEPTABLE_RANGE')
+    const parameterValue = ethers.BigNumber.from(5)
+    await configurationManager.setParameter(parameterName, parameterValue)
+
+    await expect(sigmaGuesser.updateAcceptableRange()).to.be.revertedWith('Sigma: Invalid acceptableRange')
   })
 
   describe('FindNextSigma', () => {

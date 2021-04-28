@@ -3,7 +3,7 @@ const createPriceFeedMock = require('../util/createPriceFeedMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
 const getTimestamp = require('../util/getTimestamp')
 
-describe('PriceProvider', () => {
+describe.only('PriceProvider', () => {
   let PriceProvider, provider, deployer
   let defaultPriceFeed, startedAt, updatedAt
 
@@ -31,6 +31,11 @@ describe('PriceProvider', () => {
       updatedAt,
       answeredInRound: 1
     })
+
+    const parameterName = ethers.utils.formatBytes32String('MIN_UPDATE_INTERVAL')
+
+    await configurationManager.setParameter(parameterName, ethers.BigNumber.from(11100))
+
     provider = await PriceProvider.deploy(configurationManager.address, [asset0], [defaultPriceFeed.contract.address])
     await configurationManager.setPriceProvider(provider.address)
   })
@@ -39,9 +44,35 @@ describe('PriceProvider', () => {
     it('assigns the asset on construction correctly', async () => {
       expect(await provider.getPriceFeed(asset0)).to.equal(defaultPriceFeed.contract.address)
     })
-
     it('assigns the decimals on construction correctly', async () => {
       expect(await provider.getAssetDecimals(asset0)).to.equal(decimals)
+    })
+    it('should revert if minUpdateInterval is invalid during deploy', async () => {
+      const parameterName = ethers.utils.formatBytes32String('MIN_UPDATE_INTERVAL')
+      const parameterValue = ethers.BigNumber.from(2).pow(255)
+      await configurationManager.setParameter(parameterName, parameterValue)
+      await expect(PriceProvider.deploy(configurationManager.address, [asset0], [defaultPriceFeed.contract.address])).to.be.revertedWith('PriceProvider: Invalid minUpdateInterval')
+      await configurationManager.setParameter(parameterName, '11100')
+    })
+    it('should update the minUpdateInterval correctly from configuratorManager', async () => {
+      const parameterName = ethers.utils.formatBytes32String('MIN_UPDATE_INTERVAL')
+      const parameterValue = ethers.BigNumber.from(15)
+      await configurationManager.setParameter(parameterName, parameterValue)
+
+      await provider.updateMinUpdateInterval()
+      expect(await provider.minUpdateInterval()).to.be.equal(parameterValue)
+
+      await configurationManager.setParameter(parameterName, ethers.BigNumber.from(11100))
+    })
+
+    it('should not update the minUpdateInterval if invalid value came from configuratorManager', async () => {
+      const parameterName = ethers.utils.formatBytes32String('MIN_UPDATE_INTERVAL')
+      const parameterValue = ethers.BigNumber.from(2).pow(255)
+      await configurationManager.setParameter(parameterName, parameterValue)
+
+      await expect(provider.updateMinUpdateInterval()).to.be.revertedWith('PriceProvider: Invalid minUpdateInterval')
+
+      await configurationManager.setParameter(parameterName, ethers.BigNumber.from(11100))
     })
   })
 
