@@ -35,7 +35,7 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
          */
         _parameters["MIN_UPDATE_INTERVAL"] = 11100;
 
-          /**
+        /**
          * Acceptable range interval on sigma numerical method
          */
         _parameters["GUESSER_ACCEPTABLE_RANGE"] = 10;

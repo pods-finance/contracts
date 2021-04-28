@@ -29,15 +29,13 @@ contract SigmaGuesser is ISigmaGuesser {
     uint256 public constant MIN_ACCEPTABLE_RANGE = 10; //10%
 
     struct Boundaries {
-        uint256 sigmaLower; 
+        uint256 sigmaLower;
         uint256 priceLower;
         uint256 sigmaHigher;
         uint256 priceHigher;
     }
 
-    constructor(
-        IConfigurationManager _configurationManager,
-        address blackScholes) public {
+    constructor(IConfigurationManager _configurationManager, address blackScholes) public {
         require(blackScholes != address(0), "Sigma: Invalid blackScholes");
 
         configurationManager = _configurationManager;
@@ -254,13 +252,11 @@ contract SigmaGuesser is ISigmaGuesser {
         b.priceHigher = newGuessPrice;
     }
 
-
-     /**
+    /**
      * @notice Update acceptableRange calling configuratorManager
      */
     function updateAcceptableRange() external override {
-      acceptableRange = configurationManager.getParameter("GUESSER_ACCEPTABLE_RANGE");
-      require(acceptableRange >= MIN_ACCEPTABLE_RANGE, "Sigma: Invalid acceptableRange");
+        acceptableRange = configurationManager.getParameter("GUESSER_ACCEPTABLE_RANGE");
+        require(acceptableRange >= MIN_ACCEPTABLE_RANGE, "Sigma: Invalid acceptableRange");
     }
-
 }

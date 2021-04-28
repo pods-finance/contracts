@@ -74,8 +74,8 @@ contract PriceProvider is IPriceProvider, Ownable {
      * @notice Update minUpdateInterval fetching from configurationManager
      */
     function updateMinUpdateInterval() external override {
-      minUpdateInterval = configurationManager.getParameter("MIN_UPDATE_INTERVAL");
-      require(minUpdateInterval < block.timestamp, "PriceProvider: Invalid minUpdateInterval");
+        minUpdateInterval = configurationManager.getParameter("MIN_UPDATE_INTERVAL");
+        require(minUpdateInterval < block.timestamp, "PriceProvider: Invalid minUpdateInterval");
     }
 
     /**
