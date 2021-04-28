@@ -62,6 +62,15 @@ module.exports = {
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       network_id: 42
     },
+    mainnet: {
+      accounts: {
+        mnemonic: process.env.DEV_MNEMONIC,
+        initialIndex: parseInt(process.env.ADDRESS_INDEX),
+        count: 1
+      },
+      url: 'https://mainnet.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
+      network_id: 1
+    },
     goerli: {
       accounts: {
         mnemonic: process.env.DEV_MNEMONIC,
