@@ -32,6 +32,7 @@ const scenarios = [
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
+    emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
     initialSigma: toBigNumber(0.661e18),
     expectedNewIV: toBigNumber(0.66615e18),
@@ -52,6 +53,7 @@ const scenarios = [
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
+    emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
     initialSigma: toBigNumber(2 * 1e18),
     expectedNewIV: toBigNumber(1.2 * 1e18),
@@ -648,7 +650,11 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, 1, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
-        await optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+        const trade = optionAMMPool.connect(buyer)
+          .tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+
+        await expect(trade).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
 
         const buyerStrikeAmountAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const tokensSpent = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
@@ -718,7 +724,11 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, '1000000000000000000000000', buyerAddress, priceObj.newIV)).to.be.revertedWith('AMM: slippage not acceptable')
 
-        await optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, 0, buyerAddress, priceObj.newIV)
+        const trade = optionAMMPool.connect(buyer)
+          .tradeExactAInput(numberOfOptionsToSell, 0, buyerAddress, priceObj.newIV)
+
+        await expect(trade).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, priceObj.newIV)
 
         const buyerOptionAfterBuyer = await option.balanceOf(buyerAddress)
         const tokenBAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
@@ -806,7 +816,11 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, 1, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
-        await optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+        const trade = optionAMMPool.connect(buyer)
+          .tradeExactBOutput(numberOfTokensToReceive, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+
+        await expect(trade).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
 
         const buyerOptionAfterTrade = await option.balanceOf(buyerAddress)
         const buyerStrikeAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
@@ -921,7 +935,10 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
-        await optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, 0, buyerAddress, scenario.initialSigma)
+        const trade = optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, 0, buyerAddress, scenario.initialSigma)
+
+        await expect(trade).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
 
         const buyerOptionAfterBuyer = await option.balanceOf(buyerAddress)
         const buyerStrikeAfterBuyer = await mockStrikeAsset.balanceOf(buyerAddress)

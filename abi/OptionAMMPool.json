@@ -216,6 +216,25 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "spotPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newIV",
+        "type": "uint256"
+      }
+    ],
+    "name": "TradeInfo",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "FIMP_DECIMALS",
     "outputs": [

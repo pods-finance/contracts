@@ -70,6 +70,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      */
     PriceProperties public priceProperties;
 
+    event TradeInfo(uint256 spotPrice, uint256 newIV);
+
     constructor(
         address _optionAddress,
         address _stableAsset,
@@ -794,8 +796,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     function _onTrade(TradeDetails memory tradeDetails) internal {
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         uint256 newSigma = abi.decode(tradeDetails.params, (uint256));
         priceProperties.currentSigma = newSigma;
+
+        emit TradeInfo(spotPrice, newSigma);
 
         IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
         IERC20(tokenB()).safeTransfer(address(feePoolB), tradeDetails.feesTokenB);
