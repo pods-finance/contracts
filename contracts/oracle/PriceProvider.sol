@@ -21,7 +21,7 @@ contract PriceProvider is IPriceProvider, Ownable {
     /**
      * @dev Minimum price interval to accept a price feed
      */
-    uint256 public MIN_UPDATE_INTERVAL;
+    uint256 public minUpdateInterval;
 
     /**
      * @dev Stores PriceFeed by asset address
@@ -37,7 +37,11 @@ contract PriceProvider is IPriceProvider, Ownable {
         address[] memory _feeds
     ) public {
         configurationManager = _configurationManager;
-        MIN_UPDATE_INTERVAL = _configurationManager.getParameter("MIN_UPDATE_INTERVAL");
+
+        minUpdateInterval = _configurationManager.getParameter("MIN_UPDATE_INTERVAL");
+
+        require(minUpdateInterval < block.timestamp, "PriceProvider: Invalid minUpdateInterval");
+
         _setAssetFeeds(_assets, _feeds);
     }
 
@@ -64,6 +68,14 @@ contract PriceProvider is IPriceProvider, Ownable {
                 emit AssetFeedRemoved(_assets[i], removedFeed);
             }
         }
+    }
+
+    /**
+     * @notice Update minUpdateInterval fetching from configurationManager
+     */
+    function updateMinUpdateInterval() external override {
+      minUpdateInterval = configurationManager.getParameter("MIN_UPDATE_INTERVAL");
+      require(minUpdateInterval < block.timestamp, "PriceProvider: Invalid minUpdateInterval");
     }
 
     /**
@@ -160,6 +172,6 @@ contract PriceProvider is IPriceProvider, Ownable {
      * @param _timestamp The timestamp to check
      */
     function _isObsolete(uint256 _timestamp) internal view returns (bool) {
-        return _timestamp < (block.timestamp - MIN_UPDATE_INTERVAL);
+        return _timestamp < (block.timestamp - minUpdateInterval);
     }
 }

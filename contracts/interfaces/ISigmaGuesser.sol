@@ -22,4 +22,7 @@ interface ISigmaGuesser {
         uint256 _timeToMaturity,
         int256 _riskFree
     ) external view returns (uint256, uint256);
+
+    function updateAcceptableRange() external;
+
 }
