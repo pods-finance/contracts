@@ -44,7 +44,7 @@ describe('OptionHelper', () => {
       tokenAddress: underlyingAsset.address,
       configurationManager
     })
-    configurationManager.setPriceProvider(mock.priceProvider.address)
+    await configurationManager.setPriceProvider(mock.priceProvider.address)
 
     option = await createMockOption({
       configurationManager,
