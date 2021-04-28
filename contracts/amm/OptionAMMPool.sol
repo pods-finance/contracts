@@ -361,19 +361,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         return _getOptionTradeDetailsExactBOutput(exactAmountBOut);
     }
 
-    /**
-     * @notice getSpotPrice Check the spot price of given asset with a certain precision controlled by decimalsOutput
-     *
-     * @param asset address to check the spot price
-     * @param decimalsOutput number of decimals of the response
-     *
-     * @return spotPrice amount of A that will be transfer from msg.sender to the pool
-     */
-
-    function getSpotPrice(address asset, uint256 decimalsOutput) external override view returns (uint256 spotPrice) {
-        return _getSpotPrice(asset, decimalsOutput);
-    }
-
     function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
         if (timeToMaturity == 0) {
             return 0;

@@ -616,30 +616,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "asset",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "decimalsOutput",
-        "type": "uint256"
-      }
-    ],
-    "name": "getSpotPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "spotPrice",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "user",
         "type": "address"
       }

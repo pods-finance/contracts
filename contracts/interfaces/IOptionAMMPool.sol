@@ -77,7 +77,5 @@ interface IOptionAMMPool is IAMM {
             uint256 feesTokenB
         );
 
-    function getSpotPrice(address asset, uint256 decimalsOutput) external view returns (uint256);
-
     function getABPrice() external view returns (uint256);
 }

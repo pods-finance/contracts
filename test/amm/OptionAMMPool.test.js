@@ -146,12 +146,6 @@ scenarios.forEach(scenario => {
         expect(priceProperties.strikePrice).to.equal(optionStrikePrice.mul(toBigNumber(10).pow(bsDecimals.sub(optionStrikePriceDecimals))))
       })
 
-      it('should return spotPrice accordingly', async () => {
-        const spotPrice = await optionAMMPool.getSpotPrice(mockUnderlyingAsset.address, 18)
-        const bsDecimals = await optionAMMPool.PRICING_DECIMALS()
-        expect(spotPrice).to.equal(scenario.initialSpotPrice.mul(toBigNumber(10).pow(bsDecimals.sub(scenario.spotPriceDecimals))))
-      })
-
       it('should not allow trade after option expiration', async () => {
         await skipToWithdrawWindow(option)
         await expect(
