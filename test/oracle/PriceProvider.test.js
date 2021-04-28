@@ -3,7 +3,7 @@ const createPriceFeedMock = require('../util/createPriceFeedMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
 const getTimestamp = require('../util/getTimestamp')
 
-describe.only('PriceProvider', () => {
+describe('PriceProvider', () => {
   let PriceProvider, provider, deployer
   let defaultPriceFeed, startedAt, updatedAt
 

@@ -91,7 +91,7 @@ const initialSigmaNull = {
   expectedNewSigma: toBigNumber(1.2 * 1e18)
 }
 
-describe.only('SigmaGuesser', () => {
+describe('SigmaGuesser', () => {
   let SigmaGuesser, sigmaGuesser, blackScholes, configurationManager
 
   before(async () => {
