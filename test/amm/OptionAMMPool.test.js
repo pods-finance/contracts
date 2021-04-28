@@ -113,8 +113,8 @@ scenarios.forEach(scenario => {
         answeredInRound: 1
       })
       priceProvider = await PriceProvider.deploy(configurationManager.address, [mockUnderlyingAsset.address], [defaultPriceFeed.contract.address])
-      configurationManager.setPriceProvider(priceProvider.address)
-      
+      await configurationManager.setPriceProvider(priceProvider.address)
+
       factoryContract = await createOptionFactory(weth.address, configurationManager)
 
       option = await createMockOption({
