@@ -62,15 +62,13 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
         console.log(`Pool cap set to: ${capValue} ${await tokenBContract.symbol()}`)
       }
 
-      await saveJSON(pathFile, { pools: newPoolObj })
-
       if (verify) {
         const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
         const addressFeelTokenA = await pool.feePoolA()
         const addressFeelTokenB = await pool.feePoolB()
         const configuratorManager = await pool.configurationManager()
 
-        const constructorArguments = [
+        const poolConstructorArguments = [
           option,
           tokenb,
           initialsigma,
@@ -78,8 +76,17 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
           addressFeelTokenB,
           configuratorManager
         ]
-        console.log('constructorArguments', constructorArguments)
-        await verifyContract(hre, poolAddress, constructorArguments)
+
+        await verifyContract(hre, poolAddress, poolConstructorArguments)
+
+        const feePool = await ethers.getContractAt('FeePool', addressFeelTokenA)
+
+        const feeConstructorArguments = [
+          await feePool.feeToken(),
+          await feePool.feeValue(),
+          await feePool.feeDecimals()
+        ]
+        await verifyContract(hre, addressFeelTokenA, feeConstructorArguments)
       }
 
       console.log('----End Deploy New Pool----')
