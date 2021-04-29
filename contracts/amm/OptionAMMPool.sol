@@ -163,7 +163,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
-        return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
+
+        uint256 amountBOut = _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
+
+        _getTradeInfo();
+        return amountBOut;
     }
 
     /**
@@ -190,7 +194,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
-        return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
+
+        uint256 amountBIn = _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
+
+        _getTradeInfo();
+        return amountBIn;
     }
 
     /**
@@ -216,7 +224,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
-        return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
+
+        uint256 amountAOut = _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
+
+        _getTradeInfo();
+        return amountAOut;
     }
 
     /**
@@ -243,7 +255,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
-        return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
+
+        uint256 amountAIn = _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
+
+        _getTradeInfo();
+        return amountAIn;
     }
 
     /**
@@ -783,11 +799,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     function _onTrade(TradeDetails memory tradeDetails) internal {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         uint256 newSigma = abi.decode(tradeDetails.params, (uint256));
         priceProperties.currentSigma = newSigma;
-
-        emit TradeInfo(spotPrice, newSigma);
 
         IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
         IERC20(tokenB()).safeTransfer(address(feePoolB), tradeDetails.feesTokenB);
@@ -817,5 +830,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
                 !emergencyStop.isStopped(configurationManager.getSigmaGuesser()),
             "Pool: Pool is stopped"
         );
+    }
+
+    function _getTradeInfo() private {
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
+        emit TradeInfo(spotPrice, priceProperties.currentSigma);
     }
 }
