@@ -62,8 +62,6 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
         console.log(`Pool cap set to: ${capValue} ${await tokenBContract.symbol()}`)
       }
 
-      await saveJSON(pathFile, { pools: newPoolObj })
-
       if (verify) {
         const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
         const addressFeelTokenA = await pool.feePoolA()

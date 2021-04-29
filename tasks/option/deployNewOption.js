@@ -99,8 +99,6 @@ task('deployNewOption', 'Deploy New Option')
         console.log(`Option cap set to: ${capValue} ${optionParams.symbol}`)
       }
 
-      await saveJSON(pathFile, { options: newOptionObj })
-
       if (verify) {
         const constructorElements = [...funcParameters]
         constructorElements.splice(2, 1)
