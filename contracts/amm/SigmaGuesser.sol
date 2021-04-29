@@ -246,7 +246,7 @@ contract SigmaGuesser is ISigmaGuesser {
             b.priceLower = newGuessPrice;
 
             // it keep increasing the currentSigma in 150% until it finds a new higher boundary
-            newGuessSigma = newGuessSigma.add(newGuessSigma.div(2)); 
+            newGuessSigma = newGuessSigma.add(newGuessSigma.div(2));
             newGuessPrice = _getPrice(_spotPrice, _strikePrice, newGuessSigma, _timeToMaturity, _riskFree, _optionType);
         }
         b.sigmaHigher = newGuessSigma;
