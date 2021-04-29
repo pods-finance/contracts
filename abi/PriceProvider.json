@@ -79,19 +79,6 @@
   },
   {
     "inputs": [],
-    "name": "MIN_UPDATE_INTERVAL",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "configurationManager",
     "outputs": [
       {
@@ -201,6 +188,19 @@
   },
   {
     "inputs": [],
+    "name": "minUpdateInterval",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "owner",
     "outputs": [
       {
@@ -259,6 +259,13 @@
       }
     ],
     "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "updateMinUpdateInterval",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -11,12 +11,13 @@ module.exports = async function createConfigurationManager ({ priceProvider } = 
     createBlackScholes()
   ])
 
-  const [configurationManager, emergencyStop, cap, sigmaGuesser] = await Promise.all([
+  const [configurationManager, emergencyStop, cap] = await Promise.all([
     ConfigurationManager.deploy(),
     EmergencyStop.deploy(),
-    CapProvider.deploy(),
-    SigmaGuesser.deploy(blackScholes.address)
+    CapProvider.deploy()
   ])
+
+  const sigmaGuesser = await SigmaGuesser.deploy(configurationManager.address, blackScholes.address)
 
   if (!priceProvider) {
     priceProvider = await PriceProvider.deploy(configurationManager.address, [], [])
