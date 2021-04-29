@@ -18,11 +18,7 @@ require('hardhat-gas-reporter')
 require('solidity-coverage')
 require('hardhat-contract-sizer')
 
-require('./tasks/option/deployOptionFactory')
-require('./tasks/deployOptionHelper')
-require('./tasks/deployWeek')
-require('./tasks/exportABI')
-
+require('./tasks/index')
 require('./tasks/utils/index')
 require('./tasks/Amm/index')
 require('./tasks/configuration/index')
@@ -61,6 +57,15 @@ module.exports = {
       },
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       network_id: 42
+    },
+    mainnet: {
+      accounts: {
+        mnemonic: process.env.DEV_MNEMONIC,
+        initialIndex: parseInt(process.env.ADDRESS_INDEX),
+        count: 1
+      },
+      url: 'https://mainnet.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
+      network_id: 1
     },
     goerli: {
       accounts: {
