@@ -336,6 +336,22 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.addLiquidity(1000, 10000, lpAddress)).to.be.revertedWith('AMM: option price zero')
       })
+
+      it('logs the spot price and iv', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        await mintOptions(option, amountOfOptionsToMint, lp)
+        await option.connect(lp).approve(optionAMMPool.address, amountOfOptionsToMint)
+
+        await mockStrikeAsset.connect(lp).mint(amountOfStrikeLpNeed)
+        await mockStrikeAsset.connect(lp).approve(optionAMMPool.address, amountOfStrikeLpNeed)
+
+        const addition = optionAMMPool.connect(lp).addLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress)
+
+        await expect(addition).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
+      })
     })
 
     describe('Remove Liquidity', () => {
@@ -357,11 +373,12 @@ scenarios.forEach(scenario => {
         const lpOptionBeforeTrade = await option.balanceOf(lpAddress)
         const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
 
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
-
         const withdrawObj = await optionAMMPool.connect(lp).getRemoveLiquidityAmounts(100, 100, lpAddress)
 
-        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
+        const removal = optionAMMPool.connect(lp).removeLiquidity(100, 100)
+
+        await expect(removal).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
 
         const lpOptionAfterBuyer = await option.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
@@ -375,10 +392,10 @@ scenarios.forEach(scenario => {
         expect(poolStrikeAmountAfterTrade).to.eq(0)
         expect(lpStrikeAfterBuyer).to.eq(lpStrikeAfterBuyer)
 
-        const feePoolABalancefterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolABalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
         const feePoolBBalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressB)
 
-        expect(feePoolABalancefterStrike).to.eq(0)
+        expect(feePoolABalanceAfterStrike).to.eq(0)
         expect(feePoolBBalanceAfterStrike).to.eq(0)
       })
 

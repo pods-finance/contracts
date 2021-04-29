@@ -125,6 +125,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         _addLiquidity(amountOfA, amountOfB, owner);
+        _getTradeInfo();
     }
 
     /**
@@ -137,6 +138,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _nonReentrant();
         _emergencyStopCheck();
         _removeLiquidity(amountOfA, amountOfB);
+        _getTradeInfo();
     }
 
     /**
