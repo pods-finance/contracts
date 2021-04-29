@@ -23,4 +23,6 @@ interface IPriceProvider {
         );
 
     function getPriceFeed(address _asset) external view returns (address);
+
+    function updateMinUpdateInterval() external;
 }
