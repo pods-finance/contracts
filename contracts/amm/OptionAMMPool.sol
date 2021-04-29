@@ -70,6 +70,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      */
     PriceProperties public priceProperties;
 
+    event TradeInfo(uint256 spotPrice, uint256 newIV);
+
     constructor(
         address _optionAddress,
         address _stableAsset,
@@ -123,6 +125,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         _addLiquidity(amountOfA, amountOfB, owner);
+        _getTradeInfo();
     }
 
     /**
@@ -135,6 +138,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _nonReentrant();
         _emergencyStopCheck();
         _removeLiquidity(amountOfA, amountOfB);
+        _getTradeInfo();
     }
 
     /**
@@ -161,7 +165,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
-        return _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
+
+        uint256 amountBOut = _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
+
+        _getTradeInfo();
+        return amountBOut;
     }
 
     /**
@@ -188,7 +196,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
-        return _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
+
+        uint256 amountBIn = _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
+
+        _getTradeInfo();
+        return amountBIn;
     }
 
     /**
@@ -214,7 +226,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
-        return _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
+
+        uint256 amountAOut = _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
+
+        _getTradeInfo();
+        return amountAOut;
     }
 
     /**
@@ -241,7 +257,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.sigmaInitialGuess = sigmaInitialGuess;
-        return _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
+
+        uint256 amountAIn = _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
+
+        _getTradeInfo();
+        return amountAIn;
     }
 
     /**
@@ -357,19 +377,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         )
     {
         return _getOptionTradeDetailsExactBOutput(exactAmountBOut);
-    }
-
-    /**
-     * @notice getSpotPrice Check the spot price of given asset with a certain precision controlled by decimalsOutput
-     *
-     * @param asset address to check the spot price
-     * @param decimalsOutput number of decimals of the response
-     *
-     * @return spotPrice amount of A that will be transfer from msg.sender to the pool
-     */
-
-    function getSpotPrice(address asset, uint256 decimalsOutput) external override view returns (uint256 spotPrice) {
-        return _getSpotPrice(asset, decimalsOutput);
     }
 
     function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
@@ -825,5 +832,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
                 !emergencyStop.isStopped(configurationManager.getSigmaGuesser()),
             "Pool: Pool is stopped"
         );
+    }
+
+    function _getTradeInfo() private {
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
+        emit TradeInfo(spotPrice, priceProperties.currentSigma);
     }
 }

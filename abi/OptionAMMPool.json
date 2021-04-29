@@ -216,6 +216,25 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "spotPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newIV",
+        "type": "uint256"
+      }
+    ],
+    "name": "TradeInfo",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "FIMP_DECIMALS",
     "outputs": [
@@ -587,30 +606,6 @@
       {
         "internalType": "uint256",
         "name": "withdrawAmountB",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "asset",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "decimalsOutput",
-        "type": "uint256"
-      }
-    ],
-    "name": "getSpotPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "spotPrice",
         "type": "uint256"
       }
     ],

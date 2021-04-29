@@ -32,6 +32,7 @@ const scenarios = [
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
+    emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
     initialSigma: toBigNumber(0.661e18),
     expectedNewIV: toBigNumber(0.66615e18),
@@ -52,6 +53,7 @@ const scenarios = [
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
     initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
+    emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
     initialSigma: toBigNumber(2 * 1e18),
     expectedNewIV: toBigNumber(1.2 * 1e18),
@@ -142,12 +144,6 @@ scenarios.forEach(scenario => {
 
         expect(priceProperties.expiration).to.equal(optionExpiration)
         expect(priceProperties.strikePrice).to.equal(optionStrikePrice.mul(toBigNumber(10).pow(bsDecimals.sub(optionStrikePriceDecimals))))
-      })
-
-      it('should return spotPrice accordingly', async () => {
-        const spotPrice = await optionAMMPool.getSpotPrice(mockUnderlyingAsset.address, 18)
-        const bsDecimals = await optionAMMPool.PRICING_DECIMALS()
-        expect(spotPrice).to.equal(scenario.initialSpotPrice.mul(toBigNumber(10).pow(bsDecimals.sub(scenario.spotPriceDecimals))))
       })
 
       it('should not allow trade after option expiration', async () => {
@@ -340,6 +336,22 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.addLiquidity(1000, 10000, lpAddress)).to.be.revertedWith('AMM: option price zero')
       })
+
+      it('logs the spot price and iv', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        await mintOptions(option, amountOfOptionsToMint, lp)
+        await option.connect(lp).approve(optionAMMPool.address, amountOfOptionsToMint)
+
+        await mockStrikeAsset.connect(lp).mint(amountOfStrikeLpNeed)
+        await mockStrikeAsset.connect(lp).approve(optionAMMPool.address, amountOfStrikeLpNeed)
+
+        const addition = optionAMMPool.connect(lp).addLiquidity(amountOfOptionsToMint, amountOfStrikeLpNeed, lpAddress)
+
+        await expect(addition).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
+      })
     })
 
     describe('Remove Liquidity', () => {
@@ -361,11 +373,12 @@ scenarios.forEach(scenario => {
         const lpOptionBeforeTrade = await option.balanceOf(lpAddress)
         const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
 
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
-
         const withdrawObj = await optionAMMPool.connect(lp).getRemoveLiquidityAmounts(100, 100, lpAddress)
 
-        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
+        const removal = optionAMMPool.connect(lp).removeLiquidity(100, 100)
+
+        await expect(removal).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
 
         const lpOptionAfterBuyer = await option.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
@@ -379,10 +392,10 @@ scenarios.forEach(scenario => {
         expect(poolStrikeAmountAfterTrade).to.eq(0)
         expect(lpStrikeAfterBuyer).to.eq(lpStrikeAfterBuyer)
 
-        const feePoolABalancefterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolABalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressA)
         const feePoolBBalanceAfterStrike = await mockStrikeAsset.balanceOf(feeAddressB)
 
-        expect(feePoolABalancefterStrike).to.eq(0)
+        expect(feePoolABalanceAfterStrike).to.eq(0)
         expect(feePoolBBalanceAfterStrike).to.eq(0)
       })
 
@@ -648,7 +661,11 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, 1, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
-        await optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+        const trade = optionAMMPool.connect(buyer)
+          .tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+
+        await expect(trade).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
 
         const buyerStrikeAmountAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const tokensSpent = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
@@ -723,7 +740,11 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, '1000000000000000000000000', buyerAddress, priceObj.newIV)).to.be.revertedWith('AMM: slippage not acceptable')
 
-        await optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, 0, buyerAddress, priceObj.newIV)
+        const trade = optionAMMPool.connect(buyer)
+          .tradeExactAInput(numberOfOptionsToSell, 0, buyerAddress, priceObj.newIV)
+
+        await expect(trade).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, priceObj.newIV)
 
         const buyerOptionAfterBuyer = await option.balanceOf(buyerAddress)
         const tokenBAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
@@ -811,7 +832,11 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, 1, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
-        await optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+        const trade = optionAMMPool.connect(buyer)
+          .tradeExactBOutput(numberOfTokensToReceive, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)
+
+        await expect(trade).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
 
         const buyerOptionAfterTrade = await option.balanceOf(buyerAddress)
         const buyerStrikeAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
@@ -926,7 +951,10 @@ scenarios.forEach(scenario => {
 
         await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, ethers.constants.MaxUint256, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
-        await optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, 0, buyerAddress, scenario.initialSigma)
+        const trade = optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, 0, buyerAddress, scenario.initialSigma)
+
+        await expect(trade).to.emit(optionAMMPool, 'TradeInfo')
+          .withArgs(scenario.emittedSpotPrice, scenario.initialSigma)
 
         const buyerOptionAfterBuyer = await option.balanceOf(buyerAddress)
         const buyerStrikeAfterBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
