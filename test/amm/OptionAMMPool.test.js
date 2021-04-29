@@ -671,8 +671,13 @@ scenarios.forEach(scenario => {
         const tokensSpent = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
         expect(tradeDetails.amountBIn).to.be.equal(tokensSpent)
 
-        const feesBN = (new BigNumber(tokensSpent.toString()).multipliedBy(new BigNumber(0.00003))).toFixed(0, 2)
+        const feesBN = (new BigNumber(tokensSpent.toString()).multipliedBy(new BigNumber(0.005))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())
+        const feeContractA = await ethers.getContractAt('FeePool', feeAddressA)
+        const feeContractB = await ethers.getContractAt('FeePool', feeAddressB)
+
+        const feesAPortion = await feeContractA.feeValue()
+        const feesBPortion = await feeContractB.feeValue()
 
         const balanceAfterOptionBuyer = await option.balanceOf(buyerAddress)
 
@@ -680,7 +685,7 @@ scenarios.forEach(scenario => {
         const balanceAfterStrikeFeePoolB = await mockStrikeAsset.balanceOf(feeAddressB)
 
         expect(balanceAfterOptionBuyer).to.eq(numberOfOptionsToBuy)
-        expect(balanceAfterStrikeFeePoolA).to.eq(balanceAfterStrikeFeePoolB)
+        expect(balanceAfterStrikeFeePoolB).to.eq(balanceAfterStrikeFeePoolA.mul(feesBPortion).div(feesAPortion))
         expect(approximately(fees, balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB), 8)).to.be.true
       })
 
@@ -840,7 +845,7 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
 
-        const feesBN = (new BigNumber(numberOfTokensToReceive.toString()).multipliedBy(new BigNumber(0.00003))).toFixed(0, 2)
+        const feesBN = (new BigNumber(numberOfTokensToReceive.toString()).multipliedBy(new BigNumber(0.005))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())
 
         expect(poolStrikeAmountBeforeTrade).to.eq(poolStrikeAmountAfterTrade.add(numberOfTokensToReceive).add(fees))

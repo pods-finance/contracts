@@ -34,6 +34,11 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
          * Defaulted to 3 hours and 10 minutes
          */
         _parameters["MIN_UPDATE_INTERVAL"] = 11100;
+
+        /**
+         * Acceptable range interval on sigma numerical method
+         */
+        _parameters["GUESSER_ACCEPTABLE_RANGE"] = 10;
     }
 
     function setParameter(bytes32 name, uint256 value) external override onlyOwner {

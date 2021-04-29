@@ -111,6 +111,13 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
+     * @notice Return the current fee token
+     */
+    function feeToken() external override view returns (address) {
+        return _token;
+    }
+
+    /**
      * @notice Return the current fee value
      */
     function feeValue() external override view returns (uint256) {
