@@ -645,10 +645,6 @@ scenarios.forEach(scenario => {
 
         const buyerStrikeAmountBeforeTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(numberOfOptionsToBuy)
-        console.log('tradeDetails')
-        console.log(tradeDetails.amountBIn.toString())
-        console.log(tradeDetails.feesTokenA.toString())
-        console.log(tradeDetails.feesTokenB.toString())
 
         await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, 1, buyerAddress, scenario.initialSigma)).to.be.revertedWith('AMM: slippage not acceptable')
 
@@ -657,7 +653,6 @@ scenarios.forEach(scenario => {
         const buyerStrikeAmountAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const tokensSpent = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
         expect(tradeDetails.amountBIn).to.be.equal(tokensSpent)
-        console.log('tokensSpent', tokensSpent.toString())
 
         const feesBN = (new BigNumber(tokensSpent.toString()).multipliedBy(new BigNumber(0.005))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())
@@ -671,8 +666,6 @@ scenarios.forEach(scenario => {
 
         const balanceAfterStrikeFeePoolA = await mockStrikeAsset.balanceOf(feeAddressA)
         const balanceAfterStrikeFeePoolB = await mockStrikeAsset.balanceOf(feeAddressB)
-        console.log('balanceAfterStrikeFeePoolA', balanceAfterStrikeFeePoolA.toString())
-        console.log('balanceAfterStrikeFeePoolB', balanceAfterStrikeFeePoolB.toString())
 
         expect(balanceAfterOptionBuyer).to.eq(numberOfOptionsToBuy)
         expect(balanceAfterStrikeFeePoolB).to.eq(balanceAfterStrikeFeePoolA.mul(feesBPortion).div(feesAPortion))
