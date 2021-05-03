@@ -671,7 +671,7 @@ scenarios.forEach(scenario => {
         const tokensSpent = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
         expect(tradeDetails.amountBIn).to.be.equal(tokensSpent)
 
-        const feesBN = (new BigNumber(tokensSpent.toString()).multipliedBy(new BigNumber(0.005))).toFixed(0, 2)
+        const feesBN = (new BigNumber(tokensSpent.toString()).multipliedBy(new BigNumber(0.03))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())
         const feeContractA = await ethers.getContractAt('FeePool', feeAddressA)
         const feeContractB = await ethers.getContractAt('FeePool', feeAddressB)
@@ -845,7 +845,7 @@ scenarios.forEach(scenario => {
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
 
-        const feesBN = (new BigNumber(numberOfTokensToReceive.toString()).multipliedBy(new BigNumber(0.005))).toFixed(0, 2)
+        const feesBN = (new BigNumber(numberOfTokensToReceive.toString()).multipliedBy(new BigNumber(0.03))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())
 
         expect(poolStrikeAmountBeforeTrade).to.eq(poolStrikeAmountAfterTrade.add(numberOfTokensToReceive).add(fees))
