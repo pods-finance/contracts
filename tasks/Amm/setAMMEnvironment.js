@@ -13,7 +13,7 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
     const configurationManagerAddress = configuration
 
     // 2) Deploy Option Builders + Option Factory
-    const optionFactoryAddress = await run('deployOptionFactory', { builders, configuration: configurationManagerAddress, wethadapt })
+    const optionFactoryAddress = await run('deployOptionFactory', { builders, configuration: configurationManagerAddress, wethadapt, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
       setter: 'setOptionFactory',
