@@ -5,7 +5,7 @@ task('inspectConfigurationManager', 'Checks the contracts associated with a Conf
 
     if (!address) {
       const json = require(filePath)
-      address = json.configurationManager
+      address = json.ConfigurationManager
     }
 
     if (!ethers.utils.isAddress(address)) {

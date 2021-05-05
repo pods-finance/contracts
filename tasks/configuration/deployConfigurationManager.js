@@ -39,9 +39,9 @@ task('deployConfigurationManager', 'Deploy a new instance of ConfigurationManage
     })
 
     const saveObj = {
-      configurationManager: configurationManager.address,
-      emergencyStop: emergencyStop.address,
-      capProvider: capProvider.address
+      ConfigurationManager: configurationManager.address,
+      EmergencyStop: emergencyStop.address,
+      CapProvider: capProvider.address
     }
 
     await saveJSON(`../../deployments/${hre.network.name}.json`, saveObj)

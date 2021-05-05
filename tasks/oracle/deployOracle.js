@@ -12,7 +12,7 @@ task('deployOracle', 'Deploy full Oracle (Chainlink + PriceFeed)')
     const chainlinkAddress = await run('deployChainlink', { source })
     const priceProviderAddress = await run('deployPriceProvider', { configuration, asset, feed: chainlinkAddress })
 
-    await saveJSON(path, { chainlinkPriceFeed: chainlinkAddress, priceProvider: priceProviderAddress })
+    await saveJSON(path, { ChainlinkPriceFeed: chainlinkAddress, PriceProvider: priceProviderAddress })
 
     if (verify) {
       await verifyContract(hre, chainlinkAddress, [source])

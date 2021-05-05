@@ -19,7 +19,7 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     const _filePath = pathJoin.join(__dirname, path)
     const content = await fsPromises.readFile(_filePath)
     const wethAddress = wethadapt || JSON.parse(content).WETH
-    const configurationManager = configuration || JSON.parse(content).configurationManager
+    const configurationManager = configuration || JSON.parse(content).ConfigurationManager
 
     if (!configurationManager) {
       throw Error('Configuration Manager not found')
@@ -47,7 +47,7 @@ task('deployOptionFactory', 'Deploy OptionFactory')
 
     await factory.deployed()
 
-    await saveJSON(path, { optionFactory: factory.address })
+    await saveJSON(path, { OptionFactory: factory.address })
 
     if (verify) {
       await verifyContract(hre, factory.address, constructorElements)

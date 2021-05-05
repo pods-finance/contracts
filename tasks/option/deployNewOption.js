@@ -15,7 +15,8 @@ task('deployNewOption', 'Deploy New Option')
   .addFlag('call', 'Add this flag if the option is a Call')
   .addFlag('american', 'Add this flag if the option is american')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
-  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american, verify }, hre) => {
+  .addFlag('tenderly', 'if true, it should verify the contract after the deployment')
+  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american, verify, tenderly }, hre) => {
     console.log('----Start Deploy New Option----')
     const pathFile = `../../deployments/${hre.network.name}.json`
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
@@ -29,8 +30,8 @@ task('deployNewOption', 'Deploy New Option')
 
     const strikeAssetAddress = contentJSON[strikeAsset]
     const underlyingAssetAddress = contentJSON[underlyingAsset]
-    const optionFactoryAddress = contentJSON.optionFactory
-    const configuratorManagerAddress = contentJSON.configurationManager
+    const optionFactoryAddress = contentJSON.OptionFactory
+    const configuratorManagerAddress = contentJSON.ConfigurationManager
 
     const [owner] = await ethers.getSigners()
     const deployerAddress = await owner.getAddress()
@@ -105,6 +106,11 @@ task('deployNewOption', 'Deploy New Option')
         constructorElements.push(configuratorManagerAddress)
         console.log('constructorElements', constructorElements)
         await verifyContract(hre, option, constructorElements)
+      }
+
+      if (tenderly) {
+        const contractName = underlyingAsset === 'WETH' ? 'WPodPut' : 'PodPut'
+        await hre.tenderly.push({ name: contractName, address: option })
       }
 
       console.log('----Finish Deploy New Option----')
