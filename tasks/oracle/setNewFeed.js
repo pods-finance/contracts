@@ -19,7 +19,7 @@ task('setNewFeed', 'Deploy Chainlink w/ source + set source and asset to price p
     const contentJSON = JSON.parse(content)
 
     const assetAddress = contentJSON[assetUpper]
-    const priceProviderAddress = contentJSON.priceProvider
+    const priceProviderAddress = contentJSON.PriceProvider
 
     const chainlinkFeedAddress = await run('deployChainlink', { source })
     console.log('Setting feed to Price Provider')
