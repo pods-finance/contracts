@@ -1,6 +1,7 @@
 const saveJSON = require('../utils/saveJSON')
 const { toBigNumber } = require('../../utils/utils')
 const verifyContract = require('../utils/verify')
+const getOptionContractName = require('../utils/getOptionContractName')
 
 const fs = require('fs')
 const path = require('path')
@@ -109,7 +110,9 @@ task('deployNewOption', 'Deploy New Option')
       }
 
       if (tenderly) {
-        const contractName = underlyingAsset === 'WETH' ? 'WPodPut' : 'PodPut'
+        const optionType = call ? 'CALL' : 'PUT'
+        const contractName = getOptionContractName(hre.network.name, underlyingAsset, optionType)
+        hre.config.tenderly.project = `Pods-${hre.network.name}`
         await hre.tenderly.push({ name: contractName, address: option })
       }
 

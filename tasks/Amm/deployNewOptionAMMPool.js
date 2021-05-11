@@ -91,7 +91,8 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       }
 
       if (tenderly) {
-        hre.tenderly.project = 'Pods-Kovan'
+        const name = `Pods-${hre.network.name}`
+        hre.config.tenderly.project = name
         await hre.tenderly.push({ name: 'OptionAMMPool', address: poolAddress })
       }
 
