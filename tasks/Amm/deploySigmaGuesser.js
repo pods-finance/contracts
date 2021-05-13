@@ -13,7 +13,7 @@ internalTask('deploySigmaGuesser', 'Deploy Sigma Contract')
     const sigmaGuesser = await SigmaContract.deploy(configuration, bs)
 
     await sigmaGuesser.deployed()
-    await saveJSON(path, { sigmaGuesser: sigmaGuesser.address })
+    await saveJSON(path, { SigmaGuesser: sigmaGuesser.address })
 
     if (verify) {
       await verifyContract(hre, sigmaGuesser.address, [configuration, bs])

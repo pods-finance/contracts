@@ -9,7 +9,7 @@ task('increaseCap', 'Increase an option or pool cap')
 
     if (!configurator) {
       const json = require(filePath)
-      configurator = json.configurationManager
+      configurator = json.ConfigurationManager
     }
 
     if (!ethers.utils.isAddress(contract)) {

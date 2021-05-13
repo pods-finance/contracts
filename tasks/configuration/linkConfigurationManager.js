@@ -7,7 +7,7 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
 
     if (!address) {
       const json = require(filePath)
-      address = json.configurationManager
+      address = json.ConfigurationManager
     }
 
     if (!ethers.utils.isAddress(address)) {

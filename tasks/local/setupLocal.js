@@ -53,13 +53,12 @@ task('setupLocal', 'Deploy a whole local test environment')
     const content = await fsPromises.readFile(_filePath)
 
     // Set WETH price Provider
-    const priceProvider = await ethers.getContractAt('PriceProvider', JSON.parse(content).priceProvider)
-    console.log('content.priceProvider', JSON.parse(content).priceProvider)
+    const priceProvider = await ethers.getContractAt('PriceProvider', JSON.parse(content).PriceProvider)
 
     await priceProvider.setAssetFeeds([mockWETH.address], [chainlinkWETHFeed.address])
     await priceProvider.setAssetFeeds([mockLINK.address], [chainlinkLINKFeed.address])
 
-    const optionAMMFactory = JSON.parse(content).optionAMMFactory
+    const optionAMMFactory = JSON.parse(content).OptionAMMFactory
 
     // 4) Deploy Test Option
     const currentBlockTimestamp = await getTimestamp()

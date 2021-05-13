@@ -117,6 +117,10 @@ module.exports = {
   etherscan: {
     apiKey: process.env.ETHERSCAN_APIKEY
   },
+  tenderly: {
+    project: 'Pods-mainnet',
+    username: 'Pods-tech'
+  },
   spdxLicenseIdentifier: {
     overwrite: true
   }

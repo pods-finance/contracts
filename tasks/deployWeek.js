@@ -6,7 +6,8 @@ const fsPromises = fs.promises
 task('deployWeek', 'Deploy a whole local test environment')
   .addFlag('start', 'add this flag if you want to start and mint the initial options and add liquidity')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
-  .setAction(async ({ start, verify }, hre) => {
+  .addFlag('tenderly', 'if true, it should verify the contract after the deployment on tenderly')
+  .setAction(async ({ start, verify, tenderly }, hre) => {
     const pathFile = `../deployments/${hre.network.name}.json`
 
     // 4) Deploy Test Option
@@ -20,13 +21,18 @@ task('deployWeek', 'Deploy a whole local test environment')
 
     const options = [
       {
-        strike: 'DAI',
+        strike: 'USDC',
         underlying: 'WETH',
-        price: '1200'
+        price: '3000'
+      },
+      {
+        strike: 'ADAI',
+        underlying: 'WETH',
+        price: '3000'
       }
     ]
 
-    const intervals = [7]
+    const intervals = [2]
     const oneDayInSeconds = 24 * 60 * 60
 
     for (const optionObj of options) {
@@ -36,8 +42,9 @@ task('deployWeek', 'Deploy a whole local test environment')
           underlying: optionObj.underlying,
           price: optionObj.price,
           expiration: (currentBlockTimestamp + oneDayInSeconds * interval).toString(),
-          cap: '1000',
-          verify
+          cap: '1000000000',
+          verify,
+          tenderly
         })
         const tokenbAddress = contentJSON[optionObj.strike]
         deployedOptions.push(optionAddress)
@@ -46,9 +53,10 @@ task('deployWeek', 'Deploy a whole local test environment')
         const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
-          initialsigma: '1150000000000000000',
-          cap: '10000000',
-          verify
+          initialsigma: '1750000000000000000',
+          cap: '10000000000000000',
+          verify,
+          tenderly
         })
 
         console.log('start Flag: ', start)

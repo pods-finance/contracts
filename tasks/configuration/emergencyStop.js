@@ -9,7 +9,7 @@ task('emergencyStop', 'Interact with a EmergencyStop connected to a Configuratio
 
     if (!address) {
       const json = require(filePath)
-      address = json.configurationManager
+      address = json.ConfigurationManager
     }
 
     if (!ethers.utils.isAddress(address)) {
