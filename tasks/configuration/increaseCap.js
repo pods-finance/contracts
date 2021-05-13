@@ -22,7 +22,7 @@ task('increaseCap', 'Increase an option or pool cap')
     const valueToSend = max ? 0 : value
 
     const tx = await capContract.setCap(contract, valueToSend)
-    const txReceipt = tx.wait()
+    const txReceipt = await tx.wait()
     console.log(`transactionHash: ${txReceipt.transactionHash}`)
     console.log('======== END MODIFY CONTRACT CAP ==========')
   })
