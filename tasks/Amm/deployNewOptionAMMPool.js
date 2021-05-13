@@ -91,9 +91,15 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       }
 
       if (tenderly) {
-        const name = `Pods-${hre.network.name}`
-        hre.config.tenderly.project = name
-        await hre.tenderly.push({ name: 'OptionAMMPool', address: poolAddress })
+        await hre.run('tenderlyPush', { name: 'OptionAMMPool', address: poolAddress })
+
+        const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
+        const addressFeelTokenA = await pool.feePoolA()
+        const addressFeelTokenB = await pool.feePoolB()
+
+        await hre.run('tenderlyPush', { name: 'FeePool', address: addressFeelTokenA })
+
+        await hre.run('tenderlyPush', { name: 'FeePool', address: addressFeelTokenB })
       }
 
       console.log('----End Deploy New Pool----')

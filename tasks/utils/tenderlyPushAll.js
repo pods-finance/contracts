@@ -1,4 +1,4 @@
-task('tenderly', 'Deploy a generic contract given artifact name')
+task('tenderlyPushAll', 'Deploy a generic contract given artifact name')
   .setAction(async ({ name, verify }, hre) => {
     console.log('----Start Deploy Contract----')
     const content = require(`../../${hre.network.name}.json`)

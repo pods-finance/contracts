@@ -1,4 +1,5 @@
 require('./deploy')
 require('./deployMockERC20')
 require('./getPool')
-require('./verifyTenderly')
+require('./tenderlyPush')
+require('./tenderlyPushAll')

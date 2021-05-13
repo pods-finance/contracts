@@ -89,9 +89,6 @@ task('deployNewOption', 'Deploy New Option')
       console.log('deployer: ', deployer)
       console.log('option: ', option)
 
-      const currentOptions = contentJSON.options
-      const newOptionObj = Object.assign({}, currentOptions, { [option]: optionParams })
-
       if (cap != null && parseFloat(cap) > 0) {
         const configurationManager = await ethers.getContractAt('ConfigurationManager', await FactoryContract.configurationManager())
         const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
@@ -113,8 +110,7 @@ task('deployNewOption', 'Deploy New Option')
       if (tenderly) {
         const optionType = call ? 'CALL' : 'PUT'
         const contractName = getOptionContractName(hre.network.name, underlyingAsset, optionType)
-        hre.config.tenderly.project = `Pods-${hre.network.name}`
-        await hre.tenderly.push({ name: contractName, address: option })
+        await hre.run('tenderlyPush', { name: contractName, address: option })
       }
 
       console.log('----Finish Deploy New Option----')
