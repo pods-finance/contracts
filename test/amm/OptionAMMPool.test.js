@@ -186,18 +186,6 @@ scenarios.forEach(scenario => {
         ).to.be.revertedWith('Pool: exercise window has started')
       })
 
-      it('should not create a pool with fee pools that are non-contracts', async () => {
-        const tx = OptionAMMPool.deploy(
-          option.address,
-          mockStrikeAsset.address,
-          scenario.initialSigma,
-          buyerAddress,
-          buyerAddress,
-          configurationManager.address
-        )
-        await expect(tx).to.be.revertedWith('Pool: Invalid fee pools')
-      })
-
       it('should not create a pool with American options', async () => {
         const americanOption = await createMockOption({
           underlyingAsset: mockUnderlyingAsset.address,

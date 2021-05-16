@@ -15,6 +15,7 @@ import "../interfaces/IOptionAMMPool.sol";
 import "../interfaces/IFeePool.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IEmergencyStop.sol";
+import "./FeePool.sol";
 
 /**
  * Represents an Option specific single-sided AMM.
@@ -76,15 +77,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         address _optionAddress,
         address _stableAsset,
         uint256 _initialSigma,
-        address _feePoolA,
-        address _feePoolB,
         IConfigurationManager _configurationManager
     ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
-        require(Address.isContract(_feePoolA) && Address.isContract(_feePoolB), "Pool: Invalid fee pools");
         require(
             IPodOption(_optionAddress).exerciseType() == IPodOption.ExerciseType.EUROPEAN,
             "Pool: invalid exercise type"
         );
+
+        feePoolA = new FeePool(_stableAsset, 15, 3);
+        feePoolB = new FeePool(_stableAsset, 15, 3);
 
         priceProperties.currentSigma = _initialSigma;
         priceProperties.sigmaInitialGuess = _initialSigma;
@@ -102,8 +103,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
 
-        feePoolA = IFeePool(_feePoolA);
-        feePoolB = IFeePool(_feePoolB);
         configurationManager = IConfigurationManager(_configurationManager);
     }
 
