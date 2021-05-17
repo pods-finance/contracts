@@ -101,6 +101,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getIVGuesser",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -192,19 +205,6 @@
   },
   {
     "inputs": [],
-    "name": "getSigmaGuesser",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "owner",
     "outputs": [
       {
@@ -258,6 +258,19 @@
       }
     ],
     "name": "setEmergencyStop",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ivGuesser",
+        "type": "address"
+      }
+    ],
+    "name": "setIVGuesser",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -328,19 +341,6 @@
       }
     ],
     "name": "setPricingMethod",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "sigmaGuesser",
-        "type": "address"
-      }
-    ],
-    "name": "setSigmaGuesser",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

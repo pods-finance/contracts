@@ -13,7 +13,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "_initialSigma",
+        "name": "_initialIV",
         "type": "uint256"
       },
       {
@@ -672,7 +672,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "currentSigma",
+        "name": "currentIV",
         "type": "uint256"
       },
       {
@@ -682,7 +682,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -778,7 +778,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -812,7 +812,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -846,7 +846,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -880,7 +880,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],

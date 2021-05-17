@@ -17,7 +17,7 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     /* solhint-disable private-vars-leading-underscore */
     bytes32 private constant EMERGENCY_STOP = "EMERGENCY_STOP";
     bytes32 private constant PRICING_METHOD = "PRICING_METHOD";
-    bytes32 private constant SIGMA_GUESSER = "SIGMA_GUESSER";
+    bytes32 private constant IV_GUESSER = "IV_GUESSER";
     bytes32 private constant PRICE_PROVIDER = "PRICE_PROVIDER";
     bytes32 private constant CAP_PROVIDER = "CAP_PROVIDER";
     bytes32 private constant AMM_FACTORY = "AMM_FACTORY";
@@ -54,8 +54,8 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
         _setModule(PRICING_METHOD, pricingMethod);
     }
 
-    function setSigmaGuesser(address sigmaGuesser) external override onlyOwner {
-        _setModule(SIGMA_GUESSER, sigmaGuesser);
+    function setIVGuesser(address ivGuesser) external override onlyOwner {
+        _setModule(IV_GUESSER, ivGuesser);
     }
 
     function setPriceProvider(address priceProvider) external override onlyOwner {
@@ -90,8 +90,8 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
         return getModule(PRICING_METHOD);
     }
 
-    function getSigmaGuesser() external override view returns (address) {
-        return getModule(SIGMA_GUESSER);
+    function getIVGuesser() external override view returns (address) {
+        return getModule(IV_GUESSER);
     }
 
     function getPriceProvider() external override view returns (address) {
