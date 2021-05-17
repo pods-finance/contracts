@@ -11,6 +11,8 @@ interface IConfigurationManager {
 
     function setIVGuesser(address ivGuesser) external;
 
+    function setIVProvider(address ivProvider) external;
+
     function setPriceProvider(address priceProvider) external;
 
     function setCapProvider(address capProvider) external;
@@ -28,6 +30,8 @@ interface IConfigurationManager {
     function getPricingMethod() external view returns (address);
 
     function getIVGuesser() external view returns (address);
+
+    function getIVProvider() external view returns (address);
 
     function getPriceProvider() external view returns (address);
 

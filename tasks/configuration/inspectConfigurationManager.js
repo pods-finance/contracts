@@ -18,6 +18,7 @@ task('inspectConfigurationManager', 'Checks the contracts associated with a Conf
     console.log(`EmergencyStop: ${await configurationManager.getEmergencyStop()}`)
     console.log(`BlackScholes: ${await configurationManager.getPricingMethod()}`)
     console.log(`IVGuesser: ${await configurationManager.getIVGuesser()}`)
+    console.log(`IVProvider: ${await configurationManager.getIVProvider()}`)
     console.log(`PriceProvider: ${await configurationManager.getPriceProvider()}`)
     console.log(`CapProvider: ${await configurationManager.getCapProvider()}`)
     console.log(`OptionFactory: ${await configurationManager.getOptionFactory()}`)

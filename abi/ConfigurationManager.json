@@ -114,6 +114,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getIVProvider",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -271,6 +284,19 @@
       }
     ],
     "name": "setIVGuesser",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ivProvider",
+        "type": "address"
+      }
+    ],
+    "name": "setIVProvider",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

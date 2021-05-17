@@ -35,6 +35,13 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
       newContract: ivGuesserAddress
     })
 
+    const ivProviderAddress = await hre.run('deployIVProvider', { verify })
+    await hre.run('linkConfigurationManager', {
+      address: configurationManagerAddress,
+      setter: 'setIVProvider',
+      newContract: ivProviderAddress
+    })
+
     const priceProviderAddress = await hre.run('deployOracle', { configuration: configurationManagerAddress, asset: asset, source: source, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,

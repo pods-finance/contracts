@@ -18,6 +18,7 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     bytes32 private constant EMERGENCY_STOP = "EMERGENCY_STOP";
     bytes32 private constant PRICING_METHOD = "PRICING_METHOD";
     bytes32 private constant IV_GUESSER = "IV_GUESSER";
+    bytes32 private constant IV_PROVIDER = "IV_PROVIDER";
     bytes32 private constant PRICE_PROVIDER = "PRICE_PROVIDER";
     bytes32 private constant CAP_PROVIDER = "CAP_PROVIDER";
     bytes32 private constant AMM_FACTORY = "AMM_FACTORY";
@@ -58,6 +59,10 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
         _setModule(IV_GUESSER, ivGuesser);
     }
 
+    function setIVProvider(address ivProvider) external override onlyOwner {
+        _setModule(IV_PROVIDER, ivProvider);
+    }
+
     function setPriceProvider(address priceProvider) external override onlyOwner {
         _setModule(PRICE_PROVIDER, priceProvider);
     }
@@ -92,6 +97,10 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
 
     function getIVGuesser() external override view returns (address) {
         return getModule(IV_GUESSER);
+    }
+
+    function getIVProvider() external override view returns (address) {
+        return getModule(IV_PROVIDER);
     }
 
     function getPriceProvider() external override view returns (address) {
