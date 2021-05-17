@@ -8,6 +8,7 @@ import "./AMM.sol";
 import "../lib/CappedPool.sol";
 import "../lib/FlashloanProtection.sol";
 import "../interfaces/IPriceProvider.sol";
+import "../interfaces/ISigmaProvider.sol";
 import "../interfaces/IBlackScholes.sol";
 import "../interfaces/ISigmaGuesser.sol";
 import "../interfaces/IPodOption.sol";
@@ -36,6 +37,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     using SafeMath for uint256;
     uint256 public constant PRICING_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
+    uint256 private constant _ORACLE_SIGMA_WEIGHT = 3;
+    uint256 private constant _POOL_SIGMA_WEIGHT = 1;
 
     // External Contracts
     /**
@@ -102,7 +105,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 strikePriceWithRightDecimals = strikePrice.mul(10**(PRICING_DECIMALS - strikePriceDecimals));
 
         priceProperties.strikePrice = strikePriceWithRightDecimals;
-
         configurationManager = IConfigurationManager(_configurationManager);
     }
 
@@ -378,9 +380,22 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         return _getOptionTradeDetailsExactBOutput(exactAmountBOut);
     }
 
-    function _calculateNewABPrice(uint256 spotPrice, uint256 timeToMaturity) internal view returns (uint256) {
+    function _getPriceDetails()
+        internal
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
+        uint256 timeToMaturity = _getTimeToMaturityInYears();
+        uint256 adjustedSigma = _getAdjustedSigma(tokenA(), priceProperties.currentSigma);
+
         if (timeToMaturity == 0) {
-            return 0;
+            return (0, spotPrice, 0, adjustedSigma);
         }
         IBlackScholes pricingMethod = IBlackScholes(configurationManager.getPricingMethod());
         uint256 newABPrice;
@@ -389,7 +404,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             newABPrice = pricingMethod.getPutPrice(
                 spotPrice,
                 priceProperties.strikePrice,
-                priceProperties.currentSigma,
+                adjustedSigma,
                 timeToMaturity,
                 priceProperties.riskFree
             );
@@ -397,16 +412,16 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             newABPrice = pricingMethod.getCallPrice(
                 spotPrice,
                 priceProperties.strikePrice,
-                priceProperties.currentSigma,
+                adjustedSigma,
                 timeToMaturity,
                 priceProperties.riskFree
             );
         }
         if (newABPrice == 0) {
-            return 0;
+            return (0, spotPrice, timeToMaturity, adjustedSigma);
         }
         uint256 newABPriceWithDecimals = newABPrice.div(10**(PRICING_DECIMALS.sub(tokenBDecimals())));
-        return newABPriceWithDecimals;
+        return (newABPriceWithDecimals, spotPrice, timeToMaturity, adjustedSigma);
     }
 
     /**
@@ -437,10 +452,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     function _getABPrice() internal override view returns (uint256) {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
-        uint256 timeToMaturity = _getTimeToMaturityInYears();
-
-        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        (uint256 newABPrice, , , ) = _getPriceDetails();
         return newABPrice;
     }
 
@@ -459,6 +471,23 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             spotPriceWithRightPrecision = spotPrice.mul(10**diffDecimals);
         }
         return spotPriceWithRightPrecision;
+    }
+
+    function _getOracleSigma(address optionAddress) internal view returns (uint256 oracleSigma) {
+        ISigmaProvider sigmaProvider = ISigmaProvider(configurationManager.getSigmaProvider());
+        oracleSigma = sigmaProvider.getOptionSigma(optionAddress);
+    }
+
+    function _getAdjustedSigma(address optionAddress, uint256 currentSigma)
+        internal
+        view
+        returns (uint256 adjustedSigma)
+    {
+        uint256 oracleSigma = _getOracleSigma(optionAddress);
+
+        adjustedSigma = _ORACLE_SIGMA_WEIGHT.mul(oracleSigma).add(_POOL_SIGMA_WEIGHT.mul(currentSigma)).div(
+            _POOL_SIGMA_WEIGHT + _ORACLE_SIGMA_WEIGHT
+        );
     }
 
     function _getNewIV(
@@ -502,9 +531,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
-        uint256 timeToMaturity = _getTimeToMaturityInYears();
-        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
         if (newABPrice == 0) {
             return (0, 0, 0, 0);
         }
@@ -550,10 +577,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
-        uint256 timeToMaturity = _getTimeToMaturityInYears();
-
-        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
         if (newABPrice == 0) {
             return (0, 0, 0, 0);
         }
@@ -595,10 +619,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
-        uint256 timeToMaturity = _getTimeToMaturityInYears();
-
-        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
         if (newABPrice == 0) {
             return (0, 0, 0, 0);
         }
@@ -639,10 +660,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
-        uint256 timeToMaturity = _getTimeToMaturityInYears();
-
-        uint256 newABPrice = _calculateNewABPrice(spotPrice, timeToMaturity);
+        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
         if (newABPrice == 0) {
             return (0, 0, 0, 0);
         }
