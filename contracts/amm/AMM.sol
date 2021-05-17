@@ -105,6 +105,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
     uint256 public deamortizedTokenBBalance;
 
     /**
+     * @notice The factory that created this AMM instance
+     */
+    address public immutable factory;
+
+    /**
      * @notice It contains the token A original balance, token B original balance,
      * and the Open Value Factor (Fimp) at the time of the deposit.
      */
@@ -152,6 +157,8 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
         _tokenADecimals = tryDecimals(IERC20(tokenA));
         _tokenBDecimals = tryDecimals(IERC20(tokenB));
+
+        factory = msg.sender;
     }
 
     /**

@@ -48,11 +48,15 @@ describe('OptionAMMFactory', () => {
       mockUnderlyingAsset.address,
       initialSigma
     )
-    const pool = await getPoolCreated(factory, tx, caller)
+    const poolAddress = await getPoolCreated(factory, tx, caller)
 
     await expect(tx)
       .to.emit(factory, 'PoolCreated')
-      .withArgs(await caller.getAddress(), pool, option.address)
+      .withArgs(await caller.getAddress(), poolAddress, option.address)
+
+    const pool = await ethers.getContractAt('AMM', poolAddress)
+
+    expect(await pool.factory()).to.be.equal(factory.address)
   })
 
   it('should not deploy a factory without a proper ConfigurationManager', async () => {

@@ -46,6 +46,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     uint256 private immutable _strikePrice;
     uint256 private immutable _expiration;
     uint256 private _startOfExerciseWindow;
+    address public immutable factory;
 
     /**
      * @notice Reserve share balance
@@ -107,6 +108,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
 
         _strikePrice = strikePrice;
         _setupDecimals(underlyingDecimals);
+
+        factory = _configurationManager.getOptionFactory();
     }
 
     /**
