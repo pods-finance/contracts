@@ -85,31 +85,24 @@
     "name": "getIV",
     "outputs": [
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "roundId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "updatedAt",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "answer",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint8",
-            "name": "decimals",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct IIVProvider.IVData",
+        "internalType": "uint256",
         "name": "",
-        "type": "tuple"
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",

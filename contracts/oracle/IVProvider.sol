@@ -23,8 +23,19 @@ contract IVProvider is IIVProvider, Ownable {
         _;
     }
 
-    function getIV(address option) external override view returns (IVData memory) {
-        return _answers[option];
+    function getIV(address option)
+        external
+        override
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint8
+        )
+    {
+        IVData memory data = _answers[option];
+        return (data.roundId, data.updatedAt, data.answer, data.decimals);
     }
 
     function updateIV(
