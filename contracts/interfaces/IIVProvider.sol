@@ -16,7 +16,11 @@ interface IIVProvider {
 
     function getIV(address option) external view returns (IVData memory);
 
-    function updateIV(address option, uint256 answer, uint8 decimals) external;
+    function updateIV(
+        address option,
+        uint256 answer,
+        uint8 decimals
+    ) external;
 
     function setUpdater(address updater) external;
 }

@@ -12,7 +12,6 @@ import "../interfaces/IIVProvider.sol";
  * @notice Storage of implied volatility oracles
  */
 contract IVProvider is IIVProvider, Ownable {
-
     mapping(address => IVData) private _answers;
 
     mapping(address => uint256) private _lastIds;
@@ -24,21 +23,20 @@ contract IVProvider is IIVProvider, Ownable {
         _;
     }
 
-    function getIV(address option) external view override returns (IVData memory) {
+    function getIV(address option) external override view returns (IVData memory) {
         return _answers[option];
     }
 
-    function updateIV(address option, uint256 answer, uint8 decimals) external override isUpdater {
+    function updateIV(
+        address option,
+        uint256 answer,
+        uint8 decimals
+    ) external override isUpdater {
         uint256 lastRoundId = _lastIds[option];
         uint256 roundId = ++lastRoundId;
 
         _lastIds[option] = roundId;
-        _answers[option] = IVData(
-            roundId,
-            block.timestamp,
-            answer,
-            decimals
-        );
+        _answers[option] = IVData(roundId, block.timestamp, answer, decimals);
 
         emit UpdatedIV(option, roundId, block.timestamp, answer, decimals);
     }
