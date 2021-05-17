@@ -21,16 +21,16 @@ describe('IVProvider', () => {
     await provider.connect(updater).updateIV(option, 130e8, 8)
 
     const firstIVData = await provider.getIV(option)
-    expect(firstIVData.roundId).to.be.equal(1)
-    expect(firstIVData.updatedAt.toNumber()).to.be.greaterThan(timestamp)
-    expect(firstIVData.answer).to.be.equal(130e8)
-    expect(firstIVData.decimals).to.be.equal(8)
+    expect(firstIVData[0]).to.be.equal(1)
+    expect(firstIVData[1].toNumber()).to.be.greaterThan(timestamp)
+    expect(firstIVData[2]).to.be.equal(130e8)
+    expect(firstIVData[3]).to.be.equal(8)
 
     await provider.connect(updater).updateIV(option, 200e8, 8)
 
     const secondIVData = await provider.getIV(option)
-    expect(secondIVData.roundId).to.be.equal(2)
-    expect(secondIVData.updatedAt.toNumber()).to.be.greaterThan(firstIVData.updatedAt.toNumber())
+    expect(secondIVData[0]).to.be.equal(2)
+    expect(secondIVData[1].toNumber()).to.be.greaterThan(firstIVData[1].toNumber())
   })
 
   describe('Role management', () => {

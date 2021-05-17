@@ -14,7 +14,15 @@ interface IIVProvider {
     event UpdatedIV(address indexed option, uint256 roundId, uint256 updatedAt, uint256 answer, uint8 decimals);
     event UpdaterSet(address indexed admin, address indexed updater);
 
-    function getIV(address option) external view returns (IVData memory);
+    function getIV(address option)
+        external
+        view
+        returns (
+            uint256 roundId,
+            uint256 updatedAt,
+            uint256 answer,
+            uint8 decimals
+        );
 
     function updateIV(
         address option,
