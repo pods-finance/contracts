@@ -9,7 +9,7 @@ import "../lib/CappedPool.sol";
 import "../lib/FlashloanProtection.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IBlackScholes.sol";
-import "../interfaces/ISigmaGuesser.sol";
+import "../interfaces/IIVGuesser.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMPool.sol";
 import "../interfaces/IFeePool.sol";
@@ -28,7 +28,7 @@ import "./FeePool.sol";
  * - priceProvider: responsible for the the spot price of the option's underlying asset.
  * - priceMethod: responsible for the current price of the option itself.
  * - impliedVolatility: responsible for one of the priceMethod inputs:
- *     implied Volatility (also known as sigma)
+ *     implied Volatility
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
@@ -60,9 +60,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 strikePrice;
         address underlyingAsset;
         IPodOption.OptionType optionType;
-        uint256 currentSigma;
+        uint256 currentIV;
         int256 riskFree;
-        uint256 sigmaInitialGuess;
+        uint256 initialIVGuess;
     }
 
     /**
@@ -76,7 +76,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     constructor(
         address _optionAddress,
         address _stableAsset,
-        uint256 _initialSigma,
+        uint256 _initialIV,
         IConfigurationManager _configurationManager
     ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
         require(
@@ -87,8 +87,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         feePoolA = new FeePool(_stableAsset, 15, 3);
         feePoolB = new FeePool(_stableAsset, 15, 3);
 
-        priceProperties.currentSigma = _initialSigma;
-        priceProperties.sigmaInitialGuess = _initialSigma;
+        priceProperties.currentIV = _initialIV;
+        priceProperties.initialIVGuess = _initialIV;
         priceProperties.underlyingAsset = IPodOption(_optionAddress).underlyingAsset();
         priceProperties.expiration = IPodOption(_optionAddress).expiration();
         priceProperties.startOfExerciseWindow = IPodOption(_optionAddress).startOfExerciseWindow();
@@ -143,27 +143,27 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     /**
      * @notice tradeExactAInput msg.sender is able to trade exact amount of token A in exchange for minimum
      * amount of token B and send the tokens B to the owner. After that, this function also updates the
-     * priceProperties.* currentSigma
+     * priceProperties.* currentIV
      *
-     * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
+     * @dev initialIVGuess is a parameter for gas saving costs purpose. Instead of calculating the new implied volatility
      * out of thin ar, caller can help the Numeric Method achieve the result in less iterations with this parameter.
      * In order to know which guess the caller should use, call the getOptionTradeDetailsExactAInput first.
      *
      * @param exactAmountAIn exact amount of A token that will be transfer from msg.sender
      * @param minAmountBOut minimum acceptable amount of token B to transfer to owner
      * @param owner the destination address that will receive the token B
-     * @param sigmaInitialGuess The first guess that the Numeric Method (getPutSigma / getCallSigma) should use
+     * @param initialIVGuess The first guess that the Numeric Method (getPutIV / getCallIV) should use
      */
     function tradeExactAInput(
         uint256 exactAmountAIn,
         uint256 minAmountBOut,
         address owner,
-        uint256 sigmaInitialGuess
+        uint256 initialIVGuess
     ) external override returns (uint256) {
         _nonReentrant();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
-        priceProperties.sigmaInitialGuess = sigmaInitialGuess;
+        priceProperties.initialIVGuess = initialIVGuess;
 
         uint256 amountBOut = _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
 
@@ -174,27 +174,27 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     /**
      * @notice _tradeExactAOutput owner is able to receive exact amount of token A in exchange of a max
      * acceptable amount of token B transfer from the msg.sender. After that, this function also updates
-     * the priceProperties.currentSigma
+     * the priceProperties.currentIV
      *
-     * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
+     * @dev initialIVGuess is a parameter for gas saving costs purpose. Instead of calculating the new implied volatility
      * out of thin ar, caller can help the Numeric Method achieve the result in less iterations with this parameter.
      * In order to know which guess the caller should use, call the getOptionTradeDetailsExactAOutput first.
      *
      * @param exactAmountAOut exact amount of token A that will be transfer to owner
      * @param maxAmountBIn maximum acceptable amount of token B to transfer from msg.sender
      * @param owner the destination address that will receive the token A
-     * @param sigmaInitialGuess The first guess that the Numeric Method (getPutSigma / getCallSigma) should use
+     * @param initialIVGuess The first guess that the Numeric Method (getPutIV / getCallIV) should use
      */
     function tradeExactAOutput(
         uint256 exactAmountAOut,
         uint256 maxAmountBIn,
         address owner,
-        uint256 sigmaInitialGuess
+        uint256 initialIVGuess
     ) external override returns (uint256) {
         _nonReentrant();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
-        priceProperties.sigmaInitialGuess = sigmaInitialGuess;
+        priceProperties.initialIVGuess = initialIVGuess;
 
         uint256 amountBIn = _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
 
@@ -204,27 +204,27 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
     /**
      * @notice _tradeExactBInput msg.sender is able to trade exact amount of token B in exchange for minimum
-     * amount of token A sent to the owner. After that, this function also updates the priceProperties.currentSigma
+     * amount of token A sent to the owner. After that, this function also updates the priceProperties.currentIV
      *
-     * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
+     * @dev initialIVGuess is a parameter for gas saving costs purpose. Instead of calculating the new implied volatility
      * out of thin ar, caller can help the Numeric Method achieve the result ini less iterations with this parameter.
      * In order to know which guess the caller should use, call the getOptionTradeDetailsExactBInput first.
      *
      * @param exactAmountBIn exact amount of token B that will be transfer from msg.sender
      * @param minAmountAOut minimum acceptable amount of token A to transfer to owner
      * @param owner the destination address that will receive the token A
-     * @param sigmaInitialGuess The first guess that the Numeric Method (getPutSigma / getCallSigma) should use
+     * @param initialIVGuess The first guess that the Numeric Method (getPutIV / getCallIV) should use
      */
     function tradeExactBInput(
         uint256 exactAmountBIn,
         uint256 minAmountAOut,
         address owner,
-        uint256 sigmaInitialGuess
+        uint256 initialIVGuess
     ) external override returns (uint256) {
         _nonReentrant();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
-        priceProperties.sigmaInitialGuess = sigmaInitialGuess;
+        priceProperties.initialIVGuess = initialIVGuess;
 
         uint256 amountAOut = _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
 
@@ -235,27 +235,27 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     /**
      * @notice _tradeExactBOutput owner is able to receive exact amount of token B in exchange of a max
      * acceptable amount of token A transfer from msg.sender. After that, this function also updates the
-     * priceProperties.currentSigma
+     * priceProperties.currentIV
      *
-     * @dev sigmaInitialGuess is a parameter for gas saving costs purpose. Instead of calculating the new sigma
+     * @dev initialIVGuess is a parameter for gas saving costs purpose. Instead of calculating the new implied volatility
      * out of thin ar, caller can help the Numeric Method achieve the result ini less iterations with this parameter.
      * In order to know which guess the caller should use, call the getOptionTradeDetailsExactBOutput first.
      *
      * @param exactAmountBOut exact amount of token B that will be transfer to owner
      * @param maxAmountAIn maximum acceptable amount of token A to transfer from msg.sender
      * @param owner the destination address that will receive the token B
-     * @param sigmaInitialGuess The first guess that the Numeric Method (getPutSigma / getCallSigma) should use
+     * @param initialIVGuess The first guess that the Numeric Method (getPutIV / getCallIV) should use
      */
     function tradeExactBOutput(
         uint256 exactAmountBOut,
         uint256 maxAmountAIn,
         address owner,
-        uint256 sigmaInitialGuess
+        uint256 initialIVGuess
     ) external override returns (uint256) {
         _nonReentrant();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
-        priceProperties.sigmaInitialGuess = sigmaInitialGuess;
+        priceProperties.initialIVGuess = initialIVGuess;
 
         uint256 amountAIn = _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
 
@@ -276,13 +276,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
     /**
      * @notice getOptionTradeDetailsExactAInput view function that simulates a trade, in order the preview
-     * the amountBOut, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * the amountBOut, the new implied volatility, that will be used as the initialIVGuess if caller wants to perform
      * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
      *
      * @param exactAmountAIn amount of token A that will by transfer from msg.sender to the pool
      *
      * @return amountBOut amount of B in exchange of the exactAmountAIn
-     * @return newIV the new sigma that this trade will result
+     * @return newIV the new implied volatility that this trade will result
      * @return feesTokenA amount of fees of collected by token A
      * @return feesTokenB amount of fees of collected by token B
      */
@@ -302,13 +302,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
     /**
      * @notice getOptionTradeDetailsExactAOutput view function that simulates a trade, in order the preview
-     * the amountBIn, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * the amountBIn, the new implied volatility, that will be used as the initialIVGuess if caller wants to perform
      * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
      *
      * @param exactAmountAOut amount of token A that will by transfer from pool to the msg.sender/owner
      *
      * @return amountBIn amount of B that will be transfer from msg.sender to the pool
-     * @return newIV the new sigma that this trade will result
+     * @return newIV the new implied volatility that this trade will result
      * @return feesTokenA amount of fees of collected by token A
      * @return feesTokenB amount of fees of collected by token B
      */
@@ -328,13 +328,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
     /**
      * @notice getOptionTradeDetailsExactBInput view function that simulates a trade, in order the preview
-     * the amountAOut, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * the amountAOut, the new implied volatility, that will be used as the initialIVGuess if caller wants to perform
      * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
      *
      * @param exactAmountBIn amount of token B that will by transfer from msg.sender to the pool
      *
      * @return amountAOut amount of A that will be transfer from contract to owner
-     * @return newIV the new sigma that this trade will result
+     * @return newIV the new implied volatility that this trade will result
      * @return feesTokenA amount of fees of collected by token A
      * @return feesTokenB amount of fees of collected by token B
      */
@@ -354,13 +354,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
     /**
      * @notice getOptionTradeDetailsExactBOutput view function that simulates a trade, in order the preview
-     * the amountAIn, the new sigma (IV), that will be used as the sigmaInitialGuess if caller wants to perform
+     * the amountAIn, the new implied volatility, that will be used as the initialIVGuess if caller wants to perform
      * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
      *
      * @param exactAmountBOut amount of token B that will by transfer from pool to the msg.sender/owner
      *
      * @return amountAIn amount of A that will be transfer from msg.sender to the pool
-     * @return newIV the new sigma that this trade will result
+     * @return newIV the new implied volatility that this trade will result
      * @return feesTokenA amount of fees of collected by token A
      * @return feesTokenB amount of fees of collected by token B
      */
@@ -389,7 +389,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             newABPrice = pricingMethod.getPutPrice(
                 spotPrice,
                 priceProperties.strikePrice,
-                priceProperties.currentSigma,
+                priceProperties.currentIV,
                 timeToMaturity,
                 priceProperties.riskFree
             );
@@ -397,7 +397,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             newABPrice = pricingMethod.getCallPrice(
                 spotPrice,
                 priceProperties.strikePrice,
-                priceProperties.currentSigma,
+                priceProperties.currentIV,
                 timeToMaturity,
                 priceProperties.riskFree
             );
@@ -469,20 +469,20 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     ) internal view returns (uint256) {
         uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(PRICING_DECIMALS.sub(tokenBDecimals())));
         uint256 newIV;
-        ISigmaGuesser sigmaGuesser = ISigmaGuesser(configurationManager.getSigmaGuesser());
+        IIVGuesser ivGuesser = IIVGuesser(configurationManager.getIVGuesser());
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
-            (newIV, ) = sigmaGuesser.getPutSigma(
+            (newIV, ) = ivGuesser.getPutIV(
                 newTargetABPriceWithDecimals,
-                properties.sigmaInitialGuess,
+                properties.initialIVGuess,
                 spotPrice,
                 properties.strikePrice,
                 timeToMaturity,
                 properties.riskFree
             );
         } else {
-            (newIV, ) = sigmaGuesser.getCallSigma(
+            (newIV, ) = ivGuesser.getCallIV(
                 newTargetABPriceWithDecimals,
-                properties.sigmaInitialGuess,
+                properties.initialIVGuess,
                 spotPrice,
                 properties.strikePrice,
                 timeToMaturity,
@@ -677,7 +677,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
-     * @dev Based on the tokensA and tokensB leaving or entering the pool, it is possible to calculate the new option target price. That price will be used later to update the currentSigma.
+     * @dev Based on the tokensA and tokensB leaving or entering the pool, it is possible to calculate the new option target price. That price will be used later to update the currentIV.
      * @param newABPrice calculated Black Scholes unit price (how many units of tokenB, to buy 1 tokena(option))
      * @param amountA The amount of tokenA that will leave or enter the pool
      * @param amountB TThe amount of tokenB that will leave or enter the pool
@@ -800,8 +800,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     function _onTrade(TradeDetails memory tradeDetails) internal {
-        uint256 newSigma = abi.decode(tradeDetails.params, (uint256));
-        priceProperties.currentSigma = newSigma;
+        uint256 newIV = abi.decode(tradeDetails.params, (uint256));
+        priceProperties.currentIV = newIV;
 
         IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
         IERC20(tokenB()).safeTransfer(address(feePoolB), tradeDetails.feesTokenB);
@@ -828,13 +828,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         require(
             !emergencyStop.isStopped(configurationManager.getPriceProvider()) &&
                 !emergencyStop.isStopped(configurationManager.getPricingMethod()) &&
-                !emergencyStop.isStopped(configurationManager.getSigmaGuesser()),
+                !emergencyStop.isStopped(configurationManager.getIVGuesser()),
             "Pool: Pool is stopped"
         );
     }
 
     function _getTradeInfo() private {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
-        emit TradeInfo(spotPrice, priceProperties.currentSigma);
+        emit TradeInfo(spotPrice, priceProperties.currentIV);
     }
 }

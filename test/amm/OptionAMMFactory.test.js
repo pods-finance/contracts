@@ -9,7 +9,7 @@ describe('OptionAMMFactory', () => {
   let OptionAMMFactory, factory
   let configurationManager, priceProviderMock, mockUnderlyingAsset
   let option
-  const initialSigma = '10000000000000000000000'
+  const initialIV = '10000000000000000000000'
 
   before(async () => {
     ;[caller] = await ethers.getSigners()
@@ -46,7 +46,7 @@ describe('OptionAMMFactory', () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      initialSigma
+      initialIV
     )
     const pool = await getPoolCreated(factory, tx, caller)
 
@@ -69,13 +69,13 @@ describe('OptionAMMFactory', () => {
     await factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      initialSigma
+      initialIV
     )
 
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      initialSigma
+      initialIV
     )
 
     await expect(tx).to.be.revertedWith('Pool already exists')
@@ -85,7 +85,7 @@ describe('OptionAMMFactory', () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      initialSigma
+      initialIV
     )
 
     const pool = await getPoolCreated(factory, tx, caller)

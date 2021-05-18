@@ -45,7 +45,7 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
-    // 3.2) Deploy BS + Sigma + AMMPoolFactory + Oracles
+    // 3.2) Deploy BS + IV + AMMPoolFactory + Oracles
     await run('setAMMEnvironment', { asset: mockWBTC.address, source: chainlinkWBTCFeed.address, configuration: configurationManagerAddress, builders: true })
 
     // 3.3) Deploy Option Exchange
@@ -91,21 +91,21 @@ task('setupLocal', 'Deploy a whole local test environment')
     const optionAMMPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWBTCAddress,
       tokenb: mockUSDC.address,
-      initialsigma: '770000000000000000', // 0.77%
+      initialiv: '770000000000000000', // 0.77%
       cap: '500000'
     })
 
     const optionAMMETHPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWETHAddress,
       tokenb: mockUSDC.address,
-      initialsigma: '2000000000000000000',
+      initialiv: '2000000000000000000',
       cap: '500000'
     })
 
     const optionLINKPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionLINKAddress,
       tokenb: mockUSDC.address,
-      initialsigma: '2311200000000000000',
+      initialiv: '2311200000000000000',
       cap: '500000'
     })
 

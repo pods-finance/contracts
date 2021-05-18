@@ -1,0 +1,275 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "_configurationManager",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "blackScholes",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "MIN_ACCEPTABLE_RANGE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "acceptableRange",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "blackScholes",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "configurationManager",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_targetPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_initialIVGuess",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_spotPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_strikePrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_timeToMaturity",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "_riskFree",
+        "type": "int256"
+      },
+      {
+        "internalType": "enum IPodOption.OptionType",
+        "name": "_optionType",
+        "type": "uint8"
+      }
+    ],
+    "name": "getApproximatedIV",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "calculatedIV",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "calculatedPrice",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_targetPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_initialIVGuess",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_spotPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_strikePrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_timeToMaturity",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "_riskFree",
+        "type": "int256"
+      }
+    ],
+    "name": "getCallIV",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "calculatedIV",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "calculatedPrice",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "ivLower",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "priceLower",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ivHigher",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "priceHigher",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IVGuesser.Boundaries",
+        "name": "boundaries",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "targetPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "getCloserIV",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_targetPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_initialIVGuess",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_spotPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_strikePrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_timeToMaturity",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "_riskFree",
+        "type": "int256"
+      }
+    ],
+    "name": "getPutIV",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "calculatedIV",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "calculatedPrice",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "updateAcceptableRange",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

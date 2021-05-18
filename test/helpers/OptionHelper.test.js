@@ -203,14 +203,14 @@ describe('OptionHelper', () => {
 
       await strikeAsset.connect(caller).mint(collateralAmount)
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
       const tx = await optionHelper.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
         0,
         deadline,
-        sigma
+        iv
       )
 
       const premium = await stableAsset.balanceOf(callerAddress)
@@ -228,14 +228,14 @@ describe('OptionHelper', () => {
 
       await strikeAsset.connect(caller).mint(collateralAmount)
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
       const tx = optionHelper.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
         minOutputAmount,
         deadline,
-        sigma
+        iv
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: deadline expired')
@@ -249,14 +249,14 @@ describe('OptionHelper', () => {
 
       await stableAsset.connect(caller).mint(collateralAmount)
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
       const tx = optionHelper.connect(caller).mintAndSellOptions(
         ethers.constants.AddressZero,
         amountToMint,
         minOutputAmount,
         deadline,
-        sigma
+        iv
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
@@ -355,7 +355,7 @@ describe('OptionHelper', () => {
       const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp() + 60
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
 
       await stableAsset.connect(caller).mint(maxAcceptedCost)
 
@@ -364,7 +364,7 @@ describe('OptionHelper', () => {
         amountToBuy,
         maxAcceptedCost,
         deadline,
-        sigma
+        iv
       )
 
       const balanceAfterTrade = await stableAsset.balanceOf(callerAddress)
@@ -380,7 +380,7 @@ describe('OptionHelper', () => {
       const minAcceptedOptions = ethers.BigNumber.from(1e7.toString())
       const deadline = await getTimestamp() + 60
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactBInput(inputAmount)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactBInput(inputAmount)
 
       await stableAsset.connect(caller).mint(inputAmount)
 
@@ -389,7 +389,7 @@ describe('OptionHelper', () => {
         minAcceptedOptions,
         inputAmount,
         deadline,
-        sigma
+        iv
       )
 
       expect(await stableAsset.balanceOf(callerAddress)).to.equal(0)
@@ -406,7 +406,7 @@ describe('OptionHelper', () => {
       const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp() + 60
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
 
       await stableAsset.connect(caller).mint(minAcceptedCost)
 
@@ -415,7 +415,7 @@ describe('OptionHelper', () => {
         amountToBuy,
         minAcceptedCost,
         deadline,
-        sigma
+        iv
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
@@ -426,7 +426,7 @@ describe('OptionHelper', () => {
       const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp()
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
 
       await stableAsset.connect(caller).mint(minAcceptedCost)
 
@@ -435,7 +435,7 @@ describe('OptionHelper', () => {
         amountToBuy,
         minAcceptedCost,
         deadline,
-        sigma
+        iv
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: deadline expired')
@@ -456,7 +456,7 @@ describe('OptionHelper', () => {
         amountToSell
       )
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToSell)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToSell)
 
       const balanceBeforeTrade = await stableAsset.balanceOf(callerAddress)
 
@@ -465,7 +465,7 @@ describe('OptionHelper', () => {
         amountToSell,
         minAcceptedToReceive,
         deadline,
-        sigma
+        iv
       )
 
       const balanceAfterTrade = await stableAsset.balanceOf(callerAddress)
@@ -488,7 +488,7 @@ describe('OptionHelper', () => {
         maxAcceptedOptionsToSell
       )
 
-      const { 0: estimatedOptionsToSell, 1: sigma } = await pool.getOptionTradeDetailsExactBOutput(tokenBAmountToReceive)
+      const { 0: estimatedOptionsToSell, 1: iv } = await pool.getOptionTradeDetailsExactBOutput(tokenBAmountToReceive)
 
       const balanceStableBeforeTrade = await stableAsset.balanceOf(callerAddress)
 
@@ -497,7 +497,7 @@ describe('OptionHelper', () => {
         maxAcceptedOptionsToSell,
         tokenBAmountToReceive,
         deadline,
-        sigma
+        iv
       )
 
       const balanceStableAfterTrade = await stableAsset.balanceOf(callerAddress)

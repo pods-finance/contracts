@@ -2,21 +2,21 @@
 
 pragma solidity 0.6.12;
 
-interface ISigmaGuesser {
+interface IIVGuesser {
     function blackScholes() external view returns (address);
 
-    function getPutSigma(
+    function getPutIV(
         uint256 _targetPrice,
-        uint256 _sigmaInitialGuess,
+        uint256 _initialIVGuess,
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,
         int256 _riskFree
     ) external view returns (uint256, uint256);
 
-    function getCallSigma(
+    function getCallIV(
         uint256 _targetPrice,
-        uint256 _sigmaInitialGuess,
+        uint256 _initialIVGuess,
         uint256 _spotPrice,
         uint256 _strikePrice,
         uint256 _timeToMaturity,

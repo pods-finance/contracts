@@ -93,14 +93,14 @@ contract OptionHelper {
      * @param optionAmount Amount of options to mint
      * @param minTokenAmount Minimum amount of output tokens accepted
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
-     * @param sigma The initial volatility guess
+     * @param initialIVGuess The initial implied volatility guess
      */
     function mintAndSellOptions(
         IPodOption option,
         uint256 optionAmount,
         uint256 minTokenAmount,
         uint256 deadline,
-        uint256 sigma
+        uint256 initialIVGuess
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
 
@@ -110,7 +110,7 @@ contract OptionHelper {
         IERC20(address(option)).safeApprove(address(pool), optionAmount);
 
         // Sells options to pool
-        uint256 tokensBought = pool.tradeExactAInput(optionAmount, minTokenAmount, msg.sender, sigma);
+        uint256 tokensBought = pool.tradeExactAInput(optionAmount, minTokenAmount, msg.sender, initialIVGuess);
 
         emit OptionsMintedAndSold(msg.sender, address(option), optionAmount, pool.tokenB(), tokensBought);
     }
@@ -192,14 +192,14 @@ contract OptionHelper {
      * @param optionAmount Amount of options to sell
      * @param minTokenReceived Min amount of input tokens to receive
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
-     * @param sigmaInitialGuess The initial sigma guess (IV)
+     * @param initialIVGuess The initial implied volatility guess
      */
     function sellExactOptions(
         IPodOption option,
         uint256 optionAmount,
         uint256 minTokenReceived,
         uint256 deadline,
-        uint256 sigmaInitialGuess
+        uint256 initialIVGuess
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenA = IERC20(pool.tokenA());
@@ -211,12 +211,7 @@ contract OptionHelper {
         tokenA.safeApprove(address(pool), optionAmount);
 
         // Buys options from pool
-        uint256 tokenAmountReceived = pool.tradeExactAInput(
-            optionAmount,
-            minTokenReceived,
-            msg.sender,
-            sigmaInitialGuess
-        );
+        uint256 tokenAmountReceived = pool.tradeExactAInput(optionAmount, minTokenReceived, msg.sender, initialIVGuess);
 
         emit OptionsSold(msg.sender, address(option), optionAmount, pool.tokenB(), tokenAmountReceived);
     }
@@ -229,14 +224,14 @@ contract OptionHelper {
      * @param maxOptionAmount max Amount of options to sell
      * @param exactTokenReceived exact amount of input tokens to receive
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
-     * @param sigmaInitialGuess The initial sigma guess (IV)
+     * @param initialIVGuess The initial implied volatility guess
      */
     function sellOptionsAndReceiveExactTokens(
         IPodOption option,
         uint256 maxOptionAmount,
         uint256 exactTokenReceived,
         uint256 deadline,
-        uint256 sigmaInitialGuess
+        uint256 initialIVGuess
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenA = IERC20(pool.tokenA());
@@ -248,12 +243,7 @@ contract OptionHelper {
         tokenA.safeApprove(address(pool), maxOptionAmount);
 
         // Buys options from pool
-        uint256 optionsSold = pool.tradeExactBOutput(
-            exactTokenReceived,
-            maxOptionAmount,
-            msg.sender,
-            sigmaInitialGuess
-        );
+        uint256 optionsSold = pool.tradeExactBOutput(exactTokenReceived, maxOptionAmount, msg.sender, initialIVGuess);
 
         uint256 unusedFunds = maxOptionAmount.sub(optionsSold);
 
@@ -276,14 +266,14 @@ contract OptionHelper {
      * @param optionAmount Amount of options to buy
      * @param maxTokenAmount Max amount of input tokens sold
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
-     * @param sigma The initial volatility guess
+     * @param initialIVGuess The initial implied volatility guess
      */
     function buyExactOptions(
         IPodOption option,
         uint256 optionAmount,
         uint256 maxTokenAmount,
         uint256 deadline,
-        uint256 sigma
+        uint256 initialIVGuess
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
@@ -295,7 +285,7 @@ contract OptionHelper {
         tokenB.safeApprove(address(pool), maxTokenAmount);
 
         // Buys options from pool
-        uint256 tokensSold = pool.tradeExactAOutput(optionAmount, maxTokenAmount, msg.sender, sigma);
+        uint256 tokensSold = pool.tradeExactAOutput(optionAmount, maxTokenAmount, msg.sender, initialIVGuess);
         uint256 unusedFunds = maxTokenAmount.sub(tokensSold);
 
         // Reset allowance
@@ -317,13 +307,14 @@ contract OptionHelper {
      * @param minOptionAmount Min amount of options bought
      * @param tokenAmount The exact amount of input tokens sold
      * @param deadline The deadline in unix-timestamp that limits the transaction from happening
+     * @param initialIVGuess The initial implied volatility guess
      */
     function buyOptionsWithExactTokens(
         IPodOption option,
         uint256 minOptionAmount,
         uint256 tokenAmount,
         uint256 deadline,
-        uint256 sigma
+        uint256 initialIVGuess
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
@@ -335,7 +326,7 @@ contract OptionHelper {
         tokenB.safeApprove(address(pool), tokenAmount);
 
         // Buys options from pool
-        uint256 optionsBought = pool.tradeExactBInput(tokenAmount, minOptionAmount, msg.sender, sigma);
+        uint256 optionsBought = pool.tradeExactBInput(tokenAmount, minOptionAmount, msg.sender, initialIVGuess);
 
         emit OptionsBought(msg.sender, address(option), optionsBought, pool.tokenB(), tokenAmount);
     }
