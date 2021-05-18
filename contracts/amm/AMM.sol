@@ -128,7 +128,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         bytes params;
     }
     /**
-     * @notice Tracks the UserDepositSnapshot struct of each user.
+     * @dev Tracks the UserDepositSnapshot struct of each user.
      * It contains the token A original balance, token B original balance,
      * and the Open Value Factor (Fimp) at the time of the deposit.
      */
