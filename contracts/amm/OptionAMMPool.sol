@@ -799,28 +799,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         }
     }
 
-    function _onTrade(TradeDetails memory tradeDetails) internal {
+    function _onTrade(TradeDetails memory tradeDetails) internal override {
         uint256 newSigma = abi.decode(tradeDetails.params, (uint256));
         priceProperties.currentSigma = newSigma;
 
         IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
         IERC20(tokenB()).safeTransfer(address(feePoolB), tradeDetails.feesTokenB);
-    }
-
-    function _onTradeExactAInput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactAOutput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactBInput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
     }
 
     function _emergencyStopCheck() private view {

@@ -419,7 +419,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         require(amountBOut > 0, "AMM: invalid amountBOut");
         require(amountBOut >= minAmountBOut, "AMM: slippage not acceptable");
 
-        _onTradeExactAInput(tradeDetails);
+        _onTrade(tradeDetails);
 
         IERC20(_tokenA).safeTransferFrom(msg.sender, address(this), exactAmountAIn);
         IERC20(_tokenB).safeTransfer(owner, amountBOut);
@@ -451,7 +451,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         require(amountBIn > 0, "AMM: invalid amountBIn");
         require(amountBIn <= maxAmountBIn, "AMM: slippage not acceptable");
 
-        _onTradeExactAOutput(tradeDetails);
+        _onTrade(tradeDetails);
 
         IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), amountBIn);
         IERC20(_tokenA).safeTransfer(owner, exactAmountAOut);
@@ -483,7 +483,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         require(amountAOut > 0, "AMM: invalid amountAOut");
         require(amountAOut >= minAmountAOut, "AMM: slippage not acceptable");
 
-        _onTradeExactBInput(tradeDetails);
+        _onTrade(tradeDetails);
 
         IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), exactAmountBIn);
         IERC20(_tokenA).safeTransfer(owner, amountAOut);
@@ -515,7 +515,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         require(amountAIn > 0, "AMM: invalid amountAIn");
         require(amountAIn <= maxAmountAIn, "AMM: slippage not acceptable");
 
-        _onTradeExactBOutput(tradeDetails);
+        _onTrade(tradeDetails);
 
         IERC20(_tokenA).safeTransferFrom(msg.sender, address(this), amountAIn);
         IERC20(_tokenB).safeTransfer(owner, exactAmountBOut);
@@ -763,13 +763,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
     function _getTradeDetailsExactBOutput(uint256 amountBOut) internal virtual returns (TradeDetails memory);
 
-    function _onTradeExactAInput(TradeDetails memory tradeDetails) internal virtual;
-
-    function _onTradeExactAOutput(TradeDetails memory tradeDetails) internal virtual;
-
-    function _onTradeExactBInput(TradeDetails memory tradeDetails) internal virtual;
-
-    function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal virtual;
+    function _onTrade(TradeDetails memory tradeDetails) internal virtual;
 
     function _onRemoveLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
 
