@@ -389,13 +389,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             uint256
         )
     {
-        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         uint256 timeToMaturity = _getTimeToMaturityInYears();
-        uint256 adjustedIV = _getAdjustedSigma(tokenA(), priceProperties.currentIV);
 
         if (timeToMaturity == 0) {
-            return (0, spotPrice, 0);
+            return (0, 0, 0);
         }
+
+        uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
+        uint256 adjustedIV = _getAdjustedIV(tokenA(), priceProperties.currentIV);
+
         IBlackScholes pricingMethod = IBlackScholes(configurationManager.getPricingMethod());
         uint256 newABPrice;
 
@@ -451,7 +453,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     function _getABPrice() internal override view returns (uint256) {
-        (uint256 newABPrice, ,) = _getPriceDetails();
+        (uint256 newABPrice, , ) = _getPriceDetails();
         return newABPrice;
     }
 
@@ -472,15 +474,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         return spotPriceWithRightPrecision;
     }
 
-    function _getOracleSigma(address optionAddress) internal view returns (uint256 oracleIV) {
+    function _getOracleIV(address optionAddress) internal view returns (uint256 oracleIV) {
         IIVProvider ivProvider = IIVProvider(configurationManager.getIVProvider());
         (, , oracleIV, ) = ivProvider.getIV(optionAddress);
     }
 
-    function _getAdjustedSigma(address optionAddress, uint256 currentIV) internal view returns (uint256 adjustedSigma) {
-        uint256 oracleIV = _getOracleSigma(optionAddress);
+    function _getAdjustedIV(address optionAddress, uint256 currentIV) internal view returns (uint256 adjustedIV) {
+        uint256 oracleIV = _getOracleIV(optionAddress);
 
-        adjustedSigma = _ORACLE_IV_WEIGHT.mul(oracleIV).add(_POOL_IV_WEIGHT.mul(currentIV)).div(
+        adjustedIV = _ORACLE_IV_WEIGHT.mul(oracleIV).add(_POOL_IV_WEIGHT.mul(currentIV)).div(
             _POOL_IV_WEIGHT + _ORACLE_IV_WEIGHT
         );
     }
@@ -516,6 +518,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         return newIV;
     }
 
+    // I want to sell you exactly 10 options and receive stable coins in return
+    // 1) based on the exactAmountIn, I calculate the amountBOutPool (how many stables I will send back)
+    // 2) Calculate newTargetPrice (poolAmountA / poolAmountB)
+    // 3) Calculate fees -> on top of amountBOutPool
+    // 3') User will receive only amountBOutUser (amountBOutPool - fees)
+
     function _getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
         internal
         view
@@ -538,12 +546,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             return (0, 0, 0, 0);
         }
 
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
+
         uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool);
         uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool);
 
         uint256 amountBOutUser = amountBOutPool.sub(feesTokenA).sub(feesTokenB);
-
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
 
         return (amountBOutUser, newIV, feesTokenA, feesTokenB);
     }

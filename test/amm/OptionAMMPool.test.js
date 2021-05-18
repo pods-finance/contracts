@@ -63,7 +63,7 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('OptionAMMPool.sol - ' + scenario.name, () => {
-    let MockERC20, WETH, OptionAMMFactory, OptionAMMPool, PriceProvider
+    let MockERC20, WETH, OptionAMMFactory, OptionAMMPool, PriceProvider, IVProvider
     let weth
     let configurationManager
     let mockUnderlyingAsset
@@ -71,6 +71,7 @@ scenarios.forEach(scenario => {
     let factoryContract
     let optionAMMFactory
     let priceProvider
+    let ivProvider
     let option
     let optionAMMPool
     let deployer, second, buyer, delegator, lp
@@ -88,12 +89,13 @@ scenarios.forEach(scenario => {
         lp.getAddress()
       ])
 
-      ;[MockERC20, WETH, OptionAMMFactory, OptionAMMPool, PriceProvider] = await Promise.all([
+      ;[MockERC20, WETH, OptionAMMFactory, OptionAMMPool, PriceProvider, IVProvider] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory'),
         ethers.getContractFactory('OptionAMMPool'),
-        ethers.getContractFactory('PriceProvider')
+        ethers.getContractFactory('PriceProvider'),
+        ethers.getContractFactory('IVProvider')
       ])
 
       ;[weth, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
@@ -115,7 +117,11 @@ scenarios.forEach(scenario => {
         answeredInRound: 1
       })
       priceProvider = await PriceProvider.deploy(configurationManager.address, [mockUnderlyingAsset.address], [defaultPriceFeed.contract.address])
+
+      ivProvider = await IVProvider.deploy()
+
       await configurationManager.setPriceProvider(priceProvider.address)
+      await configurationManager.setIVProvider(ivProvider.address)
 
       factoryContract = await createOptionFactory(weth.address, configurationManager)
 
@@ -126,6 +132,9 @@ scenarios.forEach(scenario => {
         configurationManager,
         optionType: scenario.optionType
       })
+
+      await ivProvider.setUpdater(deployerAddress)
+      await ivProvider.updateIV(option.address, scenario.initialSigma, 19)
 
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialIV)
