@@ -35,6 +35,8 @@ const scenarios = [
     emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
     initialIV: toBigNumber(0.661e18),
+    initialOracleIV: toBigNumber(0.661e18),
+    decimalsOracleIV: 18,
     expectedNewIV: toBigNumber(0.66615e18),
     cap: ethers.BigNumber.from(2000000e6.toString())
   },
@@ -56,6 +58,8 @@ const scenarios = [
     emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
     initialIV: toBigNumber(2 * 1e18),
+    initialOracleIV: toBigNumber(200 * 1e18),
+    decimalsOracleIV: 20,
     expectedNewIV: toBigNumber(1.2 * 1e18),
     cap: ethers.BigNumber.from(2000000e6.toString())
   }
@@ -134,7 +138,7 @@ scenarios.forEach(scenario => {
       })
 
       await ivProvider.setUpdater(deployerAddress)
-      await ivProvider.updateIV(option.address, scenario.initialSigma, 19)
+      await ivProvider.updateIV(option.address, scenario.initialOracleIV, scenario.decimalsOracleIV)
 
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialIV)

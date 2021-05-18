@@ -474,9 +474,18 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         return spotPriceWithRightPrecision;
     }
 
-    function _getOracleIV(address optionAddress) internal view returns (uint256 oracleIV) {
+    function _getOracleIV(address optionAddress) internal view returns (uint256 normalizedOracleIV) {
         IIVProvider ivProvider = IIVProvider(configurationManager.getIVProvider());
-        (, , oracleIV, ) = ivProvider.getIV(optionAddress);
+        (, ,uint256 oracleIV, uint256 ivDecimals) = ivProvider.getIV(optionAddress);
+        uint256 diffDecimals;
+
+        if (ivDecimals <= PRICING_DECIMALS) {
+            diffDecimals = PRICING_DECIMALS.sub(ivDecimals);
+            normalizedOracleIV = oracleIV.mul(10**diffDecimals);
+        } else {
+            diffDecimals = ivDecimals.sub(PRICING_DECIMALS);
+            normalizedOracleIV = oracleIV.div(10**diffDecimals);
+        } 
     }
 
     function _getAdjustedIV(address optionAddress, uint256 currentIV) internal view returns (uint256 adjustedIV) {
