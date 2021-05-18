@@ -145,6 +145,8 @@ scenarios.forEach(scenario => {
     })
 
     describe('Constructor/Initialization checks', () => {
+
+      
       it('should have correct option data (strikePrice, expiration, strikeAsset)', async () => {
         expect(await optionAMMPool.tokenB()).to.equal(mockStrikeAsset.address)
         expect(await optionAMMPool.tokenA()).to.equal(option.address)

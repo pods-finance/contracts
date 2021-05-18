@@ -9,10 +9,11 @@ const mintOptions = require('../util/mintOptions')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
+const initialSigma = '960000000000000000'
 
 describe('OptionHelper', () => {
-  let OptionHelper, OptionAMMFactory, MintableERC20
-  let optionHelper, configurationManager
+  let OptionHelper, OptionAMMFactory, MintableERC20, IVProvider
+  let optionHelper, configurationManager, ivProvider
   let stableAsset, strikeAsset, underlyingAsset
   let option, pool, optionAMMFactory
   let deployer, deployerAddress
@@ -26,10 +27,11 @@ describe('OptionHelper', () => {
       caller.getAddress()
     ])
 
-    ;[OptionHelper, OptionAMMFactory, MintableERC20] = await Promise.all([
+    ;[OptionHelper, OptionAMMFactory, MintableERC20, IVProvider] = await Promise.all([
       ethers.getContractFactory('OptionHelper'),
       ethers.getContractFactory('OptionAMMFactory'),
-      ethers.getContractFactory('MintableERC20')
+      ethers.getContractFactory('MintableERC20'),
+      ethers.getContractFactory('IVProvider')
     ])
 
     underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
@@ -44,12 +46,18 @@ describe('OptionHelper', () => {
       tokenAddress: underlyingAsset.address,
       configurationManager
     })
+    ivProvider = await IVProvider.deploy()
+    await ivProvider.setUpdater(deployerAddress)
+
     await configurationManager.setPriceProvider(mock.priceProvider.address)
+    await configurationManager.setIVProvider(ivProvider.address)
 
     option = await createMockOption({
       configurationManager,
       underlyingAsset: underlyingAsset.address
     })
+
+    await ivProvider.updateIV(option.address, initialSigma, '18')
 
     ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
@@ -513,8 +521,6 @@ describe('OptionHelper', () => {
 })
 
 async function createOptionAMMPool (option, optionAMMFactory, caller) {
-  const initialSigma = '960000000000000000'
-
   const [strikeAssetAddress, callerAddress] = await Promise.all([
     option.strikeAsset(),
     caller.getAddress()
