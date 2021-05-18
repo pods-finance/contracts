@@ -22,15 +22,18 @@ describe('IVProvider', () => {
 
     const firstIVData = await provider.getIV(option)
     expect(firstIVData[0]).to.be.equal(1)
-    expect(firstIVData[1].toNumber()).to.be.greaterThan(timestamp)
+    expect(firstIVData[1].toNumber() >= timestamp).to.be.true
     expect(firstIVData[2]).to.be.equal(130e8)
     expect(firstIVData[3]).to.be.equal(8)
+
+    // skips 3 minutes
+    await ethers.provider.send('evm_mine', [timestamp + 180])
 
     await provider.connect(updater).updateIV(option, 200e8, 8)
 
     const secondIVData = await provider.getIV(option)
     expect(secondIVData[0]).to.be.equal(2)
-    expect(secondIVData[1].toNumber()).to.be.greaterThan(firstIVData[1].toNumber())
+    expect(secondIVData[1].toNumber() >= firstIVData[1].toNumber()).to.be.true
   })
 
   describe('Role management', () => {

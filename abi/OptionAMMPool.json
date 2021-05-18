@@ -13,18 +13,8 @@
       },
       {
         "internalType": "uint256",
-        "name": "_initialSigma",
+        "name": "_initialIV",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_feePoolA",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_feePoolB",
-        "type": "address"
       },
       {
         "internalType": "contract IConfigurationManager",
@@ -672,7 +662,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "currentSigma",
+        "name": "currentIV",
         "type": "uint256"
       },
       {
@@ -682,7 +672,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -778,7 +768,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -812,7 +802,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -846,7 +836,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -880,7 +870,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],

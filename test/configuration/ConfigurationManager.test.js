@@ -14,7 +14,8 @@ describe('ConfigurationManager', () => {
 
     await configurationManager.setEmergencyStop(randomAddress)
     await configurationManager.setPricingMethod(randomAddress)
-    await configurationManager.setSigmaGuesser(randomAddress)
+    await configurationManager.setIVGuesser(randomAddress)
+    await configurationManager.setIVProvider(randomAddress)
     await configurationManager.setPriceProvider(randomAddress)
     await configurationManager.setCapProvider(randomAddress)
     await configurationManager.setAMMFactory(randomAddress)
@@ -27,7 +28,10 @@ describe('ConfigurationManager', () => {
     expect(await configurationManager.getPricingMethod())
       .to.equal(randomAddress)
 
-    expect(await configurationManager.getSigmaGuesser())
+    expect(await configurationManager.getIVGuesser())
+      .to.equal(randomAddress)
+
+    expect(await configurationManager.getIVProvider())
       .to.equal(randomAddress)
 
     expect(await configurationManager.getPriceProvider())

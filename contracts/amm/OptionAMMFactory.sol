@@ -35,22 +35,17 @@ contract OptionAMMFactory is IOptionAMMFactory {
      *
      * @param _optionAddress The address of option token
      * @param _stableAsset A stablecoin asset address
-     * @param _initialSigma Initial number of sigma (implied volatility)
+     * @param _initialIV Initial number of implied volatility
      * @return The address of the newly created pool
      */
     function createPool(
         address _optionAddress,
         address _stableAsset,
-        uint256 _initialSigma
+        uint256 _initialIV
     ) external override returns (address) {
         require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
 
-        OptionAMMPool pool = new OptionAMMPool(
-            _optionAddress,
-            _stableAsset,
-            _initialSigma,
-            configurationManager
-        );
+        OptionAMMPool pool = new OptionAMMPool(_optionAddress, _stableAsset, _initialIV, configurationManager);
 
         address poolAddress = address(pool);
 

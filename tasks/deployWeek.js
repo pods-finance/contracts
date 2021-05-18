@@ -53,7 +53,7 @@ task('deployWeek', 'Deploy a whole local test environment')
         const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
-          initialsigma: '1750000000000000000',
+          initialiv: '1750000000000000000',
           cap: '10000000000000000',
           verify,
           tenderly
