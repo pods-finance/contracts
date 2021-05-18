@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "./OptionAMMPool.sol";
-import "./FeePool.sol";
 
 /**
  * @title OptionAMMFactory
@@ -46,22 +45,9 @@ contract OptionAMMFactory is IOptionAMMFactory {
     ) external override returns (address) {
         require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
 
-        FeePool feePoolTokenA = new FeePool(_stableAsset, 15, 3);
-        FeePool feePoolTokenB = new FeePool(_stableAsset, 15, 3);
-
-        OptionAMMPool pool = new OptionAMMPool(
-            _optionAddress,
-            _stableAsset,
-            _initialIV,
-            address(feePoolTokenA),
-            address(feePoolTokenB),
-            configurationManager
-        );
+        OptionAMMPool pool = new OptionAMMPool(_optionAddress, _stableAsset, _initialIV, configurationManager);
 
         address poolAddress = address(pool);
-
-        feePoolTokenA.transferOwnership(poolAddress);
-        feePoolTokenB.transferOwnership(poolAddress);
 
         _pools[_optionAddress] = poolAddress;
         emit PoolCreated(msg.sender, poolAddress, _optionAddress);

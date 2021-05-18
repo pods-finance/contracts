@@ -17,16 +17,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "_feePoolA",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_feePoolB",
-        "type": "address"
-      },
-      {
         "internalType": "contract IConfigurationManager",
         "name": "_configurationManager",
         "type": "address"

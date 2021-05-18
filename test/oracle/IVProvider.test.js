@@ -22,7 +22,7 @@ describe('IVProvider', () => {
 
     const firstIVData = await provider.getIV(option)
     expect(firstIVData[0]).to.be.equal(1)
-    expect(firstIVData[1].toNumber()).to.be.greaterThan(timestamp)
+    expect(firstIVData[1].toNumber() >= timestamp).to.be.true
     expect(firstIVData[2]).to.be.equal(130e8)
     expect(firstIVData[3]).to.be.equal(8)
 
