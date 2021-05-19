@@ -11,10 +11,10 @@ const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
 
 describe('OptionHelper', () => {
-  let OptionHelper, OptionAMMFactory, MintableERC20
+  let OptionHelper, OptionAMMFactory, FeePoolBuilder, MintableERC20
   let optionHelper, configurationManager
   let stableAsset, strikeAsset, underlyingAsset
-  let option, pool, optionAMMFactory
+  let option, pool, optionAMMFactory, feePoolBuilder
   let deployer, deployerAddress
   let caller, callerAddress
   let snapshotId
@@ -26,13 +26,15 @@ describe('OptionHelper', () => {
       caller.getAddress()
     ])
 
-    ;[OptionHelper, OptionAMMFactory, MintableERC20] = await Promise.all([
+    ;[OptionHelper, OptionAMMFactory, FeePoolBuilder, MintableERC20] = await Promise.all([
       ethers.getContractFactory('OptionHelper'),
       ethers.getContractFactory('OptionAMMFactory'),
+      ethers.getContractFactory('FeePoolBuilder'),
       ethers.getContractFactory('MintableERC20')
     ])
 
     underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
+    feePoolBuilder = await FeePoolBuilder.deploy()
   })
 
   beforeEach(async () => {
@@ -54,7 +56,7 @@ describe('OptionHelper', () => {
     ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
-      OptionAMMFactory.deploy(configurationManager.address)
+      OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
     ])
 
     await configurationManager.setAMMFactory(optionAMMFactory.address)

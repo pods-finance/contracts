@@ -20,6 +20,11 @@
         "internalType": "contract IConfigurationManager",
         "name": "_configurationManager",
         "type": "address"
+      },
+      {
+        "internalType": "contract IFeePoolBuilder",
+        "name": "_feePoolBuilder",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",

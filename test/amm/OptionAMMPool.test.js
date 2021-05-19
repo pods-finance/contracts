@@ -63,13 +63,14 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('OptionAMMPool.sol - ' + scenario.name, () => {
-    let MockERC20, WETH, OptionAMMFactory, OptionAMMPool, PriceProvider
+    let MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider
     let weth
     let configurationManager
     let mockUnderlyingAsset
     let mockStrikeAsset
     let factoryContract
     let optionAMMFactory
+    let feePoolBuilder
     let priceProvider
     let option
     let optionAMMPool
@@ -88,10 +89,11 @@ scenarios.forEach(scenario => {
         lp.getAddress()
       ])
 
-      ;[MockERC20, WETH, OptionAMMFactory, OptionAMMPool, PriceProvider] = await Promise.all([
+      ;[MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory'),
+        ethers.getContractFactory('FeePoolBuilder'),
         ethers.getContractFactory('OptionAMMPool'),
         ethers.getContractFactory('PriceProvider')
       ])
@@ -102,6 +104,8 @@ scenarios.forEach(scenario => {
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
       ])
       defaultPriceFeed = await createPriceFeedMock(deployer)
+
+      feePoolBuilder = await FeePoolBuilder.deploy()
     })
 
     beforeEach(async function () {
@@ -127,7 +131,7 @@ scenarios.forEach(scenario => {
         optionType: scenario.optionType
       })
 
-      optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
+      optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialSigma)
     })
 
