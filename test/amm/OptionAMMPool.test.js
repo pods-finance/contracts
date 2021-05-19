@@ -1024,8 +1024,8 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe('OracleIV - Reduces IV big swings between trades', () => {
-      it('The Option price of the next trade should be cheaper if using oracleIV', async () => {
+    describe.only('OracleIV - Reduces IV impact between big trades', () => {
+      it('Big buy - The Option price of the next trade should be cheaper if using oracleIV', async () => {
         const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const optionLiquidityToBuy = optionLiquidityToAdd.div(15)
@@ -1050,6 +1050,32 @@ scenarios.forEach(scenario => {
         const bsPriceWithoutOracleIV = await optionAMMPool.getABPrice()
 
         expect(bsPriceWithoutOracleIV).to.be.gte(bsPriceWithOracleIV)
+      })
+      it('Big sell - The Option price of the next trade should be more expensive if using oracleIV', async () => {
+        const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const optionLiquidityToBuy = optionLiquidityToAdd.div(15)
+
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        await mintOptions(option, optionLiquidityToBuy, buyer)
+        await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(2))
+
+        await option.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+
+        const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAInput(optionLiquidityToBuy)
+
+        await optionAMMPool.connect(buyer)
+          .tradeExactAInput(optionLiquidityToBuy, 0, buyerAddress, tradeDetails.newIV)
+
+        const bsPriceWithOracleIV = await optionAMMPool.getABPrice()
+
+        await ivProvider.updateIV(option.address, tradeDetails.newIV, '18')
+
+        const bsPriceWithoutOracleIV = await optionAMMPool.getABPrice()
+
+        expect(bsPriceWithOracleIV).to.be.gte(bsPriceWithoutOracleIV)
       })
     })
   })
