@@ -1028,7 +1028,7 @@ scenarios.forEach(scenario => {
       })
     })
 
-    describe.only('OracleIV - Reduces IV impact between big trades', () => {
+    describe('OracleIV - Reduces IV impact between big trades', () => {
       it('Big buy - The Option price of the next trade should be cheaper if using oracleIV', async () => {
         const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
