@@ -10,8 +10,7 @@ contract FlashloanProtection {
      * function in the same block
      */
     function _nonReentrant() internal {
-        uint256 lastEnterBlock = sessions[tx.origin];
-        require(lastEnterBlock != block.number, "FlashloanProtection: reentrant call");
+        require(sessions[tx.origin] != block.number, "FlashloanProtection: reentrant call");
         sessions[tx.origin] = block.number;
     }
 }
