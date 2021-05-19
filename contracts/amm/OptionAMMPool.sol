@@ -528,12 +528,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         return newIV;
     }
 
-    // I want to sell you exactly 10 options and receive stable coins in return
-    // 1) based on the exactAmountIn, I calculate the amountBOutPool (how many stables I will send back)
-    // 2) Calculate newTargetPrice (poolAmountA / poolAmountB)
-    // 3) Calculate fees -> on top of amountBOutPool
-    // 3') User will receive only amountBOutUser (amountBOutPool - fees)
-
     function _getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
         internal
         view
