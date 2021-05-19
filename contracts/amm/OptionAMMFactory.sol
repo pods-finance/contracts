@@ -5,6 +5,7 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IOptionAMMFactory.sol";
+import "../interfaces/IFeePoolBuilder.sol";
 import "./OptionAMMPool.sol";
 
 /**
@@ -20,14 +21,23 @@ contract OptionAMMFactory is IOptionAMMFactory {
      */
     IConfigurationManager public immutable configurationManager;
 
+    /**
+     * @dev store globally accessed configurations
+     */
+    IFeePoolBuilder public immutable feePoolBuilder;
+
     event PoolCreated(address indexed deployer, address pool, address option);
 
-    constructor(IConfigurationManager _configurationManager) public {
+    constructor(IConfigurationManager _configurationManager, address _feePoolBuilder) public {
         require(
             Address.isContract(address(_configurationManager)),
             "OptionAMMFactory: Configuration Manager is not a contract"
         );
+        require(Address.isContract(_feePoolBuilder), "OptionAMMFactory: FeePoolBuilder is not a contract");
+
         configurationManager = _configurationManager;
+
+        feePoolBuilder = IFeePoolBuilder(_feePoolBuilder);
     }
 
     /**
@@ -45,7 +55,13 @@ contract OptionAMMFactory is IOptionAMMFactory {
     ) external override returns (address) {
         require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
 
-        OptionAMMPool pool = new OptionAMMPool(_optionAddress, _stableAsset, _initialIV, configurationManager);
+        OptionAMMPool pool = new OptionAMMPool(
+            _optionAddress,
+            _stableAsset,
+            _initialIV,
+            configurationManager,
+            feePoolBuilder
+        );
 
         address poolAddress = address(pool);
 

@@ -12,10 +12,10 @@ const OPTION_TYPE_CALL = 1
 const initialSigma = '960000000000000000'
 
 describe('OptionHelper', () => {
-  let OptionHelper, OptionAMMFactory, MintableERC20, IVProvider
+  let OptionHelper, OptionAMMFactory, FeePoolBuilder, MintableERC20, IVProvider
   let optionHelper, configurationManager, ivProvider
   let stableAsset, strikeAsset, underlyingAsset
-  let option, pool, optionAMMFactory
+  let option, pool, optionAMMFactory, feePoolBuilder
   let deployer, deployerAddress
   let caller, callerAddress
   let snapshotId
@@ -27,14 +27,17 @@ describe('OptionHelper', () => {
       caller.getAddress()
     ])
 
-    ;[OptionHelper, OptionAMMFactory, MintableERC20, IVProvider] = await Promise.all([
+    ;[OptionHelper, OptionAMMFactory, FeePoolBuilder, MintableERC20, IVProvider] = await Promise.all([
       ethers.getContractFactory('OptionHelper'),
       ethers.getContractFactory('OptionAMMFactory'),
+      ethers.getContractFactory('FeePoolBuilder'),
       ethers.getContractFactory('MintableERC20'),
       ethers.getContractFactory('IVProvider')
+
     ])
 
     underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
+    feePoolBuilder = await FeePoolBuilder.deploy()
   })
 
   beforeEach(async () => {
@@ -62,7 +65,7 @@ describe('OptionHelper', () => {
     ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
-      OptionAMMFactory.deploy(configurationManager.address)
+      OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
     ])
 
     await configurationManager.setAMMFactory(optionAMMFactory.address)

@@ -65,13 +65,14 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('OptionAMMPool.sol - ' + scenario.name, () => {
-    let MockERC20, WETH, OptionAMMFactory, OptionAMMPool, PriceProvider, IVProvider
+    let MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider, IVProvider
     let weth
     let configurationManager
     let mockUnderlyingAsset
     let mockStrikeAsset
     let factoryContract
     let optionAMMFactory
+    let feePoolBuilder
     let priceProvider
     let ivProvider
     let option
@@ -91,10 +92,11 @@ scenarios.forEach(scenario => {
         lp.getAddress()
       ])
 
-      ;[MockERC20, WETH, OptionAMMFactory, OptionAMMPool, PriceProvider, IVProvider] = await Promise.all([
+      ;[MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider, IVProvider] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory'),
+        ethers.getContractFactory('FeePoolBuilder'),
         ethers.getContractFactory('OptionAMMPool'),
         ethers.getContractFactory('PriceProvider'),
         ethers.getContractFactory('IVProvider')
@@ -106,6 +108,8 @@ scenarios.forEach(scenario => {
         MockERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
       ])
       defaultPriceFeed = await createPriceFeedMock(deployer)
+
+      feePoolBuilder = await FeePoolBuilder.deploy()
     })
 
     beforeEach(async function () {
@@ -138,7 +142,7 @@ scenarios.forEach(scenario => {
       await ivProvider.setUpdater(deployerAddress)
       await ivProvider.updateIV(option.address, scenario.initialOracleIV, scenario.decimalsOracleIV)
 
-      optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address)
+      optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialIV)
     })
 

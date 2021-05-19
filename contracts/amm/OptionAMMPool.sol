@@ -16,7 +16,7 @@ import "../interfaces/IOptionAMMPool.sol";
 import "../interfaces/IFeePool.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IEmergencyStop.sol";
-import "./FeePool.sol";
+import "../interfaces/IFeePoolBuilder.sol";
 
 /**
  * Represents an Option specific single-sided AMM.
@@ -80,15 +80,16 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         address _optionAddress,
         address _stableAsset,
         uint256 _initialIV,
-        IConfigurationManager _configurationManager
+        IConfigurationManager _configurationManager,
+        IFeePoolBuilder _feePoolBuilder
     ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
         require(
             IPodOption(_optionAddress).exerciseType() == IPodOption.ExerciseType.EUROPEAN,
             "Pool: invalid exercise type"
         );
 
-        feePoolA = new FeePool(_stableAsset, 15, 3);
-        feePoolB = new FeePool(_stableAsset, 15, 3);
+        feePoolA = _feePoolBuilder.buildFeePool(_stableAsset, 15, 3, address(this));
+        feePoolB = _feePoolBuilder.buildFeePool(_stableAsset, 15, 3, address(this));
 
         priceProperties.currentIV = _initialIV;
         priceProperties.initialIVGuess = _initialIV;
@@ -829,28 +830,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         }
     }
 
-    function _onTrade(TradeDetails memory tradeDetails) internal {
+    function _onTrade(TradeDetails memory tradeDetails) internal override {
         uint256 newIV = abi.decode(tradeDetails.params, (uint256));
         priceProperties.currentIV = newIV;
 
         IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
         IERC20(tokenB()).safeTransfer(address(feePoolB), tradeDetails.feesTokenB);
-    }
-
-    function _onTradeExactAInput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactAOutput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactBInput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
     }
 
     function _emergencyStopCheck() private view {
