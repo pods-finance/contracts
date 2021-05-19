@@ -67,7 +67,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "_initialSigma",
+        "name": "_initialIV",
         "type": "uint256"
       }
     ],
