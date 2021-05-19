@@ -30,14 +30,13 @@ const scenarios = [
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
-    initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
     emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
-    initialIV: toBigNumber(0.661e18),
-    initialOracleIV: toBigNumber(0.661e18),
+    initialIV: toBigNumber(1.661e18),
+    initialOracleIV: toBigNumber(1.661e18),
     decimalsOracleIV: 18,
-    expectedNewIV: toBigNumber(0.66615e18),
+    expectedNewIV: toBigNumber(1.66615e18),
     cap: ethers.BigNumber.from(2000000e6.toString())
   },
   {
@@ -53,7 +52,6 @@ const scenarios = [
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
-    initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
     emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
@@ -145,8 +143,6 @@ scenarios.forEach(scenario => {
     })
 
     describe('Constructor/Initialization checks', () => {
-
-      
       it('should have correct option data (strikePrice, expiration, strikeAsset)', async () => {
         expect(await optionAMMPool.tokenB()).to.equal(mockStrikeAsset.address)
         expect(await optionAMMPool.tokenA()).to.equal(option.address)
@@ -1025,6 +1021,35 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
 
         await expect(attackerContract.connect(buyer).addLiquidityAndRemove(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToAdd, buyerAddress)).to.be.revertedWith('FlashloanProtection: reentrant call')
+      })
+    })
+
+    describe('OracleIV - Reduces IV big swings between trades', () => {
+      it('The Option price of the next trade should be cheaper if using oracleIV', async () => {
+        const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const optionLiquidityToBuy = optionLiquidityToAdd.div(15)
+
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        await mintOptions(option, optionLiquidityToBuy, buyer)
+        await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(2))
+
+        await option.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+
+        const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(optionLiquidityToBuy)
+
+        await optionAMMPool.connect(buyer)
+          .tradeExactAOutput(optionLiquidityToBuy, ethers.constants.MaxUint256, buyerAddress, tradeDetails.newIV)
+
+        const bsPriceWithOracleIV = await optionAMMPool.getABPrice()
+
+        await ivProvider.updateIV(option.address, tradeDetails.newIV, '18')
+
+        const bsPriceWithoutOracleIV = await optionAMMPool.getABPrice()
+
+        expect(bsPriceWithoutOracleIV).to.be.gte(bsPriceWithOracleIV)
       })
     })
   })
