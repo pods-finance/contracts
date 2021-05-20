@@ -482,11 +482,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
         if (ivDecimals <= PRICING_DECIMALS) {
             diffDecimals = PRICING_DECIMALS.sub(ivDecimals);
-            normalizedOracleIV = oracleIV.mul(10**diffDecimals);
         } else {
             diffDecimals = ivDecimals.sub(PRICING_DECIMALS);
-            normalizedOracleIV = oracleIV.div(10**diffDecimals);
         }
+        return oracleIV.div(10**diffDecimals)
     }
 
     function _getAdjustedIV(address optionAddress, uint256 currentIV) internal view returns (uint256 adjustedIV) {
@@ -500,8 +499,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     function _getNewIV(
         uint256 newTargetABPrice,
         uint256 spotPrice,
-        uint256 timeToMaturity,
-        PriceProperties memory properties
+        uint256 timeToMaturity
     ) internal view returns (uint256) {
         uint256 newTargetABPriceWithDecimals = newTargetABPrice.mul(10**(PRICING_DECIMALS.sub(tokenBDecimals())));
         uint256 newIV;
@@ -509,20 +507,20 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         if (priceProperties.optionType == IPodOption.OptionType.PUT) {
             (newIV, ) = ivGuesser.getPutIV(
                 newTargetABPriceWithDecimals,
-                properties.initialIVGuess,
+                priceProperties.initialIVGuess,
                 spotPrice,
-                properties.strikePrice,
+                priceProperties.strikePrice,
                 timeToMaturity,
-                properties.riskFree
+                priceProperties.riskFree
             );
         } else {
             (newIV, ) = ivGuesser.getCallIV(
                 newTargetABPriceWithDecimals,
-                properties.initialIVGuess,
+                priceProperties.initialIVGuess,
                 spotPrice,
-                properties.strikePrice,
+                priceProperties.strikePrice,
                 timeToMaturity,
-                properties.riskFree
+                priceProperties.riskFree
             );
         }
         return newIV;
@@ -550,7 +548,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             return (0, 0, 0, 0);
         }
 
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
 
         uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool);
         uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool);
@@ -597,7 +595,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
         uint256 amountBInUser = amountBInPool.add(feesTokenA).add(feesTokenB);
 
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
 
         return (amountBInUser, newIV, feesTokenA, feesTokenB);
     }
@@ -638,7 +636,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 amountAOut = _getAmountAOut(newABPrice, poolBIn);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAOut, poolBIn, TradeDirection.BA);
 
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
 
         return (amountAOut, newIV, feesTokenA, feesTokenB);
     }
@@ -683,7 +681,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             return (0, 0, 0, 0);
         }
 
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity, priceProperties);
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
 
         return (amountAInPool, newIV, feesTokenA, feesTokenB);
     }
