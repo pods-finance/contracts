@@ -39,9 +39,12 @@ contract FeePool is IFeePool, Ownable {
         uint8 feeDecimals
     ) public {
         require(token != address(0), "FeePool: Invalid token");
-        require(feeDecimals <= 77 && 
-        baseFeeValue <= uint256(10)**feeDecimals && 
-        dynamicFeeValue <= uint256(10)**feeDecimals, "FeePool: Invalid Fee data");
+        require(
+            feeDecimals <= 77 &&
+                baseFeeValue <= uint256(10)**feeDecimals &&
+                dynamicFeeValue <= uint256(10)**feeDecimals,
+            "FeePool: Invalid Fee data"
+        );
 
         _token = token;
         _feeBaseValue = baseFeeValue;
@@ -56,7 +59,11 @@ contract FeePool is IFeePool, Ownable {
      * @param feeDynamicValue Fee value
      * @param decimals Fee decimals
      */
-    function setFee(uint256 feeBaseValue, uint256 feeDynamicValue, uint8 decimals) external override onlyOwner {
+    function setFee(
+        uint256 feeBaseValue,
+        uint256 feeDynamicValue,
+        uint8 decimals
+    ) external override onlyOwner {
         _feeBaseValue = feeBaseValue;
         _feeDynamicValue = feeDynamicValue;
         _feeDecimals = decimals;
@@ -150,7 +157,7 @@ contract FeePool is IFeePool, Ownable {
         uint256 unitBase = 10**uint256(_feeDecimals);
         uint256 base = (unitBase.add(_feeDynamicValue))**exponent;
         uint256 dynamicFee = amount.mul(base.sub(10**unitBase)).div(10**unitBase);
-        
+
         uint256 baseFee = amount.mul(_feeBaseValue).div(10**uint256(_feeDecimals));
         return baseFee.add(dynamicFee);
     }

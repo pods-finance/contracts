@@ -8,7 +8,11 @@ interface IFeePool {
         uint256 liability;
     }
 
-    function setFee(uint256 feeBaseValue, uint256 feeDynamicValue, uint8 decimals) external;
+    function setFee(
+        uint256 feeBaseValue,
+        uint256 feeDynamicValue,
+        uint8 decimals
+    ) external;
 
     function withdraw(address to, uint256 amount) external;
 
