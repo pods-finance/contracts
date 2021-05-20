@@ -485,7 +485,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         } else {
             diffDecimals = ivDecimals.sub(PRICING_DECIMALS);
         }
-        return oracleIV.div(10**diffDecimals)
+        return oracleIV.div(10**diffDecimals);
     }
 
     function _getAdjustedIV(address optionAddress, uint256 currentIV) internal view returns (uint256 adjustedIV) {
