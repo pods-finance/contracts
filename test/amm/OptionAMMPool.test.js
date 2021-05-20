@@ -30,12 +30,13 @@ const scenarios = [
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
-    initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
     emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
-    initialIV: toBigNumber(0.661e18),
-    expectedNewIV: toBigNumber(0.66615e18),
+    initialIV: toBigNumber(1.661e18),
+    initialOracleIV: toBigNumber(1.661e18),
+    decimalsOracleIV: 18,
+    expectedNewIV: toBigNumber(1.66615e18),
     cap: ethers.BigNumber.from(2000000e6.toString())
   },
   {
@@ -51,11 +52,12 @@ const scenarios = [
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
     amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
-    initialFImp: ethers.BigNumber.from('10').pow(54),
     initialSpotPrice: toBigNumber(18000e8),
     emittedSpotPrice: toBigNumber(18000e18),
     spotPriceDecimals: 8,
     initialIV: toBigNumber(2 * 1e18),
+    initialOracleIV: toBigNumber(200 * 1e18),
+    decimalsOracleIV: 20,
     expectedNewIV: toBigNumber(1.2 * 1e18),
     cap: ethers.BigNumber.from(2000000e6.toString())
   }
@@ -63,7 +65,7 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('OptionAMMPool.sol - ' + scenario.name, () => {
-    let MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider
+    let MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider, IVProvider
     let weth
     let configurationManager
     let mockUnderlyingAsset
@@ -72,6 +74,7 @@ scenarios.forEach(scenario => {
     let optionAMMFactory
     let feePoolBuilder
     let priceProvider
+    let ivProvider
     let option
     let optionAMMPool
     let deployer, second, buyer, delegator, lp
@@ -89,13 +92,14 @@ scenarios.forEach(scenario => {
         lp.getAddress()
       ])
 
-      ;[MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider] = await Promise.all([
+      ;[MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider, IVProvider] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory'),
         ethers.getContractFactory('FeePoolBuilder'),
         ethers.getContractFactory('OptionAMMPool'),
-        ethers.getContractFactory('PriceProvider')
+        ethers.getContractFactory('PriceProvider'),
+        ethers.getContractFactory('IVProvider')
       ])
 
       ;[weth, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
@@ -119,7 +123,11 @@ scenarios.forEach(scenario => {
         answeredInRound: 1
       })
       priceProvider = await PriceProvider.deploy(configurationManager.address, [mockUnderlyingAsset.address], [defaultPriceFeed.contract.address])
+
+      ivProvider = await IVProvider.deploy()
+
       await configurationManager.setPriceProvider(priceProvider.address)
+      await configurationManager.setIVProvider(ivProvider.address)
 
       factoryContract = await createOptionFactory(weth.address, configurationManager)
 
@@ -130,6 +138,9 @@ scenarios.forEach(scenario => {
         configurationManager,
         optionType: scenario.optionType
       })
+
+      await ivProvider.setUpdater(deployerAddress)
+      await ivProvider.updateIV(option.address, scenario.initialOracleIV, scenario.decimalsOracleIV)
 
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialIV)
@@ -1014,6 +1025,61 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
 
         await expect(attackerContract.connect(buyer).addLiquidityAndRemove(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToAdd, buyerAddress)).to.be.revertedWith('FlashloanProtection: reentrant call')
+      })
+    })
+
+    describe('OracleIV - Reduces IV impact between big trades', () => {
+      it('Big buy - The Option price of the next trade should be cheaper if using oracleIV', async () => {
+        const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const optionLiquidityToBuy = optionLiquidityToAdd.div(15)
+
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        await mintOptions(option, optionLiquidityToBuy, buyer)
+        await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(2))
+
+        await option.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+
+        const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(optionLiquidityToBuy)
+
+        await optionAMMPool.connect(buyer)
+          .tradeExactAOutput(optionLiquidityToBuy, ethers.constants.MaxUint256, buyerAddress, tradeDetails.newIV)
+
+        const bsPriceWithOracleIV = await optionAMMPool.getABPrice()
+
+        await ivProvider.updateIV(option.address, tradeDetails.newIV, '18')
+
+        const bsPriceWithoutOracleIV = await optionAMMPool.getABPrice()
+
+        expect(bsPriceWithoutOracleIV).to.be.gte(bsPriceWithOracleIV)
+      })
+      it('Big sell - The Option price of the next trade should be more expensive if using oracleIV', async () => {
+        const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const optionLiquidityToBuy = optionLiquidityToAdd.div(15)
+
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        await mintOptions(option, optionLiquidityToBuy, buyer)
+        await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(2))
+
+        await option.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+
+        const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAInput(optionLiquidityToBuy)
+
+        await optionAMMPool.connect(buyer)
+          .tradeExactAInput(optionLiquidityToBuy, 0, buyerAddress, tradeDetails.newIV)
+
+        const bsPriceWithOracleIV = await optionAMMPool.getABPrice()
+
+        await ivProvider.updateIV(option.address, tradeDetails.newIV, '18')
+
+        const bsPriceWithoutOracleIV = await optionAMMPool.getABPrice()
+
+        expect(bsPriceWithOracleIV).to.be.gte(bsPriceWithoutOracleIV)
       })
     })
   })
