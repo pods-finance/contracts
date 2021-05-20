@@ -40,7 +40,7 @@ contract BlackScholes is IBlackScholes {
      *
      * @param spotPrice Asset spot price
      * @param strikePrice Option strike price
-     * @param sigma Annually volatility on the asset price
+     * @param iv Annually volatility on the asset price
      * @param time Annualized time until maturity
      * @param riskFree The risk-free rate
      * @return call option price
@@ -48,11 +48,11 @@ contract BlackScholes is IBlackScholes {
     function getCallPrice(
         uint256 spotPrice,
         uint256 strikePrice,
-        uint256 sigma,
+        uint256 iv,
         uint256 time,
         int256 riskFree
     ) public override view returns (uint256) {
-        (int256 d1, int256 d2) = _getZScores(_uintToInt(spotPrice), _uintToInt(strikePrice), sigma, time, riskFree);
+        (int256 d1, int256 d2) = _getZScores(_uintToInt(spotPrice), _uintToInt(strikePrice), iv, time, riskFree);
 
         uint256 Nd1 = normalDistribution.getProbability(d1, precisionDecimals);
         uint256 Nd2 = normalDistribution.getProbability(d2, precisionDecimals);
@@ -73,7 +73,7 @@ contract BlackScholes is IBlackScholes {
      *
      * @param spotPrice Asset spot price
      * @param strikePrice Option strike price
-     * @param sigma Annually volatility on the asset price
+     * @param iv Annually volatility on the asset price
      * @param time Annualized time until maturity
      * @param riskFree The risk-free rate
      * @return put option price
@@ -81,11 +81,11 @@ contract BlackScholes is IBlackScholes {
     function getPutPrice(
         uint256 spotPrice,
         uint256 strikePrice,
-        uint256 sigma,
+        uint256 iv,
         uint256 time,
         int256 riskFree
     ) public override view returns (uint256) {
-        (int256 d1, int256 d2) = _getZScores(_uintToInt(spotPrice), _uintToInt(strikePrice), sigma, time, riskFree);
+        (int256 d1, int256 d2) = _getZScores(_uintToInt(spotPrice), _uintToInt(strikePrice), iv, time, riskFree);
 
         uint256 Nd1 = normalDistribution.getProbability(_additiveInverse(d1), precisionDecimals);
         uint256 Nd2 = normalDistribution.getProbability(_additiveInverse(d2), precisionDecimals);
@@ -106,35 +106,35 @@ contract BlackScholes is IBlackScholes {
      *
      ***********************************************************************************************
      * So = spotPrice                                                                             //
-     * X  = strikePrice              ln( So / X ) + t ( r + ( σ² / 2 ) )                          //
-     * σ  = sigma               d1 = --------------------------------------                       //
-     * t  = time                               σ ( sqrt(t) )                                      //
+     * X  = strikePrice                 ln( So / X ) + t ( r + ( σ² / 2 ) )                       //
+     * σ  = implied volatility     d1 = --------------------------------------                    //
+     * t  = time                                  σ ( sqrt(t) )                                   //
      * r  = riskFree                                                                              //
-     *                          d2 = d1 - σ ( sqrt(t) )                                           //
+     *                             d2 = d1 - σ ( sqrt(t) )                                        //
      ***********************************************************************************************
      *
      * @param spotPrice Asset spot price
      * @param strikePrice Option strike price
-     * @param sigma Annually volatility on the asset price
+     * @param iv Annually volatility on the asset price
      * @param time Annualized time until maturity
      * @param riskFree The risk-free rate
      */
     function _getZScores(
         int256 spotPrice,
         int256 strikePrice,
-        uint256 sigma,
+        uint256 iv,
         uint256 time,
         int256 riskFree
     ) internal pure returns (int256 d1, int256 d2) {
-        uint256 sigma2 = _normalized(sigma).mul(_normalized(sigma)) / PRECISION_UNIT;
+        uint256 iv2 = _normalized(iv).mul(_normalized(iv)) / PRECISION_UNIT;
 
         int256 A = _cachedLn(spotPrice.divide(strikePrice));
-        int256 B = (_uintToInt(sigma2 / 2)).add(_normalized(riskFree)).multiply(_normalized(_uintToInt(time)));
+        int256 B = (_uintToInt(iv2 / 2)).add(_normalized(riskFree)).multiply(_normalized(_uintToInt(time)));
 
         int256 n = A.add(B);
 
         uint256 sqrtTime = _sqrt(_normalized(time));
-        uint256 d = sigma.mul(sqrtTime) / UNIT_TO_PRECISION_FACTOR;
+        uint256 d = iv.mul(sqrtTime) / UNIT_TO_PRECISION_FACTOR;
 
         d1 = n.divide(_uintToInt(d));
         d2 = d1.subtract(_uintToInt(d));

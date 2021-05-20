@@ -7,7 +7,7 @@ const scenarios = [
     type: 'put',
     spotPrice: toBigNumber(368 * 1e18),
     strikePrice: toBigNumber(320 * 1e18),
-    sigma: toBigNumber(0.8 * 1e18),
+    iv: toBigNumber(0.8 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(0.009589041096 * 1e18), // 3.5 days
     expectedPrice: toBigNumber(0.3391972191 * 1e18)
@@ -16,7 +16,7 @@ const scenarios = [
     type: 'put',
     spotPrice: toBigNumber(10500 * 1e18),
     strikePrice: toBigNumber(11000 * 1e18),
-    sigma: toBigNumber(1.2 * 1e18),
+    iv: toBigNumber(1.2 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(0.03835616438 * 1e18), // 3.5 days
     expectedPrice: toBigNumber(1275.126573 * 1e18)
@@ -25,7 +25,7 @@ const scenarios = [
     type: 'put', // Call price should be 0
     spotPrice: toBigNumber(320 * 1e18),
     strikePrice: toBigNumber(300 * 1e18),
-    sigma: toBigNumber(0.6 * 1e18),
+    iv: toBigNumber(0.6 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(11).mul(1e14), // 0.0011
     expectedPrice: toBigNumber(0.0004 * 1e18)
@@ -34,7 +34,7 @@ const scenarios = [
     type: 'call',
     spotPrice: toBigNumber(601 * 1e18),
     strikePrice: toBigNumber(580 * 1e18),
-    sigma: toBigNumber(0.824 * 1e18),
+    iv: toBigNumber(0.824 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(0.02283105023 * 1e18), // 3.5 days
     expectedPrice: toBigNumber(40.99782 * 1e18)
@@ -43,7 +43,7 @@ const scenarios = [
     type: 'call',
     spotPrice: toBigNumber(601 * 1e18),
     strikePrice: toBigNumber(660 * 1e18),
-    sigma: toBigNumber(0.824 * 1e18),
+    iv: toBigNumber(0.824 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(0.0114155251141553 * 1e18), // 3.5 days
     expectedPrice: toBigNumber(4.0835637054095 * 1e18)
@@ -52,7 +52,7 @@ const scenarios = [
     type: 'call', // Call price should be 0
     spotPrice: toBigNumber(300 * 1e18),
     strikePrice: toBigNumber(320 * 1e18),
-    sigma: toBigNumber(0.6 * 1e18),
+    iv: toBigNumber(0.6 * 1e18),
     riskFree: toBigNumber(0),
     time: toBigNumber(11).mul(1e14), // 0.0011
     expectedPrice: toBigNumber(0.0004 * 1e18)
@@ -111,7 +111,7 @@ describe('BlackScholes', () => {
     await expect(bs.getPutPrice(
       scenarios[0].spotPrice,
       scenarios[0].strikePrice,
-      scenarios[0].sigma,
+      scenarios[0].iv,
       INT256_MAX.sub(1),
       scenarios[0].riskFree
     )).to.be.revertedWith('BlackScholes: multInt overflow')
@@ -121,7 +121,7 @@ describe('BlackScholes', () => {
     await expect(bs.getPutPrice(
       scenarios[0].spotPrice,
       scenarios[0].strikePrice,
-      scenarios[0].sigma,
+      scenarios[0].iv,
       INT256_MAX,
       scenarios[0].riskFree
     )).to.be.revertedWith('BlackScholes: casting overflow')
@@ -132,7 +132,7 @@ describe('BlackScholes', () => {
       const price = await bs.getPutPrice(
         scenario.spotPrice,
         scenario.strikePrice,
-        scenario.sigma,
+        scenario.iv,
         scenario.time,
         scenario.riskFree
       )
@@ -149,7 +149,7 @@ describe('BlackScholes', () => {
       const price = await bs.getCallPrice(
         scenario.spotPrice,
         scenario.strikePrice,
-        scenario.sigma,
+        scenario.iv,
         scenario.time,
         scenario.riskFree
       )

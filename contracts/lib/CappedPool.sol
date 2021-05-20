@@ -27,9 +27,9 @@ abstract contract CappedPool {
      */
     modifier capped(address token, uint256 amountOfLiquidity) {
         uint256 cap = capSize();
-        uint256 poolBalance = IERC20(token).balanceOf(address(this));
 
         if (cap > 0) {
+            uint256 poolBalance = IERC20(token).balanceOf(address(this));
             require(poolBalance.add(amountOfLiquidity) <= cap, "CappedPool: amount exceed cap");
         }
         _;

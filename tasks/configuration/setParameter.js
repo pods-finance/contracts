@@ -39,9 +39,9 @@ task('setParameter', 'Set a ConfigurationManager parameter')
           console.log(`Done! Transaction hash: ${updateReceipt.transactionHash}`)
           break
         case 'GUESSER_ACCEPTABLE_RANGE':
-          const sigmaGuesser = await ethers.getContractAt('SigmaGuesser', await configurationManager.getSigmaGuesser())
-          console.log(`Updating SigmaGuesser(${sigmaGuesser.address})`)
-          updateTx = await sigmaGuesser.updateAcceptableRange()
+          const ivGuesser = await ethers.getContractAt('IVGuesser', await configurationManager.getIVGuesser())
+          console.log(`Updating IVGuesser(${ivGuesser.address})`)
+          updateTx = await ivGuesser.updateAcceptableRange()
           updateReceipt = await updateTx.wait()
           console.log(`Done! Transaction hash: ${updateReceipt.transactionHash}`)
           break

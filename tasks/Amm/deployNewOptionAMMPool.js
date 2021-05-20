@@ -9,11 +9,11 @@ const verifyContract = require('../utils/verify')
 task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
-  .addParam('initialsigma', 'Initial Sigma to start the pool')
+  .addParam('initialiv', 'Initial IV to start the pool')
   .addParam('cap', 'The cap of tokenB liquidity to be added')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addFlag('tenderly', 'if true, it should verify the contract after the deployment')
-  .setAction(async ({ option, tokenb, initialsigma, cap, verify, tenderly }, hre) => {
+  .setAction(async ({ option, tokenb, initialiv, cap, verify, tenderly }, hre) => {
     console.log('----Start Deploy New Pool----')
     const pathFile = `../../deployments/${hre.network.name}.json`
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
@@ -31,7 +31,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const OptionAMMFactory = await ethers.getContractAt('OptionAMMFactory', optionAMMFactory)
     const tokenBContract = await ethers.getContractAt('MintableERC20', tokenb)
 
-    const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialsigma)
+    const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialiv)
     const txReceipt = await txIdNewPool.wait(numberOfConfirmations)
 
     console.log('txId: ', txIdNewPool.hash)
@@ -47,7 +47,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       const poolObj = {
         option,
         tokenb,
-        initialsigma
+        initialiv
       }
 
       const currentPools = contentJSON.pools
@@ -72,7 +72,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
         const poolConstructorArguments = [
           option,
           tokenb,
-          initialsigma,
+          initialiv,
           addressFeelTokenA,
           addressFeelTokenB,
           configuratorManager
