@@ -9,7 +9,6 @@ task('deployWeek', 'Deploy a whole local test environment')
   .addFlag('tenderly', 'if true, it should verify the contract after the deployment on tenderly')
   .setAction(async ({ start, verify, tenderly }, hre) => {
     const pathFile = `../deployments/${hre.network.name}.json`
-
     // 4) Deploy Test Option
     const currentBlockTimestamp = await getTimestamp()
 
@@ -23,16 +22,11 @@ task('deployWeek', 'Deploy a whole local test environment')
       {
         strike: 'USDC',
         underlying: 'WETH',
-        price: '3000'
-      },
-      {
-        strike: 'ADAI',
-        underlying: 'WETH',
-        price: '3000'
+        price: '2400'
       }
     ]
 
-    const intervals = [2]
+    const intervals = [7]
     const oneDayInSeconds = 24 * 60 * 60
 
     for (const optionObj of options) {

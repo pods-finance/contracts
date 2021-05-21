@@ -5,10 +5,10 @@ task('setupFullNetwork', 'Deploy a whole local Kovan environment')
   .addFlag('verify', 'bool if the contract should be verified or not')
   .setAction(async ({ asset, source, verify, wethadapt }, hre) => {
     await hre.run('compile')
-    const cnotracts = require(`../deployments/${hre.network.name}.json`)
+    const contracts = require(`../deployments/${hre.network.name}.json`)
 
     const assetUpper = asset.toUpperCase()
-    const assetAddress = cnotracts[assetUpper]
+    const assetAddress = contracts[assetUpper]
     // Erasing local.json file
     const configurationManagerAddress = await run('deployConfigurationManager', { verify })
 

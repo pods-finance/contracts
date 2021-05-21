@@ -1,4 +1,5 @@
 require('./deployChainlink')
 require('./deployPriceProvider')
+require('./deployIVProvider')
 require('./deployOracle')
 require('./setNewFeed')

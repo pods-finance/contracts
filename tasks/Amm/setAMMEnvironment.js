@@ -49,7 +49,9 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
       newContract: priceProviderAddress
     })
 
-    const optionAMMFactoryAddress = await hre.run('deployOptionAMMFactory', { configuration: configurationManagerAddress, verify })
+    const feeBuilderAddress = await hre.run('deploy', { name: 'FeePoolBuilder', verify, save: true })
+
+    const optionAMMFactoryAddress = await hre.run('deployOptionAMMFactory', { configuration: configurationManagerAddress, feebuilder: feeBuilderAddress, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
       setter: 'setAMMFactory',
