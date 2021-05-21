@@ -13,22 +13,17 @@
       },
       {
         "internalType": "uint256",
-        "name": "_initialSigma",
+        "name": "_initialIV",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_feePoolA",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_feePoolB",
-        "type": "address"
       },
       {
         "internalType": "contract IConfigurationManager",
         "name": "_configurationManager",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IFeePoolBuilder",
+        "name": "_feePoolBuilder",
         "type": "address"
       }
     ],
@@ -672,7 +667,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "currentSigma",
+        "name": "currentIV",
         "type": "uint256"
       },
       {
@@ -682,7 +677,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -778,7 +773,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -812,7 +807,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -846,7 +841,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -880,7 +875,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -893,35 +888,6 @@
       }
     ],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "userSnapshots",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenABalance",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenBBalance",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "fImp",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

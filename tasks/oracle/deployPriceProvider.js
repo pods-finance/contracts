@@ -11,7 +11,7 @@ task('deployPriceProvider', 'Deploy PriceProvider Contract')
     const path = `../../deployments/${hre.network.name}.json`
     const _filePath = pathJoin.join(__dirname, path)
     const content = await fsPromises.readFile(_filePath)
-    const configurationManager = configuration || JSON.parse(content).configurationManager
+    const configurationManagerAddress = configuration || JSON.parse(content).ConfigurationManager
     let assetArray = []
     let feedArray = []
 
@@ -20,12 +20,18 @@ task('deployPriceProvider', 'Deploy PriceProvider Contract')
       feedArray = [feed]
     }
 
-    if (!configurationManager) {
+    // const configurationManager = await ethers.getContractAt('ConfigurationManager', configurationManagerAddress)
+    // const parameterName = ethers.utils.formatBytes32String('MIN_UPDATE_INTERVAL')
+
+    // const tx = await configurationManager.setParameter(parameterName, '17280000')
+    // tx.wait(2)
+
+    if (!configurationManagerAddress) {
       throw Error('Configuration Manager not found')
     }
 
     const PriceProvider = await ethers.getContractFactory('PriceProvider')
-    const priceProvider = await PriceProvider.deploy(configurationManager, assetArray, feedArray)
+    const priceProvider = await PriceProvider.deploy(configurationManagerAddress, assetArray, feedArray)
 
     await priceProvider.deployed(2)
     console.log('PriceProvider Address', priceProvider.address)

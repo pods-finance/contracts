@@ -76,7 +76,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigma",
+        "name": "iv",
         "type": "uint256"
       },
       {
@@ -115,7 +115,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigma",
+        "name": "iv",
         "type": "uint256"
       },
       {

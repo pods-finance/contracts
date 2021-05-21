@@ -205,7 +205,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigma",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -238,7 +238,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigma",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -325,7 +325,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigma",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -358,7 +358,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],
@@ -391,7 +391,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "sigmaInitialGuess",
+        "name": "initialIVGuess",
         "type": "uint256"
       }
     ],

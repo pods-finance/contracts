@@ -7,7 +7,7 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
 
     if (!address) {
       const json = require(filePath)
-      address = json.configurationManager
+      address = json.ConfigurationManager
     }
 
     if (!ethers.utils.isAddress(address)) {
@@ -34,7 +34,7 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
         console.log(`PricingMethod set to ${newContract}`)
         break
       case 'setImpliedVolatility':
-        transaction = await configurationManager.setSigmaGuesser(newContract)
+        transaction = await configurationManager.setIVGuesser(newContract)
         await transaction.wait(1)
         console.log(`ImpliedVolatility set to ${newContract}`)
         break
