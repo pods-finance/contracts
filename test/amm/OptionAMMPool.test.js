@@ -222,7 +222,6 @@ scenarios.forEach(scenario => {
       })
       it('should return the AdjustedIV', async () => {
         expect(await optionAMMPool.getAdjustedIV()).to.be.eq(scenario.initialIV)
-        // await expect(optionAMMPool.adjustedIV()).to.not.be.reverted
       })
     })
 
