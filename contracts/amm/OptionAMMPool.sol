@@ -867,9 +867,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     function _emergencyStopCheck() private view {
         IEmergencyStop emergencyStop = IEmergencyStop(configurationManager.getEmergencyStop());
         require(
-            !emergencyStop.isStopped(configurationManager.getPriceProvider()) &&
-                !emergencyStop.isStopped(configurationManager.getPricingMethod()) &&
-                !emergencyStop.isStopped(configurationManager.getIVGuesser()),
+            !emergencyStop.isStopped(address(this)) &&
+                !emergencyStop.isStopped(configurationManager.getPriceProvider()) &&
+                !emergencyStop.isStopped(configurationManager.getPricingMethod()),
             "Pool: Pool is stopped"
         );
     }
