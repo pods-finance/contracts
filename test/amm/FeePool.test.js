@@ -8,7 +8,6 @@ describe('FeePool', () => {
   let owner0, owner1, feePayer, poolOwner
   let owner0Address, owner1Address
   const baseFee = toBigNumber(10)
-  const dynamicFee = toBigNumber(15)
   const initialDecimals = toBigNumber(3)
 
   before(async () => {
@@ -26,7 +25,7 @@ describe('FeePool', () => {
   })
 
   beforeEach(async () => {
-    pool = await FeePool.connect(poolOwner).deploy(usdc.address, baseFee, dynamicFee, initialDecimals)
+    pool = await FeePool.connect(poolOwner).deploy(usdc.address, baseFee, initialDecimals)
     await pool.deployed()
   })
 
@@ -38,51 +37,59 @@ describe('FeePool', () => {
 
   it('cannot charge more than 100% base fees', async () => {
     const decimals = await usdc.decimals()
-    const tx = FeePool.connect(poolOwner).deploy(usdc.address, 10 ** decimals + 1, 1, decimals)
-    await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
-  })
-
-  it('cannot charge more than 100% dynamic fees', async () => {
-    const decimals = await usdc.decimals()
-    const tx = FeePool.connect(poolOwner).deploy(usdc.address, 1, 10 ** decimals + 1, decimals)
+    const tx = FeePool.connect(poolOwner).deploy(usdc.address, 10 ** decimals + 1, decimals)
     await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
   })
 
   it('cannot create a pool with a zero-address token', async () => {
-    const tx = FeePool.connect(poolOwner).deploy(ethers.constants.AddressZero, baseFee, dynamicFee, initialDecimals)
+    const tx = FeePool.connect(poolOwner).deploy(ethers.constants.AddressZero, baseFee, initialDecimals)
     await expect(tx).to.be.revertedWith('FeePool: Invalid token')
   })
 
   describe('Fee parameters', () => {
     it('sets the contract with initial params', async () => {
-      const feeValue = await pool.feeValue()
-      expect(feeValue.feeBaseValue).to.equal(baseFee)
-      expect(feeValue.feeDynamicValue).to.equal(dynamicFee)
+      expect(await pool.feeValue()).to.equal(baseFee)
       expect(await pool.feeDecimals()).to.equal(initialDecimals)
     })
 
     it('updates the contract parameters', async () => {
       const newBaseFeeValue = toBigNumber(5)
-      const newDynamicFeeValue = toBigNumber(8)
       const newFeeDecimals = toBigNumber(1)
-      const transaction = pool.setFee(newBaseFeeValue, newDynamicFeeValue, newFeeDecimals)
+      const transaction = await pool.setFee(newBaseFeeValue, newFeeDecimals)
 
       await expect(transaction)
         .to.emit(pool, 'FeeUpdated')
-        .withArgs(usdc.address, newBaseFeeValue, newDynamicFeeValue, newFeeDecimals)
+        .withArgs(usdc.address, newBaseFeeValue, newFeeDecimals)
 
       const feeValue = await pool.feeValue()
-      expect(feeValue.feeBaseValue).to.equal(newBaseFeeValue)
-      expect(feeValue.feeDynamicValue).to.equal(newDynamicFeeValue)
+      expect(await pool.feeValue()).to.equal(newBaseFeeValue)
       expect(await pool.feeDecimals()).to.equal(newFeeDecimals)
     })
   })
 
   describe('Fee collection', () => {
-    it('calculates the fee correctly', async () => {
-      const amount = toBigNumber(100)
-      const poolAmount = toBigNumber(2000)
-      const expectedFees = toBigNumber(26)
+    it('calculates the fee correctly - small trade (0 dynamic fee)', async () => {
+      const newBaseFeeValue = toBigNumber(10)
+      const newFeeDecimals = toBigNumber(3)
+
+      await pool.setFee(newBaseFeeValue, newFeeDecimals)
+
+      const amount = toBigNumber(800)
+      const poolAmount = toBigNumber(10000)
+      const expectedFees = toBigNumber(8)
+
+      expect(await pool.getCollectable(amount, poolAmount)).to.equal(expectedFees)
+    })
+
+    it('calculates the fee correctly - big trade  (dynamic fee)', async () => {
+      const newBaseFeeValue = toBigNumber(10)
+      const newFeeDecimals = toBigNumber(3)
+
+      await pool.setFee(newBaseFeeValue, newFeeDecimals)
+
+      const amount = toBigNumber(4000)
+      const poolAmount = toBigNumber(10000)
+      const expectedFees = toBigNumber(40 + 2560)
 
       expect(await pool.getCollectable(amount, poolAmount)).to.equal(expectedFees)
     })
