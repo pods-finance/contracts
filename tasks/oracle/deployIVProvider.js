@@ -8,7 +8,7 @@ task('deployIVProvider', 'Deploy Implied Volatility Contract')
     console.log('Deploying IVProvider')
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
 
-    const IVPriceFeed = await ethers.getContractFactory('IVProvider')
+    const IVProvider = await ethers.getContractFactory('IVProvider')
     const provider = await IVPriceFeed.deploy()
     await provider.deployTransaction.wait(numberOfConfirmations)
 
