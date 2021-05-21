@@ -8,12 +8,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "baseFeeValue",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "dynamicFeeValue",
+        "name": "feeBaseValue",
         "type": "uint256"
       },
       {
@@ -38,12 +33,6 @@
         "indexed": false,
         "internalType": "uint256",
         "name": "newBaseFee",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "newDynamicFee",
         "type": "uint256"
       },
       {
@@ -196,11 +185,6 @@
         "internalType": "uint256",
         "name": "feeBaseValue",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "feeDynamicValue",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -273,11 +257,6 @@
       {
         "internalType": "uint256",
         "name": "feeBaseValue",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "feeDynamicValue",
         "type": "uint256"
       },
       {

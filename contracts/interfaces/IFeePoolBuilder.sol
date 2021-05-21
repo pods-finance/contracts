@@ -8,7 +8,6 @@ interface IFeePoolBuilder {
     function buildFeePool(
         address asset,
         uint256 feeBaseValue,
-        uint256 feeDynamicValue,
         uint8 feeDecimals,
         address owner
     ) external returns (IFeePool);

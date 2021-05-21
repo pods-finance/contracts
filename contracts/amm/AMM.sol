@@ -450,7 +450,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 amountBIn = tradeDetails.amount;
         require(amountBIn > 0, "AMM: invalid amountBIn");
         require(amountBIn <= maxAmountBIn, "AMM: slippage not acceptable");
-
         _onTrade(tradeDetails);
 
         IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), amountBIn);

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../interfaces/IFeePool.sol";
+import "hardhat/console.sol";
 
 /**
  * @title FeePool
@@ -24,31 +25,23 @@ contract FeePool is IFeePool, Ownable {
     uint256 private _totalLiability;
 
     uint256 private _feeBaseValue;
-    uint256 private _feeDynamicValue;
     uint8 private _feeDecimals;
     address private immutable _token;
 
-    event FeeUpdated(address token, uint256 newBaseFee, uint256 newDynamicFee, uint8 newFeeDecimals);
+    event FeeUpdated(address token, uint256 newBaseFee, uint8 newFeeDecimals);
     event FeeWithdrawn(address token, address to, uint256 amountWithdrawn, uint256 sharesBurned);
     event ShareMinted(address token, address to, uint256 amountMinted);
 
     constructor(
         address token,
-        uint256 baseFeeValue,
-        uint256 dynamicFeeValue,
+        uint256 feeBaseValue,
         uint8 feeDecimals
     ) public {
         require(token != address(0), "FeePool: Invalid token");
-        require(
-            feeDecimals <= 77 &&
-                baseFeeValue <= uint256(10)**feeDecimals &&
-                dynamicFeeValue <= uint256(10)**feeDecimals,
-            "FeePool: Invalid Fee data"
-        );
+        require(feeDecimals <= 77 && feeBaseValue <= uint256(10)**feeDecimals, "FeePool: Invalid Fee data");
 
         _token = token;
-        _feeBaseValue = baseFeeValue;
-        _feeDynamicValue = dynamicFeeValue;
+        _feeBaseValue = feeBaseValue;
         _feeDecimals = feeDecimals;
     }
 
@@ -56,18 +49,12 @@ contract FeePool is IFeePool, Ownable {
      * @notice Sets fee and the decimals
      *
      * @param feeBaseValue Fee value
-     * @param feeDynamicValue Fee value
      * @param decimals Fee decimals
      */
-    function setFee(
-        uint256 feeBaseValue,
-        uint256 feeDynamicValue,
-        uint8 decimals
-    ) external override onlyOwner {
+    function setFee(uint256 feeBaseValue, uint8 decimals) external override onlyOwner {
         _feeBaseValue = feeBaseValue;
-        _feeDynamicValue = feeDynamicValue;
         _feeDecimals = decimals;
-        emit FeeUpdated(_token, _feeBaseValue, feeDynamicValue, _feeDecimals);
+        emit FeeUpdated(_token, _feeBaseValue, _feeDecimals);
     }
 
     /**
@@ -135,8 +122,8 @@ contract FeePool is IFeePool, Ownable {
     /**
      * @notice Return the current fee value
      */
-    function feeValue() external override view returns (uint256 feeBaseValue, uint256 feeDynamicValue) {
-        return (_feeBaseValue, _feeDynamicValue);
+    function feeValue() external override view returns (uint256 feeBaseValue) {
+        return _feeBaseValue;
     }
 
     /**
@@ -153,12 +140,8 @@ contract FeePool is IFeePool, Ownable {
      * @param poolAmount Total pool amount
      */
     function getCollectable(uint256 amount, uint256 poolAmount) external override view returns (uint256 totalFee) {
-        uint256 exponent = amount.mul(3).mul(100).div(poolAmount);
-        uint256 unitBase = 10**uint256(_feeDecimals);
-        uint256 base = (unitBase.add(_feeDynamicValue))**exponent;
-        uint256 dynamicFee = amount.mul(base.sub(10**unitBase)).div(10**unitBase);
-
         uint256 baseFee = amount.mul(_feeBaseValue).div(10**uint256(_feeDecimals));
+        uint256 dynamicFee = _getDynamicFees(amount, poolAmount);
         return baseFee.add(dynamicFee);
     }
 
@@ -185,5 +168,16 @@ contract FeePool is IFeePool, Ownable {
      */
     function totalShares() external view returns (uint256) {
         return _shares;
+    }
+
+    /**
+     * @notice Get Dynamic fee that diisincentive trades big share of the pool in one trade
+     */
+    function _getDynamicFees(uint256 tradeAmount, uint256 poolAmount) internal pure returns (uint256) {
+        uint256 numerator = 1000 * tradeAmount.mul(tradeAmount).mul(tradeAmount);
+        uint256 denominator = poolAmount.mul(poolAmount).mul(poolAmount);
+        uint256 ratio = numerator.div(denominator);
+
+        return ratio.mul(tradeAmount) / 100;
     }
 }

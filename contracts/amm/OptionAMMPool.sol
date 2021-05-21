@@ -88,8 +88,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             "Pool: invalid exercise type"
         );
 
-        feePoolA = _feePoolBuilder.buildFeePool(_stableAsset, 10, 5, 3, address(this));
-        feePoolB = _feePoolBuilder.buildFeePool(_stableAsset, 10, 5, 3, address(this));
+        feePoolA = _feePoolBuilder.buildFeePool(_stableAsset, 10, 3, address(this));
+        feePoolB = _feePoolBuilder.buildFeePool(_stableAsset, 10, 3, address(this));
 
         priceProperties.currentIV = _initialIV;
         priceProperties.initialIVGuess = _initialIV;
@@ -593,7 +593,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         if (newABPrice == 0) {
             return (0, 0, 0, 0);
         }
-
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
 
         uint256 amountBInPool = _getAmountBInPool(exactAmountAOut, poolAmountA, poolAmountB);
@@ -629,6 +628,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 poolAmountB
     ) internal pure returns (uint256 poolBIn) {
         uint256 productConstant = poolAmountA.mul(poolAmountB);
+        require(poolAOut < poolAmountA, "AMM: insufficient liquidity");
         poolBIn = productConstant.div(poolAmountA.sub(poolAOut)).sub(poolAmountB);
     }
 
@@ -729,6 +729,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 poolAmountB
     ) internal pure returns (uint256 poolAIn) {
         uint256 productConstant = poolAmountA.mul(poolAmountB);
+        require(poolBOut < poolAmountB, "AMM: insufficient liquidity");
         poolAIn = productConstant.div(poolAmountB.sub(poolBOut)).sub(poolAmountA);
     }
 

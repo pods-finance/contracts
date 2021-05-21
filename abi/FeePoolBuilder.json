@@ -12,11 +12,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "feeDynamicValue",
-        "type": "uint256"
-      },
-      {
         "internalType": "uint8",
         "name": "feeDecimals",
         "type": "uint8"
