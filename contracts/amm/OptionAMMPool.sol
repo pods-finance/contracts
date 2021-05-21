@@ -281,10 +281,10 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @notice getAdjustedIV This function will return the adjustedIV, which is an average 
      * between the pool IV and an external oracle IV
      *
-     * @return ABPrice ABPrice is the unit price AB. Meaning how many units of B, buys 1 unit of A
+     * @return adjustedIV The average between pool's IV and external oracle IV
      */
-    function getAdjustedIV() external view returns (uint256 adjustedIV) {
-       _getAdjustedIV((tokenA()), priceProperties.currentIV);
+    function getAdjustedIV() external override view returns (uint256 adjustedIV) {
+       return _getAdjustedIV((tokenA()), priceProperties.currentIV);
     }
 
     /**
