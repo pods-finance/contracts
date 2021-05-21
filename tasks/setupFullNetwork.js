@@ -14,5 +14,3 @@ task('setupFullNetwork', 'Deploy a whole local Kovan environment')
 
     await run('setAMMEnvironment', { asset: assetAddress, source: source, configuration: configurationManagerAddress, builders: true, wethadapt, verify })
   })
-
-// npx hardhat setupFullNetwork --network kovan --asset weth --source 0x9326BFA02ADD2366b30bacB125260Af641031331--verify
