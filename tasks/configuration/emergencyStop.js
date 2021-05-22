@@ -4,8 +4,6 @@ task('emergencyStop', 'Interact with a EmergencyStop connected to a Configuratio
   .addPositionalParam('contract', 'The contract address to interact')
   .setAction(async ({ address, command, contract }, hre) => {
     const filePath = `../../deployments/${hre.network.name}.json`
-    console.log('command: ', command)
-    console.log('contract: ', contract)
 
     if (!address) {
       const json = require(filePath)
@@ -27,19 +25,22 @@ task('emergencyStop', 'Interact with a EmergencyStop connected to a Configuratio
 
     switch (command) {
       case 'stop':
+        console.log(`Stopping contract: ${contract}`)
         transaction = await emergencyStop.stop(contract)
         await transaction.wait(1)
-        console.log(`Stopped contract: ${contract}`)
+        console.log('Done!')
         break
       case 'resume':
+        console.log(`Resuming contract: ${contract}`)
         transaction = await emergencyStop.resume(contract)
         await transaction.wait(1)
-        console.log(`Resumed contract: ${contract}`)
+        console.log('Done!')
         break
       case 'isStopped':
-        console.log((await emergencyStop.isStopped(contract)) ? 'true' : 'false')
+        const response = (await emergencyStop.isStopped(contract)) ? 'true' : 'false'
+        console.log(`Contract: ${contract} is stopped: ${response}`)
         break
       default:
-        throw new Error('Setter not found! Available setters: stop, resume, isStopped')
+        throw new Error('Command not found! Available commands: stop, resume, isStopped')
     }
   })

@@ -248,13 +248,13 @@ scenarios.forEach(scenario => {
           .to.be.revertedWith('CappedPool: amount exceed cap')
       })
 
-      it('should revert if any dependency contract is stopped', async () => {
+      it('should revert if the pool is stopped', async () => {
         const emergencyStop = await ethers.getContractAt(
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
 
-        await emergencyStop.stop(await configurationManager.getPriceProvider())
+        await emergencyStop.stop(optionAMMPool.address)
 
         await mintOptions(option, scenario.amountToMint, deployer)
 
@@ -405,7 +405,7 @@ scenarios.forEach(scenario => {
         expect(feePoolBBalanceAfterStrike).to.eq(0)
       })
 
-      it('should revert if any dependency contract is stopped', async () => {
+      it('should revert if the pool is stopped', async () => {
         const emergencyStop = await ethers.getContractAt(
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
@@ -419,7 +419,7 @@ scenarios.forEach(scenario => {
 
         await optionAMMPool.addLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity, deployerAddress)
 
-        await emergencyStop.stop(await configurationManager.getPriceProvider())
+        await emergencyStop.stop(optionAMMPool.address)
 
         await expect(
           optionAMMPool.removeLiquidity(scenario.amountToMint, scenario.amountOfStableToAddLiquidity)
@@ -695,7 +695,7 @@ scenarios.forEach(scenario => {
         expect(approximately(fees, balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB), 8)).to.be.true
       })
 
-      it('should revert if any dependency contract is stopped', async () => {
+      it('should revert if the pool is stopped', async () => {
         const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
@@ -711,7 +711,7 @@ scenarios.forEach(scenario => {
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
-        await emergencyStop.stop(await configurationManager.getPriceProvider())
+        await emergencyStop.stop(optionAMMPool.address)
 
         await expect(
           optionAMMPool.connect(buyer)
@@ -787,7 +787,7 @@ scenarios.forEach(scenario => {
         await expect(optionAMMPool.connect(buyer).tradeExactAInput(numberOfOptionsToSell, '1000000000000000000000000', buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: invalid amountBOut')
       })
 
-      it('should revert if any dependency contract is stopped', async () => {
+      it('should revert if the pool is stopped', async () => {
         const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
@@ -802,7 +802,7 @@ scenarios.forEach(scenario => {
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
-        await emergencyStop.stop(await configurationManager.getPriceProvider())
+        await emergencyStop.stop(optionAMMPool.address)
 
         await expect(
           optionAMMPool.connect(buyer)
@@ -886,7 +886,7 @@ scenarios.forEach(scenario => {
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, '1000000000000000000000000', buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: invalid amountAIn')
       })
 
-      it('should revert if any dependency contract is stopped', async () => {
+      it('should revert if the pool is stopped', async () => {
         const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
@@ -902,7 +902,7 @@ scenarios.forEach(scenario => {
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
-        await emergencyStop.stop(await configurationManager.getPriceProvider())
+        await emergencyStop.stop(optionAMMPool.address)
 
         await expect(
           optionAMMPool.connect(buyer)
@@ -972,7 +972,7 @@ scenarios.forEach(scenario => {
         expect(buyerStrikeAfterBuyer).to.eq(buyerStrikeBeforeTrade.sub(numberOfTokensToSend))
       })
 
-      it('should revert if any dependency contract is stopped', async () => {
+      it('should revert if the pool is stopped', async () => {
         const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const stableLiquidityToAdd = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
@@ -987,7 +987,7 @@ scenarios.forEach(scenario => {
           'EmergencyStop',
           await configurationManager.getEmergencyStop()
         )
-        await emergencyStop.stop(await configurationManager.getPriceProvider())
+        await emergencyStop.stop(optionAMMPool.address)
 
         await expect(
           optionAMMPool.connect(buyer)

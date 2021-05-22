@@ -1,4 +1,5 @@
 const verifyContract = require('../utils/verify')
+const saveJSON = require('../utils/saveJSON')
 
 task('deployIVProvider', 'Deploy Implied Volatility Contract')
   .addOptionalParam('updater', 'updater role address')
@@ -7,7 +8,7 @@ task('deployIVProvider', 'Deploy Implied Volatility Contract')
     console.log('Deploying IVProvider')
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
 
-    const IVPriceFeed = await ethers.getContractFactory('IVPriceFeed')
+    const IVProvider = await ethers.getContractFactory('IVProvider')
     const provider = await IVPriceFeed.deploy()
     await provider.deployTransaction.wait(numberOfConfirmations)
 
@@ -18,6 +19,8 @@ task('deployIVProvider', 'Deploy Implied Volatility Contract')
     if (verify) {
       await verifyContract(hre, provider.address)
     }
+
+    await saveJSON(`../../deployments/${hre.network.name}.json`, { IVProvider: provider.address })
 
     console.log(`IVProvider: ${provider.address}`)
     return provider.address
