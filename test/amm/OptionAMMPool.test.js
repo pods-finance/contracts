@@ -650,11 +650,11 @@ scenarios.forEach(scenario => {
         const feeAddressA = await optionAMMPool.feePoolA()
         const feeAddressB = await optionAMMPool.feePoolB()
 
-        const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfStrikeLpNeed = toBigNumber(600000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(1).mul(toBigNumber(10).pow(5))
+        const numberOfOptionsToBuy = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
@@ -663,6 +663,8 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, initialBuyerBalanceStrikeAsset)
 
         const buyerStrikeAmountBeforeTrade = await mockStrikeAsset.balanceOf(buyerAddress)
+        const poolStrikeAmountBeforeTrade = await mockStrikeAsset.balanceOf(optionAMMPool.address)
+
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(numberOfOptionsToBuy)
 
         await expect(optionAMMPool.connect(buyer).tradeExactAOutput(numberOfOptionsToBuy, 1, buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: slippage not acceptable')
@@ -674,6 +676,10 @@ scenarios.forEach(scenario => {
           .withArgs(scenario.emittedSpotPrice, scenario.initialIV)
 
         const buyerStrikeAmountAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
+        const poolStrikeAmountAfterTrade = await mockStrikeAsset.balanceOf(optionAMMPool.address)
+
+        const deltaPool = poolStrikeAmountAfterTrade.sub(poolStrikeAmountBeforeTrade)
+
         const tokensSpent = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
         expect(tradeDetails.amountBIn).to.be.equal(tokensSpent)
 
@@ -692,7 +698,7 @@ scenarios.forEach(scenario => {
 
         expect(balanceAfterOptionBuyer).to.eq(numberOfOptionsToBuy)
         expect(balanceAfterStrikeFeePoolB).to.eq(balanceAfterStrikeFeePoolA.mul(feesBPortion).div(feesAPortion))
-        expect(approximately(fees, balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB), 8)).to.be.true
+        expect(balanceAfterStrikeFeePoolA.add(balanceAfterStrikeFeePoolB.add(deltaPool))).to.be.eq(tokensSpent)
       })
 
       it('should revert if the pool is stopped', async () => {
@@ -854,7 +860,7 @@ scenarios.forEach(scenario => {
         const feesBN = (new BigNumber(numberOfTokensToReceive.toString()).multipliedBy(new BigNumber(0.03))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())
 
-        expect(poolStrikeAmountBeforeTrade).to.eq(poolStrikeAmountAfterTrade.add(numberOfTokensToReceive).add(fees))
+        expect(poolStrikeAmountBeforeTrade).to.be.lt(poolStrikeAmountAfterTrade.add(numberOfTokensToReceive).add(fees))
         expect(buyerStrikeBeforeTrade).to.eq(buyerStrikeAfterTrade.sub(numberOfTokensToReceive))
 
         // Testing Remove Liquidity
@@ -883,7 +889,7 @@ scenarios.forEach(scenario => {
         await mintOptions(option, numberOfOptionsToMint, buyer)
         await option.connect(buyer).approve(optionAMMPool.address, numberOfOptionsToMint)
 
-        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, '1000000000000000000000000', buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: invalid amountAIn')
+        await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, '1000000000000000000000000', buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: insufficient liquidity')
       })
 
       it('should revert if the pool is stopped', async () => {
@@ -1035,7 +1041,7 @@ scenarios.forEach(scenario => {
       it('Big buy - The Option price of the next trade should be cheaper if using oracleIV', async () => {
         const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const optionLiquidityToBuy = optionLiquidityToAdd.div(15)
+        const optionLiquidityToBuy = optionLiquidityToAdd.div(20)
 
         await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
 
@@ -1061,7 +1067,7 @@ scenarios.forEach(scenario => {
       it('Big sell - The Option price of the next trade should be more expensive if using oracleIV', async () => {
         const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const optionLiquidityToBuy = optionLiquidityToAdd.div(15)
+        const optionLiquidityToBuy = optionLiquidityToAdd.div(20)
 
         await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
 

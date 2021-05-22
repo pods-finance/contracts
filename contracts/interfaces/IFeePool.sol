@@ -8,7 +8,7 @@ interface IFeePool {
         uint256 liability;
     }
 
-    function setFee(uint256 value, uint8 decimals) external;
+    function setFee(uint256 feeBaseValue, uint8 decimals) external;
 
     function withdraw(address to, uint256 amount) external;
 
@@ -20,7 +20,7 @@ interface IFeePool {
 
     function feeDecimals() external view returns (uint8);
 
-    function getCollectable(uint256 amount) external view returns (uint256);
+    function getCollectable(uint256 amount, uint256 poolAmount) external view returns (uint256);
 
     function sharesOf(address owner) external view returns (uint256);
 }
