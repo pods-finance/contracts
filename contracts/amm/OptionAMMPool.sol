@@ -278,6 +278,16 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
+     * @notice getAdjustedIV This function will return the adjustedIV, which is an average
+     * between the pool IV and an external oracle IV
+     *
+     * @return adjustedIV The average between pool's IV and external oracle IV
+     */
+    function getAdjustedIV() external override view returns (uint256 adjustedIV) {
+        return _getAdjustedIV(tokenA(), priceProperties.currentIV);
+    }
+
+    /**
      * @notice getOptionTradeDetailsExactAInput view function that simulates a trade, in order the preview
      * the amountBOut, the new implied volatility, that will be used as the initialIVGuess if caller wants to perform
      * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
