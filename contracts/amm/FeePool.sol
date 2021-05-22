@@ -170,7 +170,7 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * @notice Get Dynamic fee that diisincentive trades big share of the pool in one trade
+     * @notice Calculates a dynamic fee to counterbalance big trades and incentivize liquidity
      */
     function _getDynamicFees(uint256 tradeAmount, uint256 poolAmount) internal pure returns (uint256) {
         uint256 numerator = 1000 * tradeAmount.mul(tradeAmount).mul(tradeAmount);
