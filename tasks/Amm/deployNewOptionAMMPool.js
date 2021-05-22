@@ -73,9 +73,8 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
           option,
           tokenb,
           initialiv,
-          addressFeelTokenA,
-          addressFeelTokenB,
-          configuratorManager
+          configuratorManager,
+          contentJSON.FeePoolBuilder
         ]
 
         await verifyContract(hre, poolAddress, poolConstructorArguments)

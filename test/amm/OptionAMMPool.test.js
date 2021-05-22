@@ -220,6 +220,9 @@ scenarios.forEach(scenario => {
       it('should return the ABPrice', async () => {
         await expect(optionAMMPool.getABPrice()).to.not.be.reverted
       })
+      it('should return the AdjustedIV', async () => {
+        expect(await optionAMMPool.getAdjustedIV()).to.be.eq(scenario.initialIV)
+      })
     })
 
     describe('Add Liquidity', () => {

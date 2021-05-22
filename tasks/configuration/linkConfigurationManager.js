@@ -43,6 +43,11 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
         await transaction.wait(1)
         console.log(`PriceProvider set to ${newContract}`)
         break
+      case 'setIVProvider':
+        transaction = await configurationManager.setIVProvider(newContract)
+        await transaction.wait(1)
+        console.log(`IVProvider set to ${newContract}`)
+        break
       case 'setCapProvider':
         transaction = await configurationManager.setCapProvider(newContract)
         await transaction.wait(1)
