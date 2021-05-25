@@ -460,12 +460,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBIn);
         uint256 poolBIn = exactAmountBIn.sub(feesTokenA).sub(feesTokenB);
 
-        uint256 amountAOut = _getAmountAOut(newABPrice, poolBIn);
-        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAOut, poolBIn, TradeDirection.BA);
+        uint256 amountAOutPool = _getAmountAOutPool(newABPrice, poolBIn);
+        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAOutPool, poolBIn, TradeDirection.BA);
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
 
-        return (amountAOut, newIV, feesTokenA, feesTokenB);
+        return (amountAOutPool, newIV, feesTokenA, feesTokenB);
     }
 
     function _getOptionTradeDetailsExactBOutput(uint256 exactAmountBOut)
@@ -487,7 +487,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut);
         uint256 poolBOut = exactAmountBOut.add(feesTokenA).add(feesTokenB);
 
-        uint256 amountAInPool = _getAmountAIn(newABPrice, poolBOut);
+        uint256 amountAInPool = _getAmountAInPool(newABPrice, poolBOut);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAInPool, poolBOut, TradeDirection.AB);
 
         if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
@@ -640,53 +640,68 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
-     * @param poolBOut The exact amount of tokenB will leave the pool
-     * @return poolAIn The amount of tokenA(options) will enter the pool
+     * @param amountBOutPool The exact amount of tokenB will leave the pool
+     * @return amountAInPool The amount of tokenA(options) will enter the pool
      */
-    function _getAmountAIn(uint256 newABPrice, uint256 poolBOut) internal view returns (uint256 poolAIn) {
+    function _getAmountAInPool(uint256 newABPrice, uint256 amountBOutPool)
+        internal
+        view
+        returns (uint256 amountAInPool)
+    {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
-        poolAIn = productConstant.div(poolAmountB.sub(poolBOut)).sub(poolAmountA);
+        amountAInPool = productConstant.div(poolAmountB.sub(amountBOutPool)).sub(poolAmountA);
     }
 
     /**
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
-     * @param poolBIn The exact amount of tokenB will enter the pool
-     * @return poolAOut The amount of tokenA(options) will leave the pool
+     * @param amountBInPool The exact amount of tokenB will enter the pool
+     * @return amountAOutPool The amount of tokenA(options) will leave the pool
      */
-    function _getAmountAOut(uint256 newABPrice, uint256 poolBIn) internal view returns (uint256 poolAOut) {
+    function _getAmountAOutPool(uint256 newABPrice, uint256 amountBInPool)
+        internal
+        view
+        returns (uint256 amountAOutPool)
+    {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
-        poolAOut = poolAmountA.sub(productConstant.div(poolAmountB.add(poolBIn)));
-    }
-
-    /**
-
-     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
-     * (returned by the _getPoolAmounts()) and the product constant curve.
-     * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
-     * @param poolAOut The amount of tokenA(options) will leave the pool
-     * @return poolBIn The amount of tokenB will enter the pool
-     */
-    function _getAmountBInPool(uint256 newABPrice, uint256 poolAOut) internal view returns (uint256 poolBIn) {
-        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
-        uint256 productConstant = poolAmountA.mul(poolAmountB);
-        poolBIn = productConstant.div(poolAmountA.sub(poolAOut)).sub(poolAmountB);
+        amountAOutPool = poolAmountA.sub(productConstant.div(poolAmountB.add(amountBInPool)));
     }
 
     /**
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
-     * @param poolAIn The exact amount of tokenA(options) will enter the pool
-     * @return poolBOut The amount of tokenB will leave the pool
+     * @param amountAOutPool The amount of tokenA(options) will leave the pool
+     * @return amountBInPool The amount of tokenB will enter the pool
      */
-    function _getAmountBOutPool(uint256 newABPrice, uint256 poolAIn) internal view returns (uint256 poolBOut) {
+    function _getAmountBInPool(uint256 newABPrice, uint256 amountAOutPool)
+        internal
+        view
+        returns (uint256 amountBInPool)
+    {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
-        poolBOut = poolAmountB.sub(productConstant.div(poolAmountA.add(poolAIn)));
+        amountBInPool = productConstant.div(poolAmountA.sub(amountAOutPool)).sub(poolAmountB);
+    }
+
+    /**
+     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
+     * (returned by the _getPoolAmounts()) and the product constant curve.
+     * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
+     * @param amountAInPool The exact amount of tokenA(options) will enter the pool
+     * @return amountBOutPool The amount of tokenB will leave the pool
+     */
+    function _getAmountBOutPool(uint256 newABPrice, uint256 amountAInPool)
+        internal
+        view
+        returns (uint256 amountBOutPool)
+    {
+        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
+        uint256 productConstant = poolAmountA.mul(poolAmountB);
+        amountBOutPool = poolAmountB.sub(productConstant.div(poolAmountA.add(amountAInPool)));
     }
 
     /**
