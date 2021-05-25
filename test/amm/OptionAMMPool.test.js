@@ -626,11 +626,12 @@ scenarios.forEach(scenario => {
 
         const feePoolAAfter2 = await mockStrikeAsset.balanceOf(feeAddressA)
         const feePoolBAfter2 = await mockStrikeAsset.balanceOf(feeAddressB)
+
         const feesEarnedA2 = FeePoolABefore2.sub(feePoolAAfter2)
         const feesEarnedB2 = FeePoolBBefore2.sub(feePoolBAfter2)
         const totalFeesEarned2 = feesEarnedA2.add(feesEarnedB2)
 
-        expect(totalFeesEarned1.div(2)).to.be.eq(totalFeesEarned2)
+        expect(approximately(totalFeesEarned1.div(2), totalFeesEarned2)).to.equal(true)
       })
     })
 
