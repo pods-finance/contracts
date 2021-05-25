@@ -381,6 +381,124 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         return _getOptionTradeDetailsExactBOutput(exactAmountBOut);
     }
 
+    function _getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
+        internal
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
+
+        uint256 amountBOutPool = _getAmountBOutPool(newABPrice, exactAmountAIn);
+        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, exactAmountAIn, amountBOutPool, TradeDirection.AB);
+
+        if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
+            return (0, 0, 0, 0);
+        }
+
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
+
+        uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool);
+        uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool);
+
+        uint256 amountBOutUser = amountBOutPool.sub(feesTokenA).sub(feesTokenB);
+
+        return (amountBOutUser, newIV, feesTokenA, feesTokenB);
+    }
+
+    function _getOptionTradeDetailsExactAOutput(uint256 exactAmountAOut)
+        internal
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
+
+        uint256 amountBInPool = _getAmountBInPool(newABPrice, exactAmountAOut);
+        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, exactAmountAOut, amountBInPool, TradeDirection.BA);
+
+        uint256 feesTokenA = feePoolA.getCollectable(amountBInPool);
+        uint256 feesTokenB = feePoolB.getCollectable(amountBInPool);
+
+        uint256 amountBInUser = amountBInPool.add(feesTokenA).add(feesTokenB);
+
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
+
+        return (amountBInUser, newIV, feesTokenA, feesTokenB);
+    }
+
+    function _getOptionTradeDetailsExactBInput(uint256 exactAmountBIn)
+        internal
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
+
+        uint256 feesTokenA = feePoolA.getCollectable(exactAmountBIn);
+        uint256 feesTokenB = feePoolB.getCollectable(exactAmountBIn);
+        uint256 poolBIn = exactAmountBIn.sub(feesTokenA).sub(feesTokenB);
+
+        uint256 amountAOut = _getAmountAOut(newABPrice, poolBIn);
+        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAOut, poolBIn, TradeDirection.BA);
+
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
+
+        return (amountAOut, newIV, feesTokenA, feesTokenB);
+    }
+
+    function _getOptionTradeDetailsExactBOutput(uint256 exactAmountBOut)
+        internal
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
+        if (newABPrice == 0) {
+            return (0, 0, 0, 0);
+        }
+
+        uint256 feesTokenA = feePoolA.getCollectable(exactAmountBOut);
+        uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut);
+        uint256 poolBOut = exactAmountBOut.add(feesTokenA).add(feesTokenB);
+
+        uint256 amountAInPool = _getAmountAIn(newABPrice, poolBOut);
+        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAInPool, poolBOut, TradeDirection.AB);
+
+        if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
+            return (0, 0, 0, 0);
+        }
+
+        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
+
+        return (amountAInPool, newIV, feesTokenA, feesTokenB);
+    }
+
     function _getPriceDetails()
         internal
         view
@@ -424,14 +542,6 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         }
         uint256 newABPriceWithDecimals = newABPrice.div(10**(PRICING_DECIMALS.sub(tokenBDecimals())));
         return (newABPriceWithDecimals, spotPrice, timeToMaturity);
-    }
-
-    /**
-     * @dev Check for functions which are only allowed to be executed
-     * BEFORE start of exercise window.
-     */
-    function _beforeStartOfExerciseWindow() internal view {
-        require(block.timestamp < priceProperties.startOfExerciseWindow, "Pool: exercise window has started");
     }
 
     /**
@@ -526,78 +636,30 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         return newIV;
     }
 
-    function _getOptionTradeDetailsExactAInput(uint256 exactAmountAIn)
-        internal
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
-        if (newABPrice == 0) {
-            return (0, 0, 0, 0);
-        }
-
-        uint256 amountBOutPool = _getAmountBOutPool(newABPrice, exactAmountAIn);
-        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, exactAmountAIn, amountBOutPool, TradeDirection.AB);
-
-        if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
-            return (0, 0, 0, 0);
-        }
-
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
-
-        uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool);
-        uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool);
-
-        uint256 amountBOutUser = amountBOutPool.sub(feesTokenA).sub(feesTokenB);
-
-        return (amountBOutUser, newIV, feesTokenA, feesTokenB);
+    /**
+     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
+     * (returned by the _getPoolAmounts()) and the product constant curve.
+     * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
+     * @param poolBOut The exact amount of tokenB will leave the pool
+     * @return poolAIn The amount of tokenA(options) will enter the pool
+     */
+    function _getAmountAIn(uint256 newABPrice, uint256 poolBOut) internal view returns (uint256 poolAIn) {
+        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
+        uint256 productConstant = poolAmountA.mul(poolAmountB);
+        poolAIn = productConstant.div(poolAmountB.sub(poolBOut)).sub(poolAmountA);
     }
 
     /**
-
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
-     * @param poolAIn The exact amount of tokenA(options) will enter the pool
-     * @return poolBOut The amount of tokenB will leave the pool
+     * @param poolBIn The exact amount of tokenB will enter the pool
+     * @return poolAOut The amount of tokenA(options) will leave the pool
      */
-    function _getAmountBOutPool(uint256 newABPrice, uint256 poolAIn) internal view returns (uint256 poolBOut) {
+    function _getAmountAOut(uint256 newABPrice, uint256 poolBIn) internal view returns (uint256 poolAOut) {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
-        poolBOut = poolAmountB.sub(productConstant.div(poolAmountA.add(poolAIn)));
-    }
-
-    function _getOptionTradeDetailsExactAOutput(uint256 exactAmountAOut)
-        internal
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
-        if (newABPrice == 0) {
-            return (0, 0, 0, 0);
-        }
-
-        uint256 amountBInPool = _getAmountBInPool(newABPrice, exactAmountAOut);
-        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, exactAmountAOut, amountBInPool, TradeDirection.BA);
-
-        uint256 feesTokenA = feePoolA.getCollectable(amountBInPool);
-        uint256 feesTokenB = feePoolB.getCollectable(amountBInPool);
-
-        uint256 amountBInUser = amountBInPool.add(feesTokenA).add(feesTokenB);
-
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
-
-        return (amountBInUser, newIV, feesTokenA, feesTokenB);
+        poolAOut = poolAmountA.sub(productConstant.div(poolAmountB.add(poolBIn)));
     }
 
     /**
@@ -614,89 +676,17 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         poolBIn = productConstant.div(poolAmountA.sub(poolAOut)).sub(poolAmountB);
     }
 
-    function _getOptionTradeDetailsExactBInput(uint256 exactAmountBIn)
-        internal
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
-        if (newABPrice == 0) {
-            return (0, 0, 0, 0);
-        }
-
-        uint256 feesTokenA = feePoolA.getCollectable(exactAmountBIn);
-        uint256 feesTokenB = feePoolB.getCollectable(exactAmountBIn);
-        uint256 poolBIn = exactAmountBIn.sub(feesTokenA).sub(feesTokenB);
-
-        uint256 amountAOut = _getAmountAOut(newABPrice, poolBIn);
-        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAOut, poolBIn, TradeDirection.BA);
-
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
-
-        return (amountAOut, newIV, feesTokenA, feesTokenB);
-    }
-
     /**
-
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
-     * @param poolBIn The exact amount of tokenB will enter the pool
-     * @return poolAOut The amount of tokenA(options) will leave the pool
+     * @param poolAIn The exact amount of tokenA(options) will enter the pool
+     * @return poolBOut The amount of tokenB will leave the pool
      */
-    function _getAmountAOut(uint256 newABPrice, uint256 poolBIn) internal view returns (uint256 poolAOut) {
+    function _getAmountBOutPool(uint256 newABPrice, uint256 poolAIn) internal view returns (uint256 poolBOut) {
         (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
         uint256 productConstant = poolAmountA.mul(poolAmountB);
-        poolAOut = poolAmountA.sub(productConstant.div(poolAmountB.add(poolBIn)));
-    }
-
-    function _getOptionTradeDetailsExactBOutput(uint256 exactAmountBOut)
-        internal
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        (uint256 newABPrice, uint256 spotPrice, uint256 timeToMaturity) = _getPriceDetails();
-        if (newABPrice == 0) {
-            return (0, 0, 0, 0);
-        }
-
-        uint256 feesTokenA = feePoolA.getCollectable(exactAmountBOut);
-        uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut);
-        uint256 poolBOut = exactAmountBOut.add(feesTokenA).add(feesTokenB);
-
-        uint256 amountAInPool = _getAmountAIn(newABPrice, poolBOut);
-        uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAInPool, poolBOut, TradeDirection.AB);
-
-        if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
-            return (0, 0, 0, 0);
-        }
-
-        uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
-
-        return (amountAInPool, newIV, feesTokenA, feesTokenB);
-    }
-
-    /**
-     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
-     * (returned by the _getPoolAmounts()) and the product constant curve.
-     * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
-     * @param poolBOut The exact amount of tokenB will leave the pool
-     * @return poolAIn The amount of tokenA(options) will enter the pool
-     */
-    function _getAmountAIn(uint256 newABPrice, uint256 poolBOut) internal view returns (uint256 poolAIn) {
-        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
-        uint256 productConstant = poolAmountA.mul(poolAmountB);
-        poolAIn = productConstant.div(poolAmountB.sub(poolBOut)).sub(poolAmountA);
+        poolBOut = poolAmountB.sub(productConstant.div(poolAmountA.add(poolAIn)));
     }
 
     /**
@@ -828,6 +818,14 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
         IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
         IERC20(tokenB()).safeTransfer(address(feePoolB), tradeDetails.feesTokenB);
+    }
+
+    /**
+     * @dev Check for functions which are only allowed to be executed
+     * BEFORE start of exercise window.
+     */
+    function _beforeStartOfExerciseWindow() internal view {
+        require(block.timestamp < priceProperties.startOfExerciseWindow, "Pool: exercise window has started");
     }
 
     function _emergencyStopCheck() private view {
