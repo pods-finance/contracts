@@ -399,6 +399,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 amountBOutPool = _getAmountBOutPool(newABPrice, exactAmountAIn);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, exactAmountAIn, amountBOutPool, TradeDirection.AB);
 
+        // Prevents the pool to sell an option under the minimum target price,
+        // because it causes an infinite loop when trying to calculate newIV
         if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
             return (0, 0, 0, 0);
         }
@@ -490,6 +492,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 amountAInPool = _getAmountAInPool(newABPrice, poolBOut);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAInPool, poolBOut, TradeDirection.AB);
 
+        // Prevents the pool to sell an option under the minimum target price,
+        // because it causes an infinite loop when trying to calculate newIV
         if (!_isValidTargetPrice(newTargetABPrice, spotPrice)) {
             return (0, 0, 0, 0);
         }
