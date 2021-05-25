@@ -77,6 +77,12 @@ interface IOptionAMMPool is IAMM {
             uint256 feesTokenB
         );
 
+    function getRemoveLiquidityAmounts(
+        uint256 percentA,
+        uint256 percentB,
+        address user
+    ) external view returns (uint256 withdrawAmountA, uint256 withdrawAmountB);
+
     function getABPrice() external view returns (uint256);
 
     function getAdjustedIV() external view returns (uint256);

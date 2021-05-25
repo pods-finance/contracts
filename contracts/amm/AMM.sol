@@ -215,43 +215,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
     }
 
     /**
-     * @notice getRemoveLiquidityAmounts external function that returns the available for rescue
-     * amounts of token A, and token B based on the original position
-     *
-     * @param percentA percent of exposition of Token A to be removed
-     * @param percentB percent of exposition of Token B to be removed
-     * @param user Opening Value Factor by the moment of the deposit
-     *
-     * @return withdrawAmountA amount of token A that will be rescued
-     * @return withdrawAmountB amount of token B that will be rescued
-     */
-    function getRemoveLiquidityAmounts(
-        uint256 percentA,
-        uint256 percentB,
-        address user
-    ) external view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
-        return _getRemoveLiquidityAmounts(percentA, percentB, user);
-    }
-
-    /**
-     * @notice getMaxRemoveLiquidityAmounts external function that returns the max available for rescue
-     * of token A and token B based on the user total balance A, balance B and the Fimp original
-     *
-     * @param user address to check the balance info
-     *
-     * @return maxWithdrawAmountA max amount of token A the will be rescued
-     * @return maxWithdrawAmountB max amount of token B the will be rescued
-     */
-    function getMaxRemoveLiquidityAmounts(address user)
-        external
-        view
-        returns (uint256 maxWithdrawAmountA, uint256 maxWithdrawAmountB)
-    {
-        (maxWithdrawAmountA, maxWithdrawAmountB) = _getRemoveLiquidityAmounts(100, 100, user);
-        return (maxWithdrawAmountA, maxWithdrawAmountB);
-    }
-
-    /**
      * @notice _addLiquidity in any proportion of tokenA or tokenB
      *
      * @dev The inheritor contract should implement _getABPrice and _onAddLiquidity functions
@@ -383,7 +346,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
             multipliers
         );
 
-        _onRemoveLiquidity(_userSnapshots[msg.sender], msg.sender);
+        _onRemoveLiquidity(percentA, percentB, msg.sender);
 
         // Transfers / Update
         if (withdrawAmountA > 0) {
@@ -764,7 +727,11 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
     function _onTrade(TradeDetails memory tradeDetails) internal virtual;
 
-    function _onRemoveLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
+    function _onRemoveLiquidity(
+        uint256 percentA,
+        uint256 percentB,
+        address owner
+    ) internal virtual;
 
     function _onAddLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
 
