@@ -267,6 +267,44 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
+     * @notice getRemoveLiquidityAmounts external function that returns the available for rescue
+     * amounts of token A, and token B based on the original position
+     *
+     * @param percentA percent of exposition of Token A to be removed
+     * @param percentB percent of exposition of Token B to be removed
+     * @param user Opening Value Factor by the moment of the deposit
+     *
+     * @return withdrawAmountA the total amount of token A that will be rescued
+     * @return withdrawAmountB the total amount of token B that will be rescued plus fees
+     */
+    function getRemoveLiquidityAmounts(
+        uint256 percentA,
+        uint256 percentB,
+        address user
+    ) external override view returns (uint256 withdrawAmountA, uint256 withdrawAmountB) {
+        (uint256 poolWithdrawAmountA, uint256 poolWithdrawAmountB) = _getRemoveLiquidityAmounts(
+            percentA,
+            percentB,
+            user
+        );
+        (uint256 feeSharesA, uint256 feeSharesB) = _getAmountOfFeeShares(percentA, percentB, user);
+        uint256 feesWithdrawAmountA = 0;
+        uint256 feesWithdrawAmountB = 0;
+
+        if (feeSharesA > 0) {
+            (, feesWithdrawAmountA) = feePoolA.getWithdrawAmount(user, feeSharesA);
+        }
+
+        if (feeSharesB > 0) {
+            (, feesWithdrawAmountB) = feePoolB.getWithdrawAmount(user, feeSharesB);
+        }
+
+        withdrawAmountA = poolWithdrawAmountA;
+        withdrawAmountB = poolWithdrawAmountB.add(feesWithdrawAmountA).add(feesWithdrawAmountB);
+        return (withdrawAmountA, withdrawAmountB);
+    }
+
+    /**
      * @notice getABPrice This function wll call internal function _getABPrice that will calculate the
      * calculate the ABPrice based on current market conditions. It calculates only the unit price AB, not taking in
      * consideration the slippage.
@@ -573,11 +611,11 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
     /**
 
-     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
+     * @dev After it gets the unit Black-Scholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param poolAIn The exact amount of tokenA(options) will enter the pool
-     * @param poolAmountA The amount of A avaiable for trade
-     * @param poolAmountB The amount of B avaiable for trade
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return poolBOut The amount of tokenB will leave the pool
      */
     function _getAmountBOutPool(
@@ -628,8 +666,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param poolAOut The amount of tokenA(options) will leave the pool
-     * @param poolAmountA The amount of A avaiable for trade
-     * @param poolAmountB The amount of B avaiable for trade
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return poolBIn The amount of tokenB will enter the pool
      */
     function _getAmountBInPool(
@@ -677,8 +715,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param poolBIn The exact amount of tokenB will enter the pool
-     * @param poolAmountA The amount of A avaiable for trade
-     * @param poolAmountB The amount of B avaiable for trade
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return poolAOut The amount of tokenA(options) will leave the pool
      */
     function _getAmountAOut(
@@ -729,8 +767,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param poolBOut The exact amount of tokenB will leave the pool
-     * @param poolAmountA The amount of A avaiable for trade
-     * @param poolAmountB The amount of B avaiable for trade
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return poolAIn The amount of tokenA(options) will enter the pool
      */
     function _getAmountAIn(
@@ -744,12 +782,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
-     * @dev Based on the tokensA and tokensB leaving or entering the pool, it is possible to calculate the new option target price. That price will be used later to update the currentIV.
-     * @param newABPrice calculated Black Scholes unit price (how many units of tokenB, to buy 1 tokena(option))
+     * @dev Based on the tokensA and tokensB leaving or entering the pool, it is possible to calculate the new option
+     * target price. That price will be used later to update the currentIV.
+     * @param newABPrice calculated Black Scholes unit price (how many units of tokenB, to buy 1 tokenA(option))
      * @param amountA The amount of tokenA that will leave or enter the pool
      * @param amountB TThe amount of tokenB that will leave or enter the pool
      * @param tradeDirection The trade direction, if it is AB, means that tokenA will enter, and tokenB will leave.
-     * @return newTargetPrice The new unit target price (how many units of tokenB, to buy 1 tokena(option))
+     * @return newTargetPrice The new unit target price (how many units of tokenB, to buy 1 tokenA(option))
      */
     function _getNewTargetPrice(
         uint256 newABPrice,
@@ -802,7 +841,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
-     * @dev If a option is ITM, either PUTs or CALLs, the minimum price that it would cost is the difference between the spot price and strike price. If the target price after applying slippage is above this minimum, the function
+     * @dev If a option is ITM, either PUTs or CALLs, the minimum price that it would cost is the difference between
+     * the spot price and strike price. If the target price after applying slippage is above this minimum, the function
      * returns true.
      * @param newTargetPrice the new ABPrice after slippage (how many units of tokenB, to buy 1 option)
      * @param spotPrice current underlying asset spot price during this transaction
@@ -847,23 +887,37 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         feePoolB.mint(owner, amountOfQuotesBToAdd);
     }
 
-    function _onRemoveLiquidity(UserDepositSnapshot memory _userDepositSnapshot, address owner) internal override {
-        uint256 currentQuotesA = feePoolA.sharesOf(owner);
-        uint256 currentQuotesB = feePoolB.sharesOf(owner);
-
-        uint256 amountOfQuotesAToRemove = currentQuotesA.sub(
-            _userDepositSnapshot.tokenABalance.mul(10**FIMP_DECIMALS).div(_userDepositSnapshot.fImp)
+    function _onRemoveLiquidity(
+        uint256 percentA,
+        uint256 percentB,
+        address owner
+    ) internal override {
+        (uint256 amountOfSharesAToRemove, uint256 amountOfSharesBToRemove) = _getAmountOfFeeShares(
+            percentA,
+            percentB,
+            owner
         );
-        uint256 amountOfQuotesBToRemove = currentQuotesB.sub(
-            _userDepositSnapshot.tokenBBalance.mul(10**FIMP_DECIMALS).div(_userDepositSnapshot.fImp)
-        );
 
-        if (amountOfQuotesAToRemove > 0) {
-            feePoolA.withdraw(owner, amountOfQuotesAToRemove);
+        if (amountOfSharesAToRemove > 0) {
+            feePoolA.withdraw(owner, amountOfSharesAToRemove);
         }
-        if (amountOfQuotesBToRemove > 0) {
-            feePoolB.withdraw(owner, amountOfQuotesBToRemove);
+        if (amountOfSharesBToRemove > 0) {
+            feePoolB.withdraw(owner, amountOfSharesBToRemove);
         }
+    }
+
+    function _getAmountOfFeeShares(
+        uint256 percentA,
+        uint256 percentB,
+        address owner
+    ) internal view returns (uint256, uint256) {
+        uint256 currentSharesA = feePoolA.sharesOf(owner);
+        uint256 currentSharesB = feePoolB.sharesOf(owner);
+
+        uint256 amountOfSharesAToRemove = currentSharesA.mul(percentA).div(PERCENT_PRECISION);
+        uint256 amountOfSharesBToRemove = currentSharesB.mul(percentB).div(PERCENT_PRECISION);
+
+        return (amountOfSharesAToRemove, amountOfSharesBToRemove);
     }
 
     function _onTrade(TradeDetails memory tradeDetails) internal override {

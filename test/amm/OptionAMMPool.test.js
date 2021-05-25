@@ -223,6 +223,41 @@ scenarios.forEach(scenario => {
       it('should return the AdjustedIV', async () => {
         expect(await optionAMMPool.getAdjustedIV()).to.be.eq(scenario.initialIV)
       })
+      it('should return the remove liquidity amount including fees', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const numberOfOptionsToBuy = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+
+        await mockStrikeAsset.connect(buyer).mint(amountOfStrikeLpNeed)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+
+        const removeLiquidityAmountsNoLiquidity = await optionAMMPool.getRemoveLiquidityAmounts(100, 100, lp.address)
+
+        await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
+
+        const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(numberOfOptionsToBuy)
+        await optionAMMPool.connect(buyer)
+          .tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, tradeDetails.newIV)
+
+        const strikeTokenBefore = await mockStrikeAsset.balanceOf(lp.address)
+        const optionTokenBefore = await option.balanceOf(lp.address)
+
+        const removeLiquidityAmounts = await optionAMMPool.getRemoveLiquidityAmounts(100, 100, lp.address)
+
+        const optionTokenRead = removeLiquidityAmounts.withdrawAmountA
+        const strikeTokenRead = removeLiquidityAmounts.withdrawAmountB
+
+        await optionAMMPool.connect(lp).removeLiquidity(100, 100)
+
+        const optionTokenAfter = await option.balanceOf(lp.address)
+        const strikeTokenAfter = await mockStrikeAsset.balanceOf(lp.address)
+
+        const optionTokenEarned = optionTokenAfter.sub(optionTokenBefore)
+        const strikeTokenEarned = strikeTokenAfter.sub(strikeTokenBefore)
+
+        expect(optionTokenRead).to.be.eq(optionTokenEarned)
+        expect(strikeTokenRead).to.be.eq(strikeTokenEarned)
+      })
     })
 
     describe('Add Liquidity', () => {
@@ -363,13 +398,7 @@ scenarios.forEach(scenario => {
     describe('Remove Liquidity', () => {
       it('should remove all amount after simple addition', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await option.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
@@ -551,6 +580,58 @@ scenarios.forEach(scenario => {
 
         expect(feePoolABalancefterStrike).to.eq(0)
         expect(feePoolBBalanceAfterStrike).to.eq(0)
+      })
+
+      it('should remove partial liquidity and distribute fees partially accordingly', async () => {
+        const amountOfStrikeLpNeed = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const numberOfOptionsToBuy = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const initialPercent = toBigNumber(100)
+
+        const feeAddressA = await optionAMMPool.feePoolA()
+        const feeAddressB = await optionAMMPool.feePoolB()
+
+        await mockStrikeAsset.connect(buyer).mint(amountOfStrikeLpNeed)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+
+        // SITUATION A => Remove liquidity 100%
+        await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
+
+        const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(numberOfOptionsToBuy)
+        await optionAMMPool.connect(buyer)
+          .tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, tradeDetails.newIV)
+
+        const FeePoolABefore1 = await mockStrikeAsset.balanceOf(feeAddressA)
+        const FeePoolBBefore1 = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        await optionAMMPool.connect(lp).removeLiquidity(initialPercent, initialPercent)
+
+        const feePoolAAfter1 = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolBAfter1 = await mockStrikeAsset.balanceOf(feeAddressB)
+        const feesEarnedA1 = FeePoolABefore1.sub(feePoolAAfter1)
+        const feesEarnedB1 = FeePoolBBefore1.sub(feePoolBAfter1)
+        const totalFeesEarned1 = feesEarnedA1.add(feesEarnedB1)
+
+        // SITUATION A => Remove liquidity 100%
+        await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
+
+        const tradeDetails2 = await optionAMMPool.getOptionTradeDetailsExactAOutput(numberOfOptionsToBuy)
+        await optionAMMPool.connect(buyer)
+          .tradeExactAOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, tradeDetails2.newIV)
+
+        const FeePoolABefore2 = await mockStrikeAsset.balanceOf(feeAddressA)
+        const FeePoolBBefore2 = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        await optionAMMPool.connect(lp).removeLiquidity(initialPercent.div(2), initialPercent.div(2))
+
+        const feePoolAAfter2 = await mockStrikeAsset.balanceOf(feeAddressA)
+        const feePoolBAfter2 = await mockStrikeAsset.balanceOf(feeAddressB)
+
+        const feesEarnedA2 = FeePoolABefore2.sub(feePoolAAfter2)
+        const feesEarnedB2 = FeePoolBBefore2.sub(feePoolBAfter2)
+        const totalFeesEarned2 = feesEarnedA2.add(feesEarnedB2)
+
+        expect(approximately(totalFeesEarned1.div(2), totalFeesEarned2)).to.equal(true)
       })
     })
 

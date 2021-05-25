@@ -126,7 +126,11 @@ contract MockAMM is AMM {
         return;
     }
 
-    function _onRemoveLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal override {
+    function _onRemoveLiquidity(
+        uint256 percentA,
+        uint256 percentB,
+        address owner
+    ) internal override {
         return;
     }
 
