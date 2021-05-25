@@ -23,4 +23,6 @@ interface IFeePool {
     function getCollectable(uint256 amount, uint256 poolAmount) external view returns (uint256);
 
     function sharesOf(address owner) external view returns (uint256);
+
+    function getWithdrawAmount(address owner, uint256 amountOfShares) external view returns (uint256, uint256);
 }

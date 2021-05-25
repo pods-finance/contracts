@@ -58,6 +58,21 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
+     * @notice get the withdraw token amount based on the amount of shares that will be burned
+     *
+     * @param to address of the share holder
+     * @param amountOfShares amount of shares to withdraw
+     */
+    function getWithdrawAmount(address to, uint256 amountOfShares)
+        external
+        override
+        view
+        returns (uint256 amortizedLiability, uint256 withdrawAmount)
+    {
+        return _getWithdrawAmount(to, amountOfShares);
+    }
+
+    /**
      * @notice Withdraws collected fees to an address
      *
      * @param to To whom the fees should be transferred
@@ -66,16 +81,7 @@ contract FeePool is IFeePool, Ownable {
     function withdraw(address to, uint256 amountOfShares) external override onlyOwner {
         require(_balances[to].shares >= amountOfShares, "Burn exceeds balance");
 
-        uint256 feesCollected = IERC20(_token).balanceOf(address(this));
-
-        uint256 amortizedLiability = amountOfShares.mul(_balances[to].liability).div(_balances[to].shares);
-        uint256 collectedGross = feesCollected.add(_totalLiability).mul(amountOfShares).div(_shares);
-        uint256 withdrawAmount = 0;
-
-        // Prevents negative payouts
-        if (collectedGross > amortizedLiability) {
-            withdrawAmount = collectedGross.sub(amortizedLiability);
-        }
+        (uint256 amortizedLiability, uint256 withdrawAmount) = _getWithdrawAmount(to, amountOfShares);
 
         _balances[to].shares = _balances[to].shares.sub(amountOfShares);
         _balances[to].liability = _balances[to].liability.sub(amortizedLiability);
@@ -179,5 +185,22 @@ contract FeePool is IFeePool, Ownable {
         uint256 ratio = numerator.div(denominator);
 
         return ratio.mul(tradeAmount) / 100;
+    }
+
+    function _getWithdrawAmount(address to, uint256 amountOfShares)
+        internal
+        view
+        returns (uint256 amortizedLiability, uint256 withdrawAmount)
+    {
+        uint256 feesCollected = IERC20(_token).balanceOf(address(this));
+
+        withdrawAmount = 0;
+        amortizedLiability = amountOfShares.mul(_balances[to].liability).div(_balances[to].shares);
+        uint256 collectedGross = feesCollected.add(_totalLiability).mul(amountOfShares).div(_shares);
+        // Prevents negative payouts
+        if (collectedGross > amortizedLiability) {
+            withdrawAmount = collectedGross.sub(amortizedLiability);
+        }
+        return (amortizedLiability, withdrawAmount);
     }
 }

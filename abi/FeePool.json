@@ -223,6 +223,35 @@
       },
       {
         "internalType": "uint256",
+        "name": "amountOfShares",
+        "type": "uint256"
+      }
+    ],
+    "name": "getWithdrawAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amortizedLiability",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "withdrawAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
       }
