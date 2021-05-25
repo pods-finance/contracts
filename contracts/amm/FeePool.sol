@@ -26,6 +26,7 @@ contract FeePool is IFeePool, Ownable {
     uint256 private _feeBaseValue;
     uint8 private _feeDecimals;
     address private immutable _token;
+    uint256 private constant _DYNAMIC_FEE_ALPHA = 2000;
 
     event FeeUpdated(address token, uint256 newBaseFee, uint8 newFeeDecimals);
     event FeeWithdrawn(address token, address to, uint256 amountWithdrawn, uint256 sharesBurned);
@@ -173,7 +174,7 @@ contract FeePool is IFeePool, Ownable {
      * @notice Calculates a dynamic fee to counterbalance big trades and incentivize liquidity
      */
     function _getDynamicFees(uint256 tradeAmount, uint256 poolAmount) internal pure returns (uint256) {
-        uint256 numerator = 1000 * tradeAmount.mul(tradeAmount).mul(tradeAmount);
+        uint256 numerator = _DYNAMIC_FEE_ALPHA * tradeAmount.mul(tradeAmount).mul(tradeAmount);
         uint256 denominator = poolAmount.mul(poolAmount).mul(poolAmount);
         uint256 ratio = numerator.div(denominator);
 
