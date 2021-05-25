@@ -76,7 +76,7 @@ describe('FeePool', () => {
 
       const amount = toBigNumber(800)
       const poolAmount = toBigNumber(10000)
-      const expectedFees = toBigNumber(8)
+      const expectedFees = toBigNumber(16)
 
       expect(await pool.getCollectable(amount, poolAmount)).to.equal(expectedFees)
     })
@@ -89,7 +89,7 @@ describe('FeePool', () => {
 
       const amount = toBigNumber(4000)
       const poolAmount = toBigNumber(10000)
-      const expectedFees = toBigNumber(40 + 2560)
+      const expectedFees = toBigNumber(40 + 5120)
 
       expect(await pool.getCollectable(amount, poolAmount)).to.equal(expectedFees)
     })
