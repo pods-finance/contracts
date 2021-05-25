@@ -38,29 +38,29 @@ const scenarios = [
     decimalsOracleIV: 18,
     expectedNewIV: toBigNumber(1.66615e18),
     cap: ethers.BigNumber.from(2000000e6.toString())
+  },
+  {
+    name: 'CALL WBTC/USDC',
+    optionType: OPTION_TYPE_CALL,
+    underlyingAssetSymbol: 'WBTC',
+    underlyingAssetDecimals: 8,
+    expiration: 60 * 60 * 24 * 7, // 7 days
+    strikeAssetSymbol: 'USDC',
+    strikeAssetDecimals: 6,
+    strikePrice: toBigNumber(17000e6),
+    strikePriceDecimals: 6,
+    amountToMint: ethers.BigNumber.from(1e8.toString()),
+    amountToMintTooLow: 1,
+    amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
+    initialSpotPrice: toBigNumber(18000e8),
+    emittedSpotPrice: toBigNumber(18000e18),
+    spotPriceDecimals: 8,
+    initialIV: toBigNumber(2 * 1e18),
+    initialOracleIV: toBigNumber(200 * 1e18),
+    decimalsOracleIV: 20,
+    expectedNewIV: toBigNumber(1.2 * 1e18),
+    cap: ethers.BigNumber.from(2000000e6.toString())
   }
-  // {
-  //   name: 'CALL WBTC/USDC',
-  //   optionType: OPTION_TYPE_CALL,
-  //   underlyingAssetSymbol: 'WBTC',
-  //   underlyingAssetDecimals: 8,
-  //   expiration: 60 * 60 * 24 * 7, // 7 days
-  //   strikeAssetSymbol: 'USDC',
-  //   strikeAssetDecimals: 6,
-  //   strikePrice: toBigNumber(17000e6),
-  //   strikePriceDecimals: 6,
-  //   amountToMint: ethers.BigNumber.from(1e8.toString()),
-  //   amountToMintTooLow: 1,
-  //   amountOfStableToAddLiquidity: ethers.BigNumber.from(1e8.toString()),
-  //   initialSpotPrice: toBigNumber(18000e8),
-  //   emittedSpotPrice: toBigNumber(18000e18),
-  //   spotPriceDecimals: 8,
-  //   initialIV: toBigNumber(2 * 1e18),
-  //   initialOracleIV: toBigNumber(200 * 1e18),
-  //   decimalsOracleIV: 20,
-  //   expectedNewIV: toBigNumber(1.2 * 1e18),
-  //   cap: ethers.BigNumber.from(2000000e6.toString())
-  // }
 ]
 
 scenarios.forEach(scenario => {
