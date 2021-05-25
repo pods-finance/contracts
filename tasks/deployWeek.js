@@ -7,14 +7,17 @@ task('deployWeek', 'Deploy a whole local test environment')
   .addFlag('start', 'add this flag if you want to start and mint the initial options and add liquidity')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addFlag('tenderly', 'if true, it should verify the contract after the deployment on tenderly')
-  .setAction(async ({ start, verify, tenderly }, hre) => {
+  .addFlag('ivprovider', 'if true, it should add the option to the ivprovider')
+  .setAction(async ({ start, verify, ivprovider, tenderly }, hre) => {
     const pathFile = `../deployments/${hre.network.name}.json`
     // 4) Deploy Test Option
     const currentBlockTimestamp = await getTimestamp()
+    const defaultInitialIV = '1750000000000000000'
 
     const _filePath = path.join(__dirname, pathFile)
     const content = await fsPromises.readFile(_filePath)
     const contentJSON = JSON.parse(content)
+    const cfgManagerAddress = contentJSON.ConfigurationManager
 
     const deployedOptions = []
 
@@ -43,11 +46,19 @@ task('deployWeek', 'Deploy a whole local test environment')
         const tokenbAddress = contentJSON[optionObj.strike]
         deployedOptions.push(optionAddress)
 
+        if (ivprovider) {
+          const configurationManager = await ethers.getContractAt('ConfigurationManager', cfgManagerAddress)
+          const ivProviderAddress = await configurationManager.getIVProvider()
+          const ivProvider = await ethers.getContractAt('IVProvider', ivProviderAddress)
+          const tx = await ivProvider.updateIV(optionAddress, defaultInitialIV, '18')
+          await tx.wait(2)
+        }
+
         // 5) Create AMMPool test with this asset
         const poolAddress = await run('deployNewOptionAMMPool', {
           option: optionAddress,
           tokenb: tokenbAddress,
-          initialiv: '1750000000000000000',
+          initialiv: defaultInitialIV,
           cap: '10000000000000000',
           verify,
           tenderly
