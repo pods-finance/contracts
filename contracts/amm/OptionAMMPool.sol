@@ -17,7 +17,6 @@ import "../interfaces/IFeePool.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IEmergencyStop.sol";
 import "../interfaces/IFeePoolBuilder.sol";
-import "hardhat/console.sol";
 
 /**
  * Represents an Option specific single-sided AMM.
