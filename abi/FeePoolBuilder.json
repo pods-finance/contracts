@@ -8,7 +8,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "feeValue",
+        "name": "feeBaseValue",
         "type": "uint256"
       },
       {

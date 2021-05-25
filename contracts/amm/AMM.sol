@@ -128,7 +128,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         bytes params;
     }
     /**
-     * @notice Tracks the UserDepositSnapshot struct of each user.
+     * @dev Tracks the UserDepositSnapshot struct of each user.
      * It contains the token A original balance, token B original balance,
      * and the Open Value Factor (Fimp) at the time of the deposit.
      */
@@ -450,7 +450,6 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 amountBIn = tradeDetails.amount;
         require(amountBIn > 0, "AMM: invalid amountBIn");
         require(amountBIn <= maxAmountBIn, "AMM: slippage not acceptable");
-
         _onTrade(tradeDetails);
 
         IERC20(_tokenB).safeTransferFrom(msg.sender, address(this), amountBIn);

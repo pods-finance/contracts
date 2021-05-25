@@ -6,7 +6,7 @@ describe('FeePoolBuilder', () => {
   let FeePoolBuilder, MintableERC20
   let feePoolBuilder, usdc
   let deployer, owner
-  const initialFee = toBigNumber(3)
+  const baseFee = toBigNumber(3)
   const initialDecimals = toBigNumber(3)
 
   before(async () => {
@@ -27,19 +27,19 @@ describe('FeePoolBuilder', () => {
     // Calculates address
     const deterministicFeePoolAddress = await feePoolBuilder.callStatic.buildFeePool(
       usdc.address,
-      initialFee,
+      baseFee,
       initialDecimals,
       owner.address
     )
 
     // Executes the transaction
-    const tx = feePoolBuilder.buildFeePool(usdc.address, initialFee, initialDecimals, owner.address)
+    const tx = feePoolBuilder.buildFeePool(usdc.address, baseFee, initialDecimals, owner.address)
     await expect(tx).to.not.be.reverted
 
     const feePool = await ethers.getContractAt('FeePool', deterministicFeePoolAddress)
     expect(await feePool.owner()).to.be.equal(owner.address)
     expect(await feePool.feeToken()).to.be.equal(usdc.address)
-    expect(await feePool.feeValue()).to.be.equal(initialFee)
     expect(await feePool.feeDecimals()).to.be.equal(initialDecimals)
+    expect(await feePool.feeValue()).to.be.equal(baseFee)
   })
 })

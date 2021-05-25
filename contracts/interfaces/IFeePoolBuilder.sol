@@ -7,7 +7,7 @@ import "./IFeePool.sol";
 interface IFeePoolBuilder {
     function buildFeePool(
         address asset,
-        uint256 feeValue,
+        uint256 feeBaseValue,
         uint8 feeDecimals,
         address owner
     ) external returns (IFeePool);

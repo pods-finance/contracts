@@ -88,8 +88,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             "Pool: invalid exercise type"
         );
 
-        feePoolA = _feePoolBuilder.buildFeePool(_stableAsset, 15, 3, address(this));
-        feePoolB = _feePoolBuilder.buildFeePool(_stableAsset, 15, 3, address(this));
+        feePoolA = _feePoolBuilder.buildFeePool(_stableAsset, 10, 3, address(this));
+        feePoolB = _feePoolBuilder.buildFeePool(_stableAsset, 10, 3, address(this));
 
         priceProperties.currentIV = _initialIV;
         priceProperties.initialIVGuess = _initialIV;
@@ -278,6 +278,16 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
+     * @notice getAdjustedIV This function will return the adjustedIV, which is an average
+     * between the pool IV and an external oracle IV
+     *
+     * @return adjustedIV The average between pool's IV and external oracle IV
+     */
+    function getAdjustedIV() external override view returns (uint256 adjustedIV) {
+        return _getAdjustedIV(tokenA(), priceProperties.currentIV);
+    }
+
+    /**
      * @notice getOptionTradeDetailsExactAInput view function that simulates a trade, in order the preview
      * the amountBOut, the new implied volatility, that will be used as the initialIVGuess if caller wants to perform
      * a trade in sequence. Also returns the amount of Fees that will be payed to liquidity pools A and B.
@@ -396,7 +406,9 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             return (0, 0, 0, 0);
         }
 
-        uint256 amountBOutPool = _getAmountBOutPool(newABPrice, exactAmountAIn);
+        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
+
+        uint256 amountBOutPool = _getAmountBOutPool(exactAmountAIn, poolAmountA, poolAmountB);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, exactAmountAIn, amountBOutPool, TradeDirection.AB);
 
         // Prevents the pool to sell an option under the minimum target price,
@@ -407,8 +419,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
 
-        uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool);
-        uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool);
+        uint256 feesTokenA = feePoolA.getCollectable(amountBOutPool, poolAmountB);
+        uint256 feesTokenB = feePoolB.getCollectable(amountBOutPool, poolAmountB);
 
         uint256 amountBOutUser = amountBOutPool.sub(feesTokenA).sub(feesTokenB);
 
@@ -429,12 +441,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         if (newABPrice == 0) {
             return (0, 0, 0, 0);
         }
+        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
 
-        uint256 amountBInPool = _getAmountBInPool(newABPrice, exactAmountAOut);
+        uint256 amountBInPool = _getAmountBInPool(exactAmountAOut, poolAmountA, poolAmountB);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, exactAmountAOut, amountBInPool, TradeDirection.BA);
 
-        uint256 feesTokenA = feePoolA.getCollectable(amountBInPool);
-        uint256 feesTokenB = feePoolB.getCollectable(amountBInPool);
+        uint256 feesTokenA = feePoolA.getCollectable(amountBInPool, poolAmountB);
+        uint256 feesTokenB = feePoolB.getCollectable(amountBInPool, poolAmountB);
 
         uint256 amountBInUser = amountBInPool.add(feesTokenA).add(feesTokenB);
 
@@ -457,12 +470,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         if (newABPrice == 0) {
             return (0, 0, 0, 0);
         }
+        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
 
-        uint256 feesTokenA = feePoolA.getCollectable(exactAmountBIn);
-        uint256 feesTokenB = feePoolB.getCollectable(exactAmountBIn);
-        uint256 poolBIn = exactAmountBIn.sub(feesTokenA).sub(feesTokenB);
+        uint256 feesTokenA = feePoolA.getCollectable(exactAmountBIn, poolAmountB);
+        uint256 feesTokenB = feePoolB.getCollectable(exactAmountBIn, poolAmountB);
+        uint256 totalFees = feesTokenA.add(feesTokenB);
 
-        uint256 amountAOutPool = _getAmountAOutPool(newABPrice, poolBIn);
+        uint256 poolBIn = exactAmountBIn.sub(totalFees);
+
+        uint256 amountAOutPool = _getAmountAOutPool(poolBIn, poolAmountA, poolAmountB);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAOutPool, poolBIn, TradeDirection.BA);
 
         uint256 newIV = _getNewIV(newTargetABPrice, spotPrice, timeToMaturity);
@@ -484,12 +500,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         if (newABPrice == 0) {
             return (0, 0, 0, 0);
         }
+        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
 
-        uint256 feesTokenA = feePoolA.getCollectable(exactAmountBOut);
-        uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut);
-        uint256 poolBOut = exactAmountBOut.add(feesTokenA).add(feesTokenB);
+        uint256 feesTokenA = feePoolA.getCollectable(exactAmountBOut, poolAmountB);
+        uint256 feesTokenB = feePoolB.getCollectable(exactAmountBOut, poolAmountB);
+        uint256 totalFees = feesTokenA.add(feesTokenB);
 
-        uint256 amountAInPool = _getAmountAInPool(newABPrice, poolBOut);
+        uint256 poolBOut = exactAmountBOut.add(totalFees);
+
+        uint256 amountAInPool = _getAmountAInPool(poolBOut, poolAmountA, poolAmountB);
         uint256 newTargetABPrice = _getNewTargetPrice(newABPrice, amountAInPool, poolBOut, TradeDirection.AB);
 
         // Prevents the pool to sell an option under the minimum target price,
@@ -641,35 +660,36 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
-     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
+     * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
-     * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
      * @param amountBOutPool The exact amount of tokenB will leave the pool
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return amountAInPool The amount of tokenA(options) will enter the pool
      */
-    function _getAmountAInPool(uint256 newABPrice, uint256 amountBOutPool)
-        internal
-        view
-        returns (uint256 amountAInPool)
-    {
-        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
+    function _getAmountAInPool(
+        uint256 amountBOutPool,
+        uint256 poolAmountA,
+        uint256 poolAmountB
+    ) internal pure returns (uint256 amountAInPool) {
         uint256 productConstant = poolAmountA.mul(poolAmountB);
+        require(amountBOutPool < poolAmountB, "AMM: insufficient liquidity");
         amountAInPool = productConstant.div(poolAmountB.sub(amountBOutPool)).sub(poolAmountA);
     }
 
     /**
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
-     * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
      * @param amountBInPool The exact amount of tokenB will enter the pool
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return amountAOutPool The amount of tokenA(options) will leave the pool
      */
-    function _getAmountAOutPool(uint256 newABPrice, uint256 amountBInPool)
-        internal
-        view
-        returns (uint256 amountAOutPool)
-    {
-        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
+    function _getAmountAOutPool(
+        uint256 amountBInPool,
+        uint256 poolAmountA,
+        uint256 poolAmountB
+    ) internal pure returns (uint256 amountAOutPool) {
         uint256 productConstant = poolAmountA.mul(poolAmountB);
         amountAOutPool = poolAmountA.sub(productConstant.div(poolAmountB.add(amountBInPool)));
     }
@@ -677,44 +697,45 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     /**
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
-     * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
      * @param amountAOutPool The amount of tokenA(options) will leave the pool
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return amountBInPool The amount of tokenB will enter the pool
      */
-    function _getAmountBInPool(uint256 newABPrice, uint256 amountAOutPool)
-        internal
-        view
-        returns (uint256 amountBInPool)
-    {
-        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
+    function _getAmountBInPool(
+        uint256 amountAOutPool,
+        uint256 poolAmountA,
+        uint256 poolAmountB
+    ) internal pure returns (uint256 amountBInPool) {
         uint256 productConstant = poolAmountA.mul(poolAmountB);
+        require(amountAOutPool < poolAmountA, "AMM: insufficient liquidity");
         amountBInPool = productConstant.div(poolAmountA.sub(amountAOutPool)).sub(poolAmountB);
     }
 
     /**
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
-     * @param newABPrice calculated Black Scholes price (how many units of tokenB, to buy 1 option)
      * @param amountAInPool The exact amount of tokenA(options) will enter the pool
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return amountBOutPool The amount of tokenB will leave the pool
      */
-    function _getAmountBOutPool(uint256 newABPrice, uint256 amountAInPool)
-        internal
-        view
-        returns (uint256 amountBOutPool)
-    {
-        (uint256 poolAmountA, uint256 poolAmountB) = _getPoolAmounts(newABPrice);
+    function _getAmountBOutPool(
+        uint256 amountAInPool,
+        uint256 poolAmountA,
+        uint256 poolAmountB
+    ) internal pure returns (uint256 amountBOutPool) {
         uint256 productConstant = poolAmountA.mul(poolAmountB);
         amountBOutPool = poolAmountB.sub(productConstant.div(poolAmountA.add(amountAInPool)));
     }
 
     /**
      * @dev Based on the tokensA and tokensB leaving or entering the pool, it is possible to calculate the new option target price. That price will be used later to update the currentIV.
-     * @param newABPrice calculated Black Scholes unit price (how many units of tokenB, to buy 1 tokena(option))
+     * @param newABPrice calculated Black Scholes unit price (how many units of tokenB, to buy 1 tokenA(option))
      * @param amountA The amount of tokenA that will leave or enter the pool
      * @param amountB TThe amount of tokenB that will leave or enter the pool
      * @param tradeDirection The trade direction, if it is AB, means that tokenA will enter, and tokenB will leave.
-     * @return newTargetPrice The new unit target price (how many units of tokenB, to buy 1 tokena(option))
+     * @return newTargetPrice The new unit target price (how many units of tokenB, to buy 1 tokenA(option))
      */
     function _getNewTargetPrice(
         uint256 newABPrice,
