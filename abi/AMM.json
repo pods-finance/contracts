@@ -284,30 +284,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getMaxRemoveLiquidityAmounts",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "maxWithdrawAmountA",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "maxWithdrawAmountB",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "getPoolBalances",
     "outputs": [
@@ -319,40 +295,6 @@
       {
         "internalType": "uint256",
         "name": "totalTokenB",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "percentA",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "percentB",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getRemoveLiquidityAmounts",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "withdrawAmountA",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "withdrawAmountB",
         "type": "uint256"
       }
     ],
