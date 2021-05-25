@@ -223,7 +223,7 @@ scenarios.forEach(scenario => {
       it('should return the AdjustedIV', async () => {
         expect(await optionAMMPool.getAdjustedIV()).to.be.eq(scenario.initialIV)
       })
-      it.only('should return the remove liquidity amount including fees', async () => {
+      it('should return the remove liquidity amount including fees', async () => {
         const amountOfStrikeLpNeed = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const numberOfOptionsToBuy = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
