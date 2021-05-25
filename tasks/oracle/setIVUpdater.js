@@ -6,7 +6,7 @@ task('setIVUpdater', 'Set a ConfigurationManager parameter')
 
     if (!configurator) {
       const json = require(filePath)
-      configurator = json.configurationManager
+      configurator = json.ConfigurationManager
     }
 
     if (!ethers.utils.isAddress(configurator)) {
@@ -18,7 +18,8 @@ task('setIVUpdater', 'Set a ConfigurationManager parameter')
     }
 
     const configurationManager = await ethers.getContractAt('ConfigurationManager', configurator)
-    const ivProvider = await configurationManager.getIVProvider()
+    const ivProviderAddress = await configurationManager.getIVProvider()
+    const ivProvider = await ethers.getContractAt('IVProvider', ivProviderAddress)
 
     const currentUpdater = await ivProvider.updater()
 
