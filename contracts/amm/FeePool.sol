@@ -57,7 +57,7 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * @notice get thee withdraw token amount based on the amount of shares that will be burned
+     * @notice get the withdraw token amount based on the amount of shares that will be burned
      *
      * @param to address of the share holder
      * @param amountOfShares amount of shares to withdraw

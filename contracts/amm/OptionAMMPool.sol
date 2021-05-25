@@ -607,7 +607,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @dev After it gets the unit Black-Scholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param poolAIn The exact amount of tokenA(options) will enter the pool
-     * @param poolAmountA The amount of A avaiable for trade
+     * @param poolAmountA The amount of A available for trade
      * @param poolAmountB The amount of B available for trade
      * @return poolBOut The amount of tokenB will leave the pool
      */
@@ -659,8 +659,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param poolAOut The amount of tokenA(options) will leave the pool
-     * @param poolAmountA The amount of A avaiable for trade
-     * @param poolAmountB The amount of B avaiable for trade
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return poolBIn The amount of tokenB will enter the pool
      */
     function _getAmountBInPool(
@@ -708,8 +708,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minimum available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param poolBIn The exact amount of tokenB will enter the pool
-     * @param poolAmountA The amount of A avaiable for trade
-     * @param poolAmountB The amount of B avaiable for trade
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return poolAOut The amount of tokenA(options) will leave the pool
      */
     function _getAmountAOut(
@@ -760,8 +760,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @dev After it gets the unit BlackScholes price, it applies slippage based on the minium available in the pool
      * (returned by the _getPoolAmounts()) and the product constant curve.
      * @param poolBOut The exact amount of tokenB will leave the pool
-     * @param poolAmountA The amount of A avaiable for trade
-     * @param poolAmountB The amount of B avaiable for trade
+     * @param poolAmountA The amount of A available for trade
+     * @param poolAmountB The amount of B available for trade
      * @return poolAIn The amount of tokenA(options) will enter the pool
      */
     function _getAmountAIn(
@@ -775,12 +775,13 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
-     * @dev Based on the tokensA and tokensB leaving or entering the pool, it is possible to calculate the new option target price. That price will be used later to update the currentIV.
-     * @param newABPrice calculated Black Scholes unit price (how many units of tokenB, to buy 1 tokena(option))
+     * @dev Based on the tokensA and tokensB leaving or entering the pool, it is possible to calculate the new option
+     * target price. That price will be used later to update the currentIV.
+     * @param newABPrice calculated Black Scholes unit price (how many units of tokenB, to buy 1 tokenA(option))
      * @param amountA The amount of tokenA that will leave or enter the pool
      * @param amountB TThe amount of tokenB that will leave or enter the pool
      * @param tradeDirection The trade direction, if it is AB, means that tokenA will enter, and tokenB will leave.
-     * @return newTargetPrice The new unit target price (how many units of tokenB, to buy 1 tokena(option))
+     * @return newTargetPrice The new unit target price (how many units of tokenB, to buy 1 tokenBB(option))
      */
     function _getNewTargetPrice(
         uint256 newABPrice,
@@ -833,7 +834,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
     }
 
     /**
-     * @dev If a option is ITM, either PUTs or CALLs, the minimum price that it would cost is the difference between the spot price and strike price. If the target price after applying slippage is above this minimum, the function
+     * @dev If a option is ITM, either PUTs or CALLs, the minimum price that it would cost is the difference between
+     * the spot price and strike price. If the target price after applying slippage is above this minimum, the function
      * returns true.
      * @param newTargetPrice the new ABPrice after slippage (how many units of tokenB, to buy 1 option)
      * @param spotPrice current underlying asset spot price during this transaction
