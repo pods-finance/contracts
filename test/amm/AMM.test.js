@@ -368,26 +368,6 @@ scenarios.forEach(scenario => {
         await expect(amm.connect(userB).removeLiquidity(101, 100)).to.be.revertedWith('AMM: forbidden percent')
         await expect(amm.connect(userB).removeLiquidity(100, 101)).to.be.revertedWith('AMM: forbidden percent')
       })
-
-      it('should show the position of users that did not add liquidity', async () => {
-        let maxWithdrawAmountA, maxWithdrawAmountB
-        // User A asking before there is any liquidity
-        ;[maxWithdrawAmountA, maxWithdrawAmountB] = await amm.getMaxRemoveLiquidityAmounts(userAAddress)
-        expect(maxWithdrawAmountA).to.equal(0)
-        expect(maxWithdrawAmountB).to.equal(0)
-
-        // Adding liquidity
-        await mockTokenA.connect(userB).mint(1e8)
-        await mockTokenB.connect(userB).mint(1e8)
-        await mockTokenA.connect(userB).approve(amm.address, 1e8)
-        await mockTokenB.connect(userB).approve(amm.address, 1e8)
-        await amm.connect(userB).addLiquidity(1e8, 1e8, userBAddress)
-
-        // User A asking after liquidity was added
-        ;[maxWithdrawAmountA, maxWithdrawAmountB] = await amm.getMaxRemoveLiquidityAmounts(userAAddress)
-        expect(maxWithdrawAmountA).to.equal(0)
-        expect(maxWithdrawAmountB).to.equal(0)
-      })
     })
 
     describe('Scenario group APR - Add Liquidity / Price change / Remove Liquidity', () => {
