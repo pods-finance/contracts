@@ -4,31 +4,37 @@ const pathJoin = require('path')
 const fsPromises = fs.promises
 const verifyContract = require('../utils/verify')
 
-internalTask('deployOptionAMMFactory', 'Deploy deployOptionAMMFactory Contract')
+task('deployOptionAMMFactory', 'Deploy deployOptionAMMFactory Contract')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
-  .setAction(async ({ configuration, verify }, bre) => {
+  .addOptionalParam('feebuilder', 'An address of a deployed FeePoolBuilder, defaults to current `deployments` json file')
+  .setAction(async ({ configuration, feebuilder, verify }, bre) => {
     const path = `../../deployments/${bre.network.name}.json`
     console.log('----Start Deploy OptionAMMFactory----')
     let configurationManager = configuration
+    const feePoolBuilder = feebuilder
+    const _filePath = pathJoin.join(__dirname, path)
+    const content = await fsPromises.readFile(_filePath)
 
     if (!configurationManager) {
-      const _filePath = pathJoin.join(__dirname, path)
-      const content = await fsPromises.readFile(_filePath)
-      configurationManager = JSON.parse(content).configurationManager
+      configurationManager = JSON.parse(content).ConfigurationManager
+    }
+
+    if (!feePoolBuilder) {
+      configurationManager = JSON.parse(content).FeePoolBuilder
     }
 
     if (configurationManager) {
       const OptionAMMFactory = await ethers.getContractFactory('OptionAMMFactory')
-      const optionAMMFactory = await OptionAMMFactory.deploy(configurationManager)
+      const optionAMMFactory = await OptionAMMFactory.deploy(configurationManager, feePoolBuilder)
 
       await optionAMMFactory.deployed()
       console.log('OptionAMMFactory Address', optionAMMFactory.address)
 
-      await saveJSON(path, { optionAMMFactory: optionAMMFactory.address })
+      await saveJSON(path, { OptionAMMFactory: optionAMMFactory.address })
 
       if (verify) {
-        await verifyContract(hre, optionAMMFactory.address, [configurationManager])
+        await verifyContract(hre, optionAMMFactory.address, [configurationManager, feePoolBuilder])
       }
       return optionAMMFactory.address
     } else {

@@ -9,7 +9,9 @@ interface IConfigurationManager {
 
     function setPricingMethod(address pricingMethod) external;
 
-    function setSigmaGuesser(address sigmaGuesser) external;
+    function setIVGuesser(address ivGuesser) external;
+
+    function setIVProvider(address ivProvider) external;
 
     function setPriceProvider(address priceProvider) external;
 
@@ -27,7 +29,9 @@ interface IConfigurationManager {
 
     function getPricingMethod() external view returns (address);
 
-    function getSigmaGuesser() external view returns (address);
+    function getIVGuesser() external view returns (address);
+
+    function getIVProvider() external view returns (address);
 
     function getPriceProvider() external view returns (address);
 

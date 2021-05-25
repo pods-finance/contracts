@@ -5,7 +5,7 @@ task('inspectConfigurationManager', 'Checks the contracts associated with a Conf
 
     if (!address) {
       const json = require(filePath)
-      address = json.configurationManager
+      address = json.ConfigurationManager
     }
 
     if (!ethers.utils.isAddress(address)) {
@@ -17,7 +17,8 @@ task('inspectConfigurationManager', 'Checks the contracts associated with a Conf
     console.log(`ConfigurationManager deployed at: ${configurationManager.address}`)
     console.log(`EmergencyStop: ${await configurationManager.getEmergencyStop()}`)
     console.log(`BlackScholes: ${await configurationManager.getPricingMethod()}`)
-    console.log(`SigmaGuesser: ${await configurationManager.getSigmaGuesser()}`)
+    console.log(`IVGuesser: ${await configurationManager.getIVGuesser()}`)
+    console.log(`IVProvider: ${await configurationManager.getIVProvider()}`)
     console.log(`PriceProvider: ${await configurationManager.getPriceProvider()}`)
     console.log(`CapProvider: ${await configurationManager.getCapProvider()}`)
     console.log(`OptionFactory: ${await configurationManager.getOptionFactory()}`)

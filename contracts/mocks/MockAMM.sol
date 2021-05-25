@@ -122,27 +122,15 @@ contract MockAMM is AMM {
         price = _price;
     }
 
-    function _onTrade(TradeDetails memory) internal pure {
+    function _onTrade(TradeDetails memory) internal override {
         return;
     }
 
-    function _onTradeExactAInput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactAOutput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactBInput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onTradeExactBOutput(TradeDetails memory tradeDetails) internal override {
-        _onTrade(tradeDetails);
-    }
-
-    function _onRemoveLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal override {
+    function _onRemoveLiquidity(
+        uint256 percentA,
+        uint256 percentB,
+        address owner
+    ) internal override {
         return;
     }
 

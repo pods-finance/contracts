@@ -6,19 +6,21 @@ const createConfigurationManager = require('../util/createConfigurationManager')
 
 describe('OptionAMMFactory', () => {
   let caller
-  let OptionAMMFactory, factory
+  let OptionAMMFactory, FeePoolBuilder, factory, feePoolBuilder
   let configurationManager, priceProviderMock, mockUnderlyingAsset
   let option
-  const initialSigma = '10000000000000000000000'
+  const initialIV = '10000000000000000000000'
 
   before(async () => {
     ;[caller] = await ethers.getSigners()
 
-    ;[OptionAMMFactory, MockERC20] = await Promise.all([
+    ;[OptionAMMFactory, FeePoolBuilder, MockERC20] = await Promise.all([
       ethers.getContractFactory('OptionAMMFactory'),
+      ethers.getContractFactory('FeePoolBuilder'),
       ethers.getContractFactory('MintableERC20')
     ])
 
+    feePoolBuilder = await FeePoolBuilder.deploy()
     mockUnderlyingAsset = await MockERC20.deploy('USDC', 'USDC', 6)
     await mockUnderlyingAsset.deployed()
 
@@ -36,7 +38,7 @@ describe('OptionAMMFactory', () => {
   })
 
   beforeEach(async () => {
-    factory = await OptionAMMFactory.deploy(configurationManager.address)
+    factory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
     await factory.deployed()
 
     option = await createMockOption({ configurationManager })
@@ -46,7 +48,7 @@ describe('OptionAMMFactory', () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      initialSigma
+      initialIV
     )
     const pool = await getPoolCreated(factory, tx, caller)
 
@@ -57,25 +59,35 @@ describe('OptionAMMFactory', () => {
 
   it('should not deploy a factory without a proper ConfigurationManager', async () => {
     await expect(
-      OptionAMMFactory.deploy(ethers.constants.AddressZero)
+      OptionAMMFactory.deploy(ethers.constants.AddressZero, feePoolBuilder.address)
     ).to.be.revertedWith('OptionAMMFactory: Configuration Manager is not a contract')
 
     await expect(
-      OptionAMMFactory.deploy(await caller.getAddress())
+      OptionAMMFactory.deploy(await caller.getAddress(), feePoolBuilder.address)
     ).to.be.revertedWith('OptionAMMFactory: Configuration Manager is not a contract')
+  })
+
+  it('should not deploy a factory without a proper FeePoolBuilder', async () => {
+    await expect(
+      OptionAMMFactory.deploy(configurationManager.address, ethers.constants.AddressZero)
+    ).to.be.revertedWith('OptionAMMFactory: FeePoolBuilder is not a contract')
+
+    await expect(
+      OptionAMMFactory.deploy(configurationManager.address, await caller.getAddress())
+    ).to.be.revertedWith('OptionAMMFactory: FeePoolBuilder is not a contract')
   })
 
   it('should not create the same pool twice', async () => {
     await factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      initialSigma
+      initialIV
     )
 
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      initialSigma
+      initialIV
     )
 
     await expect(tx).to.be.revertedWith('Pool already exists')
@@ -85,7 +97,7 @@ describe('OptionAMMFactory', () => {
     const tx = factory.createPool(
       option.address,
       mockUnderlyingAsset.address,
-      initialSigma
+      initialIV
     )
 
     const pool = await getPoolCreated(factory, tx, caller)
