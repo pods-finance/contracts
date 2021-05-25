@@ -788,7 +788,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @param amountA The amount of tokenA that will leave or enter the pool
      * @param amountB TThe amount of tokenB that will leave or enter the pool
      * @param tradeDirection The trade direction, if it is AB, means that tokenA will enter, and tokenB will leave.
-     * @return newTargetPrice The new unit target price (how many units of tokenB, to buy 1 tokenBB(option))
+     * @return newTargetPrice The new unit target price (how many units of tokenB, to buy 1 tokenA(option))
      */
     function _getNewTargetPrice(
         uint256 newABPrice,
