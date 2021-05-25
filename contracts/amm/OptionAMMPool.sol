@@ -17,6 +17,7 @@ import "../interfaces/IFeePool.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IEmergencyStop.sol";
 import "../interfaces/IFeePoolBuilder.sol";
+import "hardhat/console.sol";
 
 /**
  * Represents an Option specific single-sided AMM.
@@ -288,9 +289,16 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
             user
         );
         (uint256 feeSharesA, uint256 feeSharesB) = _getAmountOfFeeShares(percentA, percentB, user);
+        uint256 feesWithdrawAmountA = 0;
+        uint256 feesWithdrawAmountB = 0;
 
-        (, uint256 feesWithdrawAmountA) = feePoolA.getWithdrawAmount(user, feeSharesA);
-        (, uint256 feesWithdrawAmountB) = feePoolB.getWithdrawAmount(user, feeSharesB);
+        if (feeSharesA > 0) {
+            (, feesWithdrawAmountA) = feePoolA.getWithdrawAmount(user, feeSharesA);
+        }
+
+        if (feeSharesB > 0) {
+            (, feesWithdrawAmountB) = feePoolB.getWithdrawAmount(user, feeSharesB);
+        }
 
         withdrawAmountA = poolWithdrawAmountA;
         withdrawAmountB = poolWithdrawAmountB.add(feesWithdrawAmountA).add(feesWithdrawAmountB);
