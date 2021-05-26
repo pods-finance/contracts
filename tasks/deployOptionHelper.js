@@ -1,21 +1,23 @@
-const saveJSON = require('./utils/saveJSON')
-const verifyContract = require('./utils/verify')
+const { getDeployments } = require('./utils/deployment')
+const validateAddress = require('./utils/validateAddress')
 
 task('deployOptionHelper', 'Deploy new option helper using provider')
-  .addParam('configuration', 'Address of the factory to pass to initialize')
+  .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .setAction(async ({ configuration, verify }, hre) => {
-    console.log('----Start Deploy OptionHelper----')
-    const path = `../../deployments/${hre.network.name}.json`
-    const OptionHelper = await ethers.getContractFactory('OptionHelper')
-    const optionHelper = await OptionHelper.deploy(configuration)
-    console.log('Option Helper Address: ', optionHelper.address)
-
-    await saveJSON(path, { optionHelper: optionHelper.address })
-
-    if (verify) {
-      await verifyContract(hre, optionHelper.address, [configuration])
+    if (!configuration) {
+      const deployment = getDeployments()
+      configuration = deployment.ConfigurationManager
     }
 
-    return optionHelper.address
+    validateAddress(configuration, 'configuration')
+
+    const address = await hre.run('deploy', {
+      name: 'OptionHelper',
+      args: [configuration],
+      verify,
+      save: true
+    })
+
+    return address
   })

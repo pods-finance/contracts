@@ -1,22 +1,18 @@
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
+
 task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
   .addOptionalParam('address', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addPositionalParam('setter', 'The setter to interact with')
   .addPositionalParam('newContract', 'The new contract address to set')
   .setAction(async ({ address, setter, newContract }, bre) => {
-    const filePath = `../../deployments/${bre.network.name}.json`
-
     if (!address) {
-      const json = require(filePath)
-      address = json.ConfigurationManager
+      const deployment = getDeployments()
+      address = deployment.ConfigurationManager
     }
 
-    if (!ethers.utils.isAddress(address)) {
-      throw new Error(`\`address\` is not an address. Received: ${address}`)
-    }
-
-    if (!ethers.utils.isAddress(newContract)) {
-      throw new Error(`\`newContract\` is not an address. Received: ${newContract}`)
-    }
+    validateAddress(address, 'address')
+    validateAddress(newContract, 'newContract')
 
     const configurationManager = await ethers.getContractAt('ConfigurationManager', address)
 

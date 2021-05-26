@@ -1,21 +1,20 @@
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
+
 task('setParameter', 'Set a ConfigurationManager parameter')
   .addPositionalParam('parameter', 'Parameter name')
   .addPositionalParam('value', 'New value')
-  .addOptionalParam('configurator', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
+  .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addFlag('noUpdate', 'Specifies if the param change should trigger update on dependent contract, defaults to true')
-  .setAction(async ({ configurator, parameter, value, noUpdate }, bre) => {
-    const filePath = `../../deployments/${bre.network.name}.json`
-
-    if (!configurator) {
-      const json = require(filePath)
-      configurator = json.configurationManager
+  .setAction(async ({ configuration, parameter, value, noUpdate }, bre) => {
+    if (!configuration) {
+      const deployment = getDeployments()
+      configuration = deployment.ConfigurationManager
     }
 
-    if (!ethers.utils.isAddress(configurator)) {
-      throw new Error(`\`configurator\` is not an address. Received: ${configurator}`)
-    }
+    validateAddress(configuration, 'configuration')
 
-    const configurationManager = await ethers.getContractAt('ConfigurationManager', configurator)
+    const configurationManager = await ethers.getContractAt('ConfigurationManager', configuration)
 
     const parameterName = ethers.utils.formatBytes32String(parameter)
     const parameterValue = ethers.BigNumber.from(value)
