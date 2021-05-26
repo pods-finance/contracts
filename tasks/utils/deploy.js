@@ -1,6 +1,6 @@
 const { types } = require('hardhat/config')
 const verifyContract = require('../utils/verify')
-const { saveDeployment } = require('../utils/deployment')
+const { saveDeployments } = require('../utils/deployment')
 
 task('deploy', 'Deploy a generic contract given artifact name')
   .addParam('name', 'name of the contract artifact')
@@ -27,7 +27,7 @@ task('deploy', 'Deploy a generic contract given artifact name')
     }
 
     if (save) {
-      await saveDeployment({
+      await saveDeployments({
         [name]: contract.address
       })
     }

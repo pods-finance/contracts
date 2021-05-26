@@ -5,7 +5,7 @@ const fs = require('fs')
  * Get addresses from a deployment file
  * @param {string} [network] Specify a network file. Defaults to hardhat current network
  */
-module.exports.getDeployment = function getDeployment (network) {
+module.exports.getDeployments = function getDeployments (network) {
   let filePath, deployment
 
   if (!network) {
@@ -29,7 +29,7 @@ module.exports.getDeployment = function getDeployment (network) {
  * @param {Object} contracts Hashmap of contracts to save
  * @param {string} [network] Specify a network file. Defaults to hardhat current network
  */
-module.exports.saveDeployment = async function saveDeployment (contracts, network) {
+module.exports.saveDeployments = async function saveDeployments (contracts, network) {
   let filePath, deployment
 
   if (!network) {
@@ -53,7 +53,7 @@ module.exports.saveDeployment = async function saveDeployment (contracts, networ
  * Clear all contracts in a deployment file
  * @param {string} [network] Specify a network file. Defaults to hardhat current network
  */
-module.exports.clearDeployment = async function clearDeployment (network) {
+module.exports.clearDeployments = async function clearDeployments (network) {
   let filePath
 
   if (!network) {
