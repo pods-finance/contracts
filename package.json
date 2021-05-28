@@ -49,6 +49,7 @@
     "hardhat-spdx-license-identifier": "2.0.3",
     "husky": "4.2.5",
     "mocha": "7.2.0",
+    "parse-duration": "1.0.0",
     "prettier": "2.0.5",
     "prettier-plugin-solidity": "1.0.0-alpha.54",
     "solhint": "3.0.0",
