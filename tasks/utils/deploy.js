@@ -8,7 +8,7 @@ task('deploy', 'Deploy a generic contract given artifact name')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addFlag('save', 'if true, it should save the contract address inside the deployments folder')
   .setAction(async ({ name, args = [], verify, save }, hre) => {
-    console.log(`Deploying ${name}`)
+    console.log(`\nDeploying ${name}`)
     if (args.length) {
       if (typeof args === 'string') {
         args = args.split(',')
