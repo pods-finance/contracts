@@ -7,7 +7,7 @@ task('deployChainlink', 'Deploy Chainlink Contract')
   .setAction(async ({ source, save }, hre) => {
     validateAddress(source, 'source')
 
-    const address = await hre.run('ChainlinkPriceFeed', {
+    const address = await hre.run('deploy', {
       name: 'ChainlinkPriceFeed',
       args: [source],
       save
