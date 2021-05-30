@@ -48,8 +48,8 @@ task('setupLocal', 'Deploy a whole local test environment')
     // Set WETH price Provider
     const priceProvider = await ethers.getContractAt('PriceProvider', JSON.parse(content).PriceProvider)
 
-    await priceProvider.setAssetFeeds([tokensObj.WETH], [chainlinkWETHFeed.address])
-    await priceProvider.setAssetFeeds([tokensObj.LINK], [chainlinkLINKFeed.address])
+    await priceProvider.setAssetFeeds([deployedTokens.WETH], [chainlinkWETHFeed.address])
+    await priceProvider.setAssetFeeds([deployedTokens.LINK], [chainlinkLINKFeed.address])
 
     // 4) Deploy Test Option
     const currentBlockTimestamp = await getTimestamp()
