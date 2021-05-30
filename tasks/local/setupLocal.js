@@ -95,7 +95,7 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     const optionLINKPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionLINKAddress,
-      tokenb: tokensObj.USDC,
+      tokenb: deployedTokens.USDC,
       initialiv: '2311200000000000000',
       cap: '500000'
     })
