@@ -12,12 +12,12 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     const tokensObj = {}
     const tokensList = [
-      { name: 'weth', symbol: 'weth', decimals: '18', weth: true },
-      { name: 'USDC Token', symbol: 'USDC', decimals: '6' },
-      { name: 'AUSDC Token', symbol: 'AUSDC', decimals: '6' },
-      { name: 'DAI Token', symbol: 'DAI', decimals: '18' },
-      { name: 'Wrappeed BTC', symbol: 'WBTC', decimals: '8' },
-      { name: 'LINK Address', symbol: 'LINK', decimals: '18' }
+      { name: 'Wrapped Ether', symbol: 'WETH', decimals: '18', weth: true },
+      { name: 'USD Coin', symbol: 'USDC', decimals: '6' },
+      { name: 'Aave Interest bearing USDC', symbol: 'aUSDC', decimals: '6' },
+      { name: 'Dai Stablecoin', symbol: 'DAI', decimals: '18' },
+      { name: 'Wrapped BTC', symbol: 'WBTC', decimals: '8' },
+      { name: 'ChainLink Token', symbol: 'LINK', decimals: '18' }
     ]
 
     for (const tokenObj of tokensList) {
