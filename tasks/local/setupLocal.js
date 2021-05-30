@@ -81,7 +81,7 @@ task('setupLocal', 'Deploy a whole local test environment')
     // 5) Create AMMPool test with this asset
     const optionAMMPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWBTCAddress,
-      tokenb: tokensObj.USDC,
+      tokenb: deployedTokens.USDC,
       initialiv: '770000000000000000', // 0.77%
       cap: '500000'
     })
