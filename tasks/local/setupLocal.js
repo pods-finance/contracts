@@ -102,7 +102,7 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     // 6) Mint Strike Asset
     console.log('Minting USDC strike asset')
-    const mockUSDC = await ethers.getContractAt('MintableERC20', tokensObj.USDC)
+    const mockUSDC = await ethers.getContractAt('MintableERC20', deployedTokens.USDC)
     await mockUSDC.mint('10000000000000000')
 
     // 7) Mint Options
