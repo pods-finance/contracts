@@ -11,7 +11,7 @@ task('setupLocal', 'Deploy a whole local test environment')
     await saveJSON(path, '', true)
 
     const tokensObj = {}
-    const tokensList = [
+    const tokenList = [
       { name: 'Wrapped Ether', symbol: 'WETH', decimals: '18', weth: true },
       { name: 'USD Coin', symbol: 'USDC', decimals: '6' },
       { name: 'Aave Interest bearing USDC', symbol: 'aUSDC', decimals: '6' },
