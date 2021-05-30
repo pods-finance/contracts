@@ -21,7 +21,6 @@ task('setupLocal', 'Deploy a whole local test environment')
     ]
 
     for (const tokenObj of tokensList) {
-      console.log(tokenObj)
       const tokenAddress = await run('deployToken', tokenObj)
       tokensObj[tokenObj.symbol.toUpperCase()] = tokenAddress
     }
