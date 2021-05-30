@@ -33,9 +33,9 @@ task('setupLocal', 'Deploy a whole local test environment')
     // 2) Setup Chainlink (Oracle) Mock
     const ChainlinkWBTCFeed = await ethers.getContractFactory('MockChainlinkFeed')
 
-    const chainlinkWBTCFeed = await ChainlinkWBTCFeed.deploy(tokensObj.WBTC, '8', '37170000000000')
-    const chainlinkWETHFeed = await ChainlinkWBTCFeed.deploy(tokensObj.WETH, '8', '1270000000000')
-    const chainlinkLINKFeed = await ChainlinkWBTCFeed.deploy(tokensObj.LINK, '8', '2496201073')
+    const chainlinkWBTCFeed = await ChainlinkFeed.deploy(deployedTokens.WBTC, '8', '37170000000000')
+    const chainlinkWETHFeed = await ChainlinkFeed.deploy(deployedTokens.WETH, '8', '1270000000000')
+    const chainlinkLINKFeed = await ChainlinkFeed.deploy(deployedTokens.LINK, '8', '2496201073')
 
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
