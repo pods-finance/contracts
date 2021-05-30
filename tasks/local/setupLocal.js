@@ -10,28 +10,21 @@ task('setupLocal', 'Deploy a whole local test environment')
     // Erasing local.json file
     await saveJSON(path, '', true)
 
-    // 1) Setup mock assets
-    const mockWETH = await run('deployToken', { name: 'weth', symbol: 'weth', decimals: '18', weth: true })
+    const tokensObj = {}
+    const tokenList = [
+      { name: 'Wrapped Ether', symbol: 'WETH', decimals: '18', weth: true },
+      { name: 'USD Coin', symbol: 'USDC', decimals: '6' },
+      { name: 'Aave Interest bearing USDC', symbol: 'aUSDC', decimals: '6' },
+      { name: 'Dai Stablecoin', symbol: 'DAI', decimals: '18' },
+      { name: 'Wrapped BTC', symbol: 'WBTC', decimals: '8' },
+      { name: 'ChainLink Token', symbol: 'LINK', decimals: '18' }
+    ]
 
-    const mockUSDC = await run('deployToken', { name: 'USDC Token', symbol: 'USDC', decimals: '6' })
-
-    const mockAUSDC = await run('deployToken', { name: 'AUSDC Token', symbol: 'AUSDC', decimals: '6' })
-
-    const mockDAI = await run('deployToken', { name: 'DAI Token', symbol: 'DAI', decimals: '18' })
-
-    const mockWBTC = await run('deployToken', { name: 'Wrappeed BTC', symbol: 'WBTC', decimals: '8' })
-
-    const mockLINK = await run('deployToken', { name: 'LINK Address', symbol: 'LINK', decimals: '18' })
-
-    const tokensObj = {
-      WETH: mockWETH.address,
-      USDC: mockUSDC.address,
-      AUSDC: mockAUSDC.address,
-      DAI: mockDAI.address,
-      WBTC: mockWBTC.address,
-      LINK: mockLINK.address
-
+    for (const tokenObj of tokensList) {
+      const tokenAddress = await run('deployToken', tokenObj)
+      tokensObj[tokenObj.symbol.toUpperCase()] = tokenAddress
     }
+
     await saveJSON(path, tokensObj)
 
     const configurationManagerAddress = await run('deployConfigurationManager')
@@ -39,14 +32,14 @@ task('setupLocal', 'Deploy a whole local test environment')
     // 2) Setup Chainlink (Oracle) Mock
     const ChainlinkWBTCFeed = await ethers.getContractFactory('MockChainlinkFeed')
 
-    const chainlinkWBTCFeed = await ChainlinkWBTCFeed.deploy(mockWBTC.address, '8', '37170000000000')
-    const chainlinkWETHFeed = await ChainlinkWBTCFeed.deploy(mockWETH.address, '8', '1270000000000')
-    const chainlinkLINKFeed = await ChainlinkWBTCFeed.deploy(mockLINK.address, '8', '2496201073')
+    const chainlinkWBTCFeed = await ChainlinkFeed.deploy(deployedTokens.WBTC, '8', '37170000000000')
+    const chainlinkWETHFeed = await ChainlinkFeed.deploy(deployedTokens.WETH, '8', '1270000000000')
+    const chainlinkLINKFeed = await ChainlinkFeed.deploy(deployedTokens.LINK, '8', '2496201073')
 
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
     // 3.2) Deploy BS + IV + AMMPoolFactory + Oracles
-    await run('setAMMEnvironment', { asset: mockWBTC.address, source: chainlinkWBTCFeed.address, configuration: configurationManagerAddress, builders: true })
+    await run('setAMMEnvironment', { asset: tokensObj.WBTC, source: chainlinkWBTCFeed.address, configuration: configurationManagerAddress, builders: true })
 
     // 3.3) Deploy Option Exchange
     const _filePath = pathJoin.join(__dirname, path)
@@ -55,10 +48,8 @@ task('setupLocal', 'Deploy a whole local test environment')
     // Set WETH price Provider
     const priceProvider = await ethers.getContractAt('PriceProvider', JSON.parse(content).PriceProvider)
 
-    await priceProvider.setAssetFeeds([mockWETH.address], [chainlinkWETHFeed.address])
-    await priceProvider.setAssetFeeds([mockLINK.address], [chainlinkLINKFeed.address])
-
-    const optionAMMFactory = JSON.parse(content).OptionAMMFactory
+    await priceProvider.setAssetFeeds([deployedTokens.WETH], [chainlinkWETHFeed.address])
+    await priceProvider.setAssetFeeds([deployedTokens.LINK], [chainlinkLINKFeed.address])
 
     // 4) Deploy Test Option
     const currentBlockTimestamp = await getTimestamp()
@@ -90,27 +81,28 @@ task('setupLocal', 'Deploy a whole local test environment')
     // 5) Create AMMPool test with this asset
     const optionAMMPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWBTCAddress,
-      tokenb: mockUSDC.address,
+      tokenb: deployedTokens.USDC,
       initialiv: '770000000000000000', // 0.77%
       cap: '500000'
     })
 
     const optionAMMETHPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWETHAddress,
-      tokenb: mockUSDC.address,
+      tokenb: deployedTokens.USDC,
       initialiv: '2000000000000000000',
       cap: '500000'
     })
 
     const optionLINKPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionLINKAddress,
-      tokenb: mockUSDC.address,
+      tokenb: deployedTokens.USDC,
       initialiv: '2311200000000000000',
       cap: '500000'
     })
 
     // 6) Mint Strike Asset
     console.log('Minting USDC strike asset')
+    const mockUSDC = await ethers.getContractAt('MintableERC20', deployedTokens.USDC)
     await mockUSDC.mint('10000000000000000')
 
     // 7) Mint Options
