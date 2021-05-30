@@ -88,7 +88,7 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     const optionAMMETHPoolAddress = await run('deployNewOptionAMMPool', {
       option: optionWETHAddress,
-      tokenb: tokensObj.USDC,
+      tokenb: deployedTokens.USDC,
       initialiv: '2000000000000000000',
       cap: '500000'
     })
