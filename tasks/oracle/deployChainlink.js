@@ -1,13 +1,17 @@
+const validateAddress = require('../utils/validateAddress')
+
 task('deployChainlink', 'Deploy Chainlink Contract')
   .addParam('source', 'address of chainlink pricefeed')
-  .setAction(async ({ source }) => {
-    const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
+  .addFlag('save', 'if true, it should save the contract address inside the deployments folder')
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
+  .setAction(async ({ source, save }, hre) => {
+    validateAddress(source, 'source')
 
-    console.log('----Start Deploy Chainlink----')
-    const Chainlink = await ethers.getContractFactory('ChainlinkPriceFeed')
-    const chainlink = await Chainlink.deploy(source)
-    await chainlink.deployTransaction.wait(numberOfConfirmations)
+    const address = await hre.run('deploy', {
+      name: 'ChainlinkPriceFeed',
+      args: [source],
+      save
+    })
 
-    console.log('Chainlink', chainlink.address)
-    return chainlink.address
+    return address
   })

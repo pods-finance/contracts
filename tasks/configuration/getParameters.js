@@ -1,19 +1,18 @@
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
+
 task('getParameter', 'Get a ConfigurationManager parameter')
   .addPositionalParam('parameter', 'Parameter name')
-  .addOptionalParam('configurator', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
-  .setAction(async ({ configurator, parameter }, bre) => {
-    const filePath = `../../deployments/${bre.network.name}.json`
-
-    if (!configurator) {
-      const json = require(filePath)
-      configurator = json.configurationManager
+  .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
+  .setAction(async ({ configuration, parameter }, hre) => {
+    if (!configuration) {
+      const deployment = getDeployments()
+      configuration = deployment.ConfigurationManager
     }
 
-    if (!ethers.utils.isAddress(configurator)) {
-      throw new Error(`\`configurator\` is not an address. Received: ${configurator}`)
-    }
+    validateAddress(configuration, 'configuration')
 
-    const configurationManager = await ethers.getContractAt('ConfigurationManager', configurator)
+    const configurationManager = await ethers.getContractAt('ConfigurationManager', configuration)
 
     const parameterName = ethers.utils.formatBytes32String(parameter)
     const currentValue = (await configurationManager.getParameter(parameterName)).toString()

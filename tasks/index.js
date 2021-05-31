@@ -1,3 +1,10 @@
+require('./utils/index')
+require('./amm/index')
+require('./configuration/index')
+require('./option/index')
+require('./local/index')
+require('./oracle/index')
+
 require('./exportABI')
 require('./deployWeek')
 require('./deployOptionHelper')

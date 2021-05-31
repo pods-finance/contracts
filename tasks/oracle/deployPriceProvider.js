@@ -1,39 +1,34 @@
-const fs = require('fs')
-const pathJoin = require('path')
-const fsPromises = fs.promises
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
 
 task('deployPriceProvider', 'Deploy PriceProvider Contract')
   .addOptionalParam('asset', 'address of asset')
   .addOptionalParam('feed', 'address of priceFeed asset')
   .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
-  .setAction(async ({ asset, feed, configuration }) => {
-    console.log('----Start Deploy PriceProvider----')
-    const path = `../../deployments/${hre.network.name}.json`
-    const _filePath = pathJoin.join(__dirname, path)
-    const content = await fsPromises.readFile(_filePath)
-    const configurationManagerAddress = configuration || JSON.parse(content).ConfigurationManager
-    let assetArray = []
-    let feedArray = []
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
+  .addFlag('save', 'if true, it should save the contract address inside the deployments folder')
+  .setAction(async ({ asset, feed, configuration, verify, save }, hre) => {
+    if (!configuration) {
+      const deployment = getDeployments()
+      configuration = deployment.ConfigurationManager
+    }
+
+    validateAddress(configuration, 'configuration')
+
+    let assets = []
+    let feeds = []
 
     if (asset && feed) {
-      assetArray = [asset]
-      feedArray = [feed]
+      assets = [asset]
+      feeds = [feed]
     }
 
-    // const configurationManager = await ethers.getContractAt('ConfigurationManager', configurationManagerAddress)
-    // const parameterName = ethers.utils.formatBytes32String('MIN_UPDATE_INTERVAL')
+    const address = await hre.run('deploy', {
+      name: 'PriceProvider',
+      args: [configuration, assets, feeds],
+      verify,
+      save
+    })
 
-    // const tx = await configurationManager.setParameter(parameterName, '17280000')
-    // tx.wait(2)
-
-    if (!configurationManagerAddress) {
-      throw Error('Configuration Manager not found')
-    }
-
-    const PriceProvider = await ethers.getContractFactory('PriceProvider')
-    const priceProvider = await PriceProvider.deploy(configurationManagerAddress, assetArray, feedArray)
-
-    await priceProvider.deployed(2)
-    console.log('PriceProvider Address', priceProvider.address)
-    return priceProvider.address
+    return address
   })

@@ -1,23 +1,19 @@
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
+
 task('setIVUpdater', 'Set a ConfigurationManager parameter')
   .addPositionalParam('updater', 'updater role address')
-  .addOptionalParam('configurator', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
-  .setAction(async ({ configurator, updater }, bre) => {
-    const filePath = `../../deployments/${bre.network.name}.json`
-
-    if (!configurator) {
-      const json = require(filePath)
-      configurator = json.ConfigurationManager
+  .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
+  .setAction(async ({ configuration, updater }, bre) => {
+    if (!configuration) {
+      const deployment = getDeployments()
+      configuration = deployment.ConfigurationManager
     }
 
-    if (!ethers.utils.isAddress(configurator)) {
-      throw new Error(`\`configurator\` is not an address. Received: ${configurator}`)
-    }
+    validateAddress(configuration, 'configuration')
+    validateAddress(updater, 'updater')
 
-    if (!ethers.utils.isAddress(updater)) {
-      throw new Error(`\`updater\` is not an address. Received: ${updater}`)
-    }
-
-    const configurationManager = await ethers.getContractAt('ConfigurationManager', configurator)
+    const configurationManager = await ethers.getContractAt('ConfigurationManager', configuration)
     const ivProviderAddress = await configurationManager.getIVProvider()
     const ivProvider = await ethers.getContractAt('IVProvider', ivProviderAddress)
 
