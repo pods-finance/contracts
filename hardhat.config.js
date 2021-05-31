@@ -19,12 +19,6 @@ require('solidity-coverage')
 require('hardhat-contract-sizer')
 
 require('./tasks/index')
-require('./tasks/utils/index')
-require('./tasks/Amm/index')
-require('./tasks/configuration/index')
-require('./tasks/option/index')
-require('./tasks/local/index')
-require('./tasks/oracle/index')
 
 module.exports = {
   networks: {

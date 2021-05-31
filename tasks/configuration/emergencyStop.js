@@ -1,22 +1,18 @@
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
+
 task('emergencyStop', 'Interact with a EmergencyStop connected to a ConfigurationManager')
   .addOptionalParam('address', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addPositionalParam('command', 'The command to send. stop, resume, isStopped')
   .addPositionalParam('contract', 'The contract address to interact')
   .setAction(async ({ address, command, contract }, hre) => {
-    const filePath = `../../deployments/${hre.network.name}.json`
-
     if (!address) {
-      const json = require(filePath)
-      address = json.ConfigurationManager
+      const deployment = getDeployments()
+      address = deployment.ConfigurationManager
     }
 
-    if (!ethers.utils.isAddress(address)) {
-      throw new Error(`\`address\` is not an address. Received: ${address}`)
-    }
-
-    if (!ethers.utils.isAddress(contract)) {
-      throw new Error(`\`contract\` is not an address. Received: ${contract}`)
-    }
+    validateAddress(address, 'address')
+    validateAddress(contract, 'contract')
 
     const configurationManager = await ethers.getContractAt('ConfigurationManager', address)
     const emergencyStop = await ethers.getContractAt('EmergencyStop', await configurationManager.getEmergencyStop())
