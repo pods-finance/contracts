@@ -1,8 +1,5 @@
-const saveJSON = require('../utils/saveJSON')
-const fs = require('fs')
-const pathJoin = require('path')
-const fsPromises = fs.promises
-const verifyContract = require('../utils/verify')
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
 
 task('deployOptionFactory', 'Deploy OptionFactory')
   .addFlag('builders', 'true if want to deploy all builders combined')
@@ -13,53 +10,36 @@ task('deployOptionFactory', 'Deploy OptionFactory')
   .addOptionalParam('podcallbuilder', 'podcallbuilder contract address')
   .addOptionalParam('wpodcallbuilder', 'wpodcallbuilder contract address')
   .addOptionalParam('wethadapt', 'alternative weth address in case of other networks')
-
   .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, configuration, builders, wethadapt, verify }, hre) => {
-    const path = `../../deployments/${hre.network.name}.json`
-    const _filePath = pathJoin.join(__dirname, path)
-    const content = await fsPromises.readFile(_filePath)
-    const wethAddress = wethadapt || JSON.parse(content).WETH
-    const configurationManager = configuration || JSON.parse(content).ConfigurationManager
+    const deployment = getDeployments()
+    const wethAddress = wethadapt || deployment.WETH
 
-    if (!configurationManager) {
-      throw Error('Configuration Manager not found')
+    if (!configuration) {
+      configuration = deployment.ConfigurationManager
     }
+
+    validateAddress(configuration, 'configuration')
 
     if (builders) {
-      podputbuilder = await run('deployBuilder', { optiontype: 'PodPut' })
-      wpodputbuilder = await run('deployBuilder', { optiontype: 'WPodPut' })
-      podcallbuilder = await run('deployBuilder', { optiontype: 'PodCall' })
-      wpodcallbuilder = await run('deployBuilder', { optiontype: 'WPodCall' })
+      podputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodPut', save: true, verify })
+      wpodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodPut', save: true, verify })
+      podcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodCall', save: true, verify })
+      wpodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodCall', save: true, verify })
     }
 
-    const OptionFactory = await ethers.getContractFactory('OptionFactory')
+    const factoryAddress = await hre.run('deploy', {
+      name: 'OptionFactory',
+      args: [
+        wethAddress,
+        podputbuilder,
+        wpodputbuilder,
+        podcallbuilder,
+        wpodcallbuilder,
+        configuration
+      ],
+      save: true,
+      verify
+    })
 
-    const constructorElements = [
-      wethAddress,
-      podputbuilder,
-      wpodputbuilder,
-      podcallbuilder,
-      wpodcallbuilder,
-      configurationManager
-    ]
-
-    const factory = await OptionFactory.deploy(...constructorElements)
-
-    await factory.deployed()
-
-    await saveJSON(path, { OptionFactory: factory.address })
-
-    if (verify) {
-      await verifyContract(hre, factory.address, constructorElements)
-
-      if (builders) {
-        await verifyContract(hre, podputbuilder)
-        await verifyContract(hre, wpodputbuilder)
-        await verifyContract(hre, podcallbuilder)
-        await verifyContract(hre, wpodcallbuilder)
-      }
-    }
-
-    console.log('OptionFactory deployed to: ', factory.address)
-    return factory.address
+    return factoryAddress
   })
