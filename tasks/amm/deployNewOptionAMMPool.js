@@ -26,9 +26,10 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
     const content = await fsPromises.readFile(_filePath)
     const contentJSON = JSON.parse(content)
 
-    const { OptionAMMFactory: optionAMMFactory, ConfigurationManager: configurationManager } = contentJSON
+    const { ConfigurationManager: configurationManagerAddress } = contentJSON
 
-    const OptionAMMFactory = await ethers.getContractAt('OptionAMMFactory', optionAMMFactory)
+    const configurationManager = await ethers.getContractAt('ConfigurationManager', configurationManagerAddress)
+    const OptionAMMFactory = await ethers.getContractAt('OptionAMMFactory', await configurationManager.getAMMFactory())
     const tokenBContract = await ethers.getContractAt('MintableERC20', tokenb)
 
     const txIdNewPool = await OptionAMMFactory.createPool(option, tokenb, initialiv)
@@ -54,8 +55,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       const newPoolObj = Object.assign({}, currentPools, { [poolAddress]: poolObj })
 
       if (cap != null && parseFloat(cap) > 0) {
-        const cm = await ethers.getContractAt('ConfigurationManager', configurationManager)
-        const capProvider = await ethers.getContractAt('CapProvider', await cm.getCapProvider())
+        const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
 
         const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await tokenBContract.decimals()))
         const tx = await capProvider.setCap(poolAddress, capValue)
