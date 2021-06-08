@@ -41,7 +41,7 @@ contract FaucetMumbai {
         _lendingPool.deposit(address(_dai), mintedDaiAmount.div(2), msg.sender, 0);
 
         // Mint WETH
-        uint256 askedWethAmount = 100;
+        uint256 askedWethAmount = 10 ether;
         _weth.mint(askedWethAmount);
         _weth.transfer(msg.sender, askedWethAmount);
     }

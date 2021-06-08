@@ -33,7 +33,7 @@ internalTask('deployBS', 'Deploy Black Scholes')
 
     const bs = await BlackScholes.deploy(normaldist)
     await bs.deployed()
-    await saveJSON(path, { blackScholes: bs.address })
+    await saveJSON(path, { BlackScholes: bs.address })
 
     if (verify) {
       await verifyContract(hre, bs.address, [normaldist], libObj)

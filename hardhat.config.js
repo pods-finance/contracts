@@ -19,12 +19,6 @@ require('solidity-coverage')
 require('hardhat-contract-sizer')
 
 require('./tasks/index')
-require('./tasks/utils/index')
-require('./tasks/Amm/index')
-require('./tasks/configuration/index')
-require('./tasks/option/index')
-require('./tasks/local/index')
-require('./tasks/oracle/index')
 
 module.exports = {
   networks: {
@@ -116,6 +110,10 @@ module.exports = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_APIKEY
+  },
+  tenderly: {
+    project: 'Pods-mainnet',
+    username: 'Pods-tech'
   },
   spdxLicenseIdentifier: {
     overwrite: true

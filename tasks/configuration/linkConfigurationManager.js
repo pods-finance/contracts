@@ -1,22 +1,18 @@
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
+
 task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
   .addOptionalParam('address', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addPositionalParam('setter', 'The setter to interact with')
   .addPositionalParam('newContract', 'The new contract address to set')
   .setAction(async ({ address, setter, newContract }, bre) => {
-    const filePath = `../../deployments/${bre.network.name}.json`
-
     if (!address) {
-      const json = require(filePath)
-      address = json.configurationManager
+      const deployment = getDeployments()
+      address = deployment.ConfigurationManager
     }
 
-    if (!ethers.utils.isAddress(address)) {
-      throw new Error(`\`address\` is not an address. Received: ${address}`)
-    }
-
-    if (!ethers.utils.isAddress(newContract)) {
-      throw new Error(`\`newContract\` is not an address. Received: ${newContract}`)
-    }
+    validateAddress(address, 'address')
+    validateAddress(newContract, 'newContract')
 
     const configurationManager = await ethers.getContractAt('ConfigurationManager', address)
 
@@ -34,7 +30,7 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
         console.log(`PricingMethod set to ${newContract}`)
         break
       case 'setImpliedVolatility':
-        transaction = await configurationManager.setSigmaGuesser(newContract)
+        transaction = await configurationManager.setIVGuesser(newContract)
         await transaction.wait(1)
         console.log(`ImpliedVolatility set to ${newContract}`)
         break
@@ -42,6 +38,11 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
         transaction = await configurationManager.setPriceProvider(newContract)
         await transaction.wait(1)
         console.log(`PriceProvider set to ${newContract}`)
+        break
+      case 'setIVProvider':
+        transaction = await configurationManager.setIVProvider(newContract)
+        await transaction.wait(1)
+        console.log(`IVProvider set to ${newContract}`)
         break
       case 'setCapProvider':
         transaction = await configurationManager.setCapProvider(newContract)

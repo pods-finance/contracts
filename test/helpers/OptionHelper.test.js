@@ -9,12 +9,13 @@ const mintOptions = require('../util/mintOptions')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
+const initialSigma = '960000000000000000'
 
 describe('OptionHelper', () => {
-  let OptionHelper, OptionAMMFactory, MintableERC20
-  let optionHelper, configurationManager
+  let OptionHelper, OptionAMMFactory, FeePoolBuilder, MintableERC20, IVProvider
+  let optionHelper, configurationManager, ivProvider
   let stableAsset, strikeAsset, underlyingAsset
-  let option, pool, optionAMMFactory
+  let option, pool, optionAMMFactory, feePoolBuilder
   let deployer, deployerAddress
   let caller, callerAddress
   let snapshotId
@@ -26,13 +27,17 @@ describe('OptionHelper', () => {
       caller.getAddress()
     ])
 
-    ;[OptionHelper, OptionAMMFactory, MintableERC20] = await Promise.all([
+    ;[OptionHelper, OptionAMMFactory, FeePoolBuilder, MintableERC20, IVProvider] = await Promise.all([
       ethers.getContractFactory('OptionHelper'),
       ethers.getContractFactory('OptionAMMFactory'),
-      ethers.getContractFactory('MintableERC20')
+      ethers.getContractFactory('FeePoolBuilder'),
+      ethers.getContractFactory('MintableERC20'),
+      ethers.getContractFactory('IVProvider')
+
     ])
 
     underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
+    feePoolBuilder = await FeePoolBuilder.deploy()
   })
 
   beforeEach(async () => {
@@ -44,17 +49,23 @@ describe('OptionHelper', () => {
       tokenAddress: underlyingAsset.address,
       configurationManager
     })
+    ivProvider = await IVProvider.deploy()
+    await ivProvider.setUpdater(deployerAddress)
+
     await configurationManager.setPriceProvider(mock.priceProvider.address)
+    await configurationManager.setIVProvider(ivProvider.address)
 
     option = await createMockOption({
       configurationManager,
       underlyingAsset: underlyingAsset.address
     })
 
+    await ivProvider.updateIV(option.address, initialSigma, '18')
+
     ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
-      OptionAMMFactory.deploy(configurationManager.address)
+      OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
     ])
 
     await configurationManager.setAMMFactory(optionAMMFactory.address)
@@ -203,14 +214,14 @@ describe('OptionHelper', () => {
 
       await strikeAsset.connect(caller).mint(collateralAmount)
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
       const tx = await optionHelper.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
         0,
         deadline,
-        sigma
+        iv
       )
 
       const premium = await stableAsset.balanceOf(callerAddress)
@@ -228,14 +239,14 @@ describe('OptionHelper', () => {
 
       await strikeAsset.connect(caller).mint(collateralAmount)
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
       const tx = optionHelper.connect(caller).mintAndSellOptions(
         option.address,
         amountToMint,
         minOutputAmount,
         deadline,
-        sigma
+        iv
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: deadline expired')
@@ -249,14 +260,14 @@ describe('OptionHelper', () => {
 
       await stableAsset.connect(caller).mint(collateralAmount)
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
 
       const tx = optionHelper.connect(caller).mintAndSellOptions(
         ethers.constants.AddressZero,
         amountToMint,
         minOutputAmount,
         deadline,
-        sigma
+        iv
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
@@ -355,7 +366,7 @@ describe('OptionHelper', () => {
       const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp() + 60
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
 
       await stableAsset.connect(caller).mint(maxAcceptedCost)
 
@@ -364,7 +375,7 @@ describe('OptionHelper', () => {
         amountToBuy,
         maxAcceptedCost,
         deadline,
-        sigma
+        iv
       )
 
       const balanceAfterTrade = await stableAsset.balanceOf(callerAddress)
@@ -380,7 +391,7 @@ describe('OptionHelper', () => {
       const minAcceptedOptions = ethers.BigNumber.from(1e7.toString())
       const deadline = await getTimestamp() + 60
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactBInput(inputAmount)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactBInput(inputAmount)
 
       await stableAsset.connect(caller).mint(inputAmount)
 
@@ -389,7 +400,7 @@ describe('OptionHelper', () => {
         minAcceptedOptions,
         inputAmount,
         deadline,
-        sigma
+        iv
       )
 
       expect(await stableAsset.balanceOf(callerAddress)).to.equal(0)
@@ -406,7 +417,7 @@ describe('OptionHelper', () => {
       const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp() + 60
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
 
       await stableAsset.connect(caller).mint(minAcceptedCost)
 
@@ -415,7 +426,7 @@ describe('OptionHelper', () => {
         amountToBuy,
         minAcceptedCost,
         deadline,
-        sigma
+        iv
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
@@ -426,7 +437,7 @@ describe('OptionHelper', () => {
       const amountToBuy = ethers.BigNumber.from(1e7)
       const deadline = await getTimestamp()
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAOutput(amountToBuy)
 
       await stableAsset.connect(caller).mint(minAcceptedCost)
 
@@ -435,7 +446,7 @@ describe('OptionHelper', () => {
         amountToBuy,
         minAcceptedCost,
         deadline,
-        sigma
+        iv
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: deadline expired')
@@ -456,7 +467,7 @@ describe('OptionHelper', () => {
         amountToSell
       )
 
-      const { 1: sigma } = await pool.getOptionTradeDetailsExactAInput(amountToSell)
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToSell)
 
       const balanceBeforeTrade = await stableAsset.balanceOf(callerAddress)
 
@@ -465,7 +476,7 @@ describe('OptionHelper', () => {
         amountToSell,
         minAcceptedToReceive,
         deadline,
-        sigma
+        iv
       )
 
       const balanceAfterTrade = await stableAsset.balanceOf(callerAddress)
@@ -488,7 +499,7 @@ describe('OptionHelper', () => {
         maxAcceptedOptionsToSell
       )
 
-      const { 0: estimatedOptionsToSell, 1: sigma } = await pool.getOptionTradeDetailsExactBOutput(tokenBAmountToReceive)
+      const { 0: estimatedOptionsToSell, 1: iv } = await pool.getOptionTradeDetailsExactBOutput(tokenBAmountToReceive)
 
       const balanceStableBeforeTrade = await stableAsset.balanceOf(callerAddress)
 
@@ -497,7 +508,7 @@ describe('OptionHelper', () => {
         maxAcceptedOptionsToSell,
         tokenBAmountToReceive,
         deadline,
-        sigma
+        iv
       )
 
       const balanceStableAfterTrade = await stableAsset.balanceOf(callerAddress)
@@ -513,8 +524,6 @@ describe('OptionHelper', () => {
 })
 
 async function createOptionAMMPool (option, optionAMMFactory, caller) {
-  const initialSigma = '960000000000000000'
-
   const [strikeAssetAddress, callerAddress] = await Promise.all([
     option.strikeAsset(),
     caller.getAddress()

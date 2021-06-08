@@ -13,7 +13,7 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
     const configurationManagerAddress = configuration
 
     // 2) Deploy Option Builders + Option Factory
-    const optionFactoryAddress = await run('deployOptionFactory', { builders, configuration: configurationManagerAddress, wethadapt })
+    const optionFactoryAddress = await run('deployOptionFactory', { builders, configuration: configurationManagerAddress, wethadapt, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
       setter: 'setOptionFactory',
@@ -28,21 +28,30 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
       newContract: bsAddress
     })
 
-    const sigmaGuesserAddress = await hre.run('deploySigmaGuesser', { bs: bsAddress, verify })
+    const ivGuesserAddress = await hre.run('deployIVGuesser', { configuration: configurationManagerAddress, bs: bsAddress, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
       setter: 'setImpliedVolatility',
-      newContract: sigmaGuesserAddress
+      newContract: ivGuesserAddress
     })
 
-    const priceProviderAddress = await hre.run('deployOracle', { asset: asset, source: source, verify })
+    const ivProviderAddress = await hre.run('deployIVProvider', { verify })
+    await hre.run('linkConfigurationManager', {
+      address: configurationManagerAddress,
+      setter: 'setIVProvider',
+      newContract: ivProviderAddress
+    })
+
+    const priceProviderAddress = await hre.run('deployOracle', { configuration: configurationManagerAddress, asset: asset, source: source, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
       setter: 'setPriceProvider',
       newContract: priceProviderAddress
     })
 
-    const optionAMMFactoryAddress = await hre.run('deployOptionAMMFactory', { configuration: configurationManagerAddress, verify })
+    const feeBuilderAddress = await hre.run('deploy', { name: 'FeePoolBuilder', verify, save: true })
+
+    const optionAMMFactoryAddress = await hre.run('deployOptionAMMFactory', { configuration: configurationManagerAddress, feebuilder: feeBuilderAddress, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
       setter: 'setAMMFactory',

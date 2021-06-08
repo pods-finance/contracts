@@ -5,8 +5,8 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IOptionAMMFactory.sol";
+import "../interfaces/IFeePoolBuilder.sol";
 import "./OptionAMMPool.sol";
-import "./FeePool.sol";
 
 /**
  * @title OptionAMMFactory
@@ -21,14 +21,23 @@ contract OptionAMMFactory is IOptionAMMFactory {
      */
     IConfigurationManager public immutable configurationManager;
 
+    /**
+     * @dev store globally accessed configurations
+     */
+    IFeePoolBuilder public immutable feePoolBuilder;
+
     event PoolCreated(address indexed deployer, address pool, address option);
 
-    constructor(IConfigurationManager _configurationManager) public {
+    constructor(IConfigurationManager _configurationManager, address _feePoolBuilder) public {
         require(
             Address.isContract(address(_configurationManager)),
             "OptionAMMFactory: Configuration Manager is not a contract"
         );
+        require(Address.isContract(_feePoolBuilder), "OptionAMMFactory: FeePoolBuilder is not a contract");
+
         configurationManager = _configurationManager;
+
+        feePoolBuilder = IFeePoolBuilder(_feePoolBuilder);
     }
 
     /**
@@ -36,32 +45,25 @@ contract OptionAMMFactory is IOptionAMMFactory {
      *
      * @param _optionAddress The address of option token
      * @param _stableAsset A stablecoin asset address
-     * @param _initialSigma Initial number of sigma (implied volatility)
+     * @param _initialIV Initial number of implied volatility
      * @return The address of the newly created pool
      */
     function createPool(
         address _optionAddress,
         address _stableAsset,
-        uint256 _initialSigma
+        uint256 _initialIV
     ) external override returns (address) {
         require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
-
-        FeePool feePoolTokenA = new FeePool(_stableAsset, 35, 4);
-        FeePool feePoolTokenB = new FeePool(_stableAsset, 15, 4);
 
         OptionAMMPool pool = new OptionAMMPool(
             _optionAddress,
             _stableAsset,
-            _initialSigma,
-            address(feePoolTokenA),
-            address(feePoolTokenB),
-            configurationManager
+            _initialIV,
+            configurationManager,
+            feePoolBuilder
         );
 
         address poolAddress = address(pool);
-
-        feePoolTokenA.transferOwnership(poolAddress);
-        feePoolTokenB.transferOwnership(poolAddress);
 
         _pools[_optionAddress] = poolAddress;
         emit PoolCreated(msg.sender, poolAddress, _optionAddress);

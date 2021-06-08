@@ -8,7 +8,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "feeValue",
+        "name": "feeBaseValue",
         "type": "uint256"
       },
       {
@@ -32,7 +32,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "newFee",
+        "name": "newBaseFee",
         "type": "uint256"
       },
       {
@@ -183,7 +183,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "feeBaseValue",
         "type": "uint256"
       }
     ],
@@ -196,13 +196,47 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "poolAmount",
+        "type": "uint256"
       }
     ],
     "name": "getCollectable",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "totalFee",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountOfShares",
+        "type": "uint256"
+      }
+    ],
+    "name": "getWithdrawAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amortizedLiability",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "withdrawAmount",
         "type": "uint256"
       }
     ],
@@ -251,7 +285,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "value",
+        "name": "feeBaseValue",
         "type": "uint256"
       },
       {

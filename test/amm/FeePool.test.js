@@ -7,14 +7,14 @@ describe('FeePool', () => {
   let usdc
   let owner0, owner1, feePayer, poolOwner
   let owner0Address, owner1Address
-  const initialFee = toBigNumber(3)
+  const baseFee = toBigNumber(10)
   const initialDecimals = toBigNumber(3)
 
   before(async () => {
     ;[owner0, owner1, feePayer, poolOwner] = await ethers.getSigners()
     ;[owner0Address, owner1Address] = await Promise.all([
       owner0.getAddress(),
-      owner1.getAddress(),
+      owner1.getAddress()
     ])
 
     FeePool = await ethers.getContractFactory('FeePool')
@@ -25,7 +25,7 @@ describe('FeePool', () => {
   })
 
   beforeEach(async () => {
-    pool = await FeePool.connect(poolOwner).deploy(usdc.address, initialFee, initialDecimals)
+    pool = await FeePool.connect(poolOwner).deploy(usdc.address, baseFee, initialDecimals)
     await pool.deployed()
   })
 
@@ -35,43 +35,63 @@ describe('FeePool', () => {
     await usdc.connect(owner1).burn(await usdc.balanceOf(owner1Address))
   })
 
-  it('cannot charge more than 100% fees', async () => {
+  it('cannot charge more than 100% base fees', async () => {
     const decimals = await usdc.decimals()
     const tx = FeePool.connect(poolOwner).deploy(usdc.address, 10 ** decimals + 1, decimals)
     await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
   })
 
   it('cannot create a pool with a zero-address token', async () => {
-    const tx = FeePool.connect(poolOwner).deploy(ethers.constants.AddressZero, initialFee, initialDecimals)
+    const tx = FeePool.connect(poolOwner).deploy(ethers.constants.AddressZero, baseFee, initialDecimals)
     await expect(tx).to.be.revertedWith('FeePool: Invalid token')
   })
 
   describe('Fee parameters', () => {
     it('sets the contract with initial params', async () => {
-      expect(await pool.feeValue()).to.equal(initialFee)
+      expect(await pool.feeValue()).to.equal(baseFee)
       expect(await pool.feeDecimals()).to.equal(initialDecimals)
     })
 
     it('updates the contract parameters', async () => {
-      const newFeeValue = toBigNumber(5)
+      const newBaseFeeValue = toBigNumber(5)
       const newFeeDecimals = toBigNumber(1)
-      const transaction = pool.setFee(newFeeValue, newFeeDecimals)
+      const transaction = await pool.setFee(newBaseFeeValue, newFeeDecimals)
 
       await expect(transaction)
         .to.emit(pool, 'FeeUpdated')
-        .withArgs(usdc.address, newFeeValue, newFeeDecimals)
+        .withArgs(usdc.address, newBaseFeeValue, newFeeDecimals)
 
-      expect(await pool.feeValue()).to.equal(newFeeValue)
+      const feeValue = await pool.feeValue()
+      expect(await pool.feeValue()).to.equal(newBaseFeeValue)
       expect(await pool.feeDecimals()).to.equal(newFeeDecimals)
     })
   })
 
   describe('Fee collection', () => {
-    it('calculates the fee correctly', async () => {
-      const amount = toBigNumber(1e18)
-      const expectedFees = toBigNumber(0.003 * 1e18)
+    it('calculates the fee correctly - small trade (0 dynamic fee)', async () => {
+      const newBaseFeeValue = toBigNumber(10)
+      const newFeeDecimals = toBigNumber(3)
 
-      expect(await pool.getCollectable(amount)).to.equal(expectedFees)
+      await pool.setFee(newBaseFeeValue, newFeeDecimals)
+
+      const amount = toBigNumber(800)
+      const poolAmount = toBigNumber(10000)
+      const expectedFees = toBigNumber(16)
+
+      expect(await pool.getCollectable(amount, poolAmount)).to.equal(expectedFees)
+    })
+
+    it('calculates the fee correctly - big trade  (dynamic fee)', async () => {
+      const newBaseFeeValue = toBigNumber(10)
+      const newFeeDecimals = toBigNumber(3)
+
+      await pool.setFee(newBaseFeeValue, newFeeDecimals)
+
+      const amount = toBigNumber(4000)
+      const poolAmount = toBigNumber(10000)
+      const expectedFees = toBigNumber(40 + 5120)
+
+      expect(await pool.getCollectable(amount, poolAmount)).to.equal(expectedFees)
     })
   })
 
@@ -88,7 +108,8 @@ describe('FeePool', () => {
 
       const collectFrom = async amount => {
         const collection = toBigNumber(amount)
-        const expectedFees = await pool.getCollectable(collection)
+        const poolAmount = collection.mul(1000)
+        const expectedFees = await pool.getCollectable(collection, poolAmount)
         await usdc.connect(feePayer).mint(expectedFees)
         await usdc.connect(feePayer).approve(pool.address, expectedFees)
         await usdc.connect(feePayer).transfer(pool.address, expectedFees)
@@ -120,7 +141,8 @@ describe('FeePool', () => {
 
       const collectFrom = async amount => {
         const collection = toBigNumber(amount)
-        const expectedFees = await pool.getCollectable(collection)
+        const poolAmount = collection.mul(1000)
+        const expectedFees = await pool.getCollectable(collection, poolAmount)
         await usdc.connect(feePayer).mint(expectedFees)
         await usdc.connect(feePayer).approve(pool.address, expectedFees)
         await usdc.connect(feePayer).transfer(pool.address, expectedFees)
@@ -151,7 +173,8 @@ describe('FeePool', () => {
 
       const collectFrom = async amount => {
         const collection = toBigNumber(amount)
-        const expectedFees = await pool.getCollectable(collection)
+        const poolAmount = collection.mul(1000)
+        const expectedFees = await pool.getCollectable(collection, poolAmount)
         await usdc.connect(feePayer).mint(expectedFees)
         await usdc.connect(feePayer).approve(pool.address, expectedFees)
         await usdc.connect(feePayer).transfer(pool.address, expectedFees)
@@ -174,7 +197,9 @@ describe('FeePool', () => {
       await collectFrom(400 * 1e18)
 
       // Owner 0 withdraws
-      const owner0Withdrawal = await pool.getCollectable(toBigNumber((100 + 50 + (400 / 2)) * 1e18))
+      const amount = toBigNumber((100 + 50 + (400 / 2)) * 1e18)
+      const poolAmount = amount.mul(10000)
+      const owner0Withdrawal = await pool.getCollectable(amount, poolAmount)
       await pool.connect(poolOwner).withdraw(owner0Address, owner0Shares)
       expect(await usdc.balanceOf(owner0Address)).to.equal(owner0Withdrawal)
       expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.sub(owner0Withdrawal))

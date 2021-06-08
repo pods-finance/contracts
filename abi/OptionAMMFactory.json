@@ -5,6 +5,11 @@
         "internalType": "contract IConfigurationManager",
         "name": "_configurationManager",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_feePoolBuilder",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -62,7 +67,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "_initialSigma",
+        "name": "_initialIV",
         "type": "uint256"
       }
     ],
@@ -75,6 +80,19 @@
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feePoolBuilder",
+    "outputs": [
+      {
+        "internalType": "contract IFeePoolBuilder",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

@@ -3,16 +3,34 @@ internalTask('deployToken', 'Deploy a whole local test environment')
   .addOptionalParam('symbol', 'token symbol')
   .addOptionalParam('decimals', 'token decimals')
   .addFlag('weth', 'if the token is WETH')
-  .setAction(async ({ name = 'Token', symbol = 'TKN', decimals = 18, weth }, bre) => {
-    // 1) Setup fake assets
-    const mockERC20 = await ethers.getContractFactory('MintableERC20')
-    const mockWETH = await ethers.getContractFactory('WETH')
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
+  .addFlag('save', 'if true, it should save the contract address inside the deployments folder')
+  .setAction(async ({
+      name = 'Token',
+      symbol = 'TKN',
+      decimals = 18,
+      weth,
+      save,
+      verify
+    },
+    hre
+  ) => {
     let tokenAddress
 
     if (weth) {
-      tokenAddress = await mockWETH.deploy()
+      tokenAddress = await hre.run('deploy', {
+        name: 'WETH',
+        save,
+        verify
+      })
     } else {
-      tokenAddress = await mockERC20.deploy(name, symbol, decimals)
+      tokenAddress = await hre.run('deploy', {
+        name: 'MintableERC20',
+        args: [name, symbol, decimals],
+        save,
+        verify
+      })
     }
+
     return tokenAddress
   })

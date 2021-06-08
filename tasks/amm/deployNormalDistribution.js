@@ -11,7 +11,7 @@ internalTask('deployNormalDistribution', 'Deploy Normal Distribution Contract')
     const normalDistribution = await NormalDistributionContract.deploy()
 
     await normalDistribution.deployed()
-    await saveJSON(path, { normalDistribution: normalDistribution.address })
+    await saveJSON(path, { NormalDistribution: normalDistribution.address })
 
     if (verify) {
       await verifyContract(hre, normalDistribution.address)

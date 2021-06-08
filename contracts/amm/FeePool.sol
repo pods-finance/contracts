@@ -23,36 +23,53 @@ contract FeePool is IFeePool, Ownable {
     uint256 private _shares;
     uint256 private _totalLiability;
 
-    uint256 private _feeValue;
+    uint256 private _feeBaseValue;
     uint8 private _feeDecimals;
     address private immutable _token;
+    uint256 private constant _DYNAMIC_FEE_ALPHA = 2000;
 
-    event FeeUpdated(address token, uint256 newFee, uint8 newFeeDecimals);
+    event FeeUpdated(address token, uint256 newBaseFee, uint8 newFeeDecimals);
     event FeeWithdrawn(address token, address to, uint256 amountWithdrawn, uint256 sharesBurned);
     event ShareMinted(address token, address to, uint256 amountMinted);
 
     constructor(
         address token,
-        uint256 feeValue,
+        uint256 feeBaseValue,
         uint8 feeDecimals
     ) public {
         require(token != address(0), "FeePool: Invalid token");
-        require(feeDecimals <= 77 && feeValue <= uint256(10)**feeDecimals, "FeePool: Invalid Fee data");
+        require(feeDecimals <= 77 && feeBaseValue <= uint256(10)**feeDecimals, "FeePool: Invalid Fee data");
+
         _token = token;
-        _feeValue = feeValue;
+        _feeBaseValue = feeBaseValue;
         _feeDecimals = feeDecimals;
     }
 
     /**
      * @notice Sets fee and the decimals
      *
-     * @param value Fee value
+     * @param feeBaseValue Fee value
      * @param decimals Fee decimals
      */
-    function setFee(uint256 value, uint8 decimals) external override onlyOwner {
-        _feeValue = value;
+    function setFee(uint256 feeBaseValue, uint8 decimals) external override onlyOwner {
+        _feeBaseValue = feeBaseValue;
         _feeDecimals = decimals;
-        emit FeeUpdated(_token, _feeValue, _feeDecimals);
+        emit FeeUpdated(_token, _feeBaseValue, _feeDecimals);
+    }
+
+    /**
+     * @notice get the withdraw token amount based on the amount of shares that will be burned
+     *
+     * @param to address of the share holder
+     * @param amountOfShares amount of shares to withdraw
+     */
+    function getWithdrawAmount(address to, uint256 amountOfShares)
+        external
+        override
+        view
+        returns (uint256 amortizedLiability, uint256 withdrawAmount)
+    {
+        return _getWithdrawAmount(to, amountOfShares);
     }
 
     /**
@@ -64,16 +81,7 @@ contract FeePool is IFeePool, Ownable {
     function withdraw(address to, uint256 amountOfShares) external override onlyOwner {
         require(_balances[to].shares >= amountOfShares, "Burn exceeds balance");
 
-        uint256 feesCollected = IERC20(_token).balanceOf(address(this));
-
-        uint256 amortizedLiability = amountOfShares.mul(_balances[to].liability).div(_balances[to].shares);
-        uint256 collectedGross = feesCollected.add(_totalLiability).mul(amountOfShares).div(_shares);
-        uint256 withdrawAmount = 0;
-
-        // Prevents negative payouts
-        if (collectedGross > amortizedLiability) {
-            withdrawAmount = collectedGross.sub(amortizedLiability);
-        }
+        (uint256 amortizedLiability, uint256 withdrawAmount) = _getWithdrawAmount(to, amountOfShares);
 
         _balances[to].shares = _balances[to].shares.sub(amountOfShares);
         _balances[to].liability = _balances[to].liability.sub(amortizedLiability);
@@ -120,8 +128,8 @@ contract FeePool is IFeePool, Ownable {
     /**
      * @notice Return the current fee value
      */
-    function feeValue() external override view returns (uint256) {
-        return _feeValue;
+    function feeValue() external override view returns (uint256 feeBaseValue) {
+        return _feeBaseValue;
     }
 
     /**
@@ -135,9 +143,12 @@ contract FeePool is IFeePool, Ownable {
      * @notice Utility function to calculate fee charges to a given amount
      *
      * @param amount Total transaction amount
+     * @param poolAmount Total pool amount
      */
-    function getCollectable(uint256 amount) external override view returns (uint256) {
-        return amount.mul(_feeValue).div(10**uint256(_feeDecimals));
+    function getCollectable(uint256 amount, uint256 poolAmount) external override view returns (uint256 totalFee) {
+        uint256 baseFee = amount.mul(_feeBaseValue).div(10**uint256(_feeDecimals));
+        uint256 dynamicFee = _getDynamicFees(amount, poolAmount);
+        return baseFee.add(dynamicFee);
     }
 
     /**
@@ -163,5 +174,33 @@ contract FeePool is IFeePool, Ownable {
      */
     function totalShares() external view returns (uint256) {
         return _shares;
+    }
+
+    /**
+     * @notice Calculates a dynamic fee to counterbalance big trades and incentivize liquidity
+     */
+    function _getDynamicFees(uint256 tradeAmount, uint256 poolAmount) internal pure returns (uint256) {
+        uint256 numerator = _DYNAMIC_FEE_ALPHA * tradeAmount.mul(tradeAmount).mul(tradeAmount);
+        uint256 denominator = poolAmount.mul(poolAmount).mul(poolAmount);
+        uint256 ratio = numerator.div(denominator);
+
+        return ratio.mul(tradeAmount) / 100;
+    }
+
+    function _getWithdrawAmount(address to, uint256 amountOfShares)
+        internal
+        view
+        returns (uint256 amortizedLiability, uint256 withdrawAmount)
+    {
+        uint256 feesCollected = IERC20(_token).balanceOf(address(this));
+
+        withdrawAmount = 0;
+        amortizedLiability = amountOfShares.mul(_balances[to].liability).div(_balances[to].shares);
+        uint256 collectedGross = feesCollected.add(_totalLiability).mul(amountOfShares).div(_shares);
+        // Prevents negative payouts
+        if (collectedGross > amortizedLiability) {
+            withdrawAmount = collectedGross.sub(amortizedLiability);
+        }
+        return (amortizedLiability, withdrawAmount);
     }
 }
