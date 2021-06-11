@@ -63,28 +63,10 @@ describe('BlackScholes', () => {
   let BlackScholes, bs, normalDistribution
 
   before(async () => {
-    const FixidityLib = await ethers.getContractFactory('FixidityLib')
-    const fixidity = await FixidityLib.deploy()
-    await fixidity.deployed()
-
-    const LogarithmLib = await ethers.getContractFactory('LogarithmLib', {
-      libraries: {
-        FixidityLib: fixidity.address
-      }
-    })
-    const logarithm = await LogarithmLib.deploy()
-    await logarithm.deployed()
-
     const NormalDistribution = await ethers.getContractFactory('NormalDistribution')
     normalDistribution = await NormalDistribution.deploy()
-    await normalDistribution.deployed()
 
-    BlackScholes = await ethers.getContractFactory('BlackScholes', {
-      libraries: {
-        FixidityLib: fixidity.address,
-        LogarithmLib: logarithm.address
-      }
-    })
+    BlackScholes = await ethers.getContractFactory('BlackScholes')
   })
 
   beforeEach(async () => {
@@ -97,26 +79,6 @@ describe('BlackScholes', () => {
     await expect(tx).to.be.revertedWith('BlackScholes: Invalid normalDistribution')
   })
 
-  it('should revert if number multiplication overflow', async () => {
-    await expect(bs.getCallPrice(
-      scenarios[0].spotPrice,
-      scenarios[0].strikePrice,
-      toBigNumber(1e40),
-      scenarios[0].time,
-      scenarios[0].riskFree
-    )).to.be.revertedWith('SafeMath: multiplication overflow')
-  })
-
-  it('should revert if multInt overflows', async () => {
-    await expect(bs.getPutPrice(
-      scenarios[0].spotPrice,
-      scenarios[0].strikePrice,
-      scenarios[0].iv,
-      INT256_MAX.sub(1),
-      scenarios[0].riskFree
-    )).to.be.revertedWith('BlackScholes: multInt overflow')
-  })
-
   it('should revert if casting uint to int overflow', async () => {
     await expect(bs.getPutPrice(
       scenarios[0].spotPrice,
@@ -127,9 +89,10 @@ describe('BlackScholes', () => {
     )).to.be.revertedWith('BlackScholes: casting overflow')
   })
 
-  scenarios.filter(scenario => scenario.type === 'put').forEach(scenario => {
+  scenarios.forEach(scenario => {
     it(`Calculates the ${scenario.type} price correctly`, async () => {
-      const price = await bs.getPutPrice(
+      const method = scenario.type === 'put' ? bs.getPutPrice : bs.getCallPrice
+      const price = await method(
         scenario.spotPrice,
         scenario.strikePrice,
         scenario.iv,
@@ -138,23 +101,6 @@ describe('BlackScholes', () => {
       )
 
       console.log(`\t${scenario.type} price:              ${price}`)
-      console.log(`\tscenario.expectedPrice: ${scenario.expectedPrice}`)
-
-      expect(approximately(scenario.expectedPrice, price)).to.equal(true)
-    })
-  })
-
-  scenarios.filter(scenario => scenario.type === 'call').forEach(scenario => {
-    it(`Calculates the ${scenario.type} price correctly`, async () => {
-      const price = await bs.getCallPrice(
-        scenario.spotPrice,
-        scenario.strikePrice,
-        scenario.iv,
-        scenario.time,
-        scenario.riskFree
-      )
-
-      console.log(`\t${scenario.type} price:             ${price}`)
       console.log(`\tscenario.expectedPrice: ${scenario.expectedPrice}`)
 
       expect(approximately(scenario.expectedPrice, price)).to.equal(true)
