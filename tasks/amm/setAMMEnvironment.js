@@ -21,7 +21,7 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
     })
 
     const normalDistAddress = await hre.run('deployNormalDistribution', { verify })
-    const bsAddress = await hre.run('deployBS', { normaldist: normalDistAddress, deploylibs: true, verify })
+    const bsAddress = await hre.run('deployBS', { normaldist: normalDistAddress, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
       setter: 'setPricingMethod',
