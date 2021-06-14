@@ -19,6 +19,10 @@ task('deployWeek', 'Deploy a whole local test environment')
     const contentJSON = JSON.parse(content)
 
     const deployedOptions = []
+    /*
+      Expiration expressions are used to schedule options expirations
+      For documentation see https://github.com/jkroso/parse-duration
+    */
     const options = [
       {
         strike: 'ADAI',
@@ -33,7 +37,14 @@ task('deployWeek', 'Deploy a whole local test environment')
     ]
 
     for (const option of options) {
-      const expiration = currentBlockTimestamp + (parseDuration(option.expiresIn) / 1000)
+      let expiration
+
+      // If option.expiresIn is an expression, interpret it, otherwise assume it
+      if (typeof option.expiresIn === 'string') {
+        expiration = currentBlockTimestamp + (parseDuration(option.expiresIn) / 1000)
+      } else {
+        expiration = option.expiresIn
+      }
 
       const optionAddress = await hre.run('deployNewOption', {
         strike: option.strike,
