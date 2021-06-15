@@ -19,24 +19,39 @@ task('deployWeek', 'Deploy a whole local test environment')
     const contentJSON = JSON.parse(content)
 
     const deployedOptions = []
+    /*
+      Expiration expressions are used to schedule options expirations
+      For documentation see https://github.com/jkroso/parse-duration
+    */
     const options = [
       {
-        strike: 'USDC',
-        underlying: 'WETH',
-        price: '2400',
-        expiresIn: '7d'
+        strike: 'ADAI',
+        underlying: 'WMATIC',
+        price: '1.4',
+        expiresIn: '31d',
+        initialIV: '2200000000000000000',
+        initialOptions: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
       }
     ]
 
     for (const option of options) {
-      const expiration = currentBlockTimestamp + (parseDuration(option.expiresIn) / 1000)
+      let expiration
+
+      // If option.expiresIn is an expression, interpret it, otherwise assume it
+      if (typeof option.expiresIn === 'string') {
+        expiration = currentBlockTimestamp + (parseDuration(option.expiresIn) / 1000)
+      } else {
+        expiration = option.expiresIn
+      }
 
       const optionAddress = await hre.run('deployNewOption', {
         strike: option.strike,
         underlying: option.underlying,
         price: option.price,
         expiration: expiration.toString(),
-        cap: '1000000000',
+        cap: option.optionCap,
         verify,
         tenderly
       })
@@ -55,8 +70,8 @@ task('deployWeek', 'Deploy a whole local test environment')
       const poolAddress = await hre.run('deployNewOptionAMMPool', {
         option: optionAddress,
         tokenb: tokenbAddress,
-        initialiv: defaultInitialIV,
-        cap: '10000000000000000',
+        cap: option.poolCap,
+        initialiv: option.initialIV,
         verify,
         tenderly
       })
@@ -64,11 +79,11 @@ task('deployWeek', 'Deploy a whole local test environment')
       console.log('Provide initial liquidity: ', start)
 
       if (start) {
-        await hre.run('mintOptions', { option: optionAddress, amount: '5' })
+        await hre.run('mintOptions', { option: optionAddress, amount: option.initialOptions })
 
         await hre.run('addLiquidityAMM', {
           pooladdress: poolAddress,
-          amounta: '5',
+          amounta: option.initialOptions,
           amountb: '10000'
         })
       }
