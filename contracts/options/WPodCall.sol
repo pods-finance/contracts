@@ -141,7 +141,7 @@ contract WPodCall is PodCall {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-    function unmint(uint256 amountOfOptions) external virtual override tradeWindow {
+    function unmint(uint256 amountOfOptions) external virtual override unmintWindow {
         (uint256 strikeToSend, uint256 underlyingToSend, uint256 strikeReserves, ) = _burnOptions(
             amountOfOptions,
             msg.sender

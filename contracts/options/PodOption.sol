@@ -256,11 +256,20 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
-     * @dev Modifier with the conditions to be able to mint/unmint
+     * @dev Modifier with the conditions to be able to mint
      * based on option exerciseType.
      */
     modifier tradeWindow() {
         require(_isTradeWindow(), "PodOption: trade window has closed");
+        _;
+    }
+
+    /**
+     * @dev Modifier with the conditions to be able to unmint
+     * based on option exerciseType.
+     */
+    modifier unmintWindow() {
+        require(_isTradeWindow() || _isExerciseWindow(), "PodOption: not in unmint window");
         _;
     }
 

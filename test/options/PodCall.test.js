@@ -525,12 +525,7 @@ scenarios.forEach(scenario => {
 
       it('should revert if user try to unmint after expiration - European', async () => {
         await skipToWithdrawWindow(podCall)
-        await expect(podCall.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
-      })
-
-      it('should revert if user try to unmint after start of exercise window - European', async () => {
-        await skipToExerciseWindow(podCall)
-        await expect(podCall.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
+        await expect(podCall.connect(seller).unmint(1)).to.be.revertedWith('PodOption: not in unmint window')
       })
     })
 
