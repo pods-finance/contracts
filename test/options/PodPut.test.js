@@ -21,18 +21,18 @@ const scenarios = [
     amountToMintTooLow: 1,
     cap: ethers.BigNumber.from(20e8.toString())
   },
-  {
-    name: 'WBTC/aDAI',
-    underlyingAssetSymbol: 'WBTC',
-    underlyingAssetDecimals: 8,
-    strikeAssetSymbol: 'aDAI',
-    strikeAssetDecimals: 18,
-    strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
-    strikePriceDecimals: 18,
-    amountToMint: ethers.BigNumber.from(1e8.toString()),
-    amountToMintTooLow: 1,
-    cap: ethers.BigNumber.from(20e8.toString())
-  }
+  // {
+  //   name: 'WBTC/aDAI',
+  //   underlyingAssetSymbol: 'WBTC',
+  //   underlyingAssetDecimals: 8,
+  //   strikeAssetSymbol: 'aDAI',
+  //   strikeAssetDecimals: 18,
+  //   strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
+  //   strikePriceDecimals: 18,
+  //   amountToMint: ethers.BigNumber.from(1e8.toString()),
+  //   amountToMintTooLow: 1,
+  //   cap: ethers.BigNumber.from(20e8.toString())
+  // }
 ]
 
 scenarios.forEach(scenario => {
@@ -591,12 +591,16 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodOption: you do not have minted options')
+        await expect(
+          podPut.connect(seller).unmint(scenario.amountToMint)
+        ).to.be.revertedWith('PodOption: you do not have minted options')
       })
 
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podPut.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
+        await expect(
+          podPut.connect(seller).unmint(scenario.amountToMint.mul(2))
+        ).to.be.revertedWith('PodOption: not enough minted options')
       })
 
       it('should revert if unmint amount is too low', async () => {
@@ -848,6 +852,7 @@ scenarios.forEach(scenario => {
 
     describe('American Options', () => {
       beforeEach(async function () {
+        mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
         snapshotId = await takeSnapshot()
 
         podPutAmerican = await PodPut.deploy(
@@ -889,9 +894,9 @@ scenarios.forEach(scenario => {
         await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
         await podPutAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
 
-        await podPutAmerican.connect(seller).unmint(scenario.amountToMint.div(2))
+        await mockStrikeAsset.earnInterest(podPutAmerican.address)
 
-        // should receive underlying + strike
+        await podPutAmerican.connect(seller).unmint(scenario.amountToMint.div(2))
       })
 
       it('should revert if trying to exercise after expiration', async () => {

@@ -184,7 +184,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     /**
      * @notice How many decimals does the strike token have? E.g.: 18
      */
-    function strikeAssetDecimals() external override view returns (uint8) {
+    function strikeAssetDecimals() public override view returns (uint8) {
         return ERC20(_strikeAsset).decimals();
     }
 
@@ -386,33 +386,34 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
-     * @dev Burns options, removing shares accordingly and releasing a certain amount of collateral.
-     * In case of American options where exercise can happen before the expiration, the caller may receive a
-     * mix of underlying asset and strike asset.
+     * @dev Unmints options, burning the option tokens and removing shares accordingly and releasing a certain
+     * amount of collateral.
      * @param amountOfOptions The amount option tokens to be burned
      * @param owner Which address options will be burned from
      */
-    function _burnOptions(uint256 amountOfOptions, address owner)
+    function _unmintOptions(uint256 amountOfOptions, address owner)
         internal
-        returns (
-            uint256 strikeToSend,
-            uint256 underlyingToSend,
-            uint256 currentStrikeReserves,
-            uint256 currentUnderlyingReserves
-        )
+        returns (uint256 strikeToSend, uint256 underlyingToSend)
     {
-        uint256 ownerShares = shares[owner];
-        require(ownerShares > 0, "PodOption: you do not have minted options");
+        require(shares[owner] > 0, "PodOption: you do not have minted options");
+        require(amountOfOptions <= mintedOptions[owner], "PodOption: not enough minted options");
 
-        uint256 ownerMintedOptions = mintedOptions[owner];
-        require(amountOfOptions <= ownerMintedOptions, "PodOption: not enough minted options");
+        uint256 burnedShares = shares[owner].mul(amountOfOptions).div(mintedOptions[owner]);
 
-        currentStrikeReserves = strikeReserves();
-        currentUnderlyingReserves = underlyingReserves();
+        if (_optionType == IPodOption.OptionType.PUT) {
+            uint256 strikeAssetDeposited = totalSupply().mul(_strikePrice).div(10**uint256(decimals()));
+            uint256 totalInterest = strikeReserves().sub(strikeAssetDeposited);
 
-        uint256 burnedShares = ownerShares.mul(amountOfOptions).div(ownerMintedOptions);
-        strikeToSend = burnedShares.mul(currentStrikeReserves).div(totalShares);
-        underlyingToSend = burnedShares.mul(currentUnderlyingReserves).div(totalShares);
+            strikeToSend = amountOfOptions.mul(_strikePrice).div(10**uint256(decimals())).add(
+                totalInterest.mul(burnedShares).div(totalShares)
+            );
+        } else {
+            uint256 underlyingAssetDeposited = totalSupply();
+            uint256 currentUnderlyingAmount = underlyingReserves().add(strikeReserves().div(_strikePrice));
+            uint256 totalInterest = currentUnderlyingAmount.sub(underlyingAssetDeposited);
+
+            underlyingToSend = amountOfOptions.add(totalInterest.mul(burnedShares).div(totalShares));
+        }
 
         shares[owner] = shares[owner].sub(burnedShares);
         mintedOptions[owner] = mintedOptions[owner].sub(amountOfOptions);

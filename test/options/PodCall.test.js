@@ -11,17 +11,6 @@ const EXERCISE_TYPE_AMERICAN = 1
 
 const scenarios = [
   {
-    name: 'WETH/aUSDC',
-    underlyingAssetSymbol: 'WETH',
-    underlyingAssetDecimals: 18,
-    strikeAssetSymbol: 'aUSDC',
-    strikeAssetDecimals: 6,
-    strikePrice: ethers.BigNumber.from(7000e6.toString()),
-    amountToMint: ethers.BigNumber.from(1e18.toString()),
-    amountToMintTooLow: 1,
-    cap: ethers.BigNumber.from(20e18.toString())
-  },
-  {
     name: 'WBTC/aDAI',
     underlyingAssetSymbol: 'WBTC',
     underlyingAssetDecimals: 8,
@@ -32,6 +21,18 @@ const scenarios = [
     amountToMint: ethers.BigNumber.from(1e8.toString()),
     amountToMintTooLow: 1,
     cap: ethers.BigNumber.from(20e8.toString())
+  },
+  {
+    name: 'MATIC/USDC',
+    underlyingAssetSymbol: 'MATIC',
+    underlyingAssetDecimals: 18,
+    strikeAssetSymbol: 'USDC',
+    strikeAssetDecimals: 6,
+    strikePrice: ethers.BigNumber.from( '800000'), // 0.8
+    strikePriceDecimals: 6,
+    amountToMint: ethers.BigNumber.from(1e18.toString()),
+    amountToMintTooLow: 1,
+    cap: ethers.BigNumber.from(20e18.toString())
   }
 ]
 
@@ -438,12 +439,16 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podCall.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodOption: you do not have minted options')
+        await expect(
+          podCall.connect(seller).unmint(scenario.amountToMint)
+        ).to.be.revertedWith('PodOption: you do not have minted options')
       })
 
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
+        await expect(
+          podCall.connect(seller).unmint(scenario.amountToMint.mul(2))
+        ).to.be.revertedWith('PodOption: not enough minted options')
       })
 
       it('should unmint, destroy sender option, reduce its balance and send underlying back', async () => {
@@ -659,39 +664,6 @@ scenarios.forEach(scenario => {
         await podCallAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
 
         await podCallAmerican.connect(seller).unmint(scenario.amountToMint.div(2))
-
-        // should receive underlying + strike
-      })
-
-      it('Unmint - should revert if underlyingToSend is 0 (option amount too low)', async () => {
-        expect(await podCallAmerican.balanceOf(sellerAddress)).to.equal(0)
-
-        await mockStrikeAsset.connect(seller).approve(podCallAmerican.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(ethers.constants.MaxUint256)
-
-        await mockUnderlyingAsset.connect(seller).approve(podCallAmerican.address, ethers.constants.MaxUint256)
-        await mockUnderlyingAsset.connect(seller).mint(scenario.amountToMint)
-
-        await podCallAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
-        await podCallAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
-
-        await expect(podCallAmerican.connect(seller).unmint('1')).to.be.revertedWith('PodCall: amount of options is too low')
-      })
-
-      it('Unmint - should revert if strikeToSend is 0 (option amount too low)', async () => {
-        if (scenario.strikeAssetDecimals >= scenario.underlyingAssetDecimals) return
-        expect(await podCallAmerican.balanceOf(sellerAddress)).to.equal(0)
-
-        await mockStrikeAsset.connect(seller).approve(podCallAmerican.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(ethers.constants.MaxUint256)
-
-        await mockUnderlyingAsset.connect(seller).approve(podCallAmerican.address, ethers.constants.MaxUint256)
-        await mockUnderlyingAsset.connect(seller).mint(scenario.amountToMint)
-
-        await podCallAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
-        await podCallAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
-
-        await expect(podCallAmerican.connect(seller).unmint('3')).to.be.revertedWith('PodCall: amount of options is too low')
       })
     })
   })
