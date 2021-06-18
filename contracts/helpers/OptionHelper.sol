@@ -78,11 +78,25 @@ contract OptionHelper {
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
      */
-    function mint(IPodOption option, uint256 optionAmount) external {
-        _mint(option, optionAmount);
+    function mintExactOptions(IPodOption option, uint256 optionAmount) external {
+        _mintOptionAmount(option, optionAmount);
 
         // Transfers back the minted options
         IERC20(address(option)).safeTransfer(msg.sender, optionAmount);
+    }
+
+    /**
+     * @notice Mint options
+     * @dev Mints an amount of options and return to caller
+     *
+     * @param option The option contract to mint
+     * @param collateralAmount The amount of collateral to use minting options
+     */
+    function mintWithCollateral(IPodOption option, uint256 collateralAmount) external {
+        uint256 mintedOptions = _mintWithCollateral(option, collateralAmount);
+
+        // Transfers back the minted options
+        IERC20(address(option)).safeTransfer(msg.sender, mintedOptions);
     }
 
     /**
@@ -104,7 +118,7 @@ contract OptionHelper {
     ) external withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
 
-        _mint(option, optionAmount);
+        _mintOptionAmount(option, optionAmount);
 
         // Approve pool transfer
         IERC20(address(option)).safeApprove(address(pool), optionAmount);
@@ -131,7 +145,7 @@ contract OptionHelper {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
-        _mint(option, optionAmount);
+        _mintOptionAmount(option, optionAmount);
 
         if (tokenAmount > 0) {
             // Take stable token from caller
@@ -335,12 +349,12 @@ contract OptionHelper {
      * @dev Mints an amount of tokens collecting the strike tokens from the caller
      *
      * @param option The option contract to mint
-     * @param amount The amount of options to mint
+     * @param optionAmount The amount of options to mint
      */
-    function _mint(IPodOption option, uint256 amount) internal {
+    function _mintOptionAmount(IPodOption option, uint256 optionAmount) internal {
         if (option.optionType() == IPodOption.OptionType.PUT) {
             IERC20 strikeAsset = IERC20(option.strikeAsset());
-            uint256 strikeToTransfer = option.strikeToTransfer(amount);
+            uint256 strikeToTransfer = option.strikeToTransfer(optionAmount);
 
             // Take strike asset from caller
             strikeAsset.safeTransferFrom(msg.sender, address(this), strikeToTransfer);
@@ -348,17 +362,50 @@ contract OptionHelper {
             // Approving strike asset transfer to Option
             strikeAsset.safeApprove(address(option), strikeToTransfer);
 
-            option.mint(amount, msg.sender);
+            option.mint(optionAmount, msg.sender);
         } else if (option.optionType() == IPodOption.OptionType.CALL) {
             IERC20 underlyingAsset = IERC20(option.underlyingAsset());
 
             // Take underlying asset from caller
-            underlyingAsset.safeTransferFrom(msg.sender, address(this), amount);
+            underlyingAsset.safeTransferFrom(msg.sender, address(this), optionAmount);
 
             // Approving underlying asset to Option
-            underlyingAsset.safeApprove(address(option), amount);
+            underlyingAsset.safeApprove(address(option), optionAmount);
 
-            option.mint(amount, msg.sender);
+            option.mint(optionAmount, msg.sender);
+        }
+    }
+
+    /**
+     * @dev Mints an amount of tokens collecting the strike tokens from the caller
+     *
+     * @param option The option contract to mint
+     * @param collateralAmount The amount of collateral to use minting options
+     * @return optionAmount Amount of options minted
+     */
+    function _mintWithCollateral(IPodOption option, uint256 collateralAmount) internal returns(uint256 optionAmount) {
+        if (option.optionType() == IPodOption.OptionType.PUT) {
+            IERC20 strikeAsset = IERC20(option.strikeAsset());
+            optionAmount = collateralAmount.div(option.strikePrice());
+
+            // Take strike asset from caller
+            strikeAsset.safeTransferFrom(msg.sender, address(this), collateralAmount);
+
+            // Approving strike asset transfer to Option
+            strikeAsset.safeApprove(address(option), collateralAmount);
+
+            option.mint(optionAmount, msg.sender);
+        } else if (option.optionType() == IPodOption.OptionType.CALL) {
+            IERC20 underlyingAsset = IERC20(option.underlyingAsset());
+            optionAmount = collateralAmount;
+
+            // Take underlying asset from caller
+            underlyingAsset.safeTransferFrom(msg.sender, address(this), optionAmount);
+
+            // Approving underlying asset to Option
+            underlyingAsset.safeApprove(address(option), optionAmount);
+
+            option.mint(optionAmount, msg.sender);
         }
     }
 

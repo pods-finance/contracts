@@ -102,9 +102,25 @@ describe('OptionHelper', () => {
       await stableAsset.connect(caller).mint(collateralAmount)
       expect(await stableAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
 
-      await optionHelper.connect(caller).mint(
+      await optionHelper.connect(caller).mintExactOptions(
         option.address,
         amountToMint
+      )
+
+      expect(await option.balanceOf(callerAddress)).to.equal(amountToMint)
+    })
+
+    it('mints the options with exact amount of collateral', async () => {
+      const strikePrice = await option.strikePrice()
+      const amountToMint = ethers.BigNumber.from(52e6)
+      const collateralAmount = amountToMint.mul(strikePrice)
+
+      await stableAsset.connect(caller).mint(collateralAmount)
+      expect(await stableAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
+
+      await optionHelper.connect(caller).mintWithCollateral(
+        option.address,
+        collateralAmount
       )
 
       expect(await option.balanceOf(callerAddress)).to.equal(amountToMint)
@@ -124,7 +140,7 @@ describe('OptionHelper', () => {
       await stableAsset.connect(caller).mint(strikeToTransfer)
       await stableAsset.connect(caller).approve(optionHelper.address, strikeToTransfer)
 
-      await optionHelper.connect(caller).mint(
+      await optionHelper.connect(caller).mintExactOptions(
         putOption.address,
         amountToMint
       )
@@ -141,7 +157,7 @@ describe('OptionHelper', () => {
       await underlyingAsset.connect(caller).mint(amountToMint)
       await underlyingAsset.connect(caller).approve(optionHelper.address, amountToMint)
 
-      await optionHelper.connect(caller).mint(
+      await optionHelper.connect(caller).mintExactOptions(
         callOption.address,
         amountToMint
       )
@@ -208,6 +224,30 @@ describe('OptionHelper', () => {
 
   describe('Mint and Sell', () => {
     it('mints and sells the exact amount of options', async () => {
+      const amountToMint = ethers.BigNumber.from(1e7.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+      const deadline = await getTimestamp() + 60
+
+      await strikeAsset.connect(caller).mint(collateralAmount)
+
+      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
+
+      const tx = await optionHelper.connect(caller).mintAndSellOptions(
+        option.address,
+        amountToMint,
+        0,
+        deadline,
+        iv
+      )
+
+      const premium = await stableAsset.balanceOf(callerAddress)
+
+      await expect(Promise.resolve(tx))
+        .to.emit(optionHelper, 'OptionsMintedAndSold')
+        .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, premium)
+    })
+
+    it('mints and sells the options with exact collateral', async () => {
       const amountToMint = ethers.BigNumber.from(1e7.toString())
       const collateralAmount = await option.strikeToTransfer(amountToMint)
       const deadline = await getTimestamp() + 60

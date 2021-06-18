@@ -271,24 +271,6 @@
         "internalType": "uint256",
         "name": "optionAmount",
         "type": "uint256"
-      }
-    ],
-    "name": "mint",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "contract IPodOption",
-        "name": "option",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "optionAmount",
-        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -330,6 +312,42 @@
       }
     ],
     "name": "mintAndSellOptions",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IPodOption",
+        "name": "option",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "optionAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "mintExactOptions",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IPodOption",
+        "name": "option",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collateralAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "mintWithCollateral",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
