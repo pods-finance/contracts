@@ -4,11 +4,11 @@ task('getPool', "Prints a option's pool address")
   .setAction(async ({ option, factory }, hre) => {
     let factoryAddress
     if (!factory) {
-      factoryAddress = require(`../../deployments/${hre.network.name}.json`).optionAMMFactory
+      factoryAddress = require(`../../deployments/${hre.network.name}.json`).OptionAMMFactory
     } else {
       factoryAddress = factory
     }
-    
+
     const factoryContract = await ethers.getContractAt('OptionAMMFactory', factoryAddress)
     const poolAddress = await factoryContract.getPool(option)
     console.log('poolAddress: ', poolAddress)
