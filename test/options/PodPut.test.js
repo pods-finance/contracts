@@ -21,18 +21,18 @@ const scenarios = [
     amountToMintTooLow: 1,
     cap: ethers.BigNumber.from(20e8.toString())
   },
-  // {
-  //   name: 'WBTC/aDAI',
-  //   underlyingAssetSymbol: 'WBTC',
-  //   underlyingAssetDecimals: 8,
-  //   strikeAssetSymbol: 'aDAI',
-  //   strikeAssetDecimals: 18,
-  //   strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
-  //   strikePriceDecimals: 18,
-  //   amountToMint: ethers.BigNumber.from(1e8.toString()),
-  //   amountToMintTooLow: 1,
-  //   cap: ethers.BigNumber.from(20e8.toString())
-  // }
+  {
+    name: 'WBTC/aDAI',
+    underlyingAssetSymbol: 'WBTC',
+    underlyingAssetDecimals: 8,
+    strikeAssetSymbol: 'aDAI',
+    strikeAssetDecimals: 18,
+    strikePrice: ethers.BigNumber.from(7000).mul(ethers.BigNumber.from(10).pow(18)),
+    strikePriceDecimals: 18,
+    amountToMint: ethers.BigNumber.from(1e8.toString()),
+    amountToMintTooLow: 1,
+    cap: ethers.BigNumber.from(20e8.toString())
+  }
 ]
 
 scenarios.forEach(scenario => {
