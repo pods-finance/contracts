@@ -7738,10 +7738,10 @@ postinstall-postinstall@^2.1.0:
   resolved "https://registry.yarnpkg.com/postinstall-postinstall/-/postinstall-postinstall-2.1.0.tgz#4f7f77441ef539d1512c40bd04c71b06a4704ca3"
   integrity sha512-7hQX6ZlZXIoRiWNrbMQaLzUUfH+sSx39u8EJ9HYuDc1kLo9IXKWjM5RSquZN1ad5GnH8CGFM78fsAAQi3OKEEQ==
 
-prb-math@1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/prb-math/-/prb-math-1.1.0.tgz#e5dfa8b2437517ff0e2f26256f491660d14df795"
-  integrity sha512-V8h9uXHM++znzQImQHvqrMghe1qgq75orbaVY4biC7g7FHKLwfRVl8QC/a/ee8/ot9j8bgvH2EyIzq86dl9bCA==
+prb-math@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/prb-math/-/prb-math-2.0.1.tgz#48fd73c9ae78ddf2369d1769ebe3a1dfc6934914"
+  integrity sha512-GmFCqPOdaZ2dzusgQXnxyuL45JzqjSTZTYzE7hFDFGK5xm1G48UNp2DLFUCkwmkzjuLP9g/YL68i+0TnTTAbNQ==
 
 precond@0.2:
   version "0.2.3"
