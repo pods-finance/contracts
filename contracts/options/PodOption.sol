@@ -386,7 +386,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     }
 
     /**
-     * @dev Unmints options, burning the option tokens and removing shares accordingly and releasing a certain
+     * @dev Unmints options, burning the option tokens removing shares accordingly and releasing a certain
      * amount of collateral.
      * @param amountOfOptions The amount option tokens to be burned
      * @param owner Which address options will be burned from
