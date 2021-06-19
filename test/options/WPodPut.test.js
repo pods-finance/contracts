@@ -388,12 +388,7 @@ scenarios.forEach(scenario => {
 
       it('should revert if user try to unmint after expiration', async () => {
         await skipToWithdrawWindow(wPodPut)
-        await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
-      })
-
-      it('should revert if user try to unmint after start of exercise window', async () => {
-        await skipToExerciseWindow(wPodPut)
-        await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
+        await expect(wPodPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: not in unmint window')
       })
     })
 
@@ -571,35 +566,6 @@ scenarios.forEach(scenario => {
         await wPodPutAmerican.connect(seller).exerciseEth({ value: scenario.amountToMint.div(2) })
 
         await expect(wPodPutAmerican.connect(seller).unmint(scenario.amountToMint.div(2))).to.not.be.reverted
-      })
-
-      it('should revert if unmint amount is too low - underlying', async () => {
-        mockStrikeAsset = await MockInterestBearingERC20.deploy('test token', 'TEST', 19)
-
-        const specificScenario = {
-          amountToMint: ethers.BigNumber.from(10).pow(18),
-          strikePrice: ethers.BigNumber.from(10).pow(19)
-        }
-        wPodPutAmerican = await WPodPut.deploy(
-          scenario.name,
-          scenario.name,
-          EXERCISE_TYPE_AMERICAN,
-          mockUnderlyingAsset.address,
-          mockStrikeAsset.address,
-          specificScenario.strikePrice,
-          await getTimestamp() + 24 * 60 * 60 * 7,
-          0, // 24h
-          configurationManager.address
-        )
-
-        await mockStrikeAsset.connect(seller).approve(wPodPutAmerican.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(specificScenario.strikePrice.mul(2))
-
-        await wPodPutAmerican.connect(seller).mint(specificScenario.amountToMint, sellerAddress)
-
-        await wPodPutAmerican.connect(seller).exerciseEth({ value: '1' })
-
-        await expect(wPodPutAmerican.connect(seller).unmint('1')).to.be.revertedWith('WPodPut: amount of options is too low')
       })
     })
   })

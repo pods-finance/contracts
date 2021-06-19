@@ -591,12 +591,16 @@ scenarios.forEach(scenario => {
 
     describe('Unminting options', () => {
       it('should revert if try to unmint without amount', async () => {
-        await expect(podPut.connect(seller).unmint(scenario.amountToMint)).to.be.revertedWith('PodOption: you do not have minted options')
+        await expect(
+          podPut.connect(seller).unmint(scenario.amountToMint)
+        ).to.be.revertedWith('PodOption: you do not have minted options')
       })
 
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(podPut.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
+        await expect(
+          podPut.connect(seller).unmint(scenario.amountToMint.mul(2))
+        ).to.be.revertedWith('PodOption: not enough minted options')
       })
 
       it('should revert if unmint amount is too low', async () => {
@@ -690,7 +694,7 @@ scenarios.forEach(scenario => {
 
       it('should revert if user try to unmint after expiration', async () => {
         await skipToWithdrawWindow(podPut)
-        await expect(podPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: trade window has closed')
+        await expect(podPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: not in unmint window')
       })
     })
 
@@ -848,6 +852,7 @@ scenarios.forEach(scenario => {
 
     describe('American Options', () => {
       beforeEach(async function () {
+        mockStrikeAsset = await MockInterestBearingERC20.deploy(scenario.strikeAssetSymbol, scenario.strikeAssetSymbol, scenario.strikeAssetDecimals)
         snapshotId = await takeSnapshot()
 
         podPutAmerican = await PodPut.deploy(
@@ -889,9 +894,9 @@ scenarios.forEach(scenario => {
         await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
         await podPutAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
 
-        await podPutAmerican.connect(seller).unmint(scenario.amountToMint.div(2))
+        await mockStrikeAsset.earnInterest(podPutAmerican.address)
 
-        // should receive underlying + strike
+        await podPutAmerican.connect(seller).unmint(scenario.amountToMint.div(2))
       })
 
       it('should revert if trying to exercise after expiration', async () => {
@@ -923,24 +928,6 @@ scenarios.forEach(scenario => {
         await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
 
         await expect(podPutAmerican.connect(seller).withdraw()).to.be.revertedWith('PodOption: option has not expired yet')
-      })
-
-      it('should revert if unmint amount is too low - underlying', async () => {
-        if (scenario.underlyingAssetDecimals > scenario.strikeAssetDecimals) return
-        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice.mul(2))
-
-        await mockUnderlyingAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
-        await mockUnderlyingAsset.connect(seller).mint(scenario.amountToMint.mul(2))
-
-        await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
-        const ownerShares = await podPut.shares(sellerAddress)
-        const userMintedOptions = await podPut.mintedOptions(sellerAddress)
-
-        await podPutAmerican.connect(seller).exercise('1')
-
-        // if (ownerShares.div(userMintedOptions).gt(1)) return
-        await expect(podPutAmerican.connect(seller).unmint('1')).to.be.revertedWith('PodPut: amount of options is too low')
       })
     })
   })

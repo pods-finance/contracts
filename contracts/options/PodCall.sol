@@ -135,28 +135,15 @@ contract PodCall is PodOption {
     /**
      * @notice Unlocks collateral by burning option tokens.
      *
-     * @dev In case of American options where exercise can happen before the expiration, caller
-     * may receive a mix of underlying asset and strike asset.
+     * Options can only be unmminted while the series is NOT expired.
      *
-     * Options can only be burned while the series is NOT expired.
-     *
-     * @param amountOfOptions The amount option tokens to be burned
+     * @param amountOfOptions The amount option tokens to be unminted
      */
-    function unmint(uint256 amountOfOptions) external virtual override tradeWindow {
-        (uint256 strikeToSend, uint256 underlyingToSend, uint256 strikeReserves, ) = _burnOptions(
-            amountOfOptions,
-            msg.sender
-        );
-        require(underlyingToSend > 0, "PodCall: amount of options is too low");
+    function unmint(uint256 amountOfOptions) external virtual override unmintWindow {
+        (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
 
         // Sends underlying asset
         IERC20(underlyingAsset()).safeTransfer(msg.sender, underlyingToSend);
-
-        // Sends the strike asset if the option was exercised
-        if (strikeReserves > 0) {
-            require(strikeToSend > 0, "PodCall: amount of options is too low");
-            IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
-        }
 
         emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
     }
