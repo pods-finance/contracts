@@ -1,6 +1,5 @@
 require('./deployNormalDistribution')
 require('./deployBS')
-require('./deployLibs')
 require('../oracle/deployChainlink')
 require('../oracle/deployPriceProvider')
 require('../oracle/deployOracle')
