@@ -929,24 +929,6 @@ scenarios.forEach(scenario => {
 
         await expect(podPutAmerican.connect(seller).withdraw()).to.be.revertedWith('PodOption: option has not expired yet')
       })
-
-      it('should revert if unmint amount is too low - underlying', async () => {
-        if (scenario.underlyingAssetDecimals > scenario.strikeAssetDecimals) return
-        await mockStrikeAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(scenario.strikePrice.mul(2))
-
-        await mockUnderlyingAsset.connect(seller).approve(podPutAmerican.address, ethers.constants.MaxUint256)
-        await mockUnderlyingAsset.connect(seller).mint(scenario.amountToMint.mul(2))
-
-        await podPutAmerican.connect(seller).mint(scenario.amountToMint, sellerAddress)
-        const ownerShares = await podPut.shares(sellerAddress)
-        const userMintedOptions = await podPut.mintedOptions(sellerAddress)
-
-        await podPutAmerican.connect(seller).exercise('1')
-
-        // if (ownerShares.div(userMintedOptions).gt(1)) return
-        await expect(podPutAmerican.connect(seller).unmint('1')).to.be.revertedWith('PodPut: amount of options is too low')
-      })
     })
   })
 })
