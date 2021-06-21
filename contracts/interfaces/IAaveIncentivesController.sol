@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.12;
 
-interface IAaveRewarder {
+interface IAaveIncentivesController {
     function getRewardsBalance(address[] calldata assets, address user) external view returns (uint256);
 
     function claimRewards(
@@ -10,9 +10,4 @@ interface IAaveRewarder {
         uint256 amount,
         address to
     ) external returns (uint256);
-
-    function getUserUnclaimedRewards(address user) external view returns (uint256);
 }
-
-
-

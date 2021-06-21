@@ -2,17 +2,17 @@
 
 pragma solidity 0.6.12;
 
-import "../PodPut.sol";
+import "../PodCall.sol";
 import "./AaveIncentives.sol";
 
 /**
- * @title AavePodPut
+ * @title AavePodCall
  * @author Pods Finance
  *
- * @notice Represents a tokenized Put option series that handles and distributes liquidity
+ * @notice Represents a tokenized Call option series that handles and distributes liquidity
  * mining rewards to minters (sellers) proportionally to their amount of shares
  */
-contract AavePodPut is PodPut, AaveIncentives {
+contract AavePodCall is PodCall, AaveIncentives {
     constructor(
         string memory name,
         string memory symbol,
@@ -24,19 +24,19 @@ contract AavePodPut is PodPut, AaveIncentives {
         uint256 exerciseWindowSize,
         IConfigurationManager configurationManager
     )
-        public
-        PodPut(
-            name,
-            symbol,
-            exerciseType,
-            underlyingAsset,
-            strikeAsset,
-            strikePrice,
-            expiration,
-            exerciseWindowSize,
-            configurationManager
-        )
-        AaveIncentives(configurationManager)
+    public
+    PodCall(
+        name,
+        symbol,
+        exerciseType,
+        underlyingAsset,
+        strikeAsset,
+        strikePrice,
+        expiration,
+        exerciseWindowSize,
+        configurationManager
+    )
+    AaveIncentives(configurationManager)
     {} // solhint-disable-line no-empty-blocks
 
     /**
@@ -49,23 +49,21 @@ contract AavePodPut is PodPut, AaveIncentives {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-     function unmintWithRewards(uint256 amountOfOptions) external unmintWindow {
-         _claimRewards(_getClaimableAssets());
-         uint256 rewardsToSend = shares[msg.sender].mul(_rewardBalance()).div(totalShares);
+    function unmintWithRewards(uint256 amountOfOptions) external unmintWindow {
+        _claimRewards(_getClaimableAssets());
+        uint256 rewardsToSend = shares[msg.sender].mul(_rewardBalance()).div(totalShares);
 
-         (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
-         require(strikeToSend > 0, "AavePodPut: amount of options is too low");
+        (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
 
-         // Sends strike asset
-         IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
+        IERC20(underlyingAsset()).safeTransfer(msg.sender, underlyingToSend);
 
-         emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
+        emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
 
-         if (rewardsToSend > 0) {
-             IERC20(rewardAsset).safeTransfer(msg.sender, rewardsToSend);
-             emit RewardsClaimed(msg.sender, rewardsToSend);
-         }
-     }
+        if (rewardsToSend > 0) {
+            IERC20(rewardAsset).safeTransfer(msg.sender, rewardsToSend);
+            emit RewardsClaimed(msg.sender, rewardsToSend);
+        }
+    }
 
     /**
      * @notice After series expiration in case of American or after exercise window for European,
@@ -81,10 +79,10 @@ contract AavePodPut is PodPut, AaveIncentives {
 
         (uint256 strikeToSend, uint256 underlyingToSend) = _withdraw();
 
-        IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
+        IERC20(underlyingAsset()).safeTransfer(msg.sender, underlyingToSend);
 
-        if (underlyingToSend > 0) {
-            IERC20(underlyingAsset()).safeTransfer(msg.sender, underlyingToSend);
+        if (strikeToSend > 0) {
+            IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
         }
 
         emit Withdraw(msg.sender, strikeToSend, underlyingToSend);
