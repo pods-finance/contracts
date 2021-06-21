@@ -59,7 +59,7 @@
     "web3": "1.2.9"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "3.0.1",
+    "@openzeppelin/contracts": "3.4.0",
     "bignumber.js": "9.0.0",
     "prb-math": "2.0.1"
   },

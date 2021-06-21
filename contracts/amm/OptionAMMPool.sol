@@ -143,6 +143,14 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _getTradeInfo();
     }
 
+    function removeRewards() external {
+        require(msg.sender == configurationManager.owner(), "not owner");
+
+        // Get Rewards
+        // Claim
+        // Send back to "owner'
+    }
+
     /**
      * @notice tradeExactAInput msg.sender is able to trade exact amount of token A in exchange for minimum
      * amount of token B and send the tokens B to the owner. After that, this function also updates the

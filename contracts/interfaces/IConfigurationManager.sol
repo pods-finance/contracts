@@ -23,6 +23,8 @@ interface IConfigurationManager {
 
     function setOptionHelper(address optionHelper) external;
 
+    function owner() external view returns (address);
+
     function getParameter(bytes32 name) external view returns (uint256);
 
     function getEmergencyStop() external view returns (address);
