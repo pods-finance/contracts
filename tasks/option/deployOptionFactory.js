@@ -7,10 +7,23 @@ task('deployOptionFactory', 'Deploy OptionFactory')
   .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addOptionalParam('podputbuilder', 'podputbuilder contract address')
   .addOptionalParam('wpodputbuilder', 'wpodputbuilder contract address')
+  .addOptionalParam('aavepodputbuilder', 'aavepodputbuilder contract address')
   .addOptionalParam('podcallbuilder', 'podcallbuilder contract address')
   .addOptionalParam('wpodcallbuilder', 'wpodcallbuilder contract address')
+  .addOptionalParam('aavepodcallbuilder', 'aavepodcallbuilder contract address')
   .addOptionalParam('wethadapt', 'alternative weth address in case of other networks')
-  .setAction(async ({ podputbuilder, wpodputbuilder, podcallbuilder, wpodcallbuilder, configuration, builders, wethadapt, verify }, hre) => {
+  .setAction(async ({
+                      podputbuilder,
+                      wpodputbuilder,
+                      aavepodputbuilder,
+                      podcallbuilder,
+                      wpodcallbuilder,
+                      aavepodcallbuilder,
+                      configuration,
+                      builders,
+                      wethadapt,
+                      verify
+                    }, hre) => {
     const deployment = getDeployments()
     const wethAddress = wethadapt || deployment.WETH
 
@@ -23,8 +36,10 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     if (builders) {
       podputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodPut', save: true, verify })
       wpodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodPut', save: true, verify })
+      wpodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodPut', save: true, verify })
       podcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodCall', save: true, verify })
       wpodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodCall', save: true, verify })
+      wpodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodCall', save: true, verify })
     }
 
     const factoryAddress = await hre.run('deploy', {
