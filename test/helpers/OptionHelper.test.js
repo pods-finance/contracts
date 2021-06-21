@@ -206,8 +206,7 @@ describe('OptionHelper', () => {
     })
 
     it('mints and add the options and stable tokens using only collateral asset', async () => {
-      // const collateralAmount = ethers.BigNumber.from(4200e6.toString())
-      const collateralAmount = ethers.BigNumber.from('1')
+      const collateralAmount = ethers.BigNumber.from(4200e6.toString())
 
       // We assume here that the strikeAsset is equal to the stable asset.
       await strikeAsset.connect(caller).mint(collateralAmount)
