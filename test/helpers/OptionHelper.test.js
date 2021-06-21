@@ -229,8 +229,6 @@ describe('OptionHelper', () => {
       const strikeAdded = poolStrikeBalanceAfter.sub(poolStrikeBalanceBefore)
 
       optionsAdded.mul(ABPrice).eq(strikeAdded)
-
-      // const strikePrice = option.strikePrice()
     })
   })
 
