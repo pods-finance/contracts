@@ -383,7 +383,7 @@ contract OptionHelper {
      * @param collateralAmount The amount of collateral to use minting options
      * @return optionAmount Amount of options minted
      */
-    function _mintWithCollateral(IPodOption option, uint256 collateralAmount) internal returns(uint256 optionAmount) {
+    function _mintWithCollateral(IPodOption option, uint256 collateralAmount) internal returns (uint256 optionAmount) {
         if (option.optionType() == IPodOption.OptionType.PUT) {
             IERC20 strikeAsset = IERC20(option.strikeAsset());
             optionAmount = collateralAmount.div(option.strikePrice());

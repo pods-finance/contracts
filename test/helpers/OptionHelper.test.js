@@ -11,7 +11,7 @@ const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
 const initialSigma = '960000000000000000'
 
-describe('OptionHelper', () => {
+describe.only('OptionHelper', () => {
   let OptionHelper, OptionAMMFactory, FeePoolBuilder, MintableERC20, IVProvider
   let optionHelper, configurationManager, ivProvider
   let stableAsset, strikeAsset, underlyingAsset
@@ -224,30 +224,6 @@ describe('OptionHelper', () => {
 
   describe('Mint and Sell', () => {
     it('mints and sells the exact amount of options', async () => {
-      const amountToMint = ethers.BigNumber.from(1e7.toString())
-      const collateralAmount = await option.strikeToTransfer(amountToMint)
-      const deadline = await getTimestamp() + 60
-
-      await strikeAsset.connect(caller).mint(collateralAmount)
-
-      const { 1: iv } = await pool.getOptionTradeDetailsExactAInput(amountToMint)
-
-      const tx = await optionHelper.connect(caller).mintAndSellOptions(
-        option.address,
-        amountToMint,
-        0,
-        deadline,
-        iv
-      )
-
-      const premium = await stableAsset.balanceOf(callerAddress)
-
-      await expect(Promise.resolve(tx))
-        .to.emit(optionHelper, 'OptionsMintedAndSold')
-        .withArgs(callerAddress, option.address, amountToMint, stableAsset.address, premium)
-    })
-
-    it('mints and sells the options with exact collateral', async () => {
       const amountToMint = ethers.BigNumber.from(1e7.toString())
       const collateralAmount = await option.strikeToTransfer(amountToMint)
       const deadline = await getTimestamp() + 60
