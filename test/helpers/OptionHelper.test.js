@@ -204,6 +204,34 @@ describe('OptionHelper', () => {
 
       await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
     })
+
+    it('mints and add the options and stable tokens using only collateral asset', async () => {
+      // const collateralAmount = ethers.BigNumber.from(4200e6.toString())
+      const collateralAmount = ethers.BigNumber.from('1')
+
+      // We assume here that the strikeAsset is equal to the stable asset.
+      await strikeAsset.connect(caller).mint(collateralAmount)
+
+      const poolOptionBalanceBefore = await option.balanceOf(pool.address)
+      const poolStrikeBalanceBefore = await strikeAsset.balanceOf(pool.address)
+
+      await optionHelper.connect(caller).mintAndAddLiquidityWithCollateral(
+        option.address,
+        collateralAmount
+      )
+
+      const ABPrice = await pool.getABPrice()
+
+      const poolOptionBalanceAfter = await option.balanceOf(pool.address)
+      const poolStrikeBalanceAfter = await strikeAsset.balanceOf(pool.address)
+
+      const optionsAdded = poolOptionBalanceAfter.sub(poolOptionBalanceBefore)
+      const strikeAdded = poolStrikeBalanceAfter.sub(poolStrikeBalanceBefore)
+
+      optionsAdded.mul(ABPrice).eq(strikeAdded)
+
+      // const strikePrice = option.strikePrice()
+    })
   })
 
   describe('Mint and Sell', () => {
