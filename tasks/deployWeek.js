@@ -31,6 +31,7 @@ task('deployWeek', 'Deploy a whole local test environment')
         expiresIn: '31d',
         initialIV: '2200000000000000000',
         initialOptions: '5000',
+        initialStable: '5000',
         optionCap: '1000000',
         poolCap: '100000'
       }
@@ -63,7 +64,7 @@ task('deployWeek', 'Deploy a whole local test environment')
         const configurationManager = await ethers.getContractAt('ConfigurationManager', contentJSON.ConfigurationManager)
         const ivProviderAddress = await configurationManager.getIVProvider()
         const ivProvider = await ethers.getContractAt('IVProvider', ivProviderAddress)
-        const tx = await ivProvider.updateIV(optionAddress, defaultInitialIV, '18')
+        const tx = await ivProvider.updateIV(optionAddress, option.initialIV, '18')
         await tx.wait(2)
       }
 

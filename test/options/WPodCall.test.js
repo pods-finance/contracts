@@ -244,7 +244,9 @@ scenarios.forEach(scenario => {
 
       it('should revert if try to unmint amount higher than possible', async () => {
         await MintPhase(scenario.amountToMint)
-        await expect(wPodCall.connect(seller).unmint(scenario.amountToMint.mul(2))).to.be.revertedWith('PodOption: not enough minted options')
+        await expect(
+          wPodCall.connect(seller).unmint(scenario.amountToMint.mul(2))
+        ).to.be.revertedWith('PodOption: not enough minted options')
       })
 
       it('should unmint, destroy sender option, reduce its balance and send underlying back - European', async () => {
@@ -262,8 +264,9 @@ scenarios.forEach(scenario => {
         expect(initialContractStrikeReserves).to.equal(0)
         expect(initialContractOptionSupply).to.equal(scenario.amountToMint)
 
-        const txUnmint = await wPodCall.connect(seller).unmint(scenario.amountToMint)
-        const txCost = await getTxCost(txUnmint)
+        const txUnmint = wPodCall.connect(seller).unmint(scenario.amountToMint)
+        await expect(txUnmint).to.not.be.reverted
+        const txCost = await getTxCost(await txUnmint)
 
         const finalSellerOptionBalance = await wPodCall.balanceOf(sellerAddress)
         const finalSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
@@ -494,31 +497,6 @@ scenarios.forEach(scenario => {
         await wPodCallAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
 
         await expect(wPodCallAmerican.connect(seller).unmint(scenario.amountToMint.div(3))).to.not.be.reverted
-      })
-
-      it('Unmint - should revert if underlyingToSend is 0 (option amount too low)', async () => {
-        expect(await wPodCallAmerican.balanceOf(sellerAddress)).to.equal(0)
-
-        await mockStrikeAsset.connect(seller).approve(wPodCallAmerican.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(ethers.constants.MaxUint256)
-
-        await wPodCallAmerican.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint })
-        await wPodCallAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
-
-        await expect(wPodCallAmerican.connect(seller).unmint('1')).to.be.revertedWith('WPodCall: amount of options is too low')
-      })
-
-      it('Unmint - should revert if strikeToSend is 0 (option amount too low)', async () => {
-        if (scenario.strikeAssetDecimals >= scenario.underlyingAssetDecimals) return
-        expect(await wPodCallAmerican.balanceOf(sellerAddress)).to.equal(0)
-
-        await mockStrikeAsset.connect(seller).approve(wPodCallAmerican.address, ethers.constants.MaxUint256)
-        await mockStrikeAsset.connect(seller).mint(ethers.constants.MaxUint256)
-
-        await wPodCallAmerican.connect(seller).mintEth(sellerAddress, { value: scenario.amountToMint })
-        await wPodCallAmerican.connect(seller).exercise(scenario.amountToMint.div(2))
-
-        await expect(wPodCallAmerican.connect(seller).unmint('3')).to.be.revertedWith('WPodCall: amount of options is too low')
       })
     })
   })

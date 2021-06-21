@@ -1,4 +1,7 @@
 const saveJSON = require('../utils/saveJSON')
+const BigNumber = require('bignumber.js')
+const parseDuration = require('parse-duration')
+
 const getTimestamp = require('../../test/util/getTimestamp')
 const fs = require('fs')
 const pathJoin = require('path')
@@ -9,6 +12,8 @@ task('setupLocal', 'Deploy a whole local test environment')
     const path = `../../deployments/${hre.network.name}.json`
     // Erasing local.json file
     await saveJSON(path, '', true)
+    const [deployer] = await ethers.getSigners()
+    const deployerAddress = await deployer.getAddress()
 
     const deployedTokens = {}
     const tokenList = [
@@ -32,8 +37,8 @@ task('setupLocal', 'Deploy a whole local test environment')
     // 2) Setup Chainlink (Oracle) Mock
     const ChainlinkFeed = await ethers.getContractFactory('MockChainlinkFeed')
 
-    const chainlinkWBTCFeed = await ChainlinkFeed.deploy(deployedTokens.WBTC, '8', '37170000000000')
-    const chainlinkWETHFeed = await ChainlinkFeed.deploy(deployedTokens.WETH, '8', '1270000000000')
+    const chainlinkWBTCFeed = await ChainlinkFeed.deploy(deployedTokens.WBTC, '8', '3717000000000')
+    const chainlinkWETHFeed = await ChainlinkFeed.deploy(deployedTokens.WETH, '8', '254000000000')
     const chainlinkLINKFeed = await ChainlinkFeed.deploy(deployedTokens.LINK, '8', '2496201073')
 
     await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
@@ -50,70 +55,103 @@ task('setupLocal', 'Deploy a whole local test environment')
     // Set WETH price Provider
     const priceProvider = await ethers.getContractAt('PriceProvider', await configurationManager.getPriceProvider())
 
-    await priceProvider.setAssetFeeds([deployedTokens.WETH], [chainlinkWETHFeed.address])
-    await priceProvider.setAssetFeeds([deployedTokens.LINK], [chainlinkLINKFeed.address])
+    await priceProvider.setAssetFeeds([deployedTokens.WETH, deployedTokens.LINK], [chainlinkWETHFeed.address, chainlinkLINKFeed.address])
+
+    const ivProviderAddress = await configurationManager.getIVProvider()
+    const ivProvider = await ethers.getContractAt('IVProvider', ivProviderAddress)
+
+    // Set the updater
+    await ivProvider.setUpdater(deployerAddress)
 
     // 4) Deploy Test Option
     const currentBlockTimestamp = await getTimestamp()
 
-    const optionWBTCAddress = await hre.run('deployNewOption', {
-      strike: 'USDC',
-      underlying: 'WBTC',
-      price: '18000',
-      expiration: (currentBlockTimestamp + 48 * 60 * 60).toString(),
-      cap: '2000'
-    })
+    const optionsList = [
+      {
+        strike: 'USDC',
+        underlying: 'WBTC',
+        price: '38000',
+        expiresIn: '20d',
+        initialIV: '1800000000000000000',
+        initialOptions: '10',
+        initialStable: '500000',
+        optionCap: '1000000',
+        poolCap: '100000000000'
+      },
+      {
+        strike: 'USDC',
+        underlying: 'WETH',
+        price: '2200',
+        expiresIn: '15d',
+        initialIV: '1760000000000000000',
+        initialOptions: '6',
+        initialStable: '11000',
+        optionCap: '1000000',
+        poolCap: '100000000000'
+      },
+      {
+        strike: 'USDC',
+        underlying: 'LINK',
+        price: '25',
+        expiresIn: '4d',
+        initialIV: '2700000000000000000',
+        initialOptions: '50',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '10000000000000'
+      }
+    ]
 
-    const optionWETHAddress = await hre.run('deployNewOption', {
-      strike: 'USDC',
-      underlying: 'WETH',
-      price: '1500',
-      expiration: (currentBlockTimestamp + 48 * 60 * 60).toString(),
-      cap: '2000'
-    })
+    const deployedOptions = []
 
-    const optionLINKAddress = await hre.run('deployNewOption', {
-      strike: 'USDC',
-      underlying: 'LINK',
-      price: '25',
-      expiration: (currentBlockTimestamp + 24 * 60 * 60 * 4).toString(),
-      cap: '2000'
-    })
+    for (const option of optionsList) {
+      let expiration
 
-    // 5) Create AMMPool test with this asset
-    const optionAMMPoolAddress = await hre.run('deployNewOptionAMMPool', {
-      option: optionWBTCAddress,
-      tokenb: deployedTokens.USDC,
-      initialiv: '770000000000000000', // 0.77%
-      cap: '500000'
-    })
+      // If option.expiresIn is an expression, interpret it, otherwise assume it
+      if (typeof option.expiresIn === 'string') {
+        expiration = currentBlockTimestamp + (parseDuration(option.expiresIn) / 1000)
+      } else {
+        expiration = option.expiresIn
+      }
 
-    const optionAMMETHPoolAddress = await hre.run('deployNewOptionAMMPool', {
-      option: optionWETHAddress,
-      tokenb: deployedTokens.USDC,
-      initialiv: '2000000000000000000',
-      cap: '500000'
-    })
+      const optionAddress = await hre.run('deployNewOption', {
+        strike: option.strike,
+        underlying: option.underlying,
+        price: option.price,
+        expiration: expiration.toString(),
+        cap: option.optionCap
+      })
 
-    const optionLINKPoolAddress = await hre.run('deployNewOptionAMMPool', {
-      option: optionLINKAddress,
-      tokenb: deployedTokens.USDC,
-      initialiv: '2311200000000000000',
-      cap: '500000'
-    })
+      const tokenbAddress = JSON.parse(content)[option.strike]
+      deployedOptions.push(optionAddress)
 
-    // 6) Mint Strike Asset
-    console.log('Minting USDC strike asset')
-    const mockUSDC = await ethers.getContractAt('MintableERC20', deployedTokens.USDC)
-    await mockUSDC.mint('10000000000000000')
+      await ivProvider.updateIV(optionAddress, option.initialIV, '18')
 
-    // // 7) Mint Options
-    await hre.run('mintOptions', { option: optionLINKAddress, amount: '600' })
+      const poolAddress = await hre.run('deployNewOptionAMMPool', {
+        option: optionAddress,
+        tokenb: tokenbAddress,
+        cap: option.poolCap,
+        initialiv: option.initialIV
+      })
+      const mockToken = await ethers.getContractAt('MintableERC20', tokenbAddress)
+      const mockTokenDecimals = await mockToken.decimals()
+      const amountToMint = BigNumber(option.poolCap).times(BigNumber(10).pow(mockTokenDecimals))
+      console.log('amountToMint')
+      console.log(amountToMint.toString())
 
-    // 8) Add Liquidity
-    await hre.run('addLiquidityAMM', {
-      pooladdress: optionLINKPoolAddress,
-      amounta: '500',
-      amountb: '11000'
-    })
+      await mockToken.mint(amountToMint.toString())
+
+      if (option.initialOptions) {
+        await hre.run('mintOptions', { option: optionAddress, amount: option.initialOptions })
+
+        await hre.run('addLiquidityAMM', {
+          pooladdress: poolAddress,
+          amounta: option.initialOptions,
+          amountb: option.initialStable
+        })
+      }
+    }
+    console.log('deployedOptions:')
+    console.log(deployedOptions)
+    console.log('---Finish Setup Local Network----')
   })

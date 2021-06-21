@@ -100,29 +100,16 @@ contract WPodPut is PodPut {
     /**
      * @notice Unlocks collateral by burning option tokens.
      *
-     * @dev In case of American options where exercise can happen before the expiration, caller
-     * may receive a mix of underlying asset and strike asset.
+     * Options can only be unmminted while the series is NOT expired.
      *
-     * Options can only be burned while the series is NOT expired.
-     *
-     * @param amountOfOptions The amount option tokens to be burned
+     * @param amountOfOptions The amount option tokens to be unminted
      */
-    function unmint(uint256 amountOfOptions) external override tradeWindow {
-        (uint256 strikeToSend, uint256 underlyingToSend, , uint256 underlyingReserves) = _burnOptions(
-            amountOfOptions,
-            msg.sender
-        );
+    function unmint(uint256 amountOfOptions) external override unmintWindow {
+        (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
         require(strikeToSend > 0, "WPodPut: amount of options is too low");
 
         // Sends strike asset
         IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
-
-        // Sends the underlying asset if the option was exercised
-        if (underlyingReserves > 0) {
-            require(underlyingToSend > 0, "WPodPut: amount of options is too low");
-            IWETH(underlyingAsset()).withdraw(underlyingToSend);
-            Address.sendValue(msg.sender, underlyingToSend);
-        }
 
         emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
     }

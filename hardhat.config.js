@@ -94,12 +94,19 @@ module.exports = {
     }
   },
   solidity: {
-    version: '0.6.12',
-    settings: {
-      optimizer: {
-        enabled: true
+    compilers: [
+      {
+        version: '0.6.12',
+        settings: {
+          optimizer: {
+            enabled: true
+          }
+        }
+      },
+      {
+        version: '0.8.4'
       }
-    }
+    ]
   },
   mocha: {
     timeout: 20000000001
