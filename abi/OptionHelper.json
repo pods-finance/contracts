@@ -310,6 +310,24 @@
       },
       {
         "internalType": "uint256",
+        "name": "collateralAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "mintAndAddLiquidityWithCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IPodOption",
+        "name": "option",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
         "name": "optionAmount",
         "type": "uint256"
       },

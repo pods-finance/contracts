@@ -149,6 +149,33 @@ contract OptionHelper {
     }
 
     /**
+     * @notice Mint and add liquidity using only collateralAmount as input
+     * @dev Mint options and provide them as liquidity to the pool
+     *
+     * @param option The option contract to mint
+     * @param collateralAmount Amount of collateral tokens to be used to both mint and mint into the stable side
+     */
+    function mintAndAddLiquidityWithCollateral(IPodOption option, uint256 collateralAmount) external {
+        IOptionAMMPool pool = _getPool(option);
+        IERC20 tokenB = IERC20(pool.tokenB());
+
+        (uint256 optionAmount, uint256 tokenBToAdd) = _calculateEvenAmounts(option, collateralAmount);
+
+        _mint(option, optionAmount);
+
+        tokenB.safeTransferFrom(msg.sender, address(this), tokenBToAdd);
+
+        // Approve pool transfer
+        IERC20(address(option)).safeApprove(address(pool), optionAmount);
+        tokenB.safeApprove(address(pool), tokenBToAdd);
+
+        // Adds options and tokens to pool as liquidity
+        pool.addLiquidity(optionAmount, tokenBToAdd, msg.sender);
+
+        emit LiquidityAdded(msg.sender, address(option), optionAmount, pool.tokenB(), tokenBToAdd);
+    }
+
+    /**
      * @notice Add liquidity
      * @dev Provide options as liquidity to the pool
      *
@@ -373,5 +400,31 @@ contract OptionHelper {
         address exchangeOptionAddress = factory.getPool(address(option));
         require(exchangeOptionAddress != address(0), "OptionHelper: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);
+    }
+
+    /**
+     * @dev Returns the AMM Pool associated with the option
+     *
+     * @param option The option to search for
+     * @param collateralAmount Total collateral amount that will be used to mint and add liquidity
+     * @return amountOfOptions amount of options to mint
+     * @return amountOfTokenB  amount of stable to add liquidity
+     */
+    function _calculateEvenAmounts(IPodOption option, uint256 collateralAmount)
+        internal
+        view
+        returns (uint256 amountOfOptions, uint256 amountOfTokenB)
+    {
+        // 1) Get BS Unit Price
+        IOptionAMMFactory factory = IOptionAMMFactory(configurationManager.getAMMFactory());
+        address exchangeOptionAddress = factory.getPool(address(option));
+        IOptionAMMPool pool = IOptionAMMPool(exchangeOptionAddress);
+
+        uint256 ABPrice = pool.getABPrice();
+        uint256 strikePrice = option.strikePrice();
+        uint256 optionDecimals = option.underlyingAssetDecimals();
+
+        amountOfOptions = collateralAmount.mul(10**optionDecimals).div(strikePrice.add(ABPrice));
+        amountOfTokenB = amountOfOptions.mul(ABPrice).div(10**optionDecimals);
     }
 }
