@@ -83,7 +83,7 @@ contract OptionFactory {
         if (optionType == IPodOption.OptionType.PUT) {
             if (underlyingAsset == WETH_ADDRESS) {
                 builder = wPodPutBuilder;
-            } else if(isAave) {
+            } else if (isAave) {
                 builder = aavePodPutBuilder;
             } else {
                 builder = podPutBuilder;
@@ -91,7 +91,7 @@ contract OptionFactory {
         } else {
             if (underlyingAsset == WETH_ADDRESS) {
                 builder = wPodCallBuilder;
-            } else if(isAave) {
+            } else if (isAave) {
                 builder = aavePodCallBuilder;
             } else {
                 builder = podCallBuilder;

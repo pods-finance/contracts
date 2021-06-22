@@ -18,12 +18,22 @@
       },
       {
         "internalType": "address",
+        "name": "AavePodPutBuilder",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
         "name": "PodCallBuilder",
         "type": "address"
       },
       {
         "internalType": "address",
         "name": "WPodCallBuilder",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "AavePodCallBuilder",
         "type": "address"
       },
       {
@@ -111,6 +121,32 @@
   },
   {
     "inputs": [],
+    "name": "aavePodCallBuilder",
+    "outputs": [
+      {
+        "internalType": "contract IOptionBuilder",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "aavePodPutBuilder",
+    "outputs": [
+      {
+        "internalType": "contract IOptionBuilder",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "configurationManager",
     "outputs": [
       {
@@ -168,6 +204,11 @@
         "internalType": "uint256",
         "name": "exerciseWindowSize",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAave",
+        "type": "bool"
       }
     ],
     "name": "createOption",
