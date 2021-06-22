@@ -6,6 +6,7 @@ const createConfigurationManager = require('../util/createConfigurationManager')
 const addLiquidity = require('../util/addLiquidity')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const mintOptions = require('../util/mintOptions')
+const { approximately } = require('../../utils/utils')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
@@ -227,7 +228,9 @@ describe('OptionHelper', () => {
       const optionsAdded = poolOptionBalanceAfter.sub(poolOptionBalanceBefore)
       const strikeAdded = poolStrikeBalanceAfter.sub(poolStrikeBalanceBefore)
 
-      optionsAdded.mul(ABPrice).eq(strikeAdded)
+      const valueA = optionsAdded.mul(ABPrice).div(ethers.BigNumber.from(10).pow(await option.decimals()))
+
+      expect(valueA).to.be.eq(strikeAdded)
     })
   })
 

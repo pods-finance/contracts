@@ -11,7 +11,6 @@ import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
-import "hardhat/console.sol";
 
 /**
  * @title PodOption
