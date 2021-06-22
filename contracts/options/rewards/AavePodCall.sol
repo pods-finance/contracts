@@ -24,19 +24,19 @@ contract AavePodCall is PodCall, AaveIncentives {
         uint256 exerciseWindowSize,
         IConfigurationManager configurationManager
     )
-    public
-    PodCall(
-        name,
-        symbol,
-        exerciseType,
-        underlyingAsset,
-        strikeAsset,
-        strikePrice,
-        expiration,
-        exerciseWindowSize,
-        configurationManager
-    )
-    AaveIncentives(configurationManager)
+        public
+        PodCall(
+            name,
+            symbol,
+            exerciseType,
+            underlyingAsset,
+            strikeAsset,
+            strikePrice,
+            expiration,
+            exerciseWindowSize,
+            configurationManager
+        )
+        AaveIncentives(configurationManager)
     {} // solhint-disable-line no-empty-blocks
 
     /**
@@ -96,10 +96,9 @@ contract AavePodCall is PodCall, AaveIncentives {
     /**
      * @dev Returns an array of staked assets which may be eligible for claiming rewards
      */
-    function _getClaimableAssets() internal view returns(address[] memory) {
-        address[] memory assets = new address[](2);
-        assets[0] = strikeAsset();
-        assets[1] = underlyingAsset();
+    function _getClaimableAssets() internal view returns (address[] memory) {
+        address[] memory assets = new address[](1);
+        assets[0] = underlyingAsset();
 
         return assets;
     }

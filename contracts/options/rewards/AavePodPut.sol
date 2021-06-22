@@ -49,23 +49,23 @@ contract AavePodPut is PodPut, AaveIncentives {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-     function unmintWithRewards(uint256 amountOfOptions) external unmintWindow {
-         _claimRewards(_getClaimableAssets());
-         uint256 rewardsToSend = shares[msg.sender].mul(_rewardBalance()).div(totalShares);
+    function unmintWithRewards(uint256 amountOfOptions) external unmintWindow {
+        _claimRewards(_getClaimableAssets());
+        uint256 rewardsToSend = shares[msg.sender].mul(_rewardBalance()).div(totalShares);
 
-         (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
-         require(strikeToSend > 0, "AavePodPut: amount of options is too low");
+        (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
+        require(strikeToSend > 0, "AavePodPut: amount of options is too low");
 
-         // Sends strike asset
-         IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
+        // Sends strike asset
+        IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
 
-         emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
+        emit Unmint(msg.sender, amountOfOptions, strikeToSend, underlyingToSend);
 
-         if (rewardsToSend > 0) {
-             IERC20(rewardAsset).safeTransfer(msg.sender, rewardsToSend);
-             emit RewardsClaimed(msg.sender, rewardsToSend);
-         }
-     }
+        if (rewardsToSend > 0) {
+            IERC20(rewardAsset).safeTransfer(msg.sender, rewardsToSend);
+            emit RewardsClaimed(msg.sender, rewardsToSend);
+        }
+    }
 
     /**
      * @notice After series expiration in case of American or after exercise window for European,
@@ -98,10 +98,9 @@ contract AavePodPut is PodPut, AaveIncentives {
     /**
      * @dev Returns an array of staked assets which may be eligible for claiming rewards
      */
-    function _getClaimableAssets() internal view returns(address[] memory) {
-        address[] memory assets = new address[](2);
+    function _getClaimableAssets() internal view returns (address[] memory) {
+        address[] memory assets = new address[](1);
         assets[0] = strikeAsset();
-        assets[1] = underlyingAsset();
 
         return assets;
     }

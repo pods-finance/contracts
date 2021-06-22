@@ -25,6 +25,8 @@ interface IConfigurationManager {
 
     function getParameter(bytes32 name) external view returns (uint256);
 
+    function owner() external view returns (address);
+
     function getEmergencyStop() external view returns (address);
 
     function getPricingMethod() external view returns (address);

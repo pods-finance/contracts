@@ -17,6 +17,7 @@ import "../interfaces/IFeePool.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IEmergencyStop.sol";
 import "../interfaces/IFeePoolBuilder.sol";
+import "../options/rewards/AaveIncentives.sol";
 
 /**
  * Represents an Option specific single-sided AMM.
@@ -33,7 +34,7 @@ import "../interfaces/IFeePoolBuilder.sol";
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
-contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
+contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection, AaveIncentives {
     using SafeMath for uint256;
     uint256 public constant PRICING_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
@@ -82,7 +83,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 _initialIV,
         IConfigurationManager _configurationManager,
         IFeePoolBuilder _feePoolBuilder
-    ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
+    ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) AaveIncentives(_configurationManager) {
         require(
             IPodOption(_optionAddress).exerciseType() == IPodOption.ExerciseType.EUROPEAN,
             "Pool: invalid exercise type"
@@ -141,6 +142,24 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _emergencyStopCheck();
         _removeLiquidity(amountOfA, amountOfB);
         _getTradeInfo();
+    }
+
+    /**
+     * @notice withdrawRewards claims reward from Aave and send to admin
+     * @dev should only be called by the admin power
+     *
+     */
+    function withdrawRewards() external override {
+        require(msg.sender == configurationManager.owner(), "not owner");
+        address[] memory assets = new address[](1);
+        assets[0] = this.tokenB();
+
+        _claimRewards(assets);
+
+        address rewardAsset = _parseAddressFromUint(configurationManager.getParameter("REWARD_ASSET"));
+        uint256 rewardsToSend = _rewardBalance();
+
+        IERC20(rewardAsset).safeTransfer(msg.sender, rewardsToSend);
     }
 
     /**
