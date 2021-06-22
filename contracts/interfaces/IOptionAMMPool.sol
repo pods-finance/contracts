@@ -86,4 +86,6 @@ interface IOptionAMMPool is IAMM {
     function getABPrice() external view returns (uint256);
 
     function getAdjustedIV() external view returns (uint256);
+
+    function withdrawRewards() external;
 }
