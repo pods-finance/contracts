@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "./AMM.sol";
 import "../lib/CappedPool.sol";
 import "../lib/FlashloanProtection.sol";
+import "../lib/Conversion.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IIVProvider.sol";
 import "../interfaces/IBlackScholes.sol";
@@ -33,7 +34,7 @@ import "../interfaces/IFeePoolBuilder.sol";
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
-contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
+contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection, AaveIcentives {
     using SafeMath for uint256;
     uint256 public constant PRICING_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
@@ -141,6 +142,18 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         _emergencyStopCheck();
         _removeLiquidity(amountOfA, amountOfB);
         _getTradeInfo();
+    }
+
+    function withdrawRewards() external {
+        require(msg.sender == configurationManager.owner(), "not owner");
+        address[] memory assets = new address[](1);
+        assets[0] = this.tokenB();
+
+        _claimRewards(assets);
+        uint256 rewardsToSend = _rewardBalance();
+        address rewardAsset = Conversion.parseAddressFromUint(configurationManager.getParameter("REWARD_ASSET"));
+
+        IERC20(rewardAsset).safeTransfer(msg.sender, rewardsToSend);
     }
 
     /**

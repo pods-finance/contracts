@@ -25,15 +25,26 @@ task('deployWeek', 'Deploy a whole local test environment')
     */
     const options = [
       {
-        strike: 'ADAI',
+        strike: 'USDC',
+        underlying: 'SUSHI',
+        price: '5.5',
+        expiresIn: '7d',
+        initialIV: '2200000000000000000'
+        // initialOptions: '5000',
+        // initialStable: '5000',
+        // optionCap: '13600',
+        // poolCap: '25000'
+      },
+      {
+        strike: 'USDC',
         underlying: 'WMATIC',
-        price: '1.4',
-        expiresIn: '31d',
-        initialIV: '2200000000000000000',
-        initialOptions: '5000',
-        initialStable: '5000',
-        optionCap: '1000000',
-        poolCap: '100000'
+        price: '1',
+        expiresIn: '7d',
+        initialIV: '2840000000000000000'
+        // initialOptions: '5000',
+        // initialStable: '5000',
+        // optionCap: '40000',
+        // poolCap: '40000'
       }
     ]
 

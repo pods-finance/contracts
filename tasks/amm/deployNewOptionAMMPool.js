@@ -10,7 +10,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
   .addParam('option', 'Option address')
   .addParam('tokenb', 'What is the other token that will be in the pool')
   .addParam('initialiv', 'Initial IV to start the pool')
-  .addParam('cap', 'The cap of tokenB liquidity to be added')
+  .addOptionalParam('cap', 'The cap of tokenB liquidity to be added')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addFlag('tenderly', 'if true, it should verify the contract after the deployment')
   .setAction(async ({ option, tokenb, initialiv, cap, verify, tenderly }, hre) => {
