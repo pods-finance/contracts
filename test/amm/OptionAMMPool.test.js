@@ -128,7 +128,6 @@ scenarios.forEach(scenario => {
       await configurationManager.setParameter(
         ethers.utils.formatBytes32String('REWARD_CONTRACT'),
         aaveRewardDistributor.address
-
       )
 
       await defaultPriceFeed.setDecimals(scenario.spotPriceDecimals)
