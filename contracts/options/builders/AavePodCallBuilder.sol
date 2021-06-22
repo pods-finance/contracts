@@ -2,19 +2,19 @@
 
 pragma solidity 0.6.12;
 
-import "./PodPut.sol";
-import "../interfaces/IPodOption.sol";
-import "../interfaces/IOptionBuilder.sol";
+import "../rewards/AavePodCall.sol";
+import "../../interfaces/IPodOption.sol";
+import "../../interfaces/IOptionBuilder.sol";
 
 /**
- * @title PodPutBuilder
+ * @title AavePodCallBuilder
  * @author Pods Finance
- * @notice Builds PodPut options
+ * @notice Builds AavePodCall options
  */
-contract PodPutBuilder is IOptionBuilder {
+contract AavePodCallBuilder is IOptionBuilder {
     /**
-     * @notice creates a new PodPut Contract
-     * @param name The option token name. Eg. "Pods Put WBTC-USDC 5000 2020-02-23"
+     * @notice creates a new AavePodCall Contract
+     * @param name The option token name. Eg. "Pods Call WBTC-USDC 5000 2020-02-23"
      * @param symbol The option token symbol. Eg. "podWBTC:20AA"
      * @param exerciseType The option exercise type. Eg. "0 for European, 1 for American"
      * @param underlyingAsset The underlying asset. Eg. "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
@@ -34,7 +34,7 @@ contract PodPutBuilder is IOptionBuilder {
         uint256 exerciseWindowSize,
         IConfigurationManager configurationManager
     ) external override returns (IPodOption) {
-        PodPut option = new PodPut(
+        AavePodCall option = new AavePodCall(
             name,
             symbol,
             exerciseType,

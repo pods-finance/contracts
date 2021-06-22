@@ -202,6 +202,7 @@ contract PodCall is PodOption {
         if (strikeToSend > 0) {
             IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
         }
+
         emit Withdraw(msg.sender, strikeToSend, underlyingToSend);
     }
 }

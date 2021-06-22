@@ -15,8 +15,10 @@ contract OptionFactory {
     IConfigurationManager public immutable configurationManager;
     IOptionBuilder public podPutBuilder;
     IOptionBuilder public wPodPutBuilder;
+    IOptionBuilder public aavePodPutBuilder;
     IOptionBuilder public podCallBuilder;
     IOptionBuilder public wPodCallBuilder;
+    IOptionBuilder public aavePodCallBuilder;
     address public WETH_ADDRESS;
 
     event OptionCreated(
@@ -35,16 +37,20 @@ contract OptionFactory {
         address wethAddress,
         address PodPutBuilder,
         address WPodPutBuilder,
+        address AavePodPutBuilder,
         address PodCallBuilder,
         address WPodCallBuilder,
+        address AavePodCallBuilder,
         address ConfigurationManager
     ) public {
         WETH_ADDRESS = wethAddress;
         configurationManager = IConfigurationManager(ConfigurationManager);
         podPutBuilder = IOptionBuilder(PodPutBuilder);
         wPodPutBuilder = IOptionBuilder(WPodPutBuilder);
+        aavePodPutBuilder = IOptionBuilder(AavePodPutBuilder);
         podCallBuilder = IOptionBuilder(PodCallBuilder);
         wPodCallBuilder = IOptionBuilder(WPodCallBuilder);
+        aavePodCallBuilder = IOptionBuilder(AavePodCallBuilder);
     }
 
     /**
@@ -69,19 +75,24 @@ contract OptionFactory {
         address strikeAsset,
         uint256 strikePrice,
         uint256 expiration,
-        uint256 exerciseWindowSize
+        uint256 exerciseWindowSize,
+        bool isAave
     ) external returns (address) {
         IOptionBuilder builder;
 
         if (optionType == IPodOption.OptionType.PUT) {
             if (underlyingAsset == WETH_ADDRESS) {
                 builder = wPodPutBuilder;
+            } else if (isAave) {
+                builder = aavePodPutBuilder;
             } else {
                 builder = podPutBuilder;
             }
         } else {
             if (underlyingAsset == WETH_ADDRESS) {
                 builder = wPodCallBuilder;
+            } else if (isAave) {
+                builder = aavePodCallBuilder;
             } else {
                 builder = podCallBuilder;
             }

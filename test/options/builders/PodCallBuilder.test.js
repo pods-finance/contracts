@@ -1,5 +1,5 @@
 const { expect } = require('chai')
-const createConfigurationManager = require('../util/createConfigurationManager')
+const createConfigurationManager = require('../../util/createConfigurationManager')
 
 const OPTION_TYPE_PUT = 0
 const EXERCISE_TYPE_EUROPEAN = 0
@@ -10,35 +10,38 @@ const ScenarioA = {
   optionType: OPTION_TYPE_PUT,
   exerciseType: EXERCISE_TYPE_EUROPEAN,
   strikePrice: 5000000000, // 5000 USDC for 1 unit of WBTC,
-  expiration: new Date().getTime() + 24 * 60 * 60 * 7,
+  expiration: new Date().getTime() + 5 * 60 * 60 * 1000,
   exerciseWindowSize: 24 * 60 * 60, // 24h
   cap: ethers.BigNumber.from(20e8.toString())
 }
 
-describe('WPodPutBuilder', function () {
-  let optionFactory
+describe('PodCallBuilder', function () {
+  let podCallBuilder
   let underlyingAsset
   let strikeAsset
   let configurationManager
 
   before(async function () {
-    const OptionFactory = await ethers.getContractFactory('WPodPutBuilder')
-    const MintableERC20 = await ethers.getContractFactory('MintableERC20')
+    const OptionBuilder = await ethers.getContractFactory('PodCallBuilder')
+    const MockERC20 = await ethers.getContractFactory('MintableERC20')
 
-    underlyingAsset = await MintableERC20.deploy('WBTC Token', 'USDC', 8)
-    strikeAsset = await MintableERC20.deploy('USDC Token', 'USDC', 6)
-    optionFactory = await OptionFactory.deploy()
+    underlyingAsset = await MockERC20.deploy('Wrapped BTC', 'WBTC', 8)
+    strikeAsset = await MockERC20.deploy('USDC Token', 'USDC', 6)
+    podCallBuilder = await OptionBuilder.deploy()
 
-    await optionFactory.deployed()
+    await underlyingAsset.mint(1000e8)
+    await strikeAsset.mint(1000e8)
+
+    await podCallBuilder.deployed()
     await underlyingAsset.deployed()
     await strikeAsset.deployed()
 
     configurationManager = await createConfigurationManager()
   })
 
-  it('Should create a new WPodPut Option correctly and not revert', async function () {
+  it('Should create a new PodPut Option correctly and not revert', async function () {
     const funcParameters = [ScenarioA.name, ScenarioA.symbol, ScenarioA.exerciseType, underlyingAsset.address, strikeAsset.address, ScenarioA.strikePrice, ScenarioA.expiration, ScenarioA.exerciseWindowSize, configurationManager.address]
 
-    await expect(optionFactory.buildOption(...funcParameters)).to.not.be.reverted
+    await expect(podCallBuilder.buildOption(...funcParameters)).to.not.be.reverted
   })
 })

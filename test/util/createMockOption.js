@@ -14,7 +14,8 @@ module.exports = async function createMockOption ({
   optionType = OPTION_TYPE_PUT,
   exerciseType = EXERCISE_TYPE_EUROPEAN,
   exerciseWindow = 24 * 60 * 60,
-  configurationManager
+  configurationManager,
+  isAave = false
 } = {}) {
   const [MockERC20, WETH] = await Promise.all([
     ethers.getContractFactory('MintableERC20'),
@@ -43,7 +44,8 @@ module.exports = async function createMockOption ({
     strikeAsset,
     strikePrice,
     await getTimestamp() + 16 * 24 * 60 * 60,
-    exerciseWindow
+    exerciseWindow,
+    isAave
   )
 
   const [deployer] = await ethers.getSigners()

@@ -204,6 +204,7 @@ contract PodPut is PodOption {
         if (underlyingToSend > 0) {
             IERC20(underlyingAsset()).safeTransfer(msg.sender, underlyingToSend);
         }
+
         emit Withdraw(msg.sender, strikeToSend, underlyingToSend);
     }
 }
