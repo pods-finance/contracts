@@ -1,6 +1,8 @@
+const { ethers, waffle: { deployMockContract } } = require('hardhat')
 const { expect } = require('chai')
 const BigNumber = require('bignumber.js')
 const skipToWithdrawWindow = require('../util/skipToWithdrawWindow')
+const IAaveIncentivesController = require('../../abi/IAaveIncentivesController.json')
 const createPriceFeedMock = require('../util/createPriceFeedMock')
 const createMockOption = require('../util/createMockOption')
 const createNewPool = require('../util/createNewPool')
@@ -65,7 +67,7 @@ const scenarios = [
 
 scenarios.forEach(scenario => {
   describe('OptionAMMPool.sol - ' + scenario.name, () => {
-    let MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider, IVProvider
+    let MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider, IVProvider, rewardToken
     let weth
     let configurationManager
     let mockUnderlyingAsset
@@ -78,7 +80,7 @@ scenarios.forEach(scenario => {
     let option
     let optionAMMPool
     let deployer, second, buyer, delegator, lp
-    let deployerAddress, secondAddress, buyerAddress, delegatorAddress, lpAddress
+    let deployerAddress, secondAddress, buyerAddress, delegatorAddress, lpAddress, MintableInterestBearing, aaveRewardDistributor, claimable
     let defaultPriceFeed
 
     before(async () => {
@@ -92,15 +94,19 @@ scenarios.forEach(scenario => {
         lp.getAddress()
       ])
 
-      ;[MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider, IVProvider] = await Promise.all([
+      ;[MockERC20, WETH, OptionAMMFactory, FeePoolBuilder, OptionAMMPool, PriceProvider, IVProvider, MintableInterestBearing, aaveRewardDistributor] = await Promise.all([
         ethers.getContractFactory('MintableERC20'),
         ethers.getContractFactory('WETH'),
         ethers.getContractFactory('OptionAMMFactory'),
         ethers.getContractFactory('FeePoolBuilder'),
         ethers.getContractFactory('OptionAMMPool'),
         ethers.getContractFactory('PriceProvider'),
-        ethers.getContractFactory('IVProvider')
+        ethers.getContractFactory('IVProvider'),
+        ethers.getContractFactory('MintableInterestBearing'),
+        await deployMockContract(deployer, IAaveIncentivesController)
       ])
+
+      rewardToken = await MintableInterestBearing.deploy('Reward Token', 'RWD', 18)
 
       ;[weth, mockUnderlyingAsset, mockStrikeAsset] = await Promise.all([
         WETH.deploy(),
@@ -114,6 +120,16 @@ scenarios.forEach(scenario => {
 
     beforeEach(async function () {
       configurationManager = await createConfigurationManager()
+
+      await configurationManager.setParameter(
+        ethers.utils.formatBytes32String('REWARD_ASSET'),
+        rewardToken.address
+      )
+      await configurationManager.setParameter(
+        ethers.utils.formatBytes32String('REWARD_CONTRACT'),
+        aaveRewardDistributor.address
+      )
+
       await defaultPriceFeed.setDecimals(scenario.spotPriceDecimals)
       await defaultPriceFeed.setRoundData({
         roundId: 1,
@@ -144,6 +160,13 @@ scenarios.forEach(scenario => {
 
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
       optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialIV)
+
+      claimable = ethers.BigNumber.from(20e18.toString())
+      await aaveRewardDistributor.mock.getRewardsBalance.returns(claimable)
+      await aaveRewardDistributor.mock.claimRewards.returns(claimable)
+
+      await rewardToken.connect(deployer).mint(claimable)
+      await rewardToken.connect(deployer).transfer(optionAMMPool.address, claimable)
     })
 
     describe('Constructor/Initialization checks', () => {
@@ -723,6 +746,15 @@ scenarios.forEach(scenario => {
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: invalid amountAIn')
 
         await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfOptionsToBuy, ethers.constants.MaxUint256, buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: invalid amountAOut')
+      })
+    })
+    describe('Withdraw Rewards', async () => {
+      it('should revert if not the owner tries to call the function', async () => {
+        await expect(optionAMMPool.connect(buyer).withdrawRewards()).to.be.revertedWith('not owner')
+      })
+      it('should collect rewards accordingly', async () => {
+        await optionAMMPool.withdrawRewards()
+        expect(await rewardToken.balanceOf(deployerAddress)).to.be.equal(claimable)
       })
     })
 

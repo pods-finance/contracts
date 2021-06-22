@@ -122,4 +122,8 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     function getOptionHelper() external override view returns (address) {
         return getModule(OPTION_HELPER);
     }
+
+    function owner() public override(Ownable, IConfigurationManager) view returns (address) {
+        return super.owner();
+    }
 }

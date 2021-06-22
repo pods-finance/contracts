@@ -5,15 +5,13 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../interfaces/IAaveIncentivesController.sol";
 import "../../interfaces/IConfigurationManager.sol";
+import "../../lib/Conversion.sol";
 
-abstract contract AaveIncentives {
+abstract contract AaveIncentives is Conversion {
     address public immutable rewardAsset;
     address public immutable rewardContract;
 
-    event RewardsClaimed(
-        address indexed claimer,
-        uint256 rewardAmount
-    );
+    event RewardsClaimed(address indexed claimer, uint256 rewardAmount);
 
     constructor(IConfigurationManager configurationManager) public {
         rewardAsset = _parseAddressFromUint(configurationManager.getParameter("REWARD_ASSET"));
@@ -34,14 +32,5 @@ abstract contract AaveIncentives {
         IAaveIncentivesController distributor = IAaveIncentivesController(rewardContract);
         uint256 amountToClaim = distributor.getRewardsBalance(assets, address(this));
         distributor.claimRewards(assets, amountToClaim, address(this));
-    }
-
-    /**
-     * @notice Parses the address represented by an uint
-     */
-    function _parseAddressFromUint(uint256 x) internal returns(address) {
-        bytes memory data = new bytes(32);
-        assembly { mstore(add(data, 32), x) }
-        return abi.decode(data, (address));
     }
 }
