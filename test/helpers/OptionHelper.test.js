@@ -33,7 +33,6 @@ describe('OptionHelper', () => {
       ethers.getContractFactory('FeePoolBuilder'),
       ethers.getContractFactory('MintableERC20'),
       ethers.getContractFactory('IVProvider')
-
     ])
 
     underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
@@ -75,7 +74,6 @@ describe('OptionHelper', () => {
     const stableLiquidity = ethers.BigNumber.from(100000e6)
 
     await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
-
     optionHelper = await OptionHelper.deploy(configurationManager.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
