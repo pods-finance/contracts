@@ -2,20 +2,20 @@
 
 pragma solidity 0.6.12;
 
-import "./WPodPut.sol";
-import "../interfaces/IPodOption.sol";
-import "../interfaces/IOptionBuilder.sol";
+import "../PodCall.sol";
+import "../../interfaces/IPodOption.sol";
+import "../../interfaces/IOptionBuilder.sol";
 
 /**
- * @title WPodPutBuilder
+ * @title PodCallBuilder
  * @author Pods Finance
- * @notice Builds WPodPut options
+ * @notice Builds PodCall options
  */
-contract WPodPutBuilder is IOptionBuilder {
+contract PodCallBuilder is IOptionBuilder {
     /**
-     * @notice creates a new WPodPut Contract
-     * @param name The option token name. Eg. "Pods Put WETH-USDC 5000 2020-02-23"
-     * @param symbol The option token symbol. Eg. "podWETH:20AA"
+     * @notice creates a new PodCall Contract
+     * @param name The option token name. Eg. "Pods Call WBTC-USDC 5000 2020-02-23"
+     * @param symbol The option token symbol. Eg. "podWBTC:20AA"
      * @param exerciseType The option exercise type. Eg. "0 for European, 1 for American"
      * @param underlyingAsset The underlying asset. Eg. "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
      * @param strikeAsset The strike asset. Eg. "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
@@ -34,7 +34,7 @@ contract WPodPutBuilder is IOptionBuilder {
         uint256 exerciseWindowSize,
         IConfigurationManager configurationManager
     ) external override returns (IPodOption) {
-        WPodPut option = new WPodPut(
+        PodCall option = new PodCall(
             name,
             symbol,
             exerciseType,

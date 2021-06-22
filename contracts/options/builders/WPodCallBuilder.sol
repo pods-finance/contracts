@@ -2,9 +2,9 @@
 
 pragma solidity 0.6.12;
 
-import "./WPodCall.sol";
-import "../interfaces/IPodOption.sol";
-import "../interfaces/IOptionBuilder.sol";
+import "../WPodCall.sol";
+import "../../interfaces/IPodOption.sol";
+import "../../interfaces/IOptionBuilder.sol";
 
 /**
  * @title WPodCallBuilder
