@@ -11,7 +11,7 @@ import "../interfaces/IConfigurationManager.sol";
  * @author Pods Finance
  * @notice Allows contracts to read protocol-wide configuration modules
  */
-contract ConfigurationManager is Ownable, IConfigurationManager, ModuleStorage {
+contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     mapping(bytes32 => uint256) private _parameters;
 
     /* solhint-disable private-vars-leading-underscore */
