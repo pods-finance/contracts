@@ -9,7 +9,7 @@ const { takeSnapshot, revertToSnapshot } = require('../../util/snapshot')
 
 describe('AavePodPut', () => {
   let snapshotId
-  let deployer, minter
+  let deployer, minter0, minter1
   let AavePodPut, MintableInterestBearing
   let configurationManager, underlyingAsset, strikeAsset, option, aaveRewardDistributor
 
@@ -18,7 +18,7 @@ describe('AavePodPut', () => {
   const claimable = ethers.BigNumber.from(20e18.toString())
 
   before(async () => {
-    ;[deployer, minter] = await ethers.getSigners()
+    ;[deployer, minter0, minter1] = await ethers.getSigners()
     ;[AavePodPut, MintableInterestBearing, configurationManager, aaveRewardDistributor] = await Promise.all([
       ethers.getContractFactory('AavePodPut'),
       ethers.getContractFactory('MintableInterestBearing'),
@@ -67,20 +67,40 @@ describe('AavePodPut', () => {
     await revertToSnapshot(snapshotId)
   })
 
-  it('unmints and gets the rewards', async () => {
-    await mintOptions(option, amountToMint, minter)
-    await option.connect(minter).unmintWithRewards(amountToMint)
-    expect(await option.balanceOf(minter.address)).to.be.equal(0)
-    expect(await strikeAsset.balanceOf(minter.address)).to.be.equal(strikePrice)
-    expect(await rewardToken.balanceOf(minter.address)).to.be.equal(claimable)
+  it('unmints entirely and gets the rewards', async () => {
+    await mintOptions(option, amountToMint, minter0)
+    await option.connect(minter0).unmintWithRewards(amountToMint)
+    expect(await option.balanceOf(minter0.address)).to.be.equal(0)
+    expect(await strikeAsset.balanceOf(minter0.address)).to.be.equal(strikePrice)
+    expect(await rewardToken.balanceOf(minter0.address)).to.be.equal(claimable)
+  })
+
+  it('unmints partially and gets partial rewards', async () => {
+    await mintOptions(option, amountToMint, minter0)
+    await mintOptions(option, amountToMint, minter1)
+
+    const partialAmountToUnmint = amountToMint.div(2)
+    const partialCollateralAmount = strikePrice.div(2)
+
+    // Minter 0 unminting partially
+    await option.connect(minter0).unmintWithRewards(partialAmountToUnmint)
+    expect(await option.balanceOf(minter0.address)).to.be.equal(partialAmountToUnmint)
+    expect(await strikeAsset.balanceOf(minter0.address)).to.be.equal(partialCollateralAmount)
+    expect(await rewardToken.balanceOf(minter0.address)).to.be.equal(claimable.div(4))
+
+    // Minter 1 didn't lose rewards
+    await option.connect(minter1).unmintWithRewards(amountToMint)
+    expect(await option.balanceOf(minter1.address)).to.be.equal(0)
+    expect(await strikeAsset.balanceOf(minter1.address)).to.be.equal(strikePrice)
+    expect(await rewardToken.balanceOf(minter1.address)).to.be.equal(claimable.div(2))
   })
 
   it('withdraws and gets the rewards', async () => {
-    await mintOptions(option, amountToMint, minter)
+    await mintOptions(option, amountToMint, minter0)
     await skipToWithdrawWindow(option)
-    await option.connect(minter).withdrawWithRewards()
-    expect(await option.shares(minter.address)).to.be.equal(0)
-    expect(await strikeAsset.balanceOf(minter.address)).to.be.equal(strikePrice)
-    expect(await rewardToken.balanceOf(minter.address)).to.be.equal(claimable)
+    await option.connect(minter0).withdrawWithRewards()
+    expect(await option.shares(minter0.address)).to.be.equal(0)
+    expect(await strikeAsset.balanceOf(minter0.address)).to.be.equal(strikePrice)
+    expect(await rewardToken.balanceOf(minter0.address)).to.be.equal(claimable)
   })
 })

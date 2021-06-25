@@ -51,7 +51,7 @@ contract AavePodPut is PodPut, AaveIncentives {
      */
     function unmintWithRewards(uint256 amountOfOptions) external unmintWindow {
         _claimRewards(_getClaimableAssets());
-        uint256 rewardsToSend = shares[msg.sender].mul(_rewardBalance()).div(totalShares);
+        uint256 rewardsToSend = (shares[msg.sender].mul(amountOfOptions).div(mintedOptions[msg.sender])).mul(_rewardBalance()).div(totalShares);
 
         (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
         require(strikeToSend > 0, "AavePodPut: amount of options is too low");
