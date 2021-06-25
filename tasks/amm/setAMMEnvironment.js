@@ -1,4 +1,3 @@
-const saveJSON = require('../utils/saveJSON')
 
 // WETH Chainlink source KOVAN: 0x9326BFA02ADD2366b30bacB125260Af641031331
 task('setAMMEnvironment', 'deploy and link all main system contracts')

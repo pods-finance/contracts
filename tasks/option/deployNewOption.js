@@ -1,4 +1,3 @@
-const saveJSON = require('../utils/saveJSON')
 const { toBigNumber } = require('../../utils/utils')
 const BigNumber = require('bignumber.js')
 const verifyContract = require('../utils/verify')
