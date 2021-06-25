@@ -36,10 +36,10 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     if (builders) {
       podputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodPut', save: true, verify })
       wpodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodPut', save: true, verify })
-      wpodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodPut', save: true, verify })
+      aavepodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodPut', save: true, verify })
       podcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodCall', save: true, verify })
       wpodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodCall', save: true, verify })
-      wpodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodCall', save: true, verify })
+      aavepodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodCall', save: true, verify })
     }
 
     const factoryAddress = await hre.run('deploy', {
@@ -48,8 +48,10 @@ task('deployOptionFactory', 'Deploy OptionFactory')
         wethAddress,
         podputbuilder,
         wpodputbuilder,
+        aavepodputbuilder,
         podcallbuilder,
         wpodcallbuilder,
+        aavepodcallbuilder,
         configuration
       ],
       save: true,
