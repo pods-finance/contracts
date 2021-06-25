@@ -69,7 +69,7 @@ describe('AavePodPut', () => {
 
   it('unmints entirely and gets the rewards', async () => {
     await mintOptions(option, amountToMint, minter0)
-    await option.connect(minter0).unmintWithRewards(amountToMint)
+    await option.connect(minter0).unmint(amountToMint)
     expect(await option.balanceOf(minter0.address)).to.be.equal(0)
     expect(await strikeAsset.balanceOf(minter0.address)).to.be.equal(strikePrice)
     expect(await rewardToken.balanceOf(minter0.address)).to.be.equal(claimable)
@@ -83,13 +83,13 @@ describe('AavePodPut', () => {
     const partialCollateralAmount = strikePrice.div(2)
 
     // Minter 0 unminting partially
-    await option.connect(minter0).unmintWithRewards(partialAmountToUnmint)
+    await option.connect(minter0).unmint(partialAmountToUnmint)
     expect(await option.balanceOf(minter0.address)).to.be.equal(partialAmountToUnmint)
     expect(await strikeAsset.balanceOf(minter0.address)).to.be.equal(partialCollateralAmount)
     expect(await rewardToken.balanceOf(minter0.address)).to.be.equal(claimable.div(4))
 
     // Minter 1 didn't lose rewards
-    await option.connect(minter1).unmintWithRewards(amountToMint)
+    await option.connect(minter1).unmint(amountToMint)
     expect(await option.balanceOf(minter1.address)).to.be.equal(0)
     expect(await strikeAsset.balanceOf(minter1.address)).to.be.equal(strikePrice)
     expect(await rewardToken.balanceOf(minter1.address)).to.be.equal(claimable.div(2))
@@ -98,7 +98,7 @@ describe('AavePodPut', () => {
   it('withdraws and gets the rewards', async () => {
     await mintOptions(option, amountToMint, minter0)
     await skipToWithdrawWindow(option)
-    await option.connect(minter0).withdrawWithRewards()
+    await option.connect(minter0).withdraw()
     expect(await option.shares(minter0.address)).to.be.equal(0)
     expect(await strikeAsset.balanceOf(minter0.address)).to.be.equal(strikePrice)
     expect(await rewardToken.balanceOf(minter0.address)).to.be.equal(claimable)
