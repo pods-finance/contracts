@@ -49,9 +49,9 @@ contract AavePodPut is PodPut, AaveIncentives {
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-    function unmintWithRewards(uint256 amountOfOptions) external unmintWindow {
+    function unmint(uint256 amountOfOptions) external override unmintWindow {
         _claimRewards(_getClaimableAssets());
-        uint256 rewardsToSend = shares[msg.sender].mul(_rewardBalance()).div(totalShares);
+        uint256 rewardsToSend = (shares[msg.sender].mul(amountOfOptions).div(mintedOptions[msg.sender])).mul(_rewardBalance()).div(totalShares);
 
         (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
         require(strikeToSend > 0, "AavePodPut: amount of options is too low");
@@ -75,7 +75,7 @@ contract AavePodPut is PodPut, AaveIncentives {
      * @dev If assets had been exercised during the option series the minter may withdraw
      * the exercised assets or a combination of exercised and strike asset tokens.
      */
-    function withdrawWithRewards() external withdrawWindow {
+    function withdraw() external override withdrawWindow {
         _claimRewards(_getClaimableAssets());
         uint256 rewardsToSend = shares[msg.sender].mul(_rewardBalance()).div(totalShares);
 
