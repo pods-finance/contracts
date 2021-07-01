@@ -11,7 +11,7 @@ module.exports = async function verify (hre, contractAddress, constructorArgumen
   }
 
   if (hre.network.name === 'matic') {
-    hre.config.etherscan.apiKey = process.env.POLYGONCAN_APIKEY
+    hre.config.etherscan.apiKey = process.env.POLYGONSCAN_APIKEY
   }
 
   await hre.run('verify:verify', verifyObj)
