@@ -41,7 +41,8 @@ task('addLiquidityAMM', 'addLiquidityAMM')
     await approveTransferERC20(tokenB, pool.address, amountB, numberOfConfirmations)
 
     // Add liquidity per se
+    console.log(`Adding liquidity to pool: ${pool.address}\nAmountA: ${amountA} ${await tokenA.symbol()}\nAmountB: ${amountB} ${await tokenB.symbol()}`)
     const tx = await pool.addLiquidity(amountA, amountB, owner)
     await tx.wait(numberOfConfirmations)
-    console.log(`Liquidity added to pool: ${pool.address}\nAmountA: ${amountA} ${await tokenA.symbol()}\nAmountB: ${amountB} ${await tokenB.symbol()}`)
+    console.log(`Liquidity added successfully!`)
   })
