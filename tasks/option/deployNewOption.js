@@ -17,7 +17,8 @@ task('deployNewOption', 'Deploy New Option')
   .addFlag('american', 'Add this flag if the option is american')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addFlag('tenderly', 'if true, it should verify the contract after the deployment')
-  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american, verify, tenderly }, hre) => {
+  .addFlag('aave', 'if true, then creates a reward-compatible option')
+  .setAction(async ({ underlying, strike, price, expiration, windowOfExercise, cap, call, american, verify, tenderly, aave = false }, hre) => {
     console.log('----Start Deploy New Option----')
     const pathFile = `../../deployments/${hre.network.name}.json`
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
@@ -67,7 +68,8 @@ task('deployNewOption', 'Deploy New Option')
       optionParams.strikeAsset,
       optionParams.strikePrice,
       optionParams.expiration,
-      optionParams.windowOfExercise
+      optionParams.windowOfExercise,
+      aave
     ]
 
     const FactoryContract = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
