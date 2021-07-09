@@ -34,12 +34,14 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     validateAddress(configuration, 'configuration')
 
     if (builders) {
-      podputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodPut', save: true, verify })
-      wpodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodPut', save: true, verify })
-      aavepodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodPut', save: true, verify })
-      podcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodCall', save: true, verify })
-      wpodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodCall', save: true, verify })
-      aavepodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodCall', save: true, verify })
+      console.log(`Deploying OptionBuilders...`)
+      podputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodPut', save: true, verify, quiet: true })
+      wpodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodPut', save: true, verify, quiet: true })
+      aavepodputbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodPut', save: true, verify, quiet: true })
+      podcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'PodCall', save: true, verify, quiet: true })
+      wpodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'WPodCall', save: true, verify, quiet: true })
+      aavepodcallbuilder = await hre.run('deployOptionBuilder', { optiontype: 'AavePodCall', save: true, verify, quiet: true })
+      console.log(`OptionBuilders deployed successfully!`)
     }
 
     const factoryAddress = await hre.run('deploy', {
