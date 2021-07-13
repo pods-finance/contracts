@@ -1,7 +1,7 @@
 task('deployConfigurationManager', 'Deploy a new instance of ConfigurationManager + Emergency + Cap and link them')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .setAction(async ({ verify }, hre) => {
-    console.log('----Start Deploy ConfiguratorManager + Emergency + Cap----')
+    console.log('----Start Deploy ConfigurationManager + Emergency + Cap----')
 
     const configurationManagerAddress = await hre.run('deploy', {
       name: 'ConfigurationManager',
@@ -33,6 +33,6 @@ task('deployConfigurationManager', 'Deploy a new instance of ConfigurationManage
       newContract: capProviderAddress
     })
 
-    console.log('----End Deploy ConfiguratorManager + Emergency + Cap----')
+    console.log('----End Deploy ConfigurationManager + Emergency + Cap----')
     return configurationManagerAddress
   })
