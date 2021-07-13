@@ -1,18 +1,18 @@
 
-module.exports = async function verify (hre, contractAddress, constructorArguments = [], libraryObj) {
+module.exports = async function verify (hre, address, constructorArguments = [], libraries) {
   console.log('--Starting Verify Process--')
-  const verifyObj = {
-    address: contractAddress,
+  const verifyData = {
+    address,
     constructorArguments
   }
 
-  if (libraryObj) {
-    verifyObj.libraries = libraryObj
+  if (libraries) {
+    verifyData.libraries = libraries
   }
 
   if (hre.network.name === 'matic') {
     hre.config.etherscan.apiKey = process.env.POLYGONSCAN_APIKEY
   }
 
-  await hre.run('verify:verify', verifyObj)
+  await hre.run('verify:verify', verifyData)
 }
