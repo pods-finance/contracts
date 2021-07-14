@@ -121,18 +121,17 @@ task('setupLocal', 'Deploy a whole local test environment')
         cap: option.optionCap
       })
 
-      const tokenbAddress = deployments[option.strike]
       deployedOptions.push(optionAddress)
 
       await ivProvider.updateIV(optionAddress, option.initialIV, '18')
 
       const poolAddress = await hre.run('deployNewOptionAMMPool', {
         option: optionAddress,
-        tokenb: tokenbAddress,
+        tokenb: option.strike,
         cap: option.poolCap,
         initialiv: option.initialIV
       })
-      const mockToken = await ethers.getContractAt('MintableERC20', tokenbAddress)
+      const mockToken = await ethers.getContractAt('MintableERC20', deployments[option.strike])
       const mockTokenDecimals = await mockToken.decimals()
       const amountToMint = BigNumber(option.poolCap).times(BigNumber(10).pow(mockTokenDecimals))
       console.log('amountToMint')

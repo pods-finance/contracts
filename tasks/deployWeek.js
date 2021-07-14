@@ -54,10 +54,10 @@ task('deployWeek', 'Deploy a whole local test environment')
         expiration: expiration.toString(),
         cap: option.optionCap,
         verify,
-        tenderly
+        tenderly,
+        aave: false
       })
 
-      const tokenbAddress = contentJSON[option.strike]
       deployedOptions.push(optionAddress)
 
       if (ivprovider) {
@@ -68,9 +68,9 @@ task('deployWeek', 'Deploy a whole local test environment')
         await tx.wait(2)
       }
 
-      const poolAddress = await hre.run('deployNewOptionAMMPool', {
+      await hre.run('deployNewOptionAMMPool', {
         option: optionAddress,
-        tokenb: tokenbAddress,
+        tokenb: option.strike,
         cap: option.poolCap,
         initialiv: option.initialIV,
         verify,
@@ -83,7 +83,7 @@ task('deployWeek', 'Deploy a whole local test environment')
         await hre.run('mintOptions', { option: optionAddress, amount: option.initialOptions })
 
         await hre.run('addLiquidityAMM', {
-          pooladdress: poolAddress,
+          option: optionAddress,
           amounta: option.initialOptions,
           amountb: '10000'
         })
