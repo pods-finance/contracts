@@ -4,7 +4,7 @@ const validateAddress = require('../utils/validateAddress')
 task('increaseCap', 'Increase an option or pool cap')
   .addParam('contract', 'An address of a target address to increase cap (either option or pool')
   .addOptionalParam('value', 'new cap number')
-  .addOptionalParam('configurator', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
+  .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addFlag('max', 'set pool cap to the max')
   .setAction(async ({ contract, value, configuration, max }, bre) => {
     console.log('======== START MODIFY CONTRACT CAP ==========')

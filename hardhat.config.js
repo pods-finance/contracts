@@ -75,7 +75,7 @@ module.exports = {
         initialIndex: parseInt(process.env.ADDRESS_INDEX),
         count: 1
       },
-      url: 'https://rpc-mainnet.matic.network',
+      url: 'https://rpc-mainnet.maticvigil.com/v1/' + process.env.MATIC_VIGIL_ID,
       network_id: 137
     },
     mumbai: {
@@ -84,7 +84,7 @@ module.exports = {
         initialIndex: parseInt(process.env.ADDRESS_INDEX),
         count: 1
       },
-      url: 'https://rpc-mumbai.maticvigil.com',
+      url: 'https://rpc-mumbai.maticvigil.com/v1/' + process.env.MATIC_VIGIL_ID,
       network_id: 80001,
       gasPrice: 1e9,
       gasLimit: 2100000

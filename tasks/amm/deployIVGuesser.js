@@ -1,24 +1,24 @@
-
-const saveJSON = require('../utils/saveJSON')
-const verifyContract = require('../utils/verify')
+const { getDeployments } = require('../utils/deployment')
+const validateAddress = require('../utils/validateAddress')
 
 internalTask('deployIVGuesser', 'Deploy IV Contract')
   .addParam('bs', 'Black Scholes Address')
-  .addParam('configuration', 'Configuration Manager Address')
+  .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .setAction(async ({ bs, configuration, verify }, hre) => {
-    console.log('----Start Deploy IV----')
-    const path = `../../deployments/${hre.network.name}.json`
-    const IVContract = await ethers.getContractFactory('IVGuesser')
-    const ivGuesser = await IVContract.deploy(configuration, bs)
-
-    await ivGuesser.deployed()
-    await saveJSON(path, { IVGuesser: ivGuesser.address })
-
-    if (verify) {
-      await verifyContract(hre, ivGuesser.address, [configuration, bs])
+    if (!configuration) {
+      const deployment = getDeployments()
+      configuration = deployment.ConfigurationManager
     }
 
-    console.log('IV Address', ivGuesser.address)
-    return ivGuesser.address
+    validateAddress(configuration, 'configuration')
+
+    const address = await hre.run('deploy', {
+      name: 'IVGuesser',
+      args: [configuration, bs],
+      verify,
+      save: true
+    })
+
+    return address
   })
