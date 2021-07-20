@@ -1,17 +1,12 @@
-const saveJSON = require('../utils/saveJSON')
 const BigNumber = require('bignumber.js')
 const parseDuration = require('parse-duration')
-
 const getTimestamp = require('../../test/util/getTimestamp')
-const fs = require('fs')
-const pathJoin = require('path')
-const fsPromises = fs.promises
+const {  getDeployments, saveDeployments, clearDeployments } = require('../utils/deployment')
 
 task('setupLocal', 'Deploy a whole local test environment')
   .setAction(async ({}, hre) => {
-    const path = `../../deployments/${hre.network.name}.json`
     // Erasing local.json file
-    await saveJSON(path, '', true)
+    await clearDeployments()
     const [deployer] = await ethers.getSigners()
     const deployerAddress = await deployer.getAddress()
 
@@ -30,7 +25,7 @@ task('setupLocal', 'Deploy a whole local test environment')
       deployedTokens[tokenObj.symbol.toUpperCase()] = tokenAddress
     }
 
-    await saveJSON(path, deployedTokens)
+    await saveDeployments(deployedTokens)
 
     const configurationManagerAddress = await hre.run('deployConfigurationManager')
 
@@ -41,14 +36,18 @@ task('setupLocal', 'Deploy a whole local test environment')
     const chainlinkWETHFeed = await ChainlinkFeed.deploy(deployedTokens.WETH, '8', '254000000000')
     const chainlinkLINKFeed = await ChainlinkFeed.deploy(deployedTokens.LINK, '8', '2496201073')
 
-    await saveJSON(path, { wbtcChainlinkFeed: chainlinkWBTCFeed.address })
+    await saveDeployments({ wbtcChainlinkFeed: chainlinkWBTCFeed.address })
 
     // 3.2) Deploy BS + IV + AMMPoolFactory + Oracles
-    await run('setAMMEnvironment', { asset: deployedTokens.WBTC, source: chainlinkWBTCFeed.address, configuration: configurationManagerAddress, builders: true })
+    await run('setAMMEnvironment', {
+      asset: deployedTokens.WBTC,
+      source: chainlinkWBTCFeed.address,
+      configuration: configurationManagerAddress,
+      builders: true
+    })
 
     // 3.3) Deploy Option Exchange
-    const _filePath = pathJoin.join(__dirname, path)
-    const content = await fsPromises.readFile(_filePath)
+    const deployments = getDeployments()
 
     const configurationManager = await ethers.getContractAt('ConfigurationManager', configurationManagerAddress)
 
@@ -122,18 +121,17 @@ task('setupLocal', 'Deploy a whole local test environment')
         cap: option.optionCap
       })
 
-      const tokenbAddress = JSON.parse(content)[option.strike]
       deployedOptions.push(optionAddress)
 
       await ivProvider.updateIV(optionAddress, option.initialIV, '18')
 
       const poolAddress = await hre.run('deployNewOptionAMMPool', {
         option: optionAddress,
-        tokenb: tokenbAddress,
+        tokenb: option.strike,
         cap: option.poolCap,
         initialiv: option.initialIV
       })
-      const mockToken = await ethers.getContractAt('MintableERC20', tokenbAddress)
+      const mockToken = await ethers.getContractAt('MintableERC20', deployments[option.strike])
       const mockTokenDecimals = await mockToken.decimals()
       const amountToMint = BigNumber(option.poolCap).times(BigNumber(10).pow(mockTokenDecimals))
       console.log('amountToMint')
