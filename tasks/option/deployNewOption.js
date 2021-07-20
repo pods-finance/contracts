@@ -1,6 +1,7 @@
 const { toBigNumber } = require('../../utils/utils')
 const verifyContract = require('../utils/verify')
 const getOptionContractName = require('../utils/getOptionContractName')
+const BigNumber = require('bignumber.js')
 const { getDeployments } = require('../utils/deployment')
 
 task('deployNewOption', 'Deploy New Option')
@@ -35,17 +36,18 @@ task('deployNewOption', 'Deploy New Option')
 
     const {
       ConfigurationManager: configurationManagerAddress,
-      OptionFactory: optionFactoryAddress,
       ...deployments
     } = getDeployments()
+
+    const configurationManager = await ethers.getContractAt('ConfigurationManager', configurationManagerAddress)
 
     const [deployer] = await ethers.getSigners()
     const underlyingAsset = await ethers.getContractAt('MintableERC20', deployments[underlyingAssetSymbol])
     const strikeAsset = await ethers.getContractAt('MintableERC20', deployments[strikeAssetSymbol])
     const strikeDecimals = await strikeAsset.decimals()
-    const strikePrice = ethers.BigNumber.from(
+    const strikePrice = BigNumber(
       price.toLocaleString('fullwide', { useGrouping: false })
-    ).mul(ethers.BigNumber.from(10).pow(strikeDecimals))
+    ).multipliedBy(BigNumber(10).pow(strikeDecimals))
 
     const optionParams = {
       name: `Pods ${call ? 'Call' : 'Put'} ${underlyingAssetSymbol}:${strikeAssetSymbol} ${price} ${new Date(expiration * 1000).toISOString().slice(0, 10)}`, // Pods Put WBTC:USDC 7000 2020-07-10
@@ -72,10 +74,11 @@ task('deployNewOption', 'Deploy New Option')
       aave
     ]
 
-    console.log(`Deploying from OptionFactory: ${optionFactoryAddress}`)
+    const OptionFactory = await ethers.getContractAt('OptionFactory', await configurationManager.getOptionFactory())
+
+    console.log(`Deploying from OptionFactory: ${OptionFactory.address}`)
     console.log('Option Parameters')
     console.table(optionParams)
-    const OptionFactory = await ethers.getContractAt('OptionFactory', optionFactoryAddress)
     const txIdNewOption = await OptionFactory.createOption(...funcParameters)
     const txReceipt = await txIdNewOption.wait(numberOfConfirmations)
     console.log('txId: ', txIdNewOption.hash)
@@ -91,7 +94,6 @@ task('deployNewOption', 'Deploy New Option')
         const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await underlyingAsset.decimals()))
         console.log(`Setting Option Cap to: ${capValue} ${optionParams.symbol} ...`)
 
-        const configurationManager = await ethers.getContractAt('ConfigurationManager', await OptionFactory.configurationManager())
         const capProvider = await ethers.getContractAt('CapProvider', await configurationManager.getCapProvider())
 
         const tx = await capProvider.setCap(optionAddress, capValue)
