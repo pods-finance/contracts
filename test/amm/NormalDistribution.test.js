@@ -57,23 +57,27 @@ describe('NormalDistribution', () => {
 
   it('gets concentrated probabilities', async () => {
     expect(
-      await nd.getProbability('4010000000000000000000000', 24)
+      await nd.getProbability('3980000000000000000000000', 24)
     ).to.equal(ethers.BigNumber.from('999970000000000000000000'))
 
     expect(
-      await nd.getProbability('4100000000000000000000000', 24)
+      await nd.getProbability('4050000000000000000000000', 24)
     ).to.equal(ethers.BigNumber.from('999970000000000000000000'))
 
     expect(
-      await nd.getProbability('4110000000000000000000000', 24)
+      await nd.getProbability('4060000000000000000000000', 24)
     ).to.equal(ethers.BigNumber.from('999980000000000000000000'))
 
     expect(
-      await nd.getProbability('4180000000000000000000000', 24)
+      await nd.getProbability('4170000000000000000000000', 24)
     ).to.equal(ethers.BigNumber.from('999980000000000000000000'))
 
     expect(
       await nd.getProbability('4190000000000000000000000', 24)
+    ).to.equal(ethers.BigNumber.from('999990000000000000000000'))
+
+    expect(
+      await nd.getProbability('5000000000000000000000000', 24)
     ).to.equal(ethers.BigNumber.from('999990000000000000000000'))
   })
 })
