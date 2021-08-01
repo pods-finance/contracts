@@ -42,7 +42,9 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
     IConfigurationManager public immutable configurationManager;
 
     address private immutable _underlyingAsset;
+    uint8 private immutable _underlyingAssetDecimals;
     address private immutable _strikeAsset;
+    uint8 private immutable _strikeAssetDecimals;
     uint256 private immutable _strikePrice;
     uint256 private immutable _expiration;
     uint256 private _startOfExerciseWindow;
@@ -103,7 +105,8 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
         _strikeAsset = strikeAsset;
 
         uint8 underlyingDecimals = tryDecimals(IERC20(underlyingAsset));
-        tryDecimals(IERC20(strikeAsset));
+        _underlyingAssetDecimals = underlyingDecimals;
+        _strikeAssetDecimals = tryDecimals(IERC20(strikeAsset));
 
         _strikePrice = strikePrice;
         _setupDecimals(underlyingDecimals);
@@ -171,7 +174,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice The number of decimals of strikePrice
      */
     function strikePriceDecimals() external override view returns (uint8) {
-        return ERC20(_strikeAsset).decimals();
+        return _strikeAssetDecimals;
     }
 
     /**
@@ -185,7 +188,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice How many decimals does the strike token have? E.g.: 18
      */
     function strikeAssetDecimals() public override view returns (uint8) {
-        return ERC20(_strikeAsset).decimals();
+        return _strikeAssetDecimals;
     }
 
     /**
@@ -199,7 +202,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
      * @notice How many decimals does the underlying token have? E.g.: 18
      */
     function underlyingAssetDecimals() public override view returns (uint8) {
-        return ERC20(_underlyingAsset).decimals();
+        return _underlyingAssetDecimals;
     }
 
     /**
