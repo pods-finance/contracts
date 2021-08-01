@@ -6,7 +6,6 @@ const createConfigurationManager = require('../util/createConfigurationManager')
 const addLiquidity = require('../util/addLiquidity')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 const mintOptions = require('../util/mintOptions')
-const { approximately } = require('../../utils/utils')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
