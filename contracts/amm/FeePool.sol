@@ -152,21 +152,17 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * @notice Return balance of an address
-     *
-     * @param owner Balance owner
+     * @dev Returns the `Balance` owned by `account`.
      */
-    function balanceOf(address owner) external view returns (Balance memory) {
-        return _balances[owner];
+    function balanceOf(address account) external view returns (Balance memory) {
+        return _balances[account];
     }
 
     /**
-     * @notice Return shares of an address
-     *
-     * @param owner Balance owner
+     * @dev Returns the `shares` owned by `account`.
      */
-    function sharesOf(address owner) external override view returns (uint256) {
-        return _balances[owner].shares;
+    function sharesOf(address account) external override view returns (uint256) {
+        return _balances[account].shares;
     }
 
     /**
