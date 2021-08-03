@@ -5,6 +5,7 @@ pragma solidity 0.6.12;
 import "../interfaces/IOptionBuilder.sol";
 import "../interfaces/IPodOption.sol";
 import "../lib/Conversion.sol";
+import "../interfaces/IOptionFactory.sol";
 
 /**
  * @title OptionFactory
@@ -12,7 +13,7 @@ import "../lib/Conversion.sol";
  * @notice Creates and store new Options Series
  * @dev Uses IOptionBuilder to create the different types of Options
  */
-contract OptionFactory is Conversion {
+contract OptionFactory is IOptionFactory, Conversion {
     IConfigurationManager public immutable configurationManager;
     IOptionBuilder public podPutBuilder;
     IOptionBuilder public wPodPutBuilder;
@@ -75,7 +76,7 @@ contract OptionFactory is Conversion {
         uint256 expiration,
         uint256 exerciseWindowSize,
         bool isAave
-    ) external returns (address) {
+    ) external override returns (address) {
         IOptionBuilder builder;
         address wrappedNetworkToken = wrappedNetworkTokenAddress();
 
@@ -126,7 +127,7 @@ contract OptionFactory is Conversion {
         return option;
     }
 
-    function wrappedNetworkTokenAddress() public view returns (address) {
+    function wrappedNetworkTokenAddress() public override returns (address) {
         return _parseAddressFromUint(configurationManager.getParameter("WRAPPED_NETWORK_TOKEN"));
     }
 }
