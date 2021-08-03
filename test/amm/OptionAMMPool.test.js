@@ -1132,7 +1132,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(optionLiquidityToBuy)
 
-        await expect(attackerContract.connect(buyer).addLiquidityAndBuy(optionAMMPool.address, optionLiquidityToAdd, stableLiquidityToAdd, optionLiquidityToBuy, tradeDetails.newIV, buyerAddress)).to.be.revertedWith('FlashloanProtection: reentrant call')
+        await expect(attackerContract.connect(buyer).addLiquidityAndBuy(optionAMMPool.address, optionLiquidityToAdd, stableLiquidityToAdd, optionLiquidityToBuy, tradeDetails.newIV, buyerAddress)).to.be.revertedWith('CombinedActionsGuard: reentrant call')
       })
       it('Should revert if an origin address tries to perform -add liquidity- and -remove liquidity- in the same block', async () => {
         const AttackerContract = await ethers.getContractFactory('AttackerOptionPool')
@@ -1147,7 +1147,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(200))
         await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
 
-        await expect(attackerContract.connect(buyer).addLiquidityAndRemove(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToAdd, buyerAddress)).to.be.revertedWith('FlashloanProtection: reentrant call')
+        await expect(attackerContract.connect(buyer).addLiquidityAndRemove(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToAdd, buyerAddress)).to.be.revertedWith('CombinedActionsGuard: reentrant call')
       })
     })
 

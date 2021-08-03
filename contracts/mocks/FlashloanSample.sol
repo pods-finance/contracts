@@ -2,18 +2,18 @@
 
 pragma solidity 0.6.12;
 
-import "../lib/FlashloanProtection.sol";
+import "../lib/CombinedActionsGuard.sol";
 
-contract FlashloanSample is FlashloanProtection {
+contract FlashloanSample is CombinedActionsGuard {
     uint256 public interactions = 0;
 
     function one() public {
-        _nonReentrant();
+        _nonCombinedActions();
         interactions += 1;
     }
 
     function two() public {
-        _nonReentrant();
+        _nonCombinedActions();
         interactions += 1;
     }
 }
