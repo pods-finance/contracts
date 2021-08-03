@@ -1,4 +1,5 @@
 const { expect } = require('chai')
+const { ethers } = require('hardhat')
 const getTimestamp = require('../util/getTimestamp')
 const createMockOption = require('../util/createMockOption')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
@@ -145,6 +146,21 @@ describe('OptionHelper', () => {
       )
 
       expect(await callOption.balanceOf(callerAddress)).to.equal(amountToMint)
+    })
+
+    it('reverts when tries to mint from a non-contract address', async () => {
+      const amountToMint = ethers.BigNumber.from(1e8.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+
+      await stableAsset.connect(caller).mint(collateralAmount)
+      expect(await stableAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
+
+      const tx = optionHelper.connect(caller).mint(
+        ethers.constants.AddressZero,
+        amountToMint
+      )
+
+      await expect(tx).to.be.revertedWith('OptionHelper: Option is not a contract')
     })
   })
 

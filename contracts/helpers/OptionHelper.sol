@@ -365,6 +365,8 @@ contract OptionHelper {
      * @param amount The amount of options to mint
      */
     function _mint(IPodOption option, uint256 amount) internal {
+        require(Address.isContract(address(option)), "OptionHelper: Option is not a contract");
+
         if (option.optionType() == IPodOption.OptionType.PUT) {
             IERC20 strikeAsset = IERC20(option.strikeAsset());
             uint256 strikeToTransfer = option.strikeToTransfer(amount);
