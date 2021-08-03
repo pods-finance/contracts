@@ -3,11 +3,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "wethAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "PodPutBuilder",
         "type": "address"
       },
@@ -105,19 +100,6 @@
     ],
     "name": "OptionCreated",
     "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "WETH_ADDRESS",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [],
@@ -272,6 +254,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "wrappedNetworkTokenAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]
