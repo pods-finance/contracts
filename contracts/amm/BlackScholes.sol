@@ -133,7 +133,7 @@ contract BlackScholes is IBlackScholes {
         int256 iv2 = iv.mul(iv);
 
         int256 A = spotPrice.div(strikePrice).ln();
-        int256 B = (iv2 / 2 + riskFree).mul(time);
+        int256 B = (iv2.div(2e18) + riskFree).mul(time);
 
         int256 n = A + B;
         int256 d = iv.mul(time.sqrt());
