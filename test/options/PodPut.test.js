@@ -283,8 +283,8 @@ scenarios.forEach(scenario => {
         expect(await podPut.hasExpired()).to.be.true
       })
 
-      it('should not allow underlyingAsset or strikeAsset decimals higher than 76', async () => {
-        const mockUnderlying77Decimals = await MockInterestBearingERC20.deploy('Teste Token', 'TEST', '77')
+      it('should not allow underlyingAsset or strikeAsset decimals higher than 38', async () => {
+        const mockUnderlying77Decimals = await MockInterestBearingERC20.deploy('Teste Token', 'TEST', '39')
 
         podPut = PodPut.deploy(
           'pod:WBTC:USDC:5000:A',
@@ -297,9 +297,9 @@ scenarios.forEach(scenario => {
           (24 * 60 * 60), // 24h - 1 second
           configurationManager.address
         )
-        await expect(podPut).to.revertedWith('RequiredDecimals: token decimals should be lower than 77')
+        await expect(podPut).to.revertedWith('RequiredDecimals: token decimals should be lower than 38')
 
-        const mockStrike77Decimals = await MockInterestBearingERC20.deploy('Teste Token', 'TEST', '77')
+        const mockStrike77Decimals = await MockInterestBearingERC20.deploy('Teste Token', 'TEST', '39')
 
         podPut = PodPut.deploy(
           'pod:WBTC:USDC:5000:A',
@@ -312,7 +312,7 @@ scenarios.forEach(scenario => {
           (24 * 60 * 60), // 24h - 1 second
           configurationManager.address
         )
-        await expect(podPut).to.revertedWith('RequiredDecimals: token decimals should be lower than 77')
+        await expect(podPut).to.revertedWith('RequiredDecimals: token decimals should be lower than 38')
       })
     })
 
