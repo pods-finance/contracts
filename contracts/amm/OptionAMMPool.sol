@@ -4,6 +4,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./AMM.sol";
 import "../lib/CappedPool.sol";
 import "../lib/CombinedActionsGuard.sol";
@@ -34,7 +35,7 @@ import "../options/rewards/AaveIncentives.sol";
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
-contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard, AaveIncentives {
+contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard, ReentrancyGuard, AaveIncentives {
     using SafeMath for uint256;
     uint256 public constant PRICING_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
@@ -123,7 +124,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external override capped(tokenB(), amountOfB) {
+    ) external override capped(tokenB(), amountOfB) nonReentrant {
         _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
@@ -137,7 +138,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
      * @param amountOfA amount of TokenA to add
      * @param amountOfB amount of TokenB to add
      */
-    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
+    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override nonReentrant {
         _nonCombinedActions();
         _emergencyStopCheck();
         _removeLiquidity(amountOfA, amountOfB);
@@ -181,7 +182,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         uint256 minAmountBOut,
         address owner,
         uint256 initialIVGuess
-    ) external override returns (uint256) {
+    ) external override nonReentrant returns (uint256) {
         _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
@@ -212,7 +213,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         uint256 maxAmountBIn,
         address owner,
         uint256 initialIVGuess
-    ) external override returns (uint256) {
+    ) external override nonReentrant returns (uint256) {
         _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
@@ -242,7 +243,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         uint256 minAmountAOut,
         address owner,
         uint256 initialIVGuess
-    ) external override returns (uint256) {
+    ) external override nonReentrant returns (uint256) {
         _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
@@ -273,7 +274,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         uint256 maxAmountAIn,
         address owner,
         uint256 initialIVGuess
-    ) external override returns (uint256) {
+    ) external override nonReentrant returns (uint256) {
         _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
