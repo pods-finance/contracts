@@ -27,7 +27,7 @@ contract AttackerOptionPool {
         tokenB.transferFrom(msg.sender, address(this), amountToAddB);
         tokenB.approve(poolAddress, 2**255);
 
-        pool.addLiquidity(amountToAddA, amountToAddB, owner);
+        pool.addLiquidity(amountToAddA, amountToAddB, address(this));
         pool.tradeExactAOutput(amountToBuyA, 2**255, owner, sigmaInitialGuess);
     }
 
