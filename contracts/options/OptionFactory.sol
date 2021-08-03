@@ -4,6 +4,7 @@ pragma solidity 0.6.12;
 
 import "../interfaces/IOptionBuilder.sol";
 import "../interfaces/IPodOption.sol";
+import "../lib/Conversion.sol";
 
 /**
  * @title OptionFactory
@@ -11,7 +12,7 @@ import "../interfaces/IPodOption.sol";
  * @notice Creates and store new Options Series
  * @dev Uses IOptionBuilder to create the different types of Options
  */
-contract OptionFactory {
+contract OptionFactory is Conversion {
     IConfigurationManager public immutable configurationManager;
     IOptionBuilder public podPutBuilder;
     IOptionBuilder public wPodPutBuilder;
@@ -19,7 +20,6 @@ contract OptionFactory {
     IOptionBuilder public podCallBuilder;
     IOptionBuilder public wPodCallBuilder;
     IOptionBuilder public aavePodCallBuilder;
-    address public WETH_ADDRESS;
 
     event OptionCreated(
         address indexed deployer,
@@ -34,7 +34,6 @@ contract OptionFactory {
     );
 
     constructor(
-        address wethAddress,
         address PodPutBuilder,
         address WPodPutBuilder,
         address AavePodPutBuilder,
@@ -43,7 +42,6 @@ contract OptionFactory {
         address AavePodCallBuilder,
         address ConfigurationManager
     ) public {
-        WETH_ADDRESS = wethAddress;
         configurationManager = IConfigurationManager(ConfigurationManager);
         podPutBuilder = IOptionBuilder(PodPutBuilder);
         wPodPutBuilder = IOptionBuilder(WPodPutBuilder);
@@ -79,9 +77,10 @@ contract OptionFactory {
         bool isAave
     ) external returns (address) {
         IOptionBuilder builder;
+        address wrappedNetworkToken = wrappedNetworkTokenAddress();
 
         if (optionType == IPodOption.OptionType.PUT) {
-            if (underlyingAsset == WETH_ADDRESS) {
+            if (underlyingAsset == wrappedNetworkToken) {
                 builder = wPodPutBuilder;
             } else if (isAave) {
                 builder = aavePodPutBuilder;
@@ -89,7 +88,7 @@ contract OptionFactory {
                 builder = podPutBuilder;
             }
         } else {
-            if (underlyingAsset == WETH_ADDRESS) {
+            if (underlyingAsset == wrappedNetworkToken) {
                 builder = wPodCallBuilder;
             } else if (isAave) {
                 builder = aavePodCallBuilder;
@@ -125,5 +124,9 @@ contract OptionFactory {
         );
 
         return option;
+    }
+
+    function wrappedNetworkTokenAddress() public view returns (address) {
+        return _parseAddressFromUint(configurationManager.getParameter("WRAPPED_NETWORK_TOKEN"));
     }
 }
