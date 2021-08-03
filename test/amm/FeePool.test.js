@@ -2,7 +2,7 @@ const { expect } = require('chai')
 const { ethers } = require('hardhat')
 const { toBigNumber } = require('../../utils/utils')
 
-describe('FeePool', () => {
+describe.only('FeePool', () => {
   let FeePool, pool
   let usdc
   let owner0, owner1, feePayer, poolOwner
@@ -61,9 +61,14 @@ describe('FeePool', () => {
         .to.emit(pool, 'FeeUpdated')
         .withArgs(usdc.address, newBaseFeeValue, newFeeDecimals)
 
-      const feeValue = await pool.feeValue()
       expect(await pool.feeValue()).to.equal(newBaseFeeValue)
       expect(await pool.feeDecimals()).to.equal(newFeeDecimals)
+    })
+
+    it('cannot charge more than 100% base fees', async () => {
+      const decimals = await usdc.decimals()
+      const tx = pool.setFee(10 ** decimals + 1, decimals)
+      await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
     })
   })
 
