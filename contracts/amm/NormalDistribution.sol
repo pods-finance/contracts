@@ -432,7 +432,7 @@ contract NormalDistribution is INormalDistribution, Ownable {
         require(decimals >= 5 && decimals < 77, "NormalDistribution: invalid decimals");
         uint256 absZ = _abs(z);
         uint256 truncatedZ = absZ.div(10**(decimals.sub(2))).mul(100);
-        uint256 fourthDigit = _abs(z).div(10**(decimals.sub(3))) - _abs(z).div(10**(decimals.sub(2))).mul(10);
+        uint256 fourthDigit = absZ.div(10**(decimals.sub(3))) - absZ.div(10**(decimals.sub(2))).mul(10);
         uint256 responseDecimals = 10**(decimals.sub(5));
         uint256 responseValue;
 
