@@ -46,7 +46,6 @@ describe('OptionFactory', function () {
     const aavePodCallBuilder = await AavePodCallBuilder.deploy()
 
     optionFactory = await OptionFactory.deploy(
-      mockWeth.address,
       podPutBuilder.address,
       wPodPutBuilder.address,
       aavePodPutBuilder.address,
