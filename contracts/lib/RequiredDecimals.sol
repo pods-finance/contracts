@@ -19,7 +19,7 @@ contract RequiredDecimals {
 
         require(success, "RequiredDecimals: required decimals");
         uint8 decimals = abi.decode(returnData, (uint8));
-        require(decimals < 77, "RequiredDecimals: token decimals should be lower than 77");
+        require(decimals < 38, "RequiredDecimals: token decimals should be lower than 38");
 
         return decimals;
     }
