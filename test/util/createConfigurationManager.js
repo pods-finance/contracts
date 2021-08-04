@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat')
 const createBlackScholes = require('./createBlackScholes')
 
-module.exports = async function createConfigurationManager ({ priceProvider, ivProvider } = {}) {
+module.exports = async function createConfigurationManager ({ priceProvider, ivProvider, networkToken } = {}) {
   const [
     PriceProvider, ConfigurationManager, EmergencyStop, CapProvider, IVGuesser, IVProvider, blackScholes,
     MockNetworkToken
@@ -36,7 +36,7 @@ module.exports = async function createConfigurationManager ({ priceProvider, ivP
 
   // Set Network Token
   const parameterName = ethers.utils.formatBytes32String('WRAPPED_NETWORK_TOKEN')
-  const parameterValue = mockNetworkToken.address
+  const parameterValue = networkToken || mockNetworkToken.address
   await configurationManager.setParameter(parameterName, parameterValue)
 
   await configurationManager.setPricingMethod(blackScholes.address)
