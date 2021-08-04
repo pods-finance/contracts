@@ -5,6 +5,7 @@ pragma solidity 0.6.12;
 import "./PodPut.sol";
 import "../interfaces/IWETH.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "../lib/Conversion.sol";
 
 /**
  * @title WPodPut
@@ -69,14 +70,13 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * be exercised and its price should be worth 0 in a healthy market.
  *
  */
-contract WPodPut is PodPut {
+contract WPodPut is PodPut, Conversion {
     event Received(address indexed sender, uint256 value);
 
     constructor(
         string memory name,
         string memory symbol,
         IPodOption.ExerciseType exerciseType,
-        address underlyingAsset,
         address strikeAsset,
         uint256 strikePrice,
         uint256 expiration,
@@ -88,7 +88,7 @@ contract WPodPut is PodPut {
             name,
             symbol,
             exerciseType,
-            underlyingAsset,
+            _parseAddressFromUint(configurationManager.getParameter("WRAPPED_NETWORK_TOKEN")),
             strikeAsset,
             strikePrice,
             expiration,

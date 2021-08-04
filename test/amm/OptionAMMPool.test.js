@@ -145,7 +145,7 @@ scenarios.forEach(scenario => {
       await configurationManager.setPriceProvider(priceProvider.address)
       await configurationManager.setIVProvider(ivProvider.address)
 
-      factoryContract = await createOptionFactory(weth.address, configurationManager)
+      factoryContract = await createOptionFactory(configurationManager)
 
       option = await createMockOption({
         underlyingAsset: mockUnderlyingAsset.address,

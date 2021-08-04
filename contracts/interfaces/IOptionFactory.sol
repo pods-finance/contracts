@@ -17,4 +17,6 @@ interface IOptionFactory {
         uint256 _exerciseWindowSize,
         bool _isAave
     ) external returns (address);
+
+    function wrappedNetworkTokenAddress() external returns (address);
 }

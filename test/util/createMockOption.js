@@ -34,7 +34,7 @@ module.exports = async function createMockOption ({
     weth = (await WETH.deploy()).address
   }
 
-  const factoryContract = await createOptionFactory(weth, configurationManager)
+  const factoryContract = await createOptionFactory(configurationManager)
   const txIdNewOption = await factoryContract.createOption(
     'pod:WBTC:USDC:8000:A',
     'pod:WBTC:USDC:8000:A',
