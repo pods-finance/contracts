@@ -475,7 +475,7 @@ contract NormalDistribution is INormalDistribution, Ownable {
     }
 
     /**
-     * @dev Returns the module of a number.
+     * @dev Returns the absolute value of a number.
      */
     function _abs(int256 a) internal pure returns (uint256) {
         return a < 0 ? uint256(-a) : uint256(a);
