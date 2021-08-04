@@ -264,6 +264,24 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_assets",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_feeds",
+        "type": "address[]"
+      }
+    ],
+    "name": "updateAssetFeeds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "updateMinUpdateInterval",
     "outputs": [],

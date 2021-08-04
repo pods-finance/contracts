@@ -5,6 +5,8 @@ pragma solidity 0.6.12;
 interface IPriceProvider {
     function setAssetFeeds(address[] memory _assets, address[] memory _feeds) external;
 
+    function updateAssetFeeds(address[] memory _assets, address[] memory _feeds) external;
+
     function removeAssetFeeds(address[] memory _assets) external;
 
     function getAssetPrice(address _asset) external view returns (uint256);

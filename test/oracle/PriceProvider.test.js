@@ -132,6 +132,56 @@ describe('PriceProvider', () => {
     })
   })
 
+  describe('updateAssetFeeds', () => {
+    it('should update a previously set feed', async () => {
+      const startingPriceFeed = await createPriceFeedMock(deployer)
+      await startingPriceFeed.setDecimals(6)
+      await startingPriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt,
+        answeredInRound: 1
+      })
+      await provider.setAssetFeeds([asset1], [startingPriceFeed.contract.address])
+
+      const newPriceFeed = await createPriceFeedMock(deployer)
+      await newPriceFeed.setDecimals(6)
+      await newPriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt,
+        answeredInRound: 1
+      })
+
+      const tx = provider.updateAssetFeeds([asset1], [newPriceFeed.contract.address])
+
+      await expect(tx)
+        .to.emit(provider, 'AssetFeedUpdated')
+        .withArgs(asset1, newPriceFeed.contract.address)
+
+      expect(await provider.getPriceFeed(asset1)).to.equal(newPriceFeed.contract.address)
+    })
+
+    it('should revert if the feed was not previously set', async () => {
+      const newPriceFeed = await createPriceFeedMock(deployer)
+      await newPriceFeed.setDecimals(6)
+      await newPriceFeed.setRoundData({
+        roundId: 1,
+        answer: 50e6,
+        startedAt,
+        updatedAt,
+        answeredInRound: 1
+      })
+
+      const tx = provider.updateAssetFeeds([asset1], [newPriceFeed.contract.address])
+
+      await expect(tx)
+        .to.be.revertedWith('PriceProvider: PriceFeed not set')
+    })
+  })
+
   describe('removeAssetFeeds', () => {
     it('should remove a feed', async () => {
       const newPriceFeed = await createPriceFeedMock(deployer)
