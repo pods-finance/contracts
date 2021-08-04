@@ -55,6 +55,18 @@ contract PriceProvider is IPriceProvider, Ownable {
     }
 
     /**
+     * @notice Updates previously registered price feeds
+     * @param _assets Array of assets
+     * @param _feeds Array of price feeds
+     */
+    function updateAssetFeeds(address[] memory _assets, address[] memory _feeds) external override onlyOwner {
+        for (uint256 i = 0; i < _assets.length; i++) {
+            require(address(_assetPriceFeeds[_assets[i]]) != address(0), "PriceProvider: PriceFeed not set");
+        }
+        _setAssetFeeds(_assets, _feeds);
+    }
+
+    /**
      * @notice Unregister price feeds
      * @dev Will not remove unregistered assets
      * @param _assets Array of assets
