@@ -76,6 +76,7 @@ describe('OptionHelper', () => {
 
     await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
     optionHelper = await OptionHelper.deploy(configurationManager.address)
+    await configurationManager.setOptionHelper(optionHelper.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
     await stableAsset.connect(caller).approve(optionHelper.address, ethers.constants.MaxUint256)

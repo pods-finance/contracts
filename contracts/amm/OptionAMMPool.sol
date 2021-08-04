@@ -124,7 +124,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         uint256 amountOfA,
         uint256 amountOfB,
         address owner
-    ) external override capped(tokenB(), amountOfB) nonReentrant {
+    ) external override capped(tokenB(), amountOfB) {
+        require(msg.sender == configurationManager.getOptionHelper() || msg.sender == owner, "AMM: invalid sender");
         _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();

@@ -284,13 +284,17 @@ scenarios.forEach(scenario => {
     })
 
     describe('Add Liquidity', () => {
+      it('should revert if not the owner tries to add liquidity on behalf of others', async () => {
+        await expect(optionAMMPool.addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('AMM: invalid sender')
+      })
+
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(optionAMMPool.addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('AMM: invalid first liquidity')
+        await expect(optionAMMPool.addLiquidity(0, 0, deployerAddress)).to.be.revertedWith('AMM: invalid first liquidity')
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
         await expect(
-          optionAMMPool.addLiquidity(1000, 10000, buyerAddress)
+          optionAMMPool.addLiquidity(1000, 10000, deployerAddress)
         ).to.be.reverted
       })
 
@@ -302,7 +306,7 @@ scenarios.forEach(scenario => {
         const capExceeded = capSize.add(1)
 
         await mockStrikeAsset.mint(capExceeded)
-        await expect(optionAMMPool.addLiquidity(0, capExceeded, buyerAddress))
+        await expect(optionAMMPool.addLiquidity(0, capExceeded, deployerAddress))
           .to.be.revertedWith('CappedPool: amount exceed cap')
       })
 
@@ -398,7 +402,7 @@ scenarios.forEach(scenario => {
         await ethers.provider.send('evm_mine', [nearExpiration])
         await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
-        await expect(optionAMMPool.addLiquidity(1000, 10000, lpAddress)).to.be.revertedWith('AMM: option price zero')
+        await expect(optionAMMPool.addLiquidity(1000, 10000, deployerAddress)).to.be.revertedWith('AMM: option price zero')
       })
 
       it('logs the spot price and iv', async () => {
