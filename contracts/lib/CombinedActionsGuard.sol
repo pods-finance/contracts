@@ -2,15 +2,15 @@
 
 pragma solidity 0.6.12;
 
-contract FlashloanProtection {
+contract CombinedActionsGuard {
     mapping(address => uint256) sessions;
 
     /**
      * @dev Prevents an address from calling more than one function that contains this
      * function in the same block
      */
-    function _nonReentrant() internal {
-        require(sessions[tx.origin] != block.number, "FlashloanProtection: reentrant call");
+    function _nonCombinedActions() internal {
+        require(sessions[tx.origin] != block.number, "CombinedActionsGuard: reentrant call");
         sessions[tx.origin] = block.number;
     }
 }
