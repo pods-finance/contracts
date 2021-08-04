@@ -290,7 +290,7 @@
       },
       {
         "internalType": "uint8",
-        "name": "decimals",
+        "name": "feeDecimals",
         "type": "uint8"
       }
     ],

@@ -49,11 +49,12 @@ contract FeePool is IFeePool, Ownable {
      * @notice Sets fee and the decimals
      *
      * @param feeBaseValue Fee value
-     * @param decimals Fee decimals
+     * @param feeDecimals Fee decimals
      */
-    function setFee(uint256 feeBaseValue, uint8 decimals) external override onlyOwner {
+    function setFee(uint256 feeBaseValue, uint8 feeDecimals) external override onlyOwner {
+        require(feeDecimals <= 77 && feeBaseValue <= uint256(10)**feeDecimals, "FeePool: Invalid Fee data");
         _feeBaseValue = feeBaseValue;
-        _feeDecimals = decimals;
+        _feeDecimals = feeDecimals;
         emit FeeUpdated(_token, _feeBaseValue, _feeDecimals);
     }
 
