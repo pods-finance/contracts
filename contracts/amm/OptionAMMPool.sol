@@ -129,7 +129,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         _addLiquidity(amountOfA, amountOfB, owner);
-        _getTradeInfo();
+        _emitTradeInfo();
     }
 
     /**
@@ -142,7 +142,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         _nonCombinedActions();
         _emergencyStopCheck();
         _removeLiquidity(amountOfA, amountOfB);
-        _getTradeInfo();
+        _emitTradeInfo();
     }
 
     /**
@@ -190,7 +190,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
 
         uint256 amountBOut = _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
 
-        _getTradeInfo();
+        _emitTradeInfo();
         return amountBOut;
     }
 
@@ -221,7 +221,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
 
         uint256 amountBIn = _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
 
-        _getTradeInfo();
+        _emitTradeInfo();
         return amountBIn;
     }
 
@@ -251,7 +251,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
 
         uint256 amountAOut = _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
 
-        _getTradeInfo();
+        _emitTradeInfo();
         return amountAOut;
     }
 
@@ -282,7 +282,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
 
         uint256 amountAIn = _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
 
-        _getTradeInfo();
+        _emitTradeInfo();
         return amountAIn;
     }
 
@@ -952,7 +952,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
         );
     }
 
-    function _getTradeInfo() private {
+    function _emitTradeInfo() private {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         emit TradeInfo(spotPrice, priceProperties.currentIV);
     }
