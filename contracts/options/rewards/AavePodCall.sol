@@ -42,9 +42,6 @@ contract AavePodCall is PodCall, AaveIncentives {
     /**
      * @notice Unlocks collateral by burning option tokens.
      *
-     * @dev In case of American options where exercise can happen before the expiration, caller
-     * may receive a mix of underlying asset and strike asset.
-     *
      * Options can only be burned while the series is NOT expired.
      *
      * @param amountOfOptions The amount option tokens to be burned
