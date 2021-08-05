@@ -1,21 +1,37 @@
 const { expect } = require('chai')
 const { ethers } = require('hardhat')
 const { toBigNumber } = require('../../utils/utils')
+const createConfigurationManager = require('../util/createConfigurationManager')
+const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
 
-describe('FeePool', () => {
+describe.only('FeePool', () => {
   let FeePool, pool
   let usdc
   let owner0, owner1, feePayer, poolOwner
   let owner0Address, owner1Address
+  let configurationManager
+  let snapshotId
   const baseFee = toBigNumber(10)
   const initialDecimals = toBigNumber(3)
 
   before(async () => {
-    ;[owner0, owner1, feePayer, poolOwner] = await ethers.getSigners()
+    ;[owner0, owner1, feePayer, poolOwner, treasury] = await ethers.getSigners()
     ;[owner0Address, owner1Address] = await Promise.all([
       owner0.getAddress(),
       owner1.getAddress()
     ])
+
+    configurationManager = await createConfigurationManager()
+
+    await configurationManager.setParameter(
+      ethers.utils.formatBytes32String('TREASURY_ADDRESS'),
+      treasury.address
+    )
+
+    await configurationManager.setParameter(
+      ethers.utils.formatBytes32String('TREASURY_FEE_RATE'),
+      0
+    )
 
     FeePool = await ethers.getContractFactory('FeePool')
 
@@ -25,24 +41,23 @@ describe('FeePool', () => {
   })
 
   beforeEach(async () => {
-    pool = await FeePool.connect(poolOwner).deploy(usdc.address, baseFee, initialDecimals)
+    snapshotId = await takeSnapshot()
+    pool = await FeePool.connect(poolOwner).deploy(configurationManager.address, usdc.address, baseFee, initialDecimals)
     await pool.deployed()
   })
 
   afterEach(async () => {
-    // Clear balances between tests
-    await usdc.connect(owner0).burn(await usdc.balanceOf(owner0Address))
-    await usdc.connect(owner1).burn(await usdc.balanceOf(owner1Address))
+    await revertToSnapshot(snapshotId)
   })
 
   it('cannot charge more than 100% base fees', async () => {
     const decimals = await usdc.decimals()
-    const tx = FeePool.connect(poolOwner).deploy(usdc.address, 10 ** decimals + 1, decimals)
+    const tx = FeePool.connect(poolOwner).deploy(configurationManager.address, usdc.address, 10 ** decimals + 1, decimals)
     await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
   })
 
   it('cannot create a pool with a zero-address token', async () => {
-    const tx = FeePool.connect(poolOwner).deploy(ethers.constants.AddressZero, baseFee, initialDecimals)
+    const tx = FeePool.connect(poolOwner).deploy(configurationManager.address, ethers.constants.AddressZero, baseFee, initialDecimals)
     await expect(tx).to.be.revertedWith('FeePool: Invalid token')
   })
 
@@ -230,6 +245,53 @@ describe('FeePool', () => {
 
       await expect(neverMintedTransaction)
         .to.be.revertedWith('Burn exceeds balance')
+    })
+  })
+
+  describe('Treasury', () => {
+    it.only('allow treasury to withdraw fees', async () => {
+      // await configurationManager.setParameter(
+      //   ethers.utils.formatBytes32String('TREASURY_FEE_RATE'),
+      //   970
+      // )
+      //
+      // const owner0Shares = toBigNumber(50)
+      // await pool.connect(poolOwner).mint(owner0Address, owner0Shares)
+      // const owner0Balance = await pool.balanceOf(owner0Address)
+      // expect(owner0Balance.shares).to.equal(owner0Shares)
+      // expect(owner0Balance.shares).to.equal(await pool.totalShares())
+      // expect(owner0Balance.liability).to.equal(0)
+
+      // let totalFees = toBigNumber(0)
+      //
+      // const collectFrom = async amount => {
+      //   const collection = toBigNumber(amount)
+      //   const poolAmount = collection.mul(1000)
+      //   const expectedFees = await pool.getCollectable(collection, poolAmount)
+      //   await usdc.connect(feePayer).mint(expectedFees)
+      //   await usdc.connect(feePayer).approve(pool.address, expectedFees)
+      //   await usdc.connect(feePayer).transfer(pool.address, expectedFees)
+      //   expect(await usdc.balanceOf(pool.address)).to.equal(totalFees.add(expectedFees))
+      //   totalFees = totalFees.add(expectedFees)
+      // }
+      //
+      // // Collect some fees
+      // await collectFrom(100 * 1e18)
+      // await collectFrom(50 * 1e18)
+      // await collectFrom(43.333 * 1e18)
+      //
+      // // Withdraws all collected fees
+      // await pool.connect(poolOwner).withdraw(owner0Address, owner0Shares)
+      // const a = await pool.balanceOf(treasury.address)
+      // // console.log(a.shares.toString())
+      // // await pool.connect(treasury).withdrawTreasury()
+      // expect(await usdc.balanceOf(owner0Address)).to.equal(totalFees)
+      // expect(await usdc.balanceOf(pool.address)).to.equal(0)
+    })
+
+    it('blocks others to withdraw treasury fees', async () => {
+      const tx = pool.withdrawTreasury()
+      expect(tx).to.be.revertedWith('FeePool: caller is not treasury')
     })
   })
 })

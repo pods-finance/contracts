@@ -12,6 +12,8 @@ interface IFeePool {
 
     function withdraw(address to, uint256 amount) external;
 
+    function withdrawTreasury() external;
+
     function mint(address to, uint256 amount) external;
 
     function feeToken() external view returns (address);

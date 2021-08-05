@@ -2,6 +2,11 @@
   {
     "inputs": [
       {
+        "internalType": "contract IConfigurationManager",
+        "name": "configurationManager",
+        "type": "address"
+      },
+      {
         "internalType": "address",
         "name": "asset",
         "type": "address"

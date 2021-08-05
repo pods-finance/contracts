@@ -2,6 +2,11 @@
   {
     "inputs": [
       {
+        "internalType": "contract IConfigurationManager",
+        "name": "_configurationManager",
+        "type": "address"
+      },
+      {
         "internalType": "address",
         "name": "token",
         "type": "address"
@@ -57,7 +62,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "to",
+        "name": "account",
         "type": "address"
       },
       {
@@ -107,7 +112,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "to",
+        "name": "account",
         "type": "address"
       },
       {
@@ -146,6 +151,19 @@
         "internalType": "struct IFeePool.Balance",
         "name": "",
         "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "configurationManager",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -218,7 +236,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "to",
+        "name": "account",
         "type": "address"
       },
       {
@@ -247,7 +265,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "to",
+        "name": "account",
         "type": "address"
       },
       {
@@ -348,7 +366,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "to",
+        "name": "account",
         "type": "address"
       },
       {
@@ -358,6 +376,13 @@
       }
     ],
     "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawTreasury",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

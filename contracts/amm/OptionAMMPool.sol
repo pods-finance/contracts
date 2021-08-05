@@ -90,8 +90,8 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
             "Pool: invalid exercise type"
         );
 
-        feePoolA = _feePoolBuilder.buildFeePool(_stableAsset, 10, 3, address(this));
-        feePoolB = _feePoolBuilder.buildFeePool(_stableAsset, 10, 3, address(this));
+        feePoolA = _feePoolBuilder.buildFeePool(_configurationManager, _stableAsset, 10, 3, address(this));
+        feePoolB = _feePoolBuilder.buildFeePool(_configurationManager, _stableAsset, 10, 3, address(this));
 
         priceProperties.currentIV = _initialIV;
         priceProperties.initialIVGuess = _initialIV;

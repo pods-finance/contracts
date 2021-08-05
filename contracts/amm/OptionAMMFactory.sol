@@ -22,7 +22,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
     IConfigurationManager public immutable configurationManager;
 
     /**
-     * @dev store globally accessed configurations
+     * @dev responsible for creating new FeePool instances
      */
     IFeePoolBuilder public immutable feePoolBuilder;
 
