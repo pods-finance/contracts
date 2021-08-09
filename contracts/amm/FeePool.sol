@@ -49,11 +49,12 @@ contract FeePool is IFeePool, Ownable {
      * @notice Sets fee and the decimals
      *
      * @param feeBaseValue Fee value
-     * @param decimals Fee decimals
+     * @param feeDecimals Fee decimals
      */
-    function setFee(uint256 feeBaseValue, uint8 decimals) external override onlyOwner {
+    function setFee(uint256 feeBaseValue, uint8 feeDecimals) external override onlyOwner {
+        require(feeDecimals <= 77 && feeBaseValue <= uint256(10)**feeDecimals, "FeePool: Invalid Fee data");
         _feeBaseValue = feeBaseValue;
-        _feeDecimals = decimals;
+        _feeDecimals = feeDecimals;
         emit FeeUpdated(_token, _feeBaseValue, _feeDecimals);
     }
 
@@ -152,21 +153,17 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * @notice Return balance of an address
-     *
-     * @param owner Balance owner
+     * @dev Returns the `Balance` owned by `account`.
      */
-    function balanceOf(address owner) external view returns (Balance memory) {
-        return _balances[owner];
+    function balanceOf(address account) external view returns (Balance memory) {
+        return _balances[account];
     }
 
     /**
-     * @notice Return shares of an address
-     *
-     * @param owner Balance owner
+     * @dev Returns the `shares` owned by `account`.
      */
-    function sharesOf(address owner) external override view returns (uint256) {
-        return _balances[owner].shares;
+    function sharesOf(address account) external override view returns (uint256) {
+        return _balances[account].shares;
     }
 
     /**

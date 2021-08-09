@@ -136,9 +136,9 @@ contract PodPut is PodOption {
     /**
      * @notice Unlocks collateral by burning option tokens.
      *
-     * Options can only be unmminted while the series is NOT expired.
+     * Options can only be burned while the series is NOT expired.
      *
-     * @param amountOfOptions The amount option tokens to be unminted
+     * @param amountOfOptions The amount option tokens to be burned
      */
     function unmint(uint256 amountOfOptions) external virtual override unmintWindow {
         (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);

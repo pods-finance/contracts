@@ -145,7 +145,7 @@ scenarios.forEach(scenario => {
       await configurationManager.setPriceProvider(priceProvider.address)
       await configurationManager.setIVProvider(ivProvider.address)
 
-      factoryContract = await createOptionFactory(weth.address, configurationManager)
+      factoryContract = await createOptionFactory(configurationManager)
 
       option = await createMockOption({
         underlyingAsset: mockUnderlyingAsset.address,
@@ -284,13 +284,17 @@ scenarios.forEach(scenario => {
     })
 
     describe('Add Liquidity', () => {
+      it('should revert if not the owner tries to add liquidity on behalf of others', async () => {
+        await expect(optionAMMPool.addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('AMM: invalid sender')
+      })
+
       it('should revert if user dont supply liquidity of both assets', async () => {
-        await expect(optionAMMPool.addLiquidity(0, 0, buyerAddress)).to.be.revertedWith('AMM: invalid first liquidity')
+        await expect(optionAMMPool.addLiquidity(0, 0, deployerAddress)).to.be.revertedWith('AMM: invalid first liquidity')
       })
 
       it('should revert if user ask more assets to it has in balance', async () => {
         await expect(
-          optionAMMPool.addLiquidity(1000, 10000, buyerAddress)
+          optionAMMPool.addLiquidity(1000, 10000, deployerAddress)
         ).to.be.reverted
       })
 
@@ -302,7 +306,7 @@ scenarios.forEach(scenario => {
         const capExceeded = capSize.add(1)
 
         await mockStrikeAsset.mint(capExceeded)
-        await expect(optionAMMPool.addLiquidity(0, capExceeded, buyerAddress))
+        await expect(optionAMMPool.addLiquidity(0, capExceeded, deployerAddress))
           .to.be.revertedWith('CappedPool: amount exceed cap')
       })
 
@@ -398,7 +402,7 @@ scenarios.forEach(scenario => {
         await ethers.provider.send('evm_mine', [nearExpiration])
         await defaultPriceFeed.setUpdateAt(await getTimestamp())
 
-        await expect(optionAMMPool.addLiquidity(1000, 10000, lpAddress)).to.be.revertedWith('AMM: option price zero')
+        await expect(optionAMMPool.addLiquidity(1000, 10000, deployerAddress)).to.be.revertedWith('AMM: option price zero')
       })
 
       it('logs the spot price and iv', async () => {
@@ -1132,7 +1136,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAOutput(optionLiquidityToBuy)
 
-        await expect(attackerContract.connect(buyer).addLiquidityAndBuy(optionAMMPool.address, optionLiquidityToAdd, stableLiquidityToAdd, optionLiquidityToBuy, tradeDetails.newIV, buyerAddress)).to.be.revertedWith('FlashloanProtection: reentrant call')
+        await expect(attackerContract.connect(buyer).addLiquidityAndBuy(optionAMMPool.address, optionLiquidityToAdd, stableLiquidityToAdd, optionLiquidityToBuy, tradeDetails.newIV, buyerAddress)).to.be.revertedWith('CombinedActionsGuard: reentrant call')
       })
       it('Should revert if an origin address tries to perform -add liquidity- and -remove liquidity- in the same block', async () => {
         const AttackerContract = await ethers.getContractFactory('AttackerOptionPool')
@@ -1147,7 +1151,7 @@ scenarios.forEach(scenario => {
         await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(200))
         await mockStrikeAsset.connect(buyer).approve(attackerContract.address, ethers.constants.MaxUint256)
 
-        await expect(attackerContract.connect(buyer).addLiquidityAndRemove(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToAdd, buyerAddress)).to.be.revertedWith('FlashloanProtection: reentrant call')
+        await expect(attackerContract.connect(buyer).addLiquidityAndRemove(optionAMMPool.address, stableLiquidityToAdd, optionLiquidityToAdd, buyerAddress)).to.be.revertedWith('CombinedActionsGuard: reentrant call')
       })
     })
 

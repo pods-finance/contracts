@@ -228,7 +228,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         uint256 amountOfB,
         address owner
     ) internal {
-        _isRecipient(owner);
+        _isValidAddress(owner);
         // Get Pool Balances
         (uint256 totalTokenA, uint256 totalTokenB) = _getPoolBalances();
 
@@ -376,7 +376,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         address owner
     ) internal returns (uint256) {
         _isValidInput(exactAmountAIn);
-        _isRecipient(owner);
+        _isValidAddress(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactAInput(exactAmountAIn);
         uint256 amountBOut = tradeDetails.amount;
         require(amountBOut > 0, "AMM: invalid amountBOut");
@@ -408,7 +408,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         address owner
     ) internal returns (uint256) {
         _isValidInput(maxAmountBIn);
-        _isRecipient(owner);
+        _isValidAddress(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactAOutput(exactAmountAOut);
         uint256 amountBIn = tradeDetails.amount;
         require(amountBIn > 0, "AMM: invalid amountBIn");
@@ -439,7 +439,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         address owner
     ) internal returns (uint256) {
         _isValidInput(exactAmountBIn);
-        _isRecipient(owner);
+        _isValidAddress(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactBInput(exactAmountBIn);
         uint256 amountAOut = tradeDetails.amount;
         require(amountAOut > 0, "AMM: invalid amountAOut");
@@ -471,7 +471,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
         address owner
     ) internal returns (uint256) {
         _isValidInput(maxAmountAIn);
-        _isRecipient(owner);
+        _isValidAddress(owner);
         TradeDetails memory tradeDetails = _getTradeDetailsExactBOutput(exactAmountBOut);
         uint256 amountAIn = tradeDetails.amount;
         require(amountAIn > 0, "AMM: invalid amountAIn");
@@ -735,7 +735,7 @@ abstract contract AMM is IAMM, RequiredDecimals {
 
     function _onAddLiquidity(UserDepositSnapshot memory userDepositSnapshot, address owner) internal virtual;
 
-    function _isRecipient(address recipient) private pure {
+    function _isValidAddress(address recipient) private pure {
         require(recipient != address(0), "AMM: transfer to zero address");
     }
 

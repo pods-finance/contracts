@@ -32,9 +32,9 @@ describe('OptionFactory', function () {
     ])
     const MintableERC20 = await ethers.getContractFactory('MintableERC20')
     const MockWETH = await ethers.getContractFactory('WETH')
-    const configurationManager = await createConfigurationManager()
-
     mockWeth = await MockWETH.deploy()
+
+    const configurationManager = await createConfigurationManager({ networkToken: mockWeth.address })
     underlyingAsset = await MintableERC20.deploy('Wrapped BTC', 'WBTC', 8)
     strikeAsset = await MintableERC20.deploy('USDC Token', 'USDC', 6)
 
@@ -46,7 +46,6 @@ describe('OptionFactory', function () {
     const aavePodCallBuilder = await AavePodCallBuilder.deploy()
 
     optionFactory = await OptionFactory.deploy(
-      mockWeth.address,
       podPutBuilder.address,
       wPodPutBuilder.address,
       aavePodPutBuilder.address,

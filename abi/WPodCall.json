@@ -18,11 +18,6 @@
       },
       {
         "internalType": "address",
-        "name": "underlyingAsset",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "strikeAsset",
         "type": "address"
       },

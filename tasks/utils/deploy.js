@@ -7,20 +7,21 @@ task('deploy', 'Deploy a generic contract given artifact name')
   .addOptionalParam('args', 'arguments passed to constructor', [], types.json)
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .addFlag('save', 'if true, it should save the contract address inside the deployments folder')
-  .setAction(async ({ name, args = [], verify, save }, hre) => {
-    console.log(`\nDeploying ${name}`)
+  .addFlag('quiet', 'makes the deployment process less verbose')
+  .setAction(async ({ name, args = [], verify, save, quiet }, hre) => {
+    !quiet && console.log(`\nDeploying ${name}`)
     if (args.length) {
       if (typeof args === 'string') {
         args = args.split(',')
       }
-      console.log(`With args: `, args)
+      !quiet && console.log(`With args: `, args)
     }
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
     const Contract = await ethers.getContractFactory(name)
     const contract = await Contract.deploy(...args)
     await contract.deployTransaction.wait(numberOfConfirmations)
 
-    console.log(`Deployed ${name}: ${contract.address}`)
+    !quiet && console.log(`Deployed ${name}: ${contract.address}`)
 
     if (verify) {
       await verifyContract(hre, contract.address, args)
