@@ -4,9 +4,9 @@ import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IOptionPoolRegistry.sol";
 
 /**
- * @title OptionAMMFactory
+ * @title OptionPoolRegistry
  * @author Pods Finance
- * @notice Creates and store new OptionAMMPool
+ * @notice Tracks the OptionAMMPool instances associated with Options
  */
 contract OptionPoolRegistry is IOptionPoolRegistry {
     IConfigurationManager public immutable configurationManager;
