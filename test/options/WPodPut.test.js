@@ -337,7 +337,6 @@ scenarios.forEach(scenario => {
         const initialSellerOptionBalance = await wPodPut.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
         const initialContractUnderlyingReserves = await wPodPut.underlyingReserves()
-        const initialContractStrikeReserves = await wPodPut.strikeReserves()
         const initialContractOptionSupply = await wPodPut.totalSupply()
 
         await expect(wPodPut.connect(seller).unmint(scenario.amountToMint)).to.not.be.reverted

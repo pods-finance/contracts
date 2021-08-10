@@ -5,15 +5,35 @@
         "internalType": "contract IConfigurationManager",
         "name": "_configurationManager",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_feePoolBuilder",
-        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "factory",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "option",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "pool",
+        "type": "address"
+      }
+    ],
+    "name": "PoolSet",
+    "type": "event"
   },
   {
     "inputs": [],
@@ -32,42 +52,37 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_optionAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_stableAsset",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_initialIV",
-        "type": "uint256"
-      }
-    ],
-    "name": "createPool",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
+        "name": "option",
         "type": "address"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "feePoolBuilder",
+    "name": "getPool",
     "outputs": [
       {
-        "internalType": "contract IFeePoolBuilder",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "option",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "pool",
+        "type": "address"
+      }
+    ],
+    "name": "setPool",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

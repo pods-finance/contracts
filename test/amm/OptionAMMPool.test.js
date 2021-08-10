@@ -12,10 +12,10 @@ const createConfigurationManager = require('../util/createConfigurationManager')
 const mintOptions = require('../util/mintOptions')
 const addLiquidity = require('../util/addLiquidity')
 const getTimestamp = require('../util/getTimestamp')
+const createOptionAMMPool = require('../util/createOptionAMMPool')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
-const EXERCISE_TYPE_EUROPEAN = 0
 const EXERCISE_TYPE_AMERICAN = 1
 
 const scenarios = [
@@ -159,7 +159,11 @@ scenarios.forEach(scenario => {
       await ivProvider.updateIV(option.address, scenario.initialOracleIV, scenario.decimalsOracleIV)
 
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
-      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialIV)
+      optionAMMPool = await createOptionAMMPool(option, {
+        configurationManager,
+        initialSigma: scenario.initialIV,
+        tokenB: mockStrikeAsset.address
+      })
 
       claimable = ethers.BigNumber.from(20e18.toString())
       await aaveRewardDistributor.mock.getRewardsBalance.returns(claimable)
@@ -201,8 +205,13 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, option.address, mockTokenB.address, scenario.initialIV)
-        await expect(optionAMMPool).to.be.revertedWith('Pool: invalid strikePrice unit')
+        const tx = createOptionAMMPool.getTransaction(option, {
+          configurationManager,
+          initialSigma: scenario.initialIV,
+          tokenB: mockTokenB.address
+        })
+
+        await expect(tx).to.be.revertedWith('Pool: invalid strikePrice unit')
       })
 
       it('should revert when trying to deploy a Pool with tokenB decimals > PRICING_DECIMALS', async () => {
@@ -213,8 +222,13 @@ scenarios.forEach(scenario => {
           configurationManager
         })
         const mockTokenB = await MockERC20.deploy('TEST', 'TEST', '20')
-        optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, option.address, mockTokenB.address, scenario.initialIV)
-        await expect(optionAMMPool).to.be.revertedWith('Pool: invalid tokenB unit')
+        const tx = createOptionAMMPool.getTransaction(option, {
+          configurationManager,
+          initialSigma: scenario.initialIV,
+          tokenB: mockTokenB.address
+        })
+
+        await expect(tx).to.be.revertedWith('Pool: invalid tokenB unit')
       })
 
       it('should not allow add liquidity after option expiration', async () => {
@@ -253,8 +267,6 @@ scenarios.forEach(scenario => {
 
         await mockStrikeAsset.connect(buyer).mint(amountOfStrikeLpNeed)
         await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
-
-        const removeLiquidityAmountsNoLiquidity = await optionAMMPool.getRemoveLiquidityAmounts(100, 100, lp.address)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
@@ -337,16 +349,15 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, toBigNumber(0.261e18))
+        optionAMMPool = await createOptionAMMPool(podPut, {
+          configurationManager,
+          initialSigma: toBigNumber(0.261e18),
+          tokenB: mockStrikeAsset.address
+        })
 
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         const actions = [
           {
@@ -484,23 +495,12 @@ scenarios.forEach(scenario => {
 
       it('should remove liquidity when option price is rounded to zero', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await option.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
         const feeAddressA = await optionAMMPool.feePoolA()
         const feeAddressB = await optionAMMPool.feePoolB()
-
-        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
-        const lpOptionBeforeTrade = await option.balanceOf(lpAddress)
-
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
         // fast forward until very close to the maturity
         const expiration = await option.expiration()
@@ -511,7 +511,6 @@ scenarios.forEach(scenario => {
 
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
-        const lpOptionAfterBuyer = await option.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
@@ -529,23 +528,12 @@ scenarios.forEach(scenario => {
 
       it('should remove liquidity after expiration', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await option.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
         const feeAddressA = await optionAMMPool.feePoolA()
         const feeAddressB = await optionAMMPool.feePoolB()
-
-        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
-        const lpOptionBeforeTrade = await option.balanceOf(lpAddress)
-
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
         await skipToWithdrawWindow(option)
 
@@ -553,7 +541,6 @@ scenarios.forEach(scenario => {
 
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
-        const lpOptionAfterBuyer = await option.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
@@ -571,29 +558,17 @@ scenarios.forEach(scenario => {
 
       it('should remove liquidity single-sided', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await option.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
         const feeAddressA = await optionAMMPool.feePoolA()
         const feeAddressB = await optionAMMPool.feePoolB()
 
-        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
-        const lpOptionBeforeTrade = await option.balanceOf(lpAddress)
-
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
-
         await optionAMMPool.connect(lp).removeLiquidity(100, 0)
 
         await optionAMMPool.connect(lp).removeLiquidity(0, 100)
 
-        const lpOptionAfterBuyer = await option.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
@@ -671,7 +646,11 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, toBigNumber(0.161e18))
+        optionAMMPool = await createOptionAMMPool(podPut, {
+          configurationManager,
+          initialSigma: toBigNumber(0.161e18),
+          tokenB: mockStrikeAsset.address
+        })
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
@@ -765,11 +744,8 @@ scenarios.forEach(scenario => {
     describe('tradeExactAInput', () => {
       it('should match values accordingly', async () => {
         const amountOfStrikeLpNeed = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
-        const amountOfOptionsBuyerToMint = toBigNumber(4).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const amountOfStrikeBuyerToMintOption = scenario.strikePrice.mul(toBigNumber(4)).add(1)
         const numberOfOptionsToSell = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
@@ -795,8 +771,6 @@ scenarios.forEach(scenario => {
           .withArgs(scenario.emittedSpotPrice, priceObj.newIV)
 
         const buyerOptionAfterBuyer = await option.balanceOf(buyerAddress)
-        const tokenBAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
-        const tokensSpent = tokenBAfterTrade.sub(tokenBBeforeTrade)
         // expect(tradeDetails.amountBOut).to.be.equal(tokensSpent)
 
         const [poolOptionAmountAfterTrade] = await optionAMMPool.getPoolBalances()
@@ -859,7 +833,6 @@ scenarios.forEach(scenario => {
         const feeAddressB = await optionAMMPool.feePoolB()
 
         const amountOfStrikeLpNeed = toBigNumber(600000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const numberOfOptionsToBuy = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
@@ -891,8 +864,6 @@ scenarios.forEach(scenario => {
         const tokensSpent = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
         expect(tradeDetails.amountBIn).to.be.equal(tokensSpent)
 
-        const feesBN = (new BigNumber(tokensSpent.toString()).multipliedBy(new BigNumber(0.03))).toFixed(0, 2)
-        const fees = toBigNumber(feesBN.toString())
         const feeContractA = await ethers.getContractAt('FeePool', feeAddressA)
         const feeContractB = await ethers.getContractAt('FeePool', feeAddressB)
 
@@ -937,10 +908,8 @@ scenarios.forEach(scenario => {
     describe('tradeExactBInput', () => {
       it('should match values accordingly', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
-        const amountOfOptionsBuyerToMint = toBigNumber(4).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const amountOfStrikeBuyerToMintOption = scenario.strikePrice.mul(toBigNumber(4)).add(1)
 
         const numberOfTokensToSend = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.strikeAssetDecimals)))
@@ -975,7 +944,6 @@ scenarios.forEach(scenario => {
         const buyerStrikeBeforeTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const buyerOptionBeforeTrade = await option.balanceOf(buyerAddress)
 
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactBInput(numberOfTokensToSend)
 
         await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, ethers.constants.MaxUint256, buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: slippage not acceptable')
@@ -989,8 +957,6 @@ scenarios.forEach(scenario => {
         const buyerStrikeAfterBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
         const tokensReceived = buyerOptionAfterBuyer.sub(buyerOptionBeforeTrade)
         expect(tradeDetails.amountAOut).to.be.equal(tokensReceived)
-
-        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
 
         expect(buyerStrikeAfterBuyer).to.eq(buyerStrikeBeforeTrade.sub(numberOfTokensToSend))
       })
@@ -1022,11 +988,7 @@ scenarios.forEach(scenario => {
     describe('tradeExactBOutput', () => {
       it('should match values accordingly', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const amountOfOptionsBuyerToMint = toBigNumber(4).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const amountOfStrikeBuyerToMintOption = scenario.strikePrice.mul(toBigNumber(4)).add(1)
 
         const numberOfOptionsToSell = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
@@ -1041,7 +1003,7 @@ scenarios.forEach(scenario => {
         const buyerStrikeBeforeTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const buyerOptionBeforeTrade = await option.balanceOf(buyerAddress)
 
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+        const [, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactBOutput(numberOfTokensToReceive)
 
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, 1, buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: slippage not acceptable')
@@ -1057,7 +1019,7 @@ scenarios.forEach(scenario => {
         const tokensSpent = buyerOptionBeforeTrade.sub(buyerOptionAfterTrade)
         expect(tradeDetails.amountAIn).to.be.equal(tokensSpent)
 
-        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
+        const [, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
 
         const feesBN = (new BigNumber(numberOfTokensToReceive.toString()).multipliedBy(new BigNumber(0.03))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())

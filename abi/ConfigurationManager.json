@@ -172,6 +172,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getOptionPoolRegistry",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -323,6 +336,19 @@
       }
     ],
     "name": "setOptionHelper",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "optionPoolRegistry",
+        "type": "address"
+      }
+    ],
+    "name": "setOptionPoolRegistry",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

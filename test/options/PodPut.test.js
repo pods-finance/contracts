@@ -474,9 +474,6 @@ scenarios.forEach(scenario => {
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
         await podPut.connect(buyer).mint(amountToMint, buyerAddress)
         await podPut.connect(seller).mint(amountToMint, sellerAddress)
-
-        const contractBalanceOfStrike = await podPut.strikeReserves()
-        const totalSupply = await podPut.totalSupply()
         // Check Option Balance
         // Check Contract Strike
         // expect(await podPut.balanceOf(sellerAddress)).to.equal(amountToMint.mul(2))
@@ -650,7 +647,6 @@ scenarios.forEach(scenario => {
         const initialSellerOptionBalance = await podPut.balanceOf(sellerAddress)
         const initialSellerStrikeBalance = await mockStrikeAsset.balanceOf(sellerAddress)
         const initialContractUnderlyingReserves = await podPut.underlyingReserves()
-        const initialContractStrikeReserves = await podPut.strikeReserves()
         const initialContractOptionSupply = await podPut.totalSupply()
 
         await podPut.connect(seller).unmint(scenario.amountToMint)
