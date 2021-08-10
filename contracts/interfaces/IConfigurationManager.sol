@@ -47,5 +47,5 @@ interface IConfigurationManager {
 
     function getOptionHelper() external view returns (address);
 
-    function getOptionPoolRegistry() external view returns(address);
+    function getOptionPoolRegistry() external view returns (address);
 }

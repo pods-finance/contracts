@@ -1503,15 +1503,8 @@ scenarios.forEach(scenario => {
         const amountOfTokenAUser00 = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenADecimals))
         const amountOfTokenBUser00 = await toBigNumber(3000).mul(toBigNumber(10 ** scenario.tokenBDecimals))
 
-        const amountOfTokenAUser01 = toBigNumber(0)
         const amountOfTokenBUser01 = await toBigNumber(100).mul(toBigNumber(10 ** scenario.tokenBDecimals))
-        const amountOfTokenBUser01Withdraw = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenBDecimals))
-
-        const amountOfTokenAUser02 = toBigNumber(0)
         const amountOfTokenBUser02 = await toBigNumber(100).mul(toBigNumber(10 ** scenario.tokenBDecimals))
-
-        const amountOfTokenBUser02Withdraw = await toBigNumber(50).mul(toBigNumber(10 ** scenario.tokenBDecimals))
-
         const amountOfTokenAUser03Bought = toBigNumber(2).mul(toBigNumber(10 ** scenario.tokenADecimals))
 
         const tokenPrice00 = toBigNumber(400).mul(toBigNumber(10 ** scenario.tokenBDecimals))
@@ -1636,9 +1629,6 @@ scenarios.forEach(scenario => {
         for (const fn of fnActionsA) {
           await fn()
         }
-
-        const balanceAfterPoolTokenA = await mockTokenA.balanceOf(amm.address)
-        const balanceAfterPoolTokenB = await mockTokenB.balanceOf(amm.address)
 
         const balanceAfterUser01TokenA = await mockTokenA.balanceOf(user01Address)
         const balanceAfterUser01TokenB = await mockTokenB.balanceOf(user01Address)
@@ -1820,11 +1810,6 @@ scenarios.forEach(scenario => {
 // priceAB => How many units of B to buy A (E.g: price = 10 => 10 B buy 1 A)
 function getValueInUnitsOfTokenA (amountTokenA, amountTokenB, tokenADecimals, tokenBDecimals, priceAB) {
   const totalValue = amountTokenA.add(amountTokenB.mul(toBigNumber(10).pow(tokenADecimals)).div(priceAB))
-  return totalValue
-}
-
-function getValueInUnitsOfTokenY (amountTokenX, amountTokenY, tokenXDecimals, tokenYDecimals, priceXY) {
-  const totalValue = amountTokenY.add(priceXY.mul(amountTokenX).div(toBigNumber(10).pow(tokenXDecimals)))
   return totalValue
 }
 

@@ -18,7 +18,10 @@ contract OptionPoolRegistry is IOptionPoolRegistry {
     }
 
     modifier onlyAMMFactory {
-        require(msg.sender == configurationManager.getAMMFactory(), "OptionPoolRegistry: caller is not current AMMFactory");
+        require(
+            msg.sender == configurationManager.getAMMFactory(),
+            "OptionPoolRegistry: caller is not current AMMFactory"
+        );
         _;
     }
 
