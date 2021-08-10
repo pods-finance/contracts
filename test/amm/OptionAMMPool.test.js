@@ -12,6 +12,7 @@ const createConfigurationManager = require('../util/createConfigurationManager')
 const mintOptions = require('../util/mintOptions')
 const addLiquidity = require('../util/addLiquidity')
 const getTimestamp = require('../util/getTimestamp')
+const createOptionAMMPool = require('../util/createOptionAMMPool')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
@@ -159,7 +160,11 @@ scenarios.forEach(scenario => {
       await ivProvider.updateIV(option.address, scenario.initialOracleIV, scenario.decimalsOracleIV)
 
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
-      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialIV)
+      optionAMMPool = await createOptionAMMPool(option, {
+        configurationManager,
+        initialSigma: scenario.initialIV,
+        tokenB: mockStrikeAsset.address
+      })
 
       claimable = ethers.BigNumber.from(20e18.toString())
       await aaveRewardDistributor.mock.getRewardsBalance.returns(claimable)
@@ -201,8 +206,13 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, option.address, mockTokenB.address, scenario.initialIV)
-        await expect(optionAMMPool).to.be.revertedWith('Pool: invalid strikePrice unit')
+        const tx = createOptionAMMPool.getTransaction(option, {
+          configurationManager,
+          initialSigma: scenario.initialIV,
+          tokenB: mockTokenB.address
+        })
+
+        await expect(tx).to.be.revertedWith('Pool: invalid strikePrice unit')
       })
 
       it('should revert when trying to deploy a Pool with tokenB decimals > PRICING_DECIMALS', async () => {
@@ -213,8 +223,13 @@ scenarios.forEach(scenario => {
           configurationManager
         })
         const mockTokenB = await MockERC20.deploy('TEST', 'TEST', '20')
-        optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, option.address, mockTokenB.address, scenario.initialIV)
-        await expect(optionAMMPool).to.be.revertedWith('Pool: invalid tokenB unit')
+        const tx = createOptionAMMPool.getTransaction(option, {
+          configurationManager,
+          initialSigma: scenario.initialIV,
+          tokenB: mockTokenB.address
+        })
+
+        await expect(tx).to.be.revertedWith('Pool: invalid tokenB unit')
       })
 
       it('should not allow add liquidity after option expiration', async () => {
@@ -337,7 +352,11 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, toBigNumber(0.261e18))
+        optionAMMPool = await createOptionAMMPool(podPut, {
+          configurationManager,
+          initialSigma: toBigNumber(0.261e18),
+          tokenB: mockStrikeAsset.address
+        })
 
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
@@ -671,7 +690,11 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, toBigNumber(0.161e18))
+        optionAMMPool = await createOptionAMMPool(podPut, {
+          configurationManager,
+          initialSigma: toBigNumber(0.161e18),
+          tokenB: mockStrikeAsset.address
+        })
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
