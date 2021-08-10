@@ -41,6 +41,12 @@ describe('FeePool', () => {
     await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
   })
 
+  it('cannot crete a FeePool with feeDecimals more than 38', async () => {
+    const decimals = await usdc.decimals()
+    const tx = FeePool.connect(poolOwner).deploy(usdc.address, 10 ** decimals + 1, 39)
+    await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
+  })
+
   it('cannot create a pool with a zero-address token', async () => {
     const tx = FeePool.connect(poolOwner).deploy(ethers.constants.AddressZero, baseFee, initialDecimals)
     await expect(tx).to.be.revertedWith('FeePool: Invalid token')
@@ -68,6 +74,11 @@ describe('FeePool', () => {
     it('cannot charge more than 100% base fees', async () => {
       const decimals = await usdc.decimals()
       const tx = pool.setFee(10 ** decimals + 1, decimals)
+      await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
+    })
+
+    it('cannot accept feeDecimals bigger than 38', async () => {
+      const tx = pool.setFee(toBigNumber(10).pow(39) + 1, 39)
       await expect(tx).to.be.revertedWith('FeePool: Invalid Fee data')
     })
   })
