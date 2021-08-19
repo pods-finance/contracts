@@ -29,10 +29,10 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
         await transaction.wait(1)
         console.log(`PricingMethod set to ${newContract}`)
         break
-      case 'setImpliedVolatility':
+      case 'setIVGuesser':
         transaction = await configurationManager.setIVGuesser(newContract)
         await transaction.wait(1)
-        console.log(`ImpliedVolatility set to ${newContract}`)
+        console.log(`IVGuesser set to ${newContract}`)
         break
       case 'setPriceProvider':
         transaction = await configurationManager.setPriceProvider(newContract)
@@ -63,6 +63,11 @@ task('linkConfigurationManager', 'Link a contract with a ConfigurationManager')
         transaction = await configurationManager.setOptionHelper(newContract)
         await transaction.wait(1)
         console.log(`OptionHelper set to ${newContract}`)
+        break
+      case 'setOptionPoolRegistry':
+        transaction = await configurationManager.setOptionPoolRegistry(newContract)
+        await transaction.wait(1)
+        console.log(`OptionPoolRegistry set to ${newContract}`)
         break
       default:
         throw new Error('Setter not found! Available setters: setEmergencyStop, setPricingMethod, setImpliedVolatility, setPriceProvider, setCapProvider')

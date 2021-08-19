@@ -11,7 +11,6 @@ task('deployOptionFactory', 'Deploy OptionFactory')
   .addOptionalParam('podcallbuilder', 'podcallbuilder contract address')
   .addOptionalParam('wpodcallbuilder', 'wpodcallbuilder contract address')
   .addOptionalParam('aavepodcallbuilder', 'aavepodcallbuilder contract address')
-  .addOptionalParam('wethadapt', 'alternative weth address in case of other networks')
   .setAction(async ({
                       podputbuilder,
                       wpodputbuilder,
@@ -21,17 +20,21 @@ task('deployOptionFactory', 'Deploy OptionFactory')
                       aavepodcallbuilder,
                       configuration,
                       builders,
-                      wethadapt,
                       verify
                     }, hre) => {
     const deployment = getDeployments()
-    const wethAddress = wethadapt || deployment.WETH
 
     if (!configuration) {
       configuration = deployment.ConfigurationManager
     }
 
     validateAddress(configuration, 'configuration')
+
+    const configurationManager = await ethers.getContractAt('ConfigurationManager', configuration)
+    const wrappedNetworkToken = await configurationManager.getParameter(ethers.utils.formatBytes32String('WRAPPED_NETWORK_TOKEN'))
+    if (wrappedNetworkToken.eq(0)) {
+      throw new Error(`\`WRAPPED_NETWORK_TOKEN\` parameter not set on ConfigurationManager(${configuration.address})`)
+    }
 
     if (builders) {
       console.log(`Deploying OptionBuilders...`)
@@ -47,7 +50,6 @@ task('deployOptionFactory', 'Deploy OptionFactory')
     const factoryAddress = await hre.run('deploy', {
       name: 'OptionFactory',
       args: [
-        wethAddress,
         podputbuilder,
         wpodputbuilder,
         aavepodputbuilder,
