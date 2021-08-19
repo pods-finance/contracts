@@ -33,6 +33,19 @@ task('deployConfigurationManager', 'Deploy a new instance of ConfigurationManage
       newContract: capProviderAddress
     })
 
+    const optionPoolRegistryAddress = await hre.run('deploy', {
+      name: 'OptionPoolRegistry',
+      save: true,
+      args: [configurationManagerAddress],
+      verify
+    })
+
+    await hre.run('linkConfigurationManager', {
+      address: configurationManagerAddress,
+      setter: 'setOptionPoolRegistry',
+      newContract: optionPoolRegistryAddress
+    })
+
     console.log('----End Deploy ConfigurationManager + Emergency + Cap----')
     return configurationManagerAddress
   })

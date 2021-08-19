@@ -43,7 +43,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
         const tx = await capProvider.setCap(poolAddress, capValue)
         await tx.wait(numberOfConfirmations)
-        console.log(`Pool cap set!`)
+        console.log('Pool cap set!')
       }
 
       if (verify) {
