@@ -29,13 +29,11 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
     console.log('txId: ', txIdNewPool.hash)
 
-    const filterFrom = await OptionAMMFactory.filters.PoolCreated(deployer.address)
-    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txReceipt.blockNumber, txReceipt.blockNumber)
+    const poolAddress = await getPoolCreated(txIdNewPool, option, ConfigurationManager)
+    console.log('pool', poolAddress)
 
-    if (eventDetails.length) {
-      const { pool: poolAddress } = eventDetails[0].args
-      console.log(`Pool deployed at: ${poolAddress}`)
-
+    console.log(`Pool deployed at: ${poolAddress}`)
+    if (true) {
       if (cap != null && parseFloat(cap) > 0) {
         const capValue = toBigNumber(cap).mul(toBigNumber(10 ** await TokenB.decimals()))
         console.log(`Setting AMM Pool Cap to: ${capValue} ${await TokenB.symbol()} ...`)
@@ -43,7 +41,7 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
         const tx = await capProvider.setCap(poolAddress, capValue)
         await tx.wait(numberOfConfirmations)
-        console.log(`Pool cap set!`)
+        console.log('Pool cap set!')
       }
 
       if (verify) {
@@ -78,3 +76,13 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
       console.log('Something went wrong: No events found')
     }
   })
+
+async function getPoolCreated (tx, option, configurationManager) {
+  const optionAMMFactory = await ethers.getContractAt('OptionAMMFactory', await configurationManager.getAMMFactory())
+  const registry = await ethers.getContractAt('OptionPoolRegistry', await configurationManager.getOptionPoolRegistry())
+  const filter = await registry.filters.PoolSet(optionAMMFactory.address, option.address)
+  const events = await registry.queryFilter(filter, tx.blockNumber, tx.blockNumber)
+
+  const { pool } = events[0].args
+  return pool
+}
