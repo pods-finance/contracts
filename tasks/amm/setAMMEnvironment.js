@@ -30,7 +30,7 @@ task('setAMMEnvironment', 'deploy and link all main system contracts')
     const ivGuesserAddress = await hre.run('deployIVGuesser', { configuration: configurationManagerAddress, bs: bsAddress, verify })
     await hre.run('linkConfigurationManager', {
       address: configurationManagerAddress,
-      setter: 'setImpliedVolatility',
+      setter: 'setIVGuesser',
       newContract: ivGuesserAddress
     })
 
