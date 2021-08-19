@@ -16,11 +16,11 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
     validateAddress(option, 'option')
 
-    const [deployer] = await ethers.getSigners()
     const { ConfigurationManager: configurationManagerAddress, FeePoolBuilder, ...deployments } = getDeployments()
 
     const ConfigurationManager = await ethers.getContractAt('ConfigurationManager', configurationManagerAddress)
     const OptionAMMFactory = await ethers.getContractAt('OptionAMMFactory', await ConfigurationManager.getAMMFactory())
+    const registry = await ethers.getContractAt('OptionPoolRegistry', await ConfigurationManager.getOptionPoolRegistry())
     const TokenB = await ethers.getContractAt('MintableERC20', deployments[tokenb])
 
     console.log(`Deploying from OptionAMMFactory: ${OptionAMMFactory.address}`)
@@ -29,8 +29,8 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
 
     console.log('txId: ', txIdNewPool.hash)
 
-    const filterFrom = await OptionAMMFactory.filters.PoolCreated(deployer.address)
-    const eventDetails = await OptionAMMFactory.queryFilter(filterFrom, txReceipt.blockNumber, txReceipt.blockNumber)
+    const filter = await registry.filters.PoolSet(OptionAMMFactory.address, option.address)
+    const eventDetails = await registry.queryFilter(filter, txReceipt.blockNumber, txReceipt.blockNumber)
 
     if (eventDetails.length) {
       const { pool: poolAddress } = eventDetails[0].args
@@ -61,6 +61,13 @@ task('deployNewOptionAMMPool', 'Deploy a New AMM Pool')
           await feePoolA.feeToken(),
           await feePoolA.feeValue(),
           await feePoolA.feeDecimals()
+        ])
+
+        const feePoolB = await ethers.getContractAt('FeePool', await pool.feePoolB())
+        await verifyContract(hre, feePoolB.address, [
+          await feePoolB.feeToken(),
+          await feePoolB.feeValue(),
+          await feePoolB.feeDecimals()
         ])
       }
 
