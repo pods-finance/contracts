@@ -13,6 +13,7 @@ module.exports = async function createMockOption ({
   strikePrice = defaultStrikePrice,
   optionType = OPTION_TYPE_PUT,
   exerciseType = EXERCISE_TYPE_EUROPEAN,
+  expiration,
   exerciseWindow = 24 * 60 * 60,
   configurationManager,
   isAave = false
@@ -34,6 +35,10 @@ module.exports = async function createMockOption ({
     weth = (await WETH.deploy()).address
   }
 
+  if (!expiration) {
+    expiration = await getTimestamp() + 16 * 24 * 60 * 60
+  }
+
   const factoryContract = await createOptionFactory(configurationManager)
   const txIdNewOption = await factoryContract.createOption(
     'pod:WBTC:USDC:8000:A',
@@ -43,7 +48,7 @@ module.exports = async function createMockOption ({
     underlyingAsset,
     strikeAsset,
     strikePrice,
-    await getTimestamp() + 16 * 24 * 60 * 60,
+    expiration,
     exerciseWindow,
     isAave
   )
