@@ -1173,7 +1173,7 @@ scenarios.forEach(scenario => {
     })
 
     describe('Withdraw Amount > TotalBalance case', () => {
-      it.only('should remove all amount after simple addition', async () => {
+      it('should remove all amount after simple addition', async () => {
         const tokenA = await MockERC20.deploy('tokenA', 'TKNA', '18')
         const tokenB = await MockERC20.deploy('tokenB', 'TKNB', '6')
         const expiration = await getTimestamp() + 724508
