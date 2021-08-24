@@ -59,7 +59,7 @@ describe('OptionHelper', () => {
 
     ;[strikeAsset, stableAsset] = await Promise.all([
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
-      ethers.getContractAt('MintableERC20', await option.strikeAsset()),
+      ethers.getContractAt('MintableERC20', await option.strikeAsset())
     ])
 
     pool = await createOptionAMMPool(option, { configurationManager, initialSigma })
@@ -212,7 +212,7 @@ describe('OptionHelper', () => {
       await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
     })
 
-    it('mints and add the options and stable tokens using only collateral asset', async () => {
+    it('should mints and add the options and stable tokens using only collateral asset', async () => {
       const collateralAmount = ethers.BigNumber.from(4200e6.toString())
 
       // We assume here that the strikeAsset is equal to the stable asset.
@@ -237,6 +237,22 @@ describe('OptionHelper', () => {
       const valueA = optionsAdded.mul(ABPrice).div(ethers.BigNumber.from(10).pow(await option.decimals()))
 
       expect(valueA).to.be.eq(strikeAdded)
+    })
+
+    it('should revert if trying to call mintAndAddLiquidityWithCollateral with Call Options', async () => {
+      const callOption = await createMockOption({
+        configurationManager,
+        underlyingAsset: underlyingAsset.address,
+        strikeAsset: stableAsset.address,
+        optionType: OPTION_TYPE_CALL
+      })
+
+      const tx = optionHelper.connect(caller).mintAndAddLiquidityWithCollateral(
+        callOption.address,
+        '100000000'
+      )
+
+      await expect(tx).to.be.revertedWith('OptionHelper: Invalid option type')
     })
   })
 
