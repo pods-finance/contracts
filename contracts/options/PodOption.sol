@@ -405,15 +405,28 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
 
         if (_optionType == IPodOption.OptionType.PUT) {
             uint256 strikeAssetDeposited = totalSupply().mul(_strikePrice).div(10**uint256(decimals()));
-            uint256 totalInterest = strikeReserves().sub(strikeAssetDeposited);
+            uint256 totalInterest = 0;
+
+            if (strikeReserves() > strikeAssetDeposited) {
+                totalInterest = strikeReserves().sub(strikeAssetDeposited);
+            }
 
             strikeToSend = amountOfOptions.mul(_strikePrice).div(10**uint256(decimals())).add(
                 totalInterest.mul(burnedShares).div(totalShares)
             );
+
+            // In the case we lost some funds due to precision, the last user to unmint will still be able to perform.
+            if (strikeToSend > strikeReserves()) {
+                strikeToSend = strikeReserves();
+            }
         } else {
             uint256 underlyingAssetDeposited = totalSupply();
             uint256 currentUnderlyingAmount = underlyingReserves().add(strikeReserves().div(_strikePrice));
-            uint256 totalInterest = currentUnderlyingAmount.sub(underlyingAssetDeposited);
+            uint256 totalInterest = 0;
+
+            if (currentUnderlyingAmount > underlyingAssetDeposited) {
+                totalInterest = currentUnderlyingAmount.sub(underlyingAssetDeposited);
+            }
 
             underlyingToSend = amountOfOptions.add(totalInterest.mul(burnedShares).div(totalShares));
         }

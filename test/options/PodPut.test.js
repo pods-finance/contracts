@@ -692,6 +692,37 @@ scenarios.forEach(scenario => {
         await skipToWithdrawWindow(podPut)
         await expect(podPut.connect(seller).unmint(1)).to.be.revertedWith('PodOption: not in unmint window')
       })
+
+      it('should unmint all strike when strike reserves are lower then totalSupply x strikePrice', async () => {
+        const assetTokenAUnderlying = await MockInterestBearingERC20.deploy('TOKEN A', 'TokenA', '3')
+        const assetTokenBStrike = await MockInterestBearingERC20.deploy('TOKEN B', 'TokenB', '2')
+
+        podPut = await PodPut.deploy(
+          'pod:tokenA:tokenB:300',
+          'pod:tokenA:tokenB:300',
+          EXERCISE_TYPE_EUROPEAN,
+          assetTokenAUnderlying.address,
+          assetTokenBStrike.address,
+          '300',
+          await getTimestamp() + 48 * 60 * 60,
+          (24 * 60 * 60), // 24h - 1 second
+          configurationManager.address
+        )
+
+        // mint tokenB
+        await assetTokenBStrike.mint('10000000000')
+        // approve
+        await assetTokenBStrike.approve(podPut.address, ethers.constants.MaxUint256)
+        await podPut.mint('2643', deployerAddress)
+        await podPut.mint('2643', deployerAddress)
+
+        await podPut.unmint('5286')
+        const totalSupply = await podPut.totalSupply()
+        const strikeReserves = await podPut.strikeReserves()
+
+        expect(totalSupply).to.be.eq(0)
+        expect(strikeReserves).to.be.eq(0)
+      })
     })
 
     describe('Withdrawing options', () => {
