@@ -346,6 +346,14 @@ abstract contract AMM is IAMM, RequiredDecimals {
             multipliers
         );
 
+        if (withdrawAmountA > totalTokenA) {
+            withdrawAmountA = totalTokenA;
+        }
+
+        if (withdrawAmountB > totalTokenB) {
+            withdrawAmountB = totalTokenB;
+        }
+
         _onRemoveLiquidity(percentA, percentB, msg.sender);
 
         // Transfers / Update
