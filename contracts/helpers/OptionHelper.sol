@@ -157,6 +157,7 @@ contract OptionHelper is ReentrancyGuard {
      * @param collateralAmount Amount of collateral tokens to be used to both mint and mint into the stable side
      */
     function mintAndAddLiquidityWithCollateral(IPodOption option, uint256 collateralAmount) external nonReentrant {
+        require(option.optionType() == IPodOption.OptionType.PUT, "OptionHelper: Invalid option type");
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
