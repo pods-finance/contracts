@@ -3,20 +3,19 @@ const { getDeployments } = require('../utils/deployment')
 task('setNewFeed', 'Deploy Chainlink w/ source + set source and asset to price provider')
   .addParam('asset', 'name of the asset (e.g: WETH / WBTC / DAI)')
   .addParam('source', 'address of the asset price feed (Chainlink WETH/USD: ')
-  .setAction(async ({ source, asset }, hre) => {
+  .addFlag('verify', 'if true, it should verify the contract after the deployment')
+  .setAction(async ({ source, asset, verify }, hre) => {
     console.log('----Start Deploying new Chainlink Price Feed and Adding to PriceProvider----')
     const numberOfConfirmations = hre.network.name === 'local' ? 1 : 2
 
     const deployments = getDeployments()
-    const assetUpper = asset.toUpperCase()
+    const assetAddress = deployments[asset.toUpperCase()]
 
-    const assetAddress = deployments[assetUpper]
-    const priceProviderAddress = deployments.PriceProvider
-
-    const chainlinkFeedAddress = await hre.run('deployChainlink', { source })
+    const chainlinkFeedAddress = await hre.run('deployChainlink', { source, verify })
     console.log('Setting feed to Price Provider')
 
-    const priceProvider = await ethers.getContractAt('PriceProvider', priceProviderAddress)
+    const configurationManager = await ethers.getContractAt('ConfigurationManager', deployments.ConfigurationManager)
+    const priceProvider = await ethers.getContractAt('PriceProvider', await configurationManager.getPriceProvider())
     const tx = await priceProvider.setAssetFeeds([assetAddress], [chainlinkFeedAddress])
     await tx.wait(numberOfConfirmations)
 
