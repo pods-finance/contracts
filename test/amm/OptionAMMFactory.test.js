@@ -55,6 +55,10 @@ describe('OptionAMMFactory', () => {
     const registry = await ethers.getContractAt('OptionPoolRegistry', await configurationManager.getOptionPoolRegistry())
 
     await expect(tx)
+      .to.emit(factory, 'PoolCreated')
+      .withArgs(caller.address, pool.address, option.address)
+
+    await expect(tx)
       .to.emit(registry, 'PoolSet')
       .withArgs(factory.address, option.address, pool.address)
   })

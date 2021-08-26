@@ -25,6 +25,8 @@ contract OptionAMMFactory is IOptionAMMFactory {
      */
     IFeePoolBuilder public immutable feePoolBuilder;
 
+    event PoolCreated(address indexed deployer, address pool, address option);
+
     constructor(IConfigurationManager _configurationManager, address _feePoolBuilder) public {
         require(
             Address.isContract(address(_configurationManager)),
@@ -62,6 +64,7 @@ contract OptionAMMFactory is IOptionAMMFactory {
         );
 
         address poolAddress = address(pool);
+        emit PoolCreated(msg.sender, poolAddress, _optionAddress);
         registry.setPool(_optionAddress, poolAddress);
 
         return poolAddress;
