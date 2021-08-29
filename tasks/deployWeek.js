@@ -2,6 +2,7 @@ const parseDuration = require('parse-duration')
 const getTimestamp = require('../test/util/getTimestamp')
 const fs = require('fs')
 const path = require('path')
+const { getDeployments } = require('./utils/deployment')
 const fsPromises = fs.promises
 
 task('deployWeek', 'Deploy a whole local test environment')
@@ -17,6 +18,7 @@ task('deployWeek', 'Deploy a whole local test environment')
     const _filePath = path.join(__dirname, pathFile)
     const content = await fsPromises.readFile(_filePath)
     const contentJSON = JSON.parse(content)
+    const deployments = getDeployments()
 
     const deployedOptions = []
     /*
@@ -24,17 +26,174 @@ task('deployWeek', 'Deploy a whole local test environment')
       For documentation see https://github.com/jkroso/parse-duration
     */
     const options = [
+      // ITM
       {
-        strike: 'ADAI',
-        underlying: 'WMATIC',
-        price: '1.4',
-        expiresIn: '31d',
-        initialIV: '2200000000000000000',
+        strike: 'USDC',
+        underlying: 'ETH',
+        price: '10',
+        expiresIn: '4d',
+        initialIV: '2000000000000000000',
         initialOptions: '5000',
         initialStable: '5000',
         optionCap: '1000000',
         poolCap: '100000'
-      }
+      },
+      {
+        strike: 'USDC',
+        underlying: 'ETH',
+        price: '10',
+        expiresIn: '15d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'USDC',
+        underlying: 'ETH',
+        price: '10',
+        expiresIn: '3 months',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      // OTM - Normal strike
+      {
+        strike: 'USDC',
+        underlying: 'ETH',
+        price: '20',
+        expiresIn: '4d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'USDC',
+        underlying: 'ETH',
+        price: '20',
+        expiresIn: '15d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'USDC',
+        underlying: 'ETH',
+        price: '20',
+        expiresIn: '3 months',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      // OTM - Interest-bearing strike
+      {
+        strike: 'AUSDC',
+        underlying: 'ETH',
+        price: '30',
+        expiresIn: '4d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'AUSDC',
+        underlying: 'ETH',
+        price: '30',
+        expiresIn: '15d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'AUSDC',
+        underlying: 'ETH',
+        price: '30',
+        expiresIn: '3 months',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      // OTM - Normal strike
+      {
+        strike: 'AUSDC',
+        underlying: 'ETH',
+        price: '30',
+        expiresIn: '4d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'AUSDC',
+        underlying: 'ETH',
+        price: '30',
+        expiresIn: '15d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'AUSDC',
+        underlying: 'ETH',
+        price: '30',
+        expiresIn: '3 months',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },{
+        strike: 'AUSDC',
+        underlying: 'WMATIC',
+        price: '3500',
+        expiresIn: '4d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'AUSDC',
+        underlying: 'WMATIC',
+        price: '3500',
+        expiresIn: '15d',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
+      {
+        strike: 'AUSDC',
+        underlying: 'WMATIC',
+        price: '3500',
+        expiresIn: '3 months',
+        initialIV: '2000000000000000000',
+        initialOptions: '5000',
+        initialStable: '5000',
+        optionCap: '1000000',
+        poolCap: '100000'
+      },
     ]
 
     for (const option of options) {
@@ -61,9 +220,8 @@ task('deployWeek', 'Deploy a whole local test environment')
       deployedOptions.push(optionAddress)
 
       if (ivprovider) {
-        const configurationManager = await ethers.getContractAt('ConfigurationManager', contentJSON.ConfigurationManager)
-        const ivProviderAddress = await configurationManager.getIVProvider()
-        const ivProvider = await ethers.getContractAt('IVProvider', ivProviderAddress)
+        const configurationManager = await ethers.getContractAt('ConfigurationManager', deployments.ConfigurationManager)
+        const ivProvider = await ethers.getContractAt('IVProvider', await configurationManager.getIVProvider())
         const tx = await ivProvider.updateIV(optionAddress, option.initialIV, '18')
         await tx.wait(2)
       }

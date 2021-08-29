@@ -1,6 +1,5 @@
 const { ethers } = require('hardhat')
 const { expect } = require('chai')
-const { toBigNumber } = require('../../utils/utils')
 
 describe('CombinedActions', () => {
   let combinedSample, combinedAttacker

@@ -13,7 +13,15 @@ task('deployOptionAMMFactory', 'Deploy deployOptionAMMFactory Contract')
     }
 
     if (!feebuilder) {
-      feebuilder = deployment.FeePoolBuilder
+      if (ethers.utils.isAddress(deployment.FeePoolBuilder)) {
+        feebuilder = deployment.FeePoolBuilder
+      } else {
+        feebuilder = await hre.run('deploy', {
+          name: 'FeePoolBuilder',
+          verify,
+          save: true
+        })
+      }
     }
 
     validateAddress(configuration, 'configuration')

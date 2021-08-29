@@ -1,8 +1,8 @@
 const { getDeployments } = require('../utils/deployment')
 const validateAddress = require('../utils/validateAddress')
 
-internalTask('deployIVGuesser', 'Deploy IV Contract')
-  .addParam('bs', 'Black Scholes Address')
+task('deployIVGuesser', 'Deploy IV Contract')
+  .addOptionalParam('bs', 'Black Scholes Address')
   .addOptionalParam('configuration', 'An address of a deployed ConfigurationManager, defaults to current `deployments` json file')
   .addFlag('verify', 'if true, it should verify the contract after the deployment')
   .setAction(async ({ bs, configuration, verify }, hre) => {
@@ -12,6 +12,11 @@ internalTask('deployIVGuesser', 'Deploy IV Contract')
     }
 
     validateAddress(configuration, 'configuration')
+
+    if (!bs) {
+      const configurationManager = await ethers.getContractAt('ConfigurationManager', configuration)
+      bs = await configurationManager.getPricingMethod()
+    }
 
     const address = await hre.run('deploy', {
       name: 'IVGuesser',

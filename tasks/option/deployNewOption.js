@@ -114,6 +114,10 @@ task('deployNewOption', 'Deploy New Option')
           configurationManagerAddress
         ]
 
+        if (underlyingAssetSymbol.toUpperCase() === 'WETH' || underlyingAssetSymbol.toUpperCase() === 'WMATIC') {
+          constructorArguments.splice(3, 1)
+        }
+
         await verifyContract(hre, optionAddress, constructorArguments)
       }
 

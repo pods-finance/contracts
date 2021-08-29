@@ -13,14 +13,17 @@ task('inspectConfigurationManager', 'Checks the contracts associated with a Conf
 
     const configurationManager = await ethers.getContractAt('ConfigurationManager', address)
 
-    console.log(`ConfigurationManager deployed at: ${configurationManager.address}`)
-    console.log(`EmergencyStop: ${await configurationManager.getEmergencyStop()}`)
-    console.log(`BlackScholes: ${await configurationManager.getPricingMethod()}`)
-    console.log(`IVGuesser: ${await configurationManager.getIVGuesser()}`)
-    console.log(`IVProvider: ${await configurationManager.getIVProvider()}`)
-    console.log(`PriceProvider: ${await configurationManager.getPriceProvider()}`)
-    console.log(`CapProvider: ${await configurationManager.getCapProvider()}`)
-    console.log(`OptionFactory: ${await configurationManager.getOptionFactory()}`)
-    console.log(`OptionAMMFactory: ${await configurationManager.getAMMFactory()}`)
-    console.log(`OptionHelper: ${await configurationManager.getOptionHelper()}`)
+    console.log(`ConfigurationManager is deployed at: ${configurationManager.address}\nOwned by: ${await configurationManager.owner()}`)
+    console.table({
+      EmergencyStop: await configurationManager.getEmergencyStop(),
+      BlackScholes: await configurationManager.getPricingMethod(),
+      IVGuesser: await configurationManager.getIVGuesser(),
+      IVProvider: await configurationManager.getIVProvider(),
+      PriceProvider: await configurationManager.getPriceProvider(),
+      CapProvider: await configurationManager.getCapProvider(),
+      OptionFactory: await configurationManager.getOptionFactory(),
+      OptionAMMFactory: await configurationManager.getAMMFactory(),
+      OptionHelper: await configurationManager.getOptionHelper(),
+      OptionPoolRegistry: await configurationManager.getOptionPoolRegistry()
+    })
   })

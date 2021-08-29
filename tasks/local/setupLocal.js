@@ -1,7 +1,7 @@
 const BigNumber = require('bignumber.js')
 const parseDuration = require('parse-duration')
 const getTimestamp = require('../../test/util/getTimestamp')
-const {  getDeployments, saveDeployments, clearDeployments } = require('../utils/deployment')
+const { getDeployments, saveDeployments, clearDeployments } = require('../utils/deployment')
 
 task('setupLocal', 'Deploy a whole local test environment')
   .setAction(async ({}, hre) => {
@@ -28,6 +28,12 @@ task('setupLocal', 'Deploy a whole local test environment')
     await saveDeployments(deployedTokens)
 
     const configurationManagerAddress = await hre.run('deployConfigurationManager')
+    const configurationManager = await ethers.getContractAt('ConfigurationManager', configurationManagerAddress)
+
+    // set WRAPPED_NETWORK_TOKEN
+    const parameterName = ethers.utils.formatBytes32String('WRAPPED_NETWORK_TOKEN')
+    const parameterValue = deployedTokens.WETH
+    await configurationManager.setParameter(parameterName, parameterValue)
 
     // 2) Setup Chainlink (Oracle) Mock
     const ChainlinkFeed = await ethers.getContractFactory('MockChainlinkFeed')
@@ -48,8 +54,6 @@ task('setupLocal', 'Deploy a whole local test environment')
 
     // 3.3) Deploy Option Exchange
     const deployments = getDeployments()
-
-    const configurationManager = await ethers.getContractAt('ConfigurationManager', configurationManagerAddress)
 
     // Set WETH price Provider
     const priceProvider = await ethers.getContractAt('PriceProvider', await configurationManager.getPriceProvider())
@@ -143,6 +147,7 @@ task('setupLocal', 'Deploy a whole local test environment')
         await hre.run('mintOptions', { option: optionAddress, amount: option.initialOptions })
 
         await hre.run('addLiquidityAMM', {
+          option: optionAddress,
           pooladdress: poolAddress,
           amounta: option.initialOptions,
           amountb: option.initialStable

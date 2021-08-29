@@ -10,8 +10,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IPodOption.sol";
-import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
+import "../interfaces/IOptionPoolRegistry.sol";
 
 /**
  * @title PodOption
@@ -157,6 +157,7 @@ contract OptionHelper is ReentrancyGuard {
      * @param collateralAmount Amount of collateral tokens to be used to both mint and mint into the stable side
      */
     function mintAndAddLiquidityWithCollateral(IPodOption option, uint256 collateralAmount) external nonReentrant {
+        require(option.optionType() == IPodOption.OptionType.PUT, "OptionHelper: Invalid option type");
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
@@ -399,8 +400,8 @@ contract OptionHelper is ReentrancyGuard {
      * @return IOptionAMMPool
      */
     function _getPool(IPodOption option) internal view returns (IOptionAMMPool) {
-        IOptionAMMFactory factory = IOptionAMMFactory(configurationManager.getAMMFactory());
-        address exchangeOptionAddress = factory.getPool(address(option));
+        IOptionPoolRegistry registry = IOptionPoolRegistry(configurationManager.getOptionPoolRegistry());
+        address exchangeOptionAddress = registry.getPool(address(option));
         require(exchangeOptionAddress != address(0), "OptionHelper: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);
     }
@@ -419,9 +420,7 @@ contract OptionHelper is ReentrancyGuard {
         returns (uint256 amountOfOptions, uint256 amountOfTokenB)
     {
         // 1) Get BS Unit Price
-        IOptionAMMFactory factory = IOptionAMMFactory(configurationManager.getAMMFactory());
-        address exchangeOptionAddress = factory.getPool(address(option));
-        IOptionAMMPool pool = IOptionAMMPool(exchangeOptionAddress);
+        IOptionAMMPool pool = _getPool(option);
 
         uint256 ABPrice = pool.getABPrice();
         uint256 strikePrice = option.strikePrice();

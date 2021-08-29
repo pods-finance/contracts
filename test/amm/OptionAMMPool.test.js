@@ -12,10 +12,10 @@ const createConfigurationManager = require('../util/createConfigurationManager')
 const mintOptions = require('../util/mintOptions')
 const addLiquidity = require('../util/addLiquidity')
 const getTimestamp = require('../util/getTimestamp')
+const createOptionAMMPool = require('../util/createOptionAMMPool')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
-const EXERCISE_TYPE_EUROPEAN = 0
 const EXERCISE_TYPE_AMERICAN = 1
 
 const scenarios = [
@@ -159,7 +159,11 @@ scenarios.forEach(scenario => {
       await ivProvider.updateIV(option.address, scenario.initialOracleIV, scenario.decimalsOracleIV)
 
       optionAMMFactory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
-      optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, option.address, mockStrikeAsset.address, scenario.initialIV)
+      optionAMMPool = await createOptionAMMPool(option, {
+        configurationManager,
+        initialSigma: scenario.initialIV,
+        tokenB: mockStrikeAsset.address
+      })
 
       claimable = ethers.BigNumber.from(20e18.toString())
       await aaveRewardDistributor.mock.getRewardsBalance.returns(claimable)
@@ -201,8 +205,13 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, option.address, mockTokenB.address, scenario.initialIV)
-        await expect(optionAMMPool).to.be.revertedWith('Pool: invalid strikePrice unit')
+        const tx = createOptionAMMPool.getTransaction(option, {
+          configurationManager,
+          initialSigma: scenario.initialIV,
+          tokenB: mockTokenB.address
+        })
+
+        await expect(tx).to.be.revertedWith('Pool: invalid strikePrice unit')
       })
 
       it('should revert when trying to deploy a Pool with tokenB decimals > PRICING_DECIMALS', async () => {
@@ -213,8 +222,13 @@ scenarios.forEach(scenario => {
           configurationManager
         })
         const mockTokenB = await MockERC20.deploy('TEST', 'TEST', '20')
-        optionAMMPool = createNewPool(deployerAddress, optionAMMFactory, option.address, mockTokenB.address, scenario.initialIV)
-        await expect(optionAMMPool).to.be.revertedWith('Pool: invalid tokenB unit')
+        const tx = createOptionAMMPool.getTransaction(option, {
+          configurationManager,
+          initialSigma: scenario.initialIV,
+          tokenB: mockTokenB.address
+        })
+
+        await expect(tx).to.be.revertedWith('Pool: invalid tokenB unit')
       })
 
       it('should not allow add liquidity after option expiration', async () => {
@@ -253,8 +267,6 @@ scenarios.forEach(scenario => {
 
         await mockStrikeAsset.connect(buyer).mint(amountOfStrikeLpNeed)
         await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
-
-        const removeLiquidityAmountsNoLiquidity = await optionAMMPool.getRemoveLiquidityAmounts(100, 100, lp.address)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
@@ -337,16 +349,15 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, toBigNumber(0.261e18))
+        optionAMMPool = await createOptionAMMPool(podPut, {
+          configurationManager,
+          initialSigma: toBigNumber(0.261e18),
+          tokenB: mockStrikeAsset.address
+        })
 
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await podPut.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         const actions = [
           {
@@ -484,23 +495,12 @@ scenarios.forEach(scenario => {
 
       it('should remove liquidity when option price is rounded to zero', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await option.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
         const feeAddressA = await optionAMMPool.feePoolA()
         const feeAddressB = await optionAMMPool.feePoolB()
-
-        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
-        const lpOptionBeforeTrade = await option.balanceOf(lpAddress)
-
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
         // fast forward until very close to the maturity
         const expiration = await option.expiration()
@@ -511,7 +511,6 @@ scenarios.forEach(scenario => {
 
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
-        const lpOptionAfterBuyer = await option.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
@@ -529,23 +528,12 @@ scenarios.forEach(scenario => {
 
       it('should remove liquidity after expiration', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await option.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
         const feeAddressA = await optionAMMPool.feePoolA()
         const feeAddressB = await optionAMMPool.feePoolB()
-
-        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
-        const lpOptionBeforeTrade = await option.balanceOf(lpAddress)
-
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
 
         await skipToWithdrawWindow(option)
 
@@ -553,7 +541,6 @@ scenarios.forEach(scenario => {
 
         await optionAMMPool.connect(lp).removeLiquidity(100, 100)
 
-        const lpOptionAfterBuyer = await option.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
@@ -571,29 +558,17 @@ scenarios.forEach(scenario => {
 
       it('should remove liquidity single-sided', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const numberOfOptionsToBuy = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const balanceBeforeOptionBuyer = await option.balanceOf(buyerAddress)
-        const balanceBeforeStrikeBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
 
         const feeAddressA = await optionAMMPool.feePoolA()
         const feeAddressB = await optionAMMPool.feePoolB()
 
-        const lpStrikeBeforeTrade = await mockStrikeAsset.balanceOf(lpAddress)
-        const lpOptionBeforeTrade = await option.balanceOf(lpAddress)
-
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
-
         await optionAMMPool.connect(lp).removeLiquidity(100, 0)
 
         await optionAMMPool.connect(lp).removeLiquidity(0, 100)
 
-        const lpOptionAfterBuyer = await option.balanceOf(lpAddress)
         const lpStrikeAfterBuyer = await mockStrikeAsset.balanceOf(lpAddress)
 
         const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
@@ -671,7 +646,11 @@ scenarios.forEach(scenario => {
           configurationManager
         })
 
-        optionAMMPool = await createNewPool(deployerAddress, optionAMMFactory, podPut.address, mockStrikeAsset.address, toBigNumber(0.161e18))
+        optionAMMPool = await createOptionAMMPool(podPut, {
+          configurationManager,
+          initialSigma: toBigNumber(0.161e18),
+          tokenB: mockStrikeAsset.address
+        })
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
@@ -765,11 +744,8 @@ scenarios.forEach(scenario => {
     describe('tradeExactAInput', () => {
       it('should match values accordingly', async () => {
         const amountOfStrikeLpNeed = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
-        const amountOfOptionsBuyerToMint = toBigNumber(4).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const amountOfStrikeBuyerToMintOption = scenario.strikePrice.mul(toBigNumber(4)).add(1)
         const numberOfOptionsToSell = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
         await addLiquidity(optionAMMPool, amountOfOptionsToMint, amountOfStrikeLpNeed, lp)
@@ -795,8 +771,6 @@ scenarios.forEach(scenario => {
           .withArgs(scenario.emittedSpotPrice, priceObj.newIV)
 
         const buyerOptionAfterBuyer = await option.balanceOf(buyerAddress)
-        const tokenBAfterTrade = await mockStrikeAsset.balanceOf(buyerAddress)
-        const tokensSpent = tokenBAfterTrade.sub(tokenBBeforeTrade)
         // expect(tradeDetails.amountBOut).to.be.equal(tokensSpent)
 
         const [poolOptionAmountAfterTrade] = await optionAMMPool.getPoolBalances()
@@ -859,7 +833,6 @@ scenarios.forEach(scenario => {
         const feeAddressB = await optionAMMPool.feePoolB()
 
         const amountOfStrikeLpNeed = toBigNumber(600000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const initialBuyerBalanceStrikeAsset = toBigNumber(10000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
         const numberOfOptionsToBuy = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
@@ -891,8 +864,6 @@ scenarios.forEach(scenario => {
         const tokensSpent = buyerStrikeAmountBeforeTrade.sub(buyerStrikeAmountAfterTrade)
         expect(tradeDetails.amountBIn).to.be.equal(tokensSpent)
 
-        const feesBN = (new BigNumber(tokensSpent.toString()).multipliedBy(new BigNumber(0.03))).toFixed(0, 2)
-        const fees = toBigNumber(feesBN.toString())
         const feeContractA = await ethers.getContractAt('FeePool', feeAddressA)
         const feeContractB = await ethers.getContractAt('FeePool', feeAddressB)
 
@@ -937,10 +908,8 @@ scenarios.forEach(scenario => {
     describe('tradeExactBInput', () => {
       it('should match values accordingly', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
-        const amountOfOptionsBuyerToMint = toBigNumber(4).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
         const amountOfStrikeBuyerToMintOption = scenario.strikePrice.mul(toBigNumber(4)).add(1)
 
         const numberOfTokensToSend = toBigNumber(1).mul(toBigNumber(10).pow(toBigNumber(scenario.strikeAssetDecimals)))
@@ -975,7 +944,6 @@ scenarios.forEach(scenario => {
         const buyerStrikeBeforeTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const buyerOptionBeforeTrade = await option.balanceOf(buyerAddress)
 
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactBInput(numberOfTokensToSend)
 
         await expect(optionAMMPool.connect(buyer).tradeExactBInput(numberOfTokensToSend, ethers.constants.MaxUint256, buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: slippage not acceptable')
@@ -989,8 +957,6 @@ scenarios.forEach(scenario => {
         const buyerStrikeAfterBuyer = await mockStrikeAsset.balanceOf(buyerAddress)
         const tokensReceived = buyerOptionAfterBuyer.sub(buyerOptionBeforeTrade)
         expect(tradeDetails.amountAOut).to.be.equal(tokensReceived)
-
-        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
 
         expect(buyerStrikeAfterBuyer).to.eq(buyerStrikeBeforeTrade.sub(numberOfTokensToSend))
       })
@@ -1022,11 +988,7 @@ scenarios.forEach(scenario => {
     describe('tradeExactBOutput', () => {
       it('should match values accordingly', async () => {
         const amountOfStrikeLpNeed = toBigNumber(6000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
-        const amountOfStrikeLpToMintOption = scenario.strikePrice.mul(toBigNumber(100)).add(1)
         const amountOfOptionsToMint = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-
-        const amountOfOptionsBuyerToMint = toBigNumber(4).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
-        const amountOfStrikeBuyerToMintOption = scenario.strikePrice.mul(toBigNumber(4)).add(1)
 
         const numberOfOptionsToSell = toBigNumber(3).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
 
@@ -1041,7 +1003,7 @@ scenarios.forEach(scenario => {
         const buyerStrikeBeforeTrade = await mockStrikeAsset.balanceOf(buyerAddress)
         const buyerOptionBeforeTrade = await option.balanceOf(buyerAddress)
 
-        const [poolOptionAmountBeforeTrade, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
+        const [, poolStrikeAmountBeforeTrade] = await optionAMMPool.getPoolBalances()
         const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactBOutput(numberOfTokensToReceive)
 
         await expect(optionAMMPool.connect(buyer).tradeExactBOutput(numberOfTokensToReceive, 1, buyerAddress, scenario.initialIV)).to.be.revertedWith('AMM: slippage not acceptable')
@@ -1057,7 +1019,7 @@ scenarios.forEach(scenario => {
         const tokensSpent = buyerOptionBeforeTrade.sub(buyerOptionAfterTrade)
         expect(tradeDetails.amountAIn).to.be.equal(tokensSpent)
 
-        const [poolOptionAmountAfterTrade, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
+        const [, poolStrikeAmountAfterTrade] = await optionAMMPool.getPoolBalances()
 
         const feesBN = (new BigNumber(numberOfTokensToReceive.toString()).multipliedBy(new BigNumber(0.03))).toFixed(0, 2)
         const fees = toBigNumber(feesBN.toString())
@@ -1209,5 +1171,490 @@ scenarios.forEach(scenario => {
         expect(bsPriceWithOracleIV).to.be.gte(bsPriceWithoutOracleIV)
       })
     })
+
+    describe('Withdraw Amount > TotalBalance case', () => {
+      it('should remove all amount after simple addition', async () => {
+        const tokenA = await MockERC20.deploy('tokenA', 'TKNA', '18')
+        const tokenB = await MockERC20.deploy('tokenB', 'TKNB', '6')
+        const expiration = await getTimestamp() + 724508
+
+        await defaultPriceFeed.setDecimals('8')
+        await defaultPriceFeed.setRoundData({
+          roundId: 1,
+          answer: '212873000000',
+          startedAt: await getTimestamp(),
+          updatedAt: await getTimestamp() + 1,
+          answeredInRound: 1
+        })
+
+        option = await createMockOption({
+          underlyingAsset: tokenA.address,
+          strikeAsset: tokenB.address,
+          strikePrice: '1400000000',
+          configurationManager,
+          optionType: '0',
+          expiration: expiration
+        })
+
+        await priceProvider.setAssetFeeds([tokenA.address], [defaultPriceFeed.contract.address])
+
+        await ivProvider.updateIV(option.address, '1550000000000000000', '18')
+
+        optionAMMPool = await createOptionAMMPool(option, {
+          configurationManager,
+          initialSigma: '1550000000000000000',
+          tokenB: tokenB.address
+        })
+
+        await hre.run('setParameter', { parameter: 'MIN_UPDATE_INTERVAL', value: '1000000', configuration: configurationManager.address, noUpdate: false })
+
+        const actions01 = [
+          {
+            name: 'mint',
+            contract: tokenB,
+            user: deployer,
+            params: ['1000000000000000000000000']
+          },
+          {
+            name: 'approve',
+            contract: tokenB,
+            user: deployer,
+            params: [option.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'mint',
+            contract: option,
+            user: deployer,
+            params: ['2142857142800000000', deployerAddress]
+          },
+          {
+            name: 'approve',
+            contract: tokenB,
+            user: deployer,
+            params: [optionAMMPool.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'approve',
+            contract: option,
+            user: deployer,
+            params: [optionAMMPool.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: deployer,
+            params: ['2142857142800000000', '2000000000', deployerAddress]
+          }
+
+        ]
+
+        const actions02 = [
+          {
+            name: 'mint',
+            contract: tokenB,
+            user: buyer,
+            params: ['1000000000000000000000000000000000000']
+          },
+          {
+            name: 'approve',
+            contract: tokenB,
+            user: buyer,
+            params: [option.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'mint',
+            contract: option,
+            user: buyer,
+            params: ['1428571428500000000', buyerAddress]
+          },
+          {
+            name: 'approve',
+            contract: tokenB,
+            user: buyer,
+            params: [optionAMMPool.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'approve',
+            contract: option,
+            user: buyer,
+            params: [optionAMMPool.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'spotPrice',
+            params: ['212873000000']
+          },
+          {
+            name: 'timestamp',
+            params: ['665736']
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: buyer,
+            params: ['1428571428500000000', '5857733', buyerAddress]
+          }
+        ]
+
+        const actions03 = [
+          {
+            name: 'mint',
+            contract: option,
+            user: buyer,
+            params: ['428571428500000000', buyerAddress]
+          },
+          {
+            name: 'spotPrice',
+            params: ['212736492086']
+          },
+          {
+            name: 'timestamp',
+            params: ['665400']
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: buyer,
+            params: ['428571428500000000', '2035606', buyerAddress]
+          }
+        ]
+
+        const actions04 = [
+          {
+            name: 'mint',
+            contract: option,
+            user: buyer,
+            params: ['21428571400000000', buyerAddress]
+          },
+          {
+            name: 'spotPrice',
+            params: ['211819551381']
+          },
+          {
+            name: 'timestamp',
+            params: ['665292']
+          },
+          {
+            name: 'tradeExactAInput',
+            contract: optionAMMPool,
+            user: buyer,
+            params: ['21428571400000000', '98691', buyerAddress, '1550000000000000000']
+          }
+        ]
+
+        const actions05 = [
+          {
+            name: 'spotPrice',
+            params: ['211819551381']
+          },
+          {
+            name: 'timestamp',
+            params: ['665055']
+          },
+          {
+            name: 'tradeExactBInput',
+            contract: optionAMMPool,
+            user: buyer,
+            params: ['3000000', '436514094380000000', buyerAddress, '1625901275547008968']
+          }
+        ]
+
+        const actions06 = [
+          {
+            name: 'spotPrice',
+            params: ['210365774025']
+          },
+          {
+            name: 'timestamp',
+            params: ['655827']
+          },
+          {
+            name: 'removeLiquidity',
+            contract: optionAMMPool,
+            user: buyer,
+            params: ['100', '100']
+          }
+        ]
+
+        const actions07 = [
+          {
+            name: 'spotPrice',
+            params: ['208835940853']
+          },
+          {
+            name: 'timestamp',
+            params: ['649363']
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: buyer,
+            params: ['1885468454400000000', '9605174', buyerAddress]
+          }
+        ]
+
+        const actions08 = [
+          {
+            name: 'spotPrice',
+            params: ['211875675870']
+          },
+          {
+            name: 'timestamp',
+            params: ['647285']
+          },
+          {
+            name: 'addLiquidity',
+            contract: optionAMMPool,
+            user: buyer,
+            params: ['236142283300000000', '1171256', buyerAddress]
+          }
+        ]
+
+        const actions09 = [
+          {
+            name: 'mint',
+            contract: tokenB,
+            user: second,
+            params: ['1000000000000000000000000000000000000']
+          },
+          {
+            name: 'approve',
+            contract: tokenB,
+            user: second,
+            params: [option.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'mint',
+            contract: option,
+            user: second,
+            params: ['107142857100000000', secondAddress]
+          },
+          {
+            name: 'approve',
+            contract: option,
+            user: second,
+            params: [optionAMMPool.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'spotPrice',
+            params: ['204691681459']
+          },
+          {
+            name: 'timestamp',
+            params: ['591138']
+          },
+          {
+            name: 'tradeExactAInput',
+            contract: optionAMMPool,
+            user: second,
+            params: ['107142857100000000', '546008', secondAddress, '1549220341740704093']
+          }
+        ]
+
+        const actions10 = [
+          {
+            name: 'mint',
+            contract: option,
+            user: second,
+            params: ['170714285700000000', secondAddress]
+          },
+          {
+            name: 'spotPrice',
+            params: ['203952000000']
+          },
+          {
+            name: 'timestamp',
+            params: ['590618']
+          },
+          {
+            name: 'tradeExactAInput',
+            contract: optionAMMPool,
+            user: second,
+            params: ['170714285700000000', '78556', secondAddress, '1549220341740704093']
+          }
+        ]
+
+        const actions11 = [
+          {
+            name: 'mint',
+            contract: option,
+            user: second,
+            params: ['7857142800000000', secondAddress]
+          },
+          {
+            name: 'spotPrice',
+            params: ['203952000000']
+          },
+          {
+            name: 'timestamp',
+            params: ['590570']
+          },
+          {
+            name: 'tradeExactAInput',
+            contract: optionAMMPool,
+            user: second,
+            params: ['7857142800000000', '37651', secondAddress, '1549220341740704093']
+          }
+        ]
+
+        const actions12 = [
+          {
+            name: 'mint',
+            contract: tokenB,
+            user: delegator,
+            params: ['1000000000000000000000000000000000000']
+          },
+          {
+            name: 'approve',
+            contract: tokenB,
+            user: delegator,
+            params: [option.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'mint',
+            contract: option,
+            user: delegator,
+            params: ['714285714200000000', delegatorAddress]
+          },
+          {
+            name: 'approve',
+            contract: option,
+            user: delegator,
+            params: [optionAMMPool.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'spotPrice',
+            params: ['219811764223']
+          },
+          {
+            name: 'timestamp',
+            params: ['516396']
+          },
+          {
+            name: 'tradeExactAInput',
+            contract: optionAMMPool,
+            user: delegator,
+            params: ['714285714200000000', '618092', delegatorAddress, '1474349727450624219']
+          }
+        ]
+
+        const actions13 = [
+          {
+            name: 'mint',
+            contract: tokenB,
+            user: lp,
+            params: ['1000000000000000000000000000000000000']
+          },
+          {
+            name: 'approve',
+            contract: tokenB,
+            user: lp,
+            params: [optionAMMPool.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'spotPrice',
+            params: ['227436216110']
+          },
+          {
+            name: 'timestamp',
+            params: ['438900']
+          },
+          {
+            name: 'tradeExactAOutput',
+            contract: optionAMMPool,
+            user: lp,
+            params: ['2000000000000000000', '15184836', lpAddress, '1686535732032623738']
+          }
+        ]
+
+        const actions14 = [
+          {
+            name: 'approve',
+            contract: option,
+            user: lp,
+            params: [optionAMMPool.address, ethers.constants.MaxUint256]
+          },
+          {
+            name: 'spotPrice',
+            params: ['223635726850']
+          },
+          {
+            name: 'timestamp',
+            params: ['292613']
+          },
+          {
+            name: 'tradeExactAInput',
+            contract: optionAMMPool,
+            user: lp,
+            params: ['1000000000000000000', '24365', lpAddress, '1502530135024776995']
+          }
+        ]
+
+        const actions15 = [
+          {
+            name: 'spotPrice',
+            params: ['223635726850']
+          },
+          {
+            name: 'timestamp',
+            params: ['292521']
+          },
+          {
+            name: 'tradeExactAInput',
+            contract: optionAMMPool,
+            user: lp,
+            params: ['1000000000000000000', '18535', lpAddress, '1441565389680518417']
+          }
+        ]
+
+        const actions16 = [
+          {
+            name: 'spotPrice',
+            params: ['189533077154']
+          },
+          {
+            name: 'timestamp',
+            params: ['2521']
+          },
+          {
+            name: 'removeLiquidity',
+            contract: optionAMMPool,
+            user: deployer,
+            params: ['100', '100']
+          }
+        ]
+        const combinedActions = actions01.concat(actions02, actions03, actions04, actions05, actions06, actions07, actions08, actions09, actions10, actions11, actions12, actions13, actions14, actions15, actions16)
+        const fnActions = combinedActions.map(action => {
+          let fn
+          if (action.name === 'spotPrice') {
+            fn = async () => changeSpotPrice(defaultPriceFeed, action.params[0])
+          } else if (action.name === 'timestamp') {
+            fn = async () => ethers.provider.send('evm_mine', [expiration - action.params[0]])
+          } else {
+            fn = async () => action.contract.connect(action.user)[action.name](...action.params)
+          }
+          return fn
+        })
+
+        for (const fn of fnActions) {
+          await fn()
+        }
+
+        const poolTokenABalanceBefore = await option.balanceOf(optionAMMPool.address)
+        const lastRemoveLiquidity = optionAMMPool.connect(buyer).removeLiquidity('100', '100')
+
+        await expect(lastRemoveLiquidity).to.emit(optionAMMPool, 'RemoveLiquidity')
+          .withArgs(buyerAddress, poolTokenABalanceBefore, '10776816')
+      })
+    })
   })
 })
+
+async function changeSpotPrice (defaultPriceFeed, newSpotPrice) {
+  await defaultPriceFeed.setRoundData({
+    roundId: 1,
+    answer: newSpotPrice,
+    startedAt: await getTimestamp(),
+    updatedAt: await getTimestamp() + 1,
+    answeredInRound: 1
+  })
+}

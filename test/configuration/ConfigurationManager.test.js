@@ -21,6 +21,7 @@ describe('ConfigurationManager', () => {
     await configurationManager.setAMMFactory(randomAddress)
     await configurationManager.setOptionFactory(randomAddress)
     await configurationManager.setOptionHelper(randomAddress)
+    await configurationManager.setOptionPoolRegistry(randomAddress)
 
     expect(await configurationManager.getEmergencyStop())
       .to.equal(randomAddress)
@@ -47,6 +48,9 @@ describe('ConfigurationManager', () => {
       .to.equal(randomAddress)
 
     expect(await configurationManager.getOptionHelper())
+      .to.equal(randomAddress)
+
+    expect(await configurationManager.getOptionPoolRegistry())
       .to.equal(randomAddress)
   })
 
