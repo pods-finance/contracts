@@ -8,9 +8,6 @@ require('@nomiclabs/hardhat-ethers')
 require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-web3')
 require('@nomiclabs/hardhat-solhint')
-require('@nomiclabs/hardhat-etherscan')
-
-require('@tenderly/hardhat-tenderly')
 
 require('hardhat-spdx-license-identifier')
 
@@ -114,13 +111,6 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     enabled: !!(process.env.REPORT_GAS)
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_APIKEY
-  },
-  tenderly: {
-    project: 'Pods-mainnet',
-    username: 'Pods-tech'
   },
   spdxLicenseIdentifier: {
     overwrite: true
