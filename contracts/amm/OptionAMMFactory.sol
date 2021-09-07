@@ -7,6 +7,7 @@ import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IFeePoolBuilder.sol";
 import "./OptionAMMPool.sol";
+import "../interfaces/IOptionPoolRegistry.sol";
 
 /**
  * @title OptionAMMFactory
@@ -14,8 +15,6 @@ import "./OptionAMMPool.sol";
  * @notice Creates and store new OptionAMMPool
  */
 contract OptionAMMFactory is IOptionAMMFactory {
-    mapping(address => address) private _pools;
-
     /**
      * @dev store globally accessed configurations
      */
@@ -53,7 +52,8 @@ contract OptionAMMFactory is IOptionAMMFactory {
         address _stableAsset,
         uint256 _initialIV
     ) external override returns (address) {
-        require(address(_pools[_optionAddress]) == address(0), "OptionAMMFactory: Pool already exists");
+        IOptionPoolRegistry registry = IOptionPoolRegistry(configurationManager.getOptionPoolRegistry());
+        require(registry.getPool(_optionAddress) == address(0), "OptionAMMFactory: Pool already exists");
 
         OptionAMMPool pool = new OptionAMMPool(
             _optionAddress,
@@ -64,22 +64,9 @@ contract OptionAMMFactory is IOptionAMMFactory {
         );
 
         address poolAddress = address(pool);
-
-        _pools[_optionAddress] = poolAddress;
         emit PoolCreated(msg.sender, poolAddress, _optionAddress);
+        registry.setPool(_optionAddress, poolAddress);
 
         return poolAddress;
-    }
-
-    /**
-     * @notice Returns the address of a previously created pool
-     *
-     * @dev If the pool has not been created it will return address(0)
-     *
-     * @param _optionAddress The address of option token
-     * @return The address of the pool
-     */
-    function getPool(address _optionAddress) external override view returns (address) {
-        return _pools[_optionAddress];
     }
 }

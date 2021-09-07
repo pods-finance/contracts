@@ -7,17 +7,18 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IPodOption.sol";
-import "../interfaces/IOptionAMMFactory.sol";
 import "../interfaces/IOptionAMMPool.sol";
+import "../interfaces/IOptionPoolRegistry.sol";
 
 /**
  * @title PodOption
  * @author Pods Finance
  * @notice Represents a Proxy that can perform a set of operations on the behalf of an user
  */
-contract OptionHelper {
+contract OptionHelper is ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -101,7 +102,7 @@ contract OptionHelper {
         uint256 minTokenAmount,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) {
+    ) external nonReentrant withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
 
         _mint(option, optionAmount);
@@ -127,7 +128,7 @@ contract OptionHelper {
         IPodOption option,
         uint256 optionAmount,
         uint256 tokenAmount
-    ) external {
+    ) external nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
@@ -149,6 +150,34 @@ contract OptionHelper {
     }
 
     /**
+     * @notice Mint and add liquidity using only collateralAmount as input
+     * @dev Mint options and provide them as liquidity to the pool
+     *
+     * @param option The option contract to mint
+     * @param collateralAmount Amount of collateral tokens to be used to both mint and mint into the stable side
+     */
+    function mintAndAddLiquidityWithCollateral(IPodOption option, uint256 collateralAmount) external nonReentrant {
+        require(option.optionType() == IPodOption.OptionType.PUT, "OptionHelper: Invalid option type");
+        IOptionAMMPool pool = _getPool(option);
+        IERC20 tokenB = IERC20(pool.tokenB());
+
+        (uint256 optionAmount, uint256 tokenBToAdd) = _calculateEvenAmounts(option, collateralAmount);
+
+        _mint(option, optionAmount);
+
+        tokenB.safeTransferFrom(msg.sender, address(this), tokenBToAdd);
+
+        // Approve pool transfer
+        IERC20(address(option)).safeApprove(address(pool), optionAmount);
+        tokenB.safeApprove(address(pool), tokenBToAdd);
+
+        // Adds options and tokens to pool as liquidity
+        pool.addLiquidity(optionAmount, tokenBToAdd, msg.sender);
+
+        emit LiquidityAdded(msg.sender, address(option), optionAmount, pool.tokenB(), tokenBToAdd);
+    }
+
+    /**
      * @notice Add liquidity
      * @dev Provide options as liquidity to the pool
      *
@@ -160,7 +189,7 @@ contract OptionHelper {
         IPodOption option,
         uint256 optionAmount,
         uint256 tokenAmount
-    ) external {
+    ) external nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
@@ -200,7 +229,7 @@ contract OptionHelper {
         uint256 minTokenReceived,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) {
+    ) external withinDeadline(deadline) nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenA = IERC20(pool.tokenA());
 
@@ -232,7 +261,7 @@ contract OptionHelper {
         uint256 exactTokenReceived,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) {
+    ) external withinDeadline(deadline) nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenA = IERC20(pool.tokenA());
 
@@ -274,7 +303,7 @@ contract OptionHelper {
         uint256 maxTokenAmount,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) {
+    ) external withinDeadline(deadline) nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
@@ -315,7 +344,7 @@ contract OptionHelper {
         uint256 tokenAmount,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) {
+    ) external withinDeadline(deadline) nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
@@ -338,6 +367,8 @@ contract OptionHelper {
      * @param amount The amount of options to mint
      */
     function _mint(IPodOption option, uint256 amount) internal {
+        require(Address.isContract(address(option)), "OptionHelper: Option is not a contract");
+
         if (option.optionType() == IPodOption.OptionType.PUT) {
             IERC20 strikeAsset = IERC20(option.strikeAsset());
             uint256 strikeToTransfer = option.strikeToTransfer(amount);
@@ -369,9 +400,33 @@ contract OptionHelper {
      * @return IOptionAMMPool
      */
     function _getPool(IPodOption option) internal view returns (IOptionAMMPool) {
-        IOptionAMMFactory factory = IOptionAMMFactory(configurationManager.getAMMFactory());
-        address exchangeOptionAddress = factory.getPool(address(option));
+        IOptionPoolRegistry registry = IOptionPoolRegistry(configurationManager.getOptionPoolRegistry());
+        address exchangeOptionAddress = registry.getPool(address(option));
         require(exchangeOptionAddress != address(0), "OptionHelper: pool not found");
         return IOptionAMMPool(exchangeOptionAddress);
+    }
+
+    /**
+     * @dev Returns the AMM Pool associated with the option
+     *
+     * @param option The option to search for
+     * @param collateralAmount Total collateral amount that will be used to mint and add liquidity
+     * @return amountOfOptions amount of options to mint
+     * @return amountOfTokenB  amount of stable to add liquidity
+     */
+    function _calculateEvenAmounts(IPodOption option, uint256 collateralAmount)
+        internal
+        view
+        returns (uint256 amountOfOptions, uint256 amountOfTokenB)
+    {
+        // 1) Get BS Unit Price
+        IOptionAMMPool pool = _getPool(option);
+
+        uint256 ABPrice = pool.getABPrice();
+        uint256 strikePrice = option.strikePrice();
+        uint256 optionDecimals = option.underlyingAssetDecimals();
+
+        amountOfOptions = collateralAmount.mul(10**optionDecimals).div(strikePrice.add(ABPrice));
+        amountOfTokenB = amountOfOptions.mul(ABPrice).div(10**optionDecimals);
     }
 }

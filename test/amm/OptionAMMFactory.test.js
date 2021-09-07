@@ -40,6 +40,7 @@ describe('OptionAMMFactory', () => {
   beforeEach(async () => {
     factory = await OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
     await factory.deployed()
+    await configurationManager.setAMMFactory(factory.address)
 
     option = await createMockOption({ configurationManager })
   })
@@ -50,11 +51,16 @@ describe('OptionAMMFactory', () => {
       mockUnderlyingAsset.address,
       initialIV
     )
-    const pool = await getPoolCreated(factory, tx, caller)
+    const pool = await getPoolCreated(tx, option, configurationManager)
+    const registry = await ethers.getContractAt('OptionPoolRegistry', await configurationManager.getOptionPoolRegistry())
 
     await expect(tx)
       .to.emit(factory, 'PoolCreated')
-      .withArgs(await caller.getAddress(), pool, option.address)
+      .withArgs(caller.address, pool.address, option.address)
+
+    await expect(tx)
+      .to.emit(registry, 'PoolSet')
+      .withArgs(factory.address, option.address, pool.address)
   })
 
   it('should not deploy a factory without a proper ConfigurationManager', async () => {
@@ -100,16 +106,19 @@ describe('OptionAMMFactory', () => {
       initialIV
     )
 
-    const pool = await getPoolCreated(factory, tx, caller)
+    const pool = await getPoolCreated(tx, option, configurationManager)
+    const registry = await ethers.getContractAt('OptionPoolRegistry', await configurationManager.getOptionPoolRegistry())
 
-    expect(await factory.getPool(option.address)).to.be.equal(pool)
+    expect(await registry.getPool(option.address)).to.be.equal(pool.address)
   })
 })
 
-async function getPoolCreated (factory, tx, caller) {
-  const receipt = await tx
-  const filterFrom = await factory.filters.PoolCreated(await caller.getAddress())
-  const eventDetails = await factory.queryFilter(filterFrom, receipt.blockNumber, receipt.blockNumber)
-  const { pool } = eventDetails[0].args
-  return pool
+async function getPoolCreated (tx, option, configurationManager) {
+  const optionAMMFactory = await ethers.getContractAt('OptionAMMFactory', await configurationManager.getAMMFactory())
+  const registry = await ethers.getContractAt('OptionPoolRegistry', await configurationManager.getOptionPoolRegistry())
+  const filter = await registry.filters.PoolSet(optionAMMFactory.address, option.address)
+  const events = await registry.queryFilter(filter, tx.blockNumber, tx.blockNumber)
+
+  const { pool } = events[0].args
+  return await ethers.getContractAt('OptionAMMPool', pool)
 }

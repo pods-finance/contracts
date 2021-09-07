@@ -24,6 +24,7 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
     bytes32 private constant AMM_FACTORY = "AMM_FACTORY";
     bytes32 private constant OPTION_FACTORY = "OPTION_FACTORY";
     bytes32 private constant OPTION_HELPER = "OPTION_HELPER";
+    bytes32 private constant OPTION_POOL_REGISTRY = "OPTION_POOL_REGISTRY";
 
     /* solhint-enable private-vars-leading-underscore */
 
@@ -83,6 +84,10 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
         _setModule(OPTION_HELPER, optionHelper);
     }
 
+    function setOptionPoolRegistry(address optionPoolRegistry) external override onlyOwner {
+        _setModule(OPTION_POOL_REGISTRY, optionPoolRegistry);
+    }
+
     function getParameter(bytes32 name) external override view returns (uint256) {
         return _parameters[name];
     }
@@ -121,5 +126,13 @@ contract ConfigurationManager is IConfigurationManager, ModuleStorage, Ownable {
 
     function getOptionHelper() external override view returns (address) {
         return getModule(OPTION_HELPER);
+    }
+
+    function getOptionPoolRegistry() external override view returns (address) {
+        return getModule(OPTION_POOL_REGISTRY);
+    }
+
+    function owner() public override(Ownable, IConfigurationManager) view returns (address) {
+        return super.owner();
     }
 }

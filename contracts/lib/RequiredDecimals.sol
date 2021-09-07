@@ -5,6 +5,8 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract RequiredDecimals {
+    uint256 private constant _MAX_TOKEN_DECIMALS = 38;
+
     /**
      * Tries to fetch the decimals of a token, if not existent, fails with a require statement
      *
@@ -19,7 +21,7 @@ contract RequiredDecimals {
 
         require(success, "RequiredDecimals: required decimals");
         uint8 decimals = abi.decode(returnData, (uint8));
-        require(decimals < 77, "RequiredDecimals: token decimals should be lower than 77");
+        require(decimals < _MAX_TOKEN_DECIMALS, "RequiredDecimals: token decimals should be lower than 38");
 
         return decimals;
     }

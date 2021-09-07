@@ -4,6 +4,8 @@ pragma solidity 0.6.12;
 
 import "../interfaces/IOptionBuilder.sol";
 import "../interfaces/IPodOption.sol";
+import "../lib/Conversion.sol";
+import "../interfaces/IOptionFactory.sol";
 
 /**
  * @title OptionFactory
@@ -11,13 +13,14 @@ import "../interfaces/IPodOption.sol";
  * @notice Creates and store new Options Series
  * @dev Uses IOptionBuilder to create the different types of Options
  */
-contract OptionFactory {
+contract OptionFactory is IOptionFactory, Conversion {
     IConfigurationManager public immutable configurationManager;
     IOptionBuilder public podPutBuilder;
     IOptionBuilder public wPodPutBuilder;
+    IOptionBuilder public aavePodPutBuilder;
     IOptionBuilder public podCallBuilder;
     IOptionBuilder public wPodCallBuilder;
-    address public WETH_ADDRESS;
+    IOptionBuilder public aavePodCallBuilder;
 
     event OptionCreated(
         address indexed deployer,
@@ -32,19 +35,21 @@ contract OptionFactory {
     );
 
     constructor(
-        address wethAddress,
         address PodPutBuilder,
         address WPodPutBuilder,
+        address AavePodPutBuilder,
         address PodCallBuilder,
         address WPodCallBuilder,
+        address AavePodCallBuilder,
         address ConfigurationManager
     ) public {
-        WETH_ADDRESS = wethAddress;
         configurationManager = IConfigurationManager(ConfigurationManager);
         podPutBuilder = IOptionBuilder(PodPutBuilder);
         wPodPutBuilder = IOptionBuilder(WPodPutBuilder);
+        aavePodPutBuilder = IOptionBuilder(AavePodPutBuilder);
         podCallBuilder = IOptionBuilder(PodCallBuilder);
         wPodCallBuilder = IOptionBuilder(WPodCallBuilder);
+        aavePodCallBuilder = IOptionBuilder(AavePodCallBuilder);
     }
 
     /**
@@ -69,19 +74,25 @@ contract OptionFactory {
         address strikeAsset,
         uint256 strikePrice,
         uint256 expiration,
-        uint256 exerciseWindowSize
-    ) external returns (address) {
+        uint256 exerciseWindowSize,
+        bool isAave
+    ) external override returns (address) {
         IOptionBuilder builder;
+        address wrappedNetworkToken = wrappedNetworkTokenAddress();
 
         if (optionType == IPodOption.OptionType.PUT) {
-            if (underlyingAsset == WETH_ADDRESS) {
+            if (underlyingAsset == wrappedNetworkToken) {
                 builder = wPodPutBuilder;
+            } else if (isAave) {
+                builder = aavePodPutBuilder;
             } else {
                 builder = podPutBuilder;
             }
         } else {
-            if (underlyingAsset == WETH_ADDRESS) {
+            if (underlyingAsset == wrappedNetworkToken) {
                 builder = wPodCallBuilder;
+            } else if (isAave) {
+                builder = aavePodCallBuilder;
             } else {
                 builder = podCallBuilder;
             }
@@ -114,5 +125,9 @@ contract OptionFactory {
         );
 
         return option;
+    }
+
+    function wrappedNetworkTokenAddress() public override returns (address) {
+        return _parseAddressFromUint(configurationManager.getParameter("WRAPPED_NETWORK_TOKEN"));
     }
 }

@@ -6,33 +6,16 @@ describe('Logarithm', () => {
   let Logarithm, log
 
   before(async () => {
-    const FixidityLib = await ethers.getContractFactory('FixidityLib')
-    const fixidity = await FixidityLib.deploy()
-    await fixidity.deployed()
-
-    const LogarithmLib = await ethers.getContractFactory('LogarithmLib', {
-      libraries: {
-        FixidityLib: fixidity.address
-      }
-    })
-    const logarithm = await LogarithmLib.deploy()
-    await logarithm.deployed()
-
-    Logarithm = await ethers.getContractFactory('LogarithmUser', {
-      libraries: {
-        LogarithmLib: logarithm.address
-      }
-    })
-
+    Logarithm = await ethers.getContractFactory('LogarithmUser')
     log = await Logarithm.deploy()
   })
 
   const scenarios = [
-    [toBigNumber(1e24), toBigNumber(0)],
-    [toBigNumber(2e24), toBigNumber(0.693147180559945309417232e24)],
-    [toBigNumber(2718281828459045235360287), toBigNumber(1e24)],
-    [toBigNumber(0.5e24), toBigNumber(-0.693147180559945309417232e24)],
-    [toBigNumber(50e24), toBigNumber(3.91202300542814605861e24)],
+    [toBigNumber(1e18), toBigNumber(0)],
+    [toBigNumber(2e18), toBigNumber(0.693147180559945309417232e18)],
+    [toBigNumber(2.718281828459045235e18), toBigNumber(1e18)],
+    [toBigNumber(0.5e18), toBigNumber(-0.693147180559945309417232e18)],
+    [toBigNumber(50e18), toBigNumber(3.91202300542814605861e18)],
   ]
 
   scenarios.forEach(([value, expected]) => {

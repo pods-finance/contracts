@@ -5,6 +5,7 @@ pragma solidity 0.6.12;
 import "./PodCall.sol";
 import "../interfaces/IWETH.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "../lib/Conversion.sol";
 
 /**
  * @title WPodCall
@@ -74,14 +75,13 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * be exercised and its price should be worth 0 in a healthy market.
  *
  */
-contract WPodCall is PodCall {
+contract WPodCall is PodCall, Conversion {
     event Received(address indexed sender, uint256 value);
 
     constructor(
         string memory name,
         string memory symbol,
         IPodOption.ExerciseType exerciseType,
-        address underlyingAsset,
         address strikeAsset,
         uint256 strikePrice,
         uint256 expiration,
@@ -93,7 +93,7 @@ contract WPodCall is PodCall {
             name,
             symbol,
             exerciseType,
-            underlyingAsset,
+            _parseAddressFromUint(configurationManager.getParameter("WRAPPED_NETWORK_TOKEN")),
             strikeAsset,
             strikePrice,
             expiration,
@@ -134,25 +134,12 @@ contract WPodCall is PodCall {
     /**
      * @notice Unlocks collateral by burning option tokens.
      *
-     * @dev In case of American options where exercise can happen before the expiration, caller
-     * may receive a mix of underlying asset and strike asset.
-     *
      * Options can only be burned while the series is NOT expired.
      *
      * @param amountOfOptions The amount option tokens to be burned
      */
-    function unmint(uint256 amountOfOptions) external virtual override tradeWindow {
-        (uint256 strikeToSend, uint256 underlyingToSend, uint256 strikeReserves, ) = _burnOptions(
-            amountOfOptions,
-            msg.sender
-        );
-        require(underlyingToSend > 0, "WPodCall: amount of options is too low");
-
-        // Sends the strike asset if the option was exercised
-        if (strikeReserves > 0) {
-            require(strikeToSend > 0, "WPodCall: amount of options is too low");
-            IERC20(strikeAsset()).safeTransfer(msg.sender, strikeToSend);
-        }
+    function unmint(uint256 amountOfOptions) external virtual override unmintWindow {
+        (uint256 strikeToSend, uint256 underlyingToSend) = _unmintOptions(amountOfOptions, msg.sender);
 
         // Sends underlying asset
         IWETH(underlyingAsset()).withdraw(underlyingToSend);

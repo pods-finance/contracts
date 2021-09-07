@@ -27,6 +27,7 @@ contract FeePool is IFeePool, Ownable {
     uint8 private _feeDecimals;
     address private immutable _token;
     uint256 private constant _DYNAMIC_FEE_ALPHA = 2000;
+    uint256 private constant _MAX_FEE_DECIMALS = 38;
 
     event FeeUpdated(address token, uint256 newBaseFee, uint8 newFeeDecimals);
     event FeeWithdrawn(address token, address to, uint256 amountWithdrawn, uint256 sharesBurned);
@@ -38,7 +39,10 @@ contract FeePool is IFeePool, Ownable {
         uint8 feeDecimals
     ) public {
         require(token != address(0), "FeePool: Invalid token");
-        require(feeDecimals <= 77 && feeBaseValue <= uint256(10)**feeDecimals, "FeePool: Invalid Fee data");
+        require(
+            feeDecimals <= _MAX_FEE_DECIMALS && feeBaseValue <= uint256(10)**feeDecimals,
+            "FeePool: Invalid Fee data"
+        );
 
         _token = token;
         _feeBaseValue = feeBaseValue;
@@ -49,11 +53,15 @@ contract FeePool is IFeePool, Ownable {
      * @notice Sets fee and the decimals
      *
      * @param feeBaseValue Fee value
-     * @param decimals Fee decimals
+     * @param feeDecimals Fee decimals
      */
-    function setFee(uint256 feeBaseValue, uint8 decimals) external override onlyOwner {
+    function setFee(uint256 feeBaseValue, uint8 feeDecimals) external override onlyOwner {
+        require(
+            feeDecimals <= _MAX_FEE_DECIMALS && feeBaseValue <= uint256(10)**feeDecimals,
+            "FeePool: Invalid Fee data"
+        );
         _feeBaseValue = feeBaseValue;
-        _feeDecimals = decimals;
+        _feeDecimals = feeDecimals;
         emit FeeUpdated(_token, _feeBaseValue, _feeDecimals);
     }
 
@@ -152,21 +160,17 @@ contract FeePool is IFeePool, Ownable {
     }
 
     /**
-     * @notice Return balance of an address
-     *
-     * @param owner Balance owner
+     * @dev Returns the `Balance` owned by `account`.
      */
-    function balanceOf(address owner) external view returns (Balance memory) {
-        return _balances[owner];
+    function balanceOf(address account) external view returns (Balance memory) {
+        return _balances[account];
     }
 
     /**
-     * @notice Return shares of an address
-     *
-     * @param owner Balance owner
+     * @dev Returns the `shares` owned by `account`.
      */
-    function sharesOf(address owner) external override view returns (uint256) {
-        return _balances[owner].shares;
+    function sharesOf(address account) external override view returns (uint256) {
+        return _balances[account].shares;
     }
 
     /**

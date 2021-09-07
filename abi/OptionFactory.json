@@ -3,11 +3,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "wethAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "PodPutBuilder",
         "type": "address"
       },
@@ -18,12 +13,22 @@
       },
       {
         "internalType": "address",
+        "name": "AavePodPutBuilder",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
         "name": "PodCallBuilder",
         "type": "address"
       },
       {
         "internalType": "address",
         "name": "WPodCallBuilder",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "AavePodCallBuilder",
         "type": "address"
       },
       {
@@ -98,10 +103,23 @@
   },
   {
     "inputs": [],
-    "name": "WETH_ADDRESS",
+    "name": "aavePodCallBuilder",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IOptionBuilder",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "aavePodPutBuilder",
+    "outputs": [
+      {
+        "internalType": "contract IOptionBuilder",
         "name": "",
         "type": "address"
       }
@@ -168,6 +186,11 @@
         "internalType": "uint256",
         "name": "exerciseWindowSize",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isAave",
+        "type": "bool"
       }
     ],
     "name": "createOption",
@@ -231,6 +254,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "wrappedNetworkTokenAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

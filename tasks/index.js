@@ -1,11 +1,3 @@
-require('./utils/index')
-require('./amm/index')
-require('./configuration/index')
-require('./option/index')
-require('./local/index')
-require('./oracle/index')
-
+require('./configuration/setParameter')
+require('./configuration/getParameters')
 require('./exportABI')
-require('./deployWeek')
-require('./deployOptionHelper')
-require('./setupFullNetwork')

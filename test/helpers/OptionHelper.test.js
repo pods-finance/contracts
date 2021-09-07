@@ -1,21 +1,24 @@
 const { expect } = require('chai')
+const { ethers } = require('hardhat')
 const getTimestamp = require('../util/getTimestamp')
 const createMockOption = require('../util/createMockOption')
 const getPriceProviderMock = require('../util/getPriceProviderMock')
 const createConfigurationManager = require('../util/createConfigurationManager')
 const addLiquidity = require('../util/addLiquidity')
 const { takeSnapshot, revertToSnapshot } = require('../util/snapshot')
+const createOptionAMMPool = require('../util/createOptionAMMPool')
 const mintOptions = require('../util/mintOptions')
 
 const OPTION_TYPE_PUT = 0
 const OPTION_TYPE_CALL = 1
-const initialSigma = '960000000000000000'
 
 describe('OptionHelper', () => {
+  const initialSigma = '960000000000000000'
+
   let OptionHelper, OptionAMMFactory, FeePoolBuilder, MintableERC20, IVProvider
-  let optionHelper, configurationManager, ivProvider
+  let optionHelper, configurationManager
   let stableAsset, strikeAsset, underlyingAsset
-  let option, pool, optionAMMFactory, feePoolBuilder
+  let option, pool
   let deployer, deployerAddress
   let caller, callerAddress
   let snapshotId
@@ -33,11 +36,9 @@ describe('OptionHelper', () => {
       ethers.getContractFactory('FeePoolBuilder'),
       ethers.getContractFactory('MintableERC20'),
       ethers.getContractFactory('IVProvider')
-
     ])
 
     underlyingAsset = await MintableERC20.deploy('WBTC', 'WBTC', 8)
-    feePoolBuilder = await FeePoolBuilder.deploy()
   })
 
   beforeEach(async () => {
@@ -49,34 +50,25 @@ describe('OptionHelper', () => {
       tokenAddress: underlyingAsset.address,
       configurationManager
     })
-    ivProvider = await IVProvider.deploy()
-    await ivProvider.setUpdater(deployerAddress)
-
     await configurationManager.setPriceProvider(mock.priceProvider.address)
-    await configurationManager.setIVProvider(ivProvider.address)
 
     option = await createMockOption({
       configurationManager,
       underlyingAsset: underlyingAsset.address
     })
 
-    await ivProvider.updateIV(option.address, initialSigma, '18')
-
-    ;[strikeAsset, stableAsset, optionAMMFactory] = await Promise.all([
+    ;[strikeAsset, stableAsset] = await Promise.all([
       ethers.getContractAt('MintableERC20', await option.strikeAsset()),
-      ethers.getContractAt('MintableERC20', await option.strikeAsset()),
-      OptionAMMFactory.deploy(configurationManager.address, feePoolBuilder.address)
+      ethers.getContractAt('MintableERC20', await option.strikeAsset())
     ])
 
-    await configurationManager.setAMMFactory(optionAMMFactory.address)
-
-    pool = await createOptionAMMPool(option, optionAMMFactory, deployer)
+    pool = await createOptionAMMPool(option, { configurationManager, initialSigma })
     const optionsLiquidity = ethers.BigNumber.from(10e8)
     const stableLiquidity = ethers.BigNumber.from(100000e6)
 
     await addLiquidity(pool, optionsLiquidity, stableLiquidity, deployer)
-
     optionHelper = await OptionHelper.deploy(configurationManager.address)
+    await configurationManager.setOptionHelper(optionHelper.address)
 
     // Approving Strike Asset(Collateral) transfer into the Exchange
     await stableAsset.connect(caller).approve(optionHelper.address, ethers.constants.MaxUint256)
@@ -148,6 +140,21 @@ describe('OptionHelper', () => {
 
       expect(await callOption.balanceOf(callerAddress)).to.equal(amountToMint)
     })
+
+    it('reverts when tries to mint from a non-contract address', async () => {
+      const amountToMint = ethers.BigNumber.from(1e8.toString())
+      const collateralAmount = await option.strikeToTransfer(amountToMint)
+
+      await stableAsset.connect(caller).mint(collateralAmount)
+      expect(await stableAsset.balanceOf(callerAddress)).to.equal(collateralAmount)
+
+      const tx = optionHelper.connect(caller).mint(
+        ethers.constants.AddressZero,
+        amountToMint
+      )
+
+      await expect(tx).to.be.revertedWith('OptionHelper: Option is not a contract')
+    })
   })
 
   describe('Mint and Add Liquidity', () => {
@@ -203,6 +210,49 @@ describe('OptionHelper', () => {
       )
 
       await expect(tx).to.be.revertedWith('OptionHelper: pool not found')
+    })
+
+    it('should mints and add the options and stable tokens using only collateral asset', async () => {
+      const collateralAmount = ethers.BigNumber.from(4200e6.toString())
+
+      // We assume here that the strikeAsset is equal to the stable asset.
+      await strikeAsset.connect(caller).mint(collateralAmount)
+
+      const poolOptionBalanceBefore = await option.balanceOf(pool.address)
+      const poolStrikeBalanceBefore = await strikeAsset.balanceOf(pool.address)
+
+      await optionHelper.connect(caller).mintAndAddLiquidityWithCollateral(
+        option.address,
+        collateralAmount
+      )
+
+      const ABPrice = await pool.getABPrice()
+
+      const poolOptionBalanceAfter = await option.balanceOf(pool.address)
+      const poolStrikeBalanceAfter = await strikeAsset.balanceOf(pool.address)
+
+      const optionsAdded = poolOptionBalanceAfter.sub(poolOptionBalanceBefore)
+      const strikeAdded = poolStrikeBalanceAfter.sub(poolStrikeBalanceBefore)
+
+      const valueA = optionsAdded.mul(ABPrice).div(ethers.BigNumber.from(10).pow(await option.decimals()))
+
+      expect(valueA).to.be.eq(strikeAdded)
+    })
+
+    it('should revert if trying to call mintAndAddLiquidityWithCollateral with Call Options', async () => {
+      const callOption = await createMockOption({
+        configurationManager,
+        underlyingAsset: underlyingAsset.address,
+        strikeAsset: stableAsset.address,
+        optionType: OPTION_TYPE_CALL
+      })
+
+      const tx = optionHelper.connect(caller).mintAndAddLiquidityWithCollateral(
+        callOption.address,
+        '100000000'
+      )
+
+      await expect(tx).to.be.revertedWith('OptionHelper: Invalid option type')
     })
   })
 
@@ -522,24 +572,3 @@ describe('OptionHelper', () => {
     })
   })
 })
-
-async function createOptionAMMPool (option, optionAMMFactory, caller) {
-  const [strikeAssetAddress, callerAddress] = await Promise.all([
-    option.strikeAsset(),
-    caller.getAddress()
-  ])
-
-  const tx = await optionAMMFactory.createPool(
-    option.address,
-    strikeAssetAddress,
-    initialSigma
-  )
-
-  const filterFrom = await optionAMMFactory.filters.PoolCreated(callerAddress)
-  const eventDetails = await optionAMMFactory.queryFilter(filterFrom, tx.blockNumber, tx.blockNumber)
-
-  const { pool: poolAddress } = eventDetails[0].args
-  const pool = await ethers.getContractAt('OptionAMMPool', poolAddress)
-
-  return pool
-}

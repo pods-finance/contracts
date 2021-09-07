@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 
-pragma solidity 0.6.12;
+pragma solidity >=0.6.12;
 
 interface IConfigurationManager {
     function setParameter(bytes32 name, uint256 value) external;
@@ -23,7 +23,11 @@ interface IConfigurationManager {
 
     function setOptionHelper(address optionHelper) external;
 
+    function setOptionPoolRegistry(address optionPoolRegistry) external;
+
     function getParameter(bytes32 name) external view returns (uint256);
+
+    function owner() external view returns (address);
 
     function getEmergencyStop() external view returns (address);
 
@@ -42,4 +46,6 @@ interface IConfigurationManager {
     function getOptionFactory() external view returns (address);
 
     function getOptionHelper() external view returns (address);
+
+    function getOptionPoolRegistry() external view returns (address);
 }

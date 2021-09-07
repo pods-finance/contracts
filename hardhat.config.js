@@ -8,9 +8,6 @@ require('@nomiclabs/hardhat-ethers')
 require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-web3')
 require('@nomiclabs/hardhat-solhint')
-require('@nomiclabs/hardhat-etherscan')
-
-require('@tenderly/hardhat-tenderly')
 
 require('hardhat-spdx-license-identifier')
 
@@ -75,7 +72,7 @@ module.exports = {
         initialIndex: parseInt(process.env.ADDRESS_INDEX),
         count: 1
       },
-      url: 'https://rpc-mainnet.matic.network',
+      url: 'https://rpc-mainnet.maticvigil.com/v1/' + process.env.MATIC_VIGIL_ID,
       network_id: 137
     },
     mumbai: {
@@ -84,7 +81,7 @@ module.exports = {
         initialIndex: parseInt(process.env.ADDRESS_INDEX),
         count: 1
       },
-      url: 'https://rpc-mumbai.maticvigil.com',
+      url: 'https://rpc-mumbai.maticvigil.com/v1/' + process.env.MATIC_VIGIL_ID,
       network_id: 80001,
       gasPrice: 1e9,
       gasLimit: 2100000
@@ -94,12 +91,19 @@ module.exports = {
     }
   },
   solidity: {
-    version: '0.6.12',
-    settings: {
-      optimizer: {
-        enabled: true
+    compilers: [
+      {
+        version: '0.6.12',
+        settings: {
+          optimizer: {
+            enabled: true
+          }
+        }
+      },
+      {
+        version: '0.8.4'
       }
-    }
+    ]
   },
   mocha: {
     timeout: 20000000001
@@ -107,13 +111,6 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     enabled: !!(process.env.REPORT_GAS)
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_APIKEY
-  },
-  tenderly: {
-    project: 'Pods-mainnet',
-    username: 'Pods-tech'
   },
   spdxLicenseIdentifier: {
     overwrite: true

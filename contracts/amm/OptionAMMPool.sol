@@ -4,9 +4,10 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./AMM.sol";
 import "../lib/CappedPool.sol";
-import "../lib/FlashloanProtection.sol";
+import "../lib/CombinedActionsGuard.sol";
 import "../interfaces/IPriceProvider.sol";
 import "../interfaces/IIVProvider.sol";
 import "../interfaces/IBlackScholes.sol";
@@ -17,6 +18,7 @@ import "../interfaces/IFeePool.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IEmergencyStop.sol";
 import "../interfaces/IFeePoolBuilder.sol";
+import "../options/rewards/AaveIncentives.sol";
 
 /**
  * Represents an Option specific single-sided AMM.
@@ -33,7 +35,7 @@ import "../interfaces/IFeePoolBuilder.sol";
  * - feePoolA and feePoolB: responsible for handling Liquidity providers fees.
  */
 
-contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
+contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard, ReentrancyGuard, AaveIncentives {
     using SafeMath for uint256;
     uint256 public constant PRICING_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
@@ -82,7 +84,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 _initialIV,
         IConfigurationManager _configurationManager,
         IFeePoolBuilder _feePoolBuilder
-    ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) {
+    ) public AMM(_optionAddress, _stableAsset) CappedPool(_configurationManager) AaveIncentives(_configurationManager) {
         require(
             IPodOption(_optionAddress).exerciseType() == IPodOption.ExerciseType.EUROPEAN,
             "Pool: invalid exercise type"
@@ -123,11 +125,12 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 amountOfB,
         address owner
     ) external override capped(tokenB(), amountOfB) {
-        _nonReentrant();
+        require(msg.sender == configurationManager.getOptionHelper() || msg.sender == owner, "AMM: invalid sender");
+        _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         _addLiquidity(amountOfA, amountOfB, owner);
-        _getTradeInfo();
+        _emitTradeInfo();
     }
 
     /**
@@ -136,11 +139,29 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
      * @param amountOfA amount of TokenA to add
      * @param amountOfB amount of TokenB to add
      */
-    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override {
-        _nonReentrant();
+    function removeLiquidity(uint256 amountOfA, uint256 amountOfB) external override nonReentrant {
+        _nonCombinedActions();
         _emergencyStopCheck();
         _removeLiquidity(amountOfA, amountOfB);
-        _getTradeInfo();
+        _emitTradeInfo();
+    }
+
+    /**
+     * @notice withdrawRewards claims reward from Aave and send to admin
+     * @dev should only be called by the admin power
+     *
+     */
+    function withdrawRewards() external override {
+        require(msg.sender == configurationManager.owner(), "not owner");
+        address[] memory assets = new address[](1);
+        assets[0] = this.tokenB();
+
+        _claimRewards(assets);
+
+        address rewardAsset = _parseAddressFromUint(configurationManager.getParameter("REWARD_ASSET"));
+        uint256 rewardsToSend = _rewardBalance();
+
+        IERC20(rewardAsset).safeTransfer(msg.sender, rewardsToSend);
     }
 
     /**
@@ -162,15 +183,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 minAmountBOut,
         address owner,
         uint256 initialIVGuess
-    ) external override returns (uint256) {
-        _nonReentrant();
+    ) external override nonReentrant returns (uint256) {
+        _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.initialIVGuess = initialIVGuess;
 
         uint256 amountBOut = _tradeExactAInput(exactAmountAIn, minAmountBOut, owner);
 
-        _getTradeInfo();
+        _emitTradeInfo();
         return amountBOut;
     }
 
@@ -193,15 +214,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 maxAmountBIn,
         address owner,
         uint256 initialIVGuess
-    ) external override returns (uint256) {
-        _nonReentrant();
+    ) external override nonReentrant returns (uint256) {
+        _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.initialIVGuess = initialIVGuess;
 
         uint256 amountBIn = _tradeExactAOutput(exactAmountAOut, maxAmountBIn, owner);
 
-        _getTradeInfo();
+        _emitTradeInfo();
         return amountBIn;
     }
 
@@ -223,15 +244,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 minAmountAOut,
         address owner,
         uint256 initialIVGuess
-    ) external override returns (uint256) {
-        _nonReentrant();
+    ) external override nonReentrant returns (uint256) {
+        _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.initialIVGuess = initialIVGuess;
 
         uint256 amountAOut = _tradeExactBInput(exactAmountBIn, minAmountAOut, owner);
 
-        _getTradeInfo();
+        _emitTradeInfo();
         return amountAOut;
     }
 
@@ -254,15 +275,15 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         uint256 maxAmountAIn,
         address owner,
         uint256 initialIVGuess
-    ) external override returns (uint256) {
-        _nonReentrant();
+    ) external override nonReentrant returns (uint256) {
+        _nonCombinedActions();
         _beforeStartOfExerciseWindow();
         _emergencyStopCheck();
         priceProperties.initialIVGuess = initialIVGuess;
 
         uint256 amountAIn = _tradeExactBOutput(exactAmountBOut, maxAmountAIn, owner);
 
-        _getTradeInfo();
+        _emitTradeInfo();
         return amountAIn;
     }
 
@@ -932,7 +953,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, FlashloanProtection {
         );
     }
 
-    function _getTradeInfo() private {
+    function _emitTradeInfo() private {
         uint256 spotPrice = _getSpotPrice(priceProperties.underlyingAsset, PRICING_DECIMALS);
         emit TradeInfo(spotPrice, priceProperties.currentIV);
     }

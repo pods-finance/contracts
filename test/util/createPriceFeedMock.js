@@ -1,6 +1,5 @@
 const { deployMockContract } = waffle
 const PriceFeedABI = require('../../abi/ChainlinkPriceFeed.json')
-const getTimestamp = require('./getTimestamp')
 
 module.exports = async function createPriceFeedMock (deployer) {
   let _roundData
