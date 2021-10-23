@@ -9,7 +9,7 @@ import "../interfaces/IRedOracle.sol";
  * @author Pods Finance
  * @notice Storage of prices feeds by asset
  */
-contract RedStoneOracle is IRedOracle {
+contract RedStoneOracle {
     uint8 public _decimals = 8;
 
     function setDecimals(uint8 decimals) external {
