@@ -421,7 +421,7 @@ abstract contract PodOption is IPodOption, ERC20, RequiredDecimals, CappedOption
             }
         } else {
             uint256 underlyingAssetDeposited = totalSupply();
-            uint256 currentUnderlyingAmount = underlyingReserves().add(strikeReserves().div(_strikePrice));
+            uint256 currentUnderlyingAmount = underlyingReserves();
             uint256 totalInterest = 0;
 
             if (currentUnderlyingAmount > underlyingAssetDeposited) {
