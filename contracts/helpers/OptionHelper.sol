@@ -12,13 +12,14 @@ import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IPodOption.sol";
 import "../interfaces/IOptionAMMPool.sol";
 import "../interfaces/IOptionPoolRegistry.sol";
+import "../interfaces/IOptionHelper.sol";
 
 /**
  * @title PodOption
  * @author Pods Finance
  * @notice Represents a Proxy that can perform a set of operations on the behalf of an user
  */
-contract OptionHelper is ReentrancyGuard {
+contract OptionHelper is IOptionHelper, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -79,7 +80,7 @@ contract OptionHelper is ReentrancyGuard {
      * @param option The option contract to mint
      * @param optionAmount Amount of options to mint
      */
-    function mint(IPodOption option, uint256 optionAmount) external {
+    function mint(IPodOption option, uint256 optionAmount) external override {
         _mint(option, optionAmount);
 
         // Transfers back the minted options
@@ -102,7 +103,7 @@ contract OptionHelper is ReentrancyGuard {
         uint256 minTokenAmount,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external nonReentrant withinDeadline(deadline) {
+    ) external override nonReentrant withinDeadline(deadline) {
         IOptionAMMPool pool = _getPool(option);
 
         _mint(option, optionAmount);
@@ -128,7 +129,7 @@ contract OptionHelper is ReentrancyGuard {
         IPodOption option,
         uint256 optionAmount,
         uint256 tokenAmount
-    ) external nonReentrant {
+    ) external override nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
@@ -156,7 +157,11 @@ contract OptionHelper is ReentrancyGuard {
      * @param option The option contract to mint
      * @param collateralAmount Amount of collateral tokens to be used to both mint and mint into the stable side
      */
-    function mintAndAddLiquidityWithCollateral(IPodOption option, uint256 collateralAmount) external nonReentrant {
+    function mintAndAddLiquidityWithCollateral(IPodOption option, uint256 collateralAmount)
+        external
+        override
+        nonReentrant
+    {
         require(option.optionType() == IPodOption.OptionType.PUT, "OptionHelper: Invalid option type");
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
@@ -189,7 +194,7 @@ contract OptionHelper is ReentrancyGuard {
         IPodOption option,
         uint256 optionAmount,
         uint256 tokenAmount
-    ) external nonReentrant {
+    ) external override nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
@@ -229,7 +234,7 @@ contract OptionHelper is ReentrancyGuard {
         uint256 minTokenReceived,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) nonReentrant {
+    ) external override withinDeadline(deadline) nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenA = IERC20(pool.tokenA());
 
@@ -261,7 +266,7 @@ contract OptionHelper is ReentrancyGuard {
         uint256 exactTokenReceived,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) nonReentrant {
+    ) external override withinDeadline(deadline) nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenA = IERC20(pool.tokenA());
 
@@ -303,7 +308,7 @@ contract OptionHelper is ReentrancyGuard {
         uint256 maxTokenAmount,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) nonReentrant {
+    ) external override withinDeadline(deadline) nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
@@ -344,7 +349,7 @@ contract OptionHelper is ReentrancyGuard {
         uint256 tokenAmount,
         uint256 deadline,
         uint256 initialIVGuess
-    ) external withinDeadline(deadline) nonReentrant {
+    ) external override withinDeadline(deadline) nonReentrant {
         IOptionAMMPool pool = _getPool(option);
         IERC20 tokenB = IERC20(pool.tokenB());
 
