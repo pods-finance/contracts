@@ -1170,6 +1170,24 @@ scenarios.forEach(scenario => {
 
         expect(bsPriceWithOracleIV).to.be.gte(bsPriceWithoutOracleIV)
       })
+      it('Should revert if caller is going to pay 0 fees due to a small trade', async () => {
+        const stableLiquidityToAdd = toBigNumber(60000).mul(toBigNumber(10).pow(scenario.strikeAssetDecimals))
+        const optionLiquidityToAdd = toBigNumber(100).mul(toBigNumber(10).pow(toBigNumber(scenario.underlyingAssetDecimals)))
+        const optionLiquidityToBuy = toBigNumber(1)
+
+        await addLiquidity(optionAMMPool, optionLiquidityToAdd, stableLiquidityToAdd, lp)
+
+        await mintOptions(option, optionLiquidityToBuy, buyer)
+        await mockStrikeAsset.connect(buyer).mint(stableLiquidityToAdd.mul(2))
+
+        await option.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+        await mockStrikeAsset.connect(buyer).approve(optionAMMPool.address, ethers.constants.MaxUint256)
+
+        const tradeDetails = await optionAMMPool.getOptionTradeDetailsExactAInput(optionLiquidityToBuy)
+
+        await expect(optionAMMPool.connect(buyer)
+          .tradeExactAInput(optionLiquidityToBuy, 0, buyerAddress, tradeDetails.newIV)).to.be.revertedWith('Pool: zero fees')
+      })
     })
 
     describe('Withdraw Amount > TotalBalance case', () => {

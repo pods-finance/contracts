@@ -929,6 +929,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
 
     function _onTrade(TradeDetails memory tradeDetails) internal override {
         uint256 newIV = abi.decode(tradeDetails.params, (uint256));
+        require(tradeDetails.feesTokenA > 0 && tradeDetails.feesTokenB > 0, "Pool: zero fees");
         priceProperties.currentIV = newIV;
 
         IERC20(tokenB()).safeTransfer(address(feePoolA), tradeDetails.feesTokenA);
