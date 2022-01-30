@@ -39,7 +39,7 @@ contract OptionAMMPool is AMM, IOptionAMMPool, CappedPool, CombinedActionsGuard,
     using SafeMath for uint256;
     uint256 public constant PRICING_DECIMALS = 18;
     uint256 private constant _SECONDS_IN_A_YEAR = 31536000;
-    uint256 private constant _ORACLE_IV_WEIGHT = 3;
+    uint256 private constant _ORACLE_IV_WEIGHT = 1;
     uint256 private constant _POOL_IV_WEIGHT = 1;
 
     // External Contracts
