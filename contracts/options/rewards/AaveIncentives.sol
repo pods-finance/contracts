@@ -31,6 +31,18 @@ abstract contract AaveIncentives is Conversion {
     function _claimRewards(address[] memory assets) internal {
         IAaveIncentivesController distributor = IAaveIncentivesController(rewardContract);
         uint256 amountToClaim = distributor.getRewardsBalance(assets, address(this));
-        distributor.claimRewards(assets, amountToClaim, address(this));
+        uint256 rewardBalance = _rewardBalance();
+
+        // Don't call "claim" if we have enough to pay option writers
+        if (rewardBalance < amountToClaim) {
+            distributor.claimRewards(assets, amountToClaim, address(this));
+        }
+    }
+
+    /**
+     * @notice Donate rewards to the option
+     */
+    function donate(uint256 amount) external {
+        require(IERC20(rewardAsset).transferFrom(msg.sender, address(this), amount), "Donation Failed");
     }
 }

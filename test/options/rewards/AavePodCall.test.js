@@ -17,6 +17,14 @@ describe('AavePodCall', () => {
   const strikePrice = ethers.BigNumber.from(300e18.toString())
   const claimable = ethers.BigNumber.from(20e18.toString())
 
+  const setupClaimable = async () => {
+    await aaveRewardDistributor.mock.getRewardsBalance.returns(claimable)
+    await aaveRewardDistributor.mock.claimRewards.returns(claimable)
+
+    await rewardToken.connect(deployer).mint(claimable)
+    await rewardToken.connect(deployer).transfer(option.address, claimable)
+  }
+
   before(async () => {
     ;[deployer, minter0, minter1] = await ethers.getSigners()
     ;[AavePodCall, MintableInterestBearing, configurationManager, aaveRewardDistributor] = await Promise.all([
@@ -39,9 +47,6 @@ describe('AavePodCall', () => {
       ethers.utils.formatBytes32String('REWARD_CONTRACT'),
       aaveRewardDistributor.address
     )
-
-    await aaveRewardDistributor.mock.getRewardsBalance.returns(claimable)
-    await aaveRewardDistributor.mock.claimRewards.returns(claimable)
   })
 
   beforeEach(async () => {
@@ -58,9 +63,6 @@ describe('AavePodCall', () => {
       24 * 60 * 60, // 24h
       configurationManager.address
     )
-
-    await rewardToken.connect(deployer).mint(claimable)
-    await rewardToken.connect(deployer).transfer(option.address, claimable)
   })
 
   afterEach(async () => {
@@ -68,6 +70,8 @@ describe('AavePodCall', () => {
   })
 
   it('unmints entirely and gets the rewards', async () => {
+    await setupClaimable()
+
     await mintOptions(option, amountToMint, minter0)
     await option.connect(minter0).unmint(amountToMint)
     expect(await option.balanceOf(minter0.address)).to.be.equal(0)
@@ -76,6 +80,8 @@ describe('AavePodCall', () => {
   })
 
   it('unmints partially and gets partial rewards', async () => {
+    await setupClaimable()
+
     await mintOptions(option, amountToMint, minter0)
     await mintOptions(option, amountToMint, minter1)
 
@@ -96,8 +102,32 @@ describe('AavePodCall', () => {
   })
 
   it('withdraws and gets the rewards', async () => {
+    await setupClaimable()
+
     await mintOptions(option, amountToMint, minter0)
     await skipToWithdrawWindow(option)
+    await option.connect(minter0).withdraw()
+    expect(await option.shares(minter0.address)).to.be.equal(0)
+    expect(await underlyingAsset.balanceOf(minter0.address)).to.be.equal(amountToMint)
+    expect(await rewardToken.balanceOf(minter0.address)).to.be.equal(claimable)
+  })
+
+  it('accepts donations', async () => {
+    // Setup Distributor to fail when claiming rewards
+    await aaveRewardDistributor.mock.getRewardsBalance.returns(claimable)
+    await aaveRewardDistributor.mock.claimRewards.reverts()
+
+    await mintOptions(option, amountToMint, minter0)
+    await skipToWithdrawWindow(option)
+    // Withdrawing with failing distributor
+    const tx = option.connect(minter0).withdraw()
+    await expect(tx).to.be.reverted
+
+    // Subsidizing rewards
+    await rewardToken.connect(deployer).mint(claimable)
+    await rewardToken.connect(deployer).approve(option.address, claimable)
+    await option.connect(deployer).donate(claimable)
+
     await option.connect(minter0).withdraw()
     expect(await option.shares(minter0.address)).to.be.equal(0)
     expect(await underlyingAsset.balanceOf(minter0.address)).to.be.equal(amountToMint)
